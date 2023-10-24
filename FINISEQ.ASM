@@ -923,12 +923,12 @@ exp_clp
 *
  SUBRP	is_door_open
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 
 	move	@close_the_door,a14
 	jrz	#door_not_open
 
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 #door_not_open
 	move	a1,*a13(ANIMODE)
 	rets
@@ -939,12 +939,12 @@ exp_clp
 *
  SUBRP	is_guy_up
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 
 	move	@guy_up,a14
 	jrz	#guy_not_up
 
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 #guy_not_up
 	move	a1,*a13(ANIMODE)
 	rets
@@ -955,12 +955,12 @@ exp_clp
 *
  SUBRP	is_he_in
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 
 	move	@guy_in,a14
 	jrz	#guy_not_in
 
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 #guy_not_in
 	move	a1,*a13(ANIMODE)
 	rets
@@ -984,7 +984,7 @@ exp_clp
 *
  SUBRP	make_wres_disappear
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 
 	move	@close_the_door,a14
 	cmpi	3,a14
@@ -996,7 +996,7 @@ exp_clp
 	calla	change_anim1a
 	PULL	a1,a13
 
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 #not_time
 	move	a1,*a13(ANIMODE)
 	rets
@@ -1046,7 +1046,7 @@ exp_clp
 *
  SUBRP	check_roll
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 	move	*a13(OBJ_ZPOSINT),a1
 	cmpi	(RING_Z_CENTER+20),a1
 	jrgt	#roll_done
@@ -1056,7 +1056,7 @@ exp_clp
 	PUSH	a0
 	calla	do_roll
 	PULL	a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 #roll_done
 	move	a0,*a13(ANIMODE)
 	rets
@@ -1074,7 +1074,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	; Now Stand the bugger up
 	WL	3,R3GU2A+FR1
@@ -1131,7 +1131,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	WL	7,H3GU4A+FR1
 	WL	7,H3GU4A+FR2
@@ -1186,7 +1186,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	WL	7,U3SU4A+FR1
 	WL	7,U3SU4A+FR2
@@ -1231,7 +1231,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	WL	7,Y3GU2A+FR1
 	WL	7,Y3GU2A+FR2
@@ -1283,7 +1283,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	WL	7,S3GU2A+FR1
 	WL	7,S3GU2A+FR2
@@ -1329,7 +1329,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	WL	7,B3GU4A+FR1
 	WL	7,B3GU4A+FR2
@@ -1384,7 +1384,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	WL	7,D3GU4A+FR1
 	WL	7,D3GU4A+FR2
@@ -1435,7 +1435,7 @@ exp_clp
 #rl_loop
 	.word	ANI_PAUSE,1
 	WL	ANI_CODE,check_roll
-	WL	ANI_IFSTATUS,#rl_loop
+	WL	ANI_IFSTATUS2,#rl_loop
 
 	WL	7,L3GU4A+FR1
 	WL	7,L3GU4A+FR2
@@ -1665,7 +1665,7 @@ TIME_FOR_MOVE	.equ	16
 	WL	5,U5RV5A+FR5
 	WL	ANI_CODE,DO_CROWD_CHEER
 	WL	ANI_CODE,is_guy_up
-	WL	ANI_IFNOTSTATUS,#loopa
+	WL	ANI_IFNOTSTATUS2,#loopa
 
 	; Let the dead guy stand there being dizzy fer a bit
 #loop
@@ -1676,7 +1676,7 @@ TIME_FOR_MOVE	.equ	16
 
 	WL	ANI_CODE,DO_CROWD_CHEER
 	WL	ANI_CODE,is_door_open
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 	WL	5,U5RV5A+FR4
 	WL	4,U5RV5A+FR3
 	WL	4,U5RV5A+FR2
@@ -1705,7 +1705,7 @@ TIME_FOR_MOVE	.equ	16
 
 	WL	ANI_CODE,DO_CROWD_CHEER
 	WL	ANI_CODE,is_he_in
-	WL	ANI_IFNOTSTATUS,#loop1
+	WL	ANI_IFNOTSTATUS2,#loop1
 	.word	ANI_DEC_RPTCOUNT
 	WL	ANI_IF_RPTCOUNT,#loop1
 
@@ -1716,7 +1716,7 @@ TIME_FOR_MOVE	.equ	16
 #d_loop
 	.word	ANI_PAUSE,5
 	WL	ANI_CODE,make_wres_disappear
-	WL	ANI_IFNOTSTATUS,#d_loop
+	WL	ANI_IFNOTSTATUS2,#d_loop
 
 	WL	7,U4PS3A+FR5
 	WL	7,U4PS3A+FR3

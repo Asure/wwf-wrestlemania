@@ -126,7 +126,7 @@ BCDARM
 	.word	ANI_ZEROVELS
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 ;#gothim
@@ -199,7 +199,7 @@ BCDARM
 	WWL	ANI_WAITHITOPP,5,B3PO4A+FR4
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed_c
+	WL	ANI_IFNOTSTATUS2,#missed_c
 
 	WL	ANI_IFBLOCKED,#missed_c
 
@@ -646,7 +646,7 @@ LET_GO_VICTIM
 	WL	5,B4MF4A+FR7
 
 	WL	ANI_CODE,#inc_loop
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 
 ;Fall out of overhead hold by reversing thru pickup frames
 	.word	ANI_DETACH
@@ -687,13 +687,13 @@ LET_GO_VICTIM
 ;	jrz	#breakout
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #breakout
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -981,13 +981,13 @@ bncoff_tbl
 	WWL	ANI_WAITHITOPP,4,B3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;Check to see if I have tried to pile drive Yokozuna!
 
 ;FIX!! Yoko check
 ;	WL	ANI_CODE,is_this_yoko
-;	WL	ANI_IFSTATUS,#yoko_miss
+;	WL	ANI_IFSTATUS2,#yoko_miss
 
 ;got him
 	.word	ANI_ATTACHZ,0,0,-2		;x & y don't matter.
@@ -1194,13 +1194,13 @@ bncoff_tbl
 	WWL	ANI_WAITHITOPP,4,B3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;Check to see if I have tried to pile drive Yokozuna!
 
 ;FIX!! Yoko check
 ;	WL	ANI_CODE,is_this_yoko
-;	WL	ANI_IFSTATUS,#yoko_miss
+;	WL	ANI_IFSTATUS2,#yoko_miss
 
 ;got him
 	.word	ANI_ATTACHZ,0,0,-2		;x & y don't matter.
@@ -1713,7 +1713,7 @@ bncoff_tbl
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,bam_fall_back_anim
 ;	.word	ANI_END
@@ -1763,7 +1763,7 @@ bncoff_tbl
 	WL	3,B3BF3C+FR3
 	WL	4,B3BF3C+FR4
 	WL	ANI_CODE,#inc_loop
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 
 ;Continue into break...
 
@@ -1808,13 +1808,13 @@ bncoff_tbl
 ;	jrz	#breakout
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #breakout
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -2008,7 +2008,7 @@ bncoff_tbl
 	.word	ANI_ATTACK_OFF
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.word	ANI_CLR_BUTCOUNT
@@ -2340,13 +2340,13 @@ bncoff_tbl
 	WWL	ANI_WAITHITOPP,4,B3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;Check to see if I have tried to pile drive Yokozuna!
 
 ;FIX!! Yoko check
 ;	WL	ANI_CODE,is_this_yoko
-;	WL	ANI_IFSTATUS,#yoko_miss
+;	WL	ANI_IFSTATUS2,#yoko_miss
 
 ;got him
 
@@ -2497,12 +2497,12 @@ bncoff_tbl
 ;;Yes, this is Yoko!
 ;
 ;	move	*a13(ANIMODE),a1
-;	ori	MODE_STATUS,a1
+;	ori	MODE_STATUS2,a1
 ;	move	a1,*a13(ANIMODE)
 ;	rets
 ;#ok
 ;	move	*a13(ANIMODE),a1
-;	andni	MODE_STATUS,a1
+;	andni	MODE_STATUS2,a1
 ;	move	a1,*a13(ANIMODE)
 ;	rets
 ;
@@ -2535,7 +2535,7 @@ bncoff_tbl
 	WWL	ANI_WAITHITOPP,4,B3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedxc
+	WL	ANI_IFNOTSTATUS2,#missedxc
 
 ;got him
 	.word	ANI_INC_COMBO
@@ -2822,7 +2822,7 @@ bncoff_tbl
 	.word	ANI_ATTACK_ON, AMODE_PUPPET_HDGRAB,28,82,59,21 ;mode,x,y,w,h
 	WWL	ANI_WAITHITOPP,7,B4GH3B+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
@@ -2850,7 +2850,7 @@ bncoff_tbl
 	.word	ANI_ATTACK_ON, AMODE_PUPPET,28,82,59,21 ;mode,x,y,w,h
 	WWL	ANI_WAITHITOPP,6,B4GH3B+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 	WL	ANI_IFBLOCKED,#missedb
 
@@ -3018,7 +3018,7 @@ bncoff_tbl
 	WWL	ANI_WAITHITOPP,22,B3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 	WL	2,B3PG3A+FR1
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
 	WL	ANI_IFBLOCKED,#missedb
 
@@ -3049,7 +3049,7 @@ bncoff_tbl
 	WL	4,B3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 	WL	ANI_GOTO,#gothim
@@ -3072,7 +3072,7 @@ bncoff_tbl
 	WWL	ANI_WAITHITOPP,4,B3DD3C+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missed
 
 ;Check to see if I have tried to pile drive Yokozuna!

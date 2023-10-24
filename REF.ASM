@@ -222,7 +222,7 @@ mode_normal	;0
 #*****************************************************************************
 * Brain process.  Continuously updates refmove_dir to show the direction to
 * minimize unhappiness.
-* >a8 = ref proc
+* 0a8H = ref proc
 
 	STRUCTPD
 	LONG		#REFPROC		;UHL ref process
@@ -819,7 +819,7 @@ _16		;16
 
 #*****************************************************************************
 * calculates the 2D distance between two points
-* >a0=x1 >a1=y1 >a2=x2 >a3=y2
+* 0a0H=x1 0a1H=y1 0a2H=x2 0a3H=y2
 * <a0=distance (a1-a3 left intact)
 
  SUBR	distance_2D
@@ -846,7 +846,7 @@ _16		;16
 
 #*****************************************************************************
 * calculates the unhappiness value of a given point in the XZ plane.
-* >a0=x >a1=z
+* 0a0H=x 0a1H=z
 * <a0=unhappiness(UHL)
 
  SUBR	calc_unhappiness
@@ -1173,7 +1173,7 @@ GRID_TLY	equ	200
 #inner_loop
 	move	a0,a14
 	sla	4,a0
-	andi	>F000,a14
+	andi	0F000H,a14
 	sra	12,a14
 	move	a14,*a11+,W
 	dsj	b2,#inner_loop

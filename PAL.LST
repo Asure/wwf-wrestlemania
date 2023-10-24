@@ -1,0 +1,1567 @@
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    **************************************************************
+       2                    *
+       3                    * Software:     ?, Shawn Liptak and Mark Turmell
+       4                    * Initiated:    4/13/89 (palstuff)
+       5                    *
+       6                    * Modified:     Shawn Liptak, 7/23/91   -New FADEIN/OUT (Total carnage)
+       7                    *               Shawn Liptak, 7/28/91   -Merged with fbstuff
+       8                    *               Shawn Liptak, 8/12/91   -PAL_TOWHT/PAL_FMWHT
+       9                    *               Shawn Liptak, 8/21/91   -Merged pall & palstuff
+      10                    *               Shawn Liptak, 9/13/91   -Clean up!
+      11                    *               Shawn Liptak, 9/17/91   -New PAL struct
+      12                    *               Shawn Liptak, 11/19/91  -Improved GETxPAL with CLNPAL
+      13                    *               Shawn Liptak, 2/20/92   -Basketball cleanup
+      14                    *               Shawn Liptak, 4/29/92   -Conditional bgndpal assembly
+      15                    *
+      16                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+      17                    *
+      18                    *.Last mod - 11/18/92 20:30
+      19                    **************************************************************
+      21                            .file   "pal.asm"
+      22                            .width  132
+      23                            .option b,d,l,t
+      24                            .mnolist
+      25                    
+      26                    
+      27                            .include        "mproc.equ"
+      28                            .include        "display.equ"
+      29                            .include        "sys.equ"
+      30                            .include        "gsp.equ"
+      31                            .include        "game.equ"
+      32                            .include        "macros.h"
+      33                    
+      34                            .include        "fontsimg.glo"
+      35                            .include        "bgndtbl.glo"
+      36                    
+      37                    ******************************************************************************
+      38                    * EXTERNAL REFERENCES
+      39                    
+      40                            .ref    IRQSKYE
+      41                            .REF    IGNORE_SPECIAL,IGNORE_THIS_PAL
+      42                    
+      43                    ******************************************************************************
+      44                    
+      45                    ;defs
+      46                    
+      47                    ;equates
+      48                    
+      49              0008  FPALNUM .equ    8
+      50              1000  FPALSZ  .equ    256*16
+      51                    
+      52                    
+      53                    ;ram
+      54                    
+      55 00000000                   .bss    fade_start,16
+      56 00000010                   .bss    fade_end,16
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    2
+
+      57 00000020                   .bss    fade_inc,16
+      58 00000030                   .bss    fade_list,32            ;list of palettes not to fade
+      59                    
+      60                    
+      61 00000000                   BSSX    PALRAM  ,0              ;Palette allocation ram
+      62 00000000                   BSSX    PALFRAM ,PALRSIZ*NMFPAL
+      63 00000000                   BSSX    PALBRAM ,PALRSIZ*NMBPAL
+      64 00000000                   BSSX    PALTRAM ,PALTSIZ*NUMPALT
+      65                    
+      66 00000000                   BSSX    FADERAM ,FPALSZ*NMFPAL  ;Fade mem for palettes
+      67                    
+      68 00000000                   BSSX    palfmin ,16
+      69 00051960                   .bss    irqskyeo,16             ;Orignal autoerase color
+      70                    
+      71                    
+      72              1950- morfpal1        equ     FADERAM+0*16*64
+      73              1d50- morfpal2        equ     FADERAM+1*16*64
+      74              2150- morfpal3        equ     FADERAM+2*16*64
+      75              2550- morfpal4        equ     FADERAM+3*16*64
+      76              2950- morfpal5        equ     FADERAM+4*16*64
+      77              2d50- morfpal6        equ     FADERAM+5*16*64
+      78              3150- morfpal7        equ     FADERAM+6*16*64
+      79              3550- morfpal8        equ     FADERAM+7*16*64
+      80              3950- morfpal9        equ     FADERAM+8*16*64
+      81              3d50- morfpal10       equ     FADERAM+9*16*64
+      82              4150- morfpal11       equ     FADERAM+10*16*64
+      83                    
+      84                            .def    morfpal1,morfpal2
+      85                            .def    morfpal3,morfpal4
+      86                            .def    morfpal5,morfpal6
+      87                            .def    morfpal7,morfpal8
+      88                            .def    morfpal9,morfpal10
+      89                            .def    morfpal11
+      90                    
+      91 00000000                   .text
+      92                    
+      93                    ********************************
+      94                    * Note: Scratch = A0-A1,A14,B0-B1
+      95                    
+      96                    
+      97                    *******************************
+      98                    * Clear out palette allocation and xfer ram
+      99                    * Trashes scratch
+     100                    
+     101 00000000            SUBR   pal_init
+     102                    
+     103 00000000     09e0          movi    PALRAM,a0               ;*Pal list
+         00000010 00000050- 
+     104 00000030     09d0          movi    PALRSIZ*NUMPAL/16,b0    ;# of words
+         00000040     00a0  
+     105                    
+     106 00000050     5621          clr     a1
+     107 00000060     9020  czkl1   move    a1,*a0+
+     108 00000070     3c50          dsj     b0,czkl1
+     109                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    3
+
+     110 00000080     09e0          movi    PALTRAM,a0              ;*xfer ram
+         00000090 00000a50- 
+     111 000000b0     09d0          movi    PALTSIZ*NUMPALT/16,b0   ;# of words
+         000000c0     00f0  
+     112                    
+     113 000000d0     9020  czkl2   move    a1,*a0+
+     114 000000e0     3c50          dsj     b0,czkl2
+     115                    
+     116                            ;always start with DIAGP as pal 0!
+     117 000000f0     09e0          movi    DIAGP,a0
+         00000100 00000000! 
+     118 00000120     0d3f          callr   pal_getf
+         00000130     0046  
+     119 00000140     0960          rets
+     120                    
+     121                    
+     122                    *******************************
+     123                    * Cleanup unused palettes
+     124                    * Trashes A1,A14,B0-B1
+     125                    
+     126 00000150            SUBR   pal_clean
+     127                    
+     128 00000150                   PUSH    a0,a2,a3,a4
+     129 00000170     09e2          movi    PALRAM+PALRSIZ,a2       ;Skip 1st pal
+         00000180 00000070- 
+     130                    
+     131 000001a0     09c3          movi    NUMPAL-1,a3             ;Chk all pals
+         000001b0     004f  
+     132 000001c0     09c4          movi    00101H,a4               ;2nd PAL #
+         000001d0     0101  
+     133                    
+     134 000001e0     07a0  qdolp   move    @OBJLST,a0,L
+         000001f0 00000000! 
+     135 00000210     ca06          jrz     cp30                    ;No objs, chk backgnd
+     136                    
+     137 00000220     b40e  cp20    move    *a0(OPAL),a14
+         00000230     0150  
+     138 00000240     49c4          cmp     a14,a4
+     139 00000250     ca17          jreq    cp80                    ;Used? Chk next
+     140 00000260     8600          move    *a0,a0,L
+     141 00000270     cbfa          jrnz    cp20
+     142                    
+     143 00000280     07a0  cp30    move    @BAKLST,a0,L            ;Check in bgnd list
+         00000290 00000000! 
+     144 000002b0     ca06          jrz     cp60                    ;No objects, clean it out
+     145                    
+     146 000002c0     b40e  cp50    move    *a0(OPAL),a14
+         000002d0     0150  
+     147 000002e0     49c4          cmp     a14,a4
+     148 000002f0     ca0d          jreq    cp80                    ;Used? Chk next
+     149 00000300     8600          move    *a0,a0,L
+     150 00000310     cbfa          jrnz    cp50
+     151                    
+     152 00000320           cp60
+     153                    ;       move    *a2,a0,L
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    4
+
+     154                    ;       cmpi    WARPP,a0
+     155                    ;       jrne    cp70                    ;Not warp pal?
+     156                    ;
+     157                    ;       movi    CYCPID,a0
+     158                    ;       movi    -1,a1
+     159                    ;       calla   EXISTP
+     160                    ;       move    a0,a0
+     161                    ;       jrnz    cp80                    ;Found cycler?
+     162                    
+     163 00000320           cp70
+     164 00000320     05ae          MOVE    @IGNORE_SPECIAL,A14
+         00000330 00000000! 
+     165 00000350     ca05          JRZ     cp70a
+     166 00000360     8640          move    *a2,a0,L
+     167 00000370     0d5f          CALLA   IGNORE_THIS_PAL
+         00000380 00000000! 
+     168 000003a0     c802          JRC     cp80
+     169 000003b0           cp70a
+     170                    
+     171 000003b0     5600          clr     a0                      ;Palette not used, free it
+     172 000003c0     8202          move    a0,*a2,L
+     173                    
+     174 000003d0     0b04  cp80    addi    00101H,a4               ;Next pal
+         000003e0     0101  
+     175                            .if     PAL64
+     176                            btst    4,a4
+     177                            jrz     cp90
+     178                            addi    03030H,a4
+     179                            sext    a4                      ;For compare
+     180                            .endif
+     181                    
+     182 000003f0     1002  cp90    addk    PALRSIZ,a2
+     183 00000400     0d83          dsj     a3,qdolp
+         00000410     ffdc  
+     184                    
+     185 00000420                   PULL    a0,a2,a3,a4
+     186 00000440     0960          rets
+     187                    
+     188                    
+     189                    *******************************
+     190                    * Find the color map # to which the given palette is assigned
+     191                    * A0=*Pallette
+     192                    * 0A0H=PAL # (DMA format) or 0 (Z)
+     193                    * Trashes scratch
+     194                    
+     195 00000450            SUBR   pal_find
+     196                    
+     197 00000450     09e1          movi    PALRAM,a1
+         00000460 00000050- 
+     198 00000480     09d0          movi    NUMPAL,b0
+         00000490     0050  
+     199                    
+     200 000004a0     962e  xmhlp   move    *a1+,a14,L      ;Get * palette
+     201 000004b0     480e          cmp     a0,a14
+     202 000004c0     ca03          jreq    xmhok           ;Found?
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    5
+
+     203 000004d0     3c90          dsj     b0,xmhlp
+     204 000004e0     5600          clr     a0              ;Set Z
+     205 000004f0     0960          rets
+     206                    
+     207 00000500     4c2e  xmhok   move    A1,a14
+     208 00000510     0bf0          subi    NUMPAL,b0       ;Compute pal #
+         00000520     ffaf  
+     209 00000530     03b0          neg     b0
+     210 00000540     4e11          move    b0,a1
+     211                    
+     212                    ;       .if     PAL64
+     213                    ;       movk    0fH,a14
+     214                    ;       and     a1,a14          ;A14=4 low bits
+     215                    ;       srl     4,a1            ;Move B4/B5 to B6/B7
+     216                    ;       sll     6,a1
+     217                    ;       add     a14,a1
+     218                    ;       .endif
+     219                    
+     220 00000550     4c20          move    a1,a0           ;Return pal #
+     221 00000560     2501          sll     8,a1
+     222 00000570     4020          add     a1,a0
+     223 00000580     1021          addk    1,a1            ;Clr Z (OK)
+     224 00000590     0960          rets
+     225                    
+     226                    
+     227                    
+     228                    *******************************
+     229                    * Get a foreground palette
+     230                    * A0=*Palette
+     231                    *Rets:
+     232                    * A0=Color map allocated (0000-cfcf)
+     233                    * Z set if no palette free
+     234                    * Trashes scratch
+     235                    
+     236 000005a0            SUBR   pal_getf
+     237                    
+     238 000005a0                   PUSH    a2,a3
+     239                    
+     240 000005c0     09e1          movi    PALRAM,a1       ;0CHheck if palette already exists
+         000005d0 00000050- 
+     241 000005f0     09c3          movi    NUMPAL,a3
+         00000600     0050  
+     242 00000610     9622  gfp4    move    *a1+,a2,L       ;Get *palette
+     243 00000620     4802          cmp     a0,a2
+     244 00000630     ca25          jreq    getpn           ;Already in color ram?
+     245 00000640     3c83          dsj     a3,gfp4
+     246                    
+     247 00000650     09e1          movi    PALFRAM,a1      ;0CHheck for a spare palette
+         00000660 00000050- 
+     248 00000680     09c3          movi    NMFPAL,a3
+         00000690     0050  
+     249 000006a0     9622  gfp8    move    *a1+,a2,L
+     250 000006b0     ca0f          jrz     getfp           ;Palette empty? Grab it
+     251 000006c0     3c63          dsj     a3,gfp8
+     252                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    6
+
+     253                            .if     DEBUG
+     254                    ;       LOCKUP
+     255                    ;       eint
+     256                            .endif
+     257 000006d0     0d3f          callr   pal_clean
+         000006e0     ffa6  
+     258                    
+     259 000006f0     09e1          movi    PALFRAM,a1      ;0CHheck for a spare palette
+         00000700 00000050- 
+     260 00000720     09c3          movi    NMFPAL,a3
+         00000730     0050  
+     261 00000740     9622  gfp20   move    *a1+,a2,L
+     262 00000750     ca05          jrz     getfp           ;Palette empty? Grab it
+     263 00000760     3c63          dsj     a3,gfp20
+     264                    
+     265 00000770           symerr  PULL    a2,a3
+     266 00000790     5600          clr     a0              ;Set Z error
+     267 000007a0     0960          rets
+     268                    
+     269                    
+     270                    ********************************
+     271                    * Get a background palette
+     272                    * A0=*Palette
+     273                    *Rets:
+     274                    * A0=Color map allocated (0000-cfcf)
+     275                    * Z set if no palette free
+     276                    * Trashes scratch
+     277                    
+     278                            .if     NMBPAL
+     279                    
+     280                     SUBR   pal_getb
+     281                    
+     282                            PUSH    a2,a3
+     283                    
+     284                            movi    PALRAM,a1       ;0CHheck if palette already exists
+     285                            movi    NUMPAL,a3
+     286                    gbp4    move    *a1+,a2,L       ;Get *palette
+     287                            cmp     a0,a2
+     288                            jreq    getpn           ;Already in color ram?
+     289                            dsj     a3,gbp4
+     290                    
+     291                            movi    PALBRAM,a1      ;0CHheck for a spare palette
+     292                            movk    NMBPAL,a3
+     293                    gbp8    move    *a1+,a2,L
+     294                            jrz     gbp30           ;Palette empty? Grab it
+     295                            dsj     a3,gbp8
+     296                    
+     297                            .if     DEBUG
+     298                            LOCKUP
+     299                            eint
+     300                            .endif
+     301                            callr   pal_clean
+     302                    
+     303                            movi    PALBRAM,a1      ;0CHheck for a spare palette
+     304                            movk    NMBPAL,a3
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    7
+
+     305                    gbp10   move    *a1+,a2,L
+     306                            jrz     gbp30           ;Palette empty? Grab it
+     307                            dsj     a3,gbp10
+     308                            jruc    symerr
+     309                    
+     310                    
+     311                    getfp   addk    NMBPAL,a3       ;>Setup your new palette
+     312                    
+     313                            .else
+     314 000007b0           getfp
+     315                    
+     316                            .endif
+     317                    
+     318                    
+     319 000007b0           gbp30   PUSH    a0,a1
+     320 000007d0     4c61          move    a3,a1           ;Palette #
+     321 000007e0     0be1          subi    NUMPAL,a1       ;Compute palette #
+         000007f0     ffaf  
+     322 00000800     03a1          neg     a1
+     323                    
+     324                            .if     PAL64
+     325                            movk    0fH,a2
+     326                            and     a1,a2           ;A2=4 low bits
+     327                            srl     4,a1            ;Move B4/B5 to B6/B7
+     328                            sll     6,a1
+     329                            add     a2,a1
+     330                            .endif
+     331                    
+     332 00000810     2501          sll     8,a1            ;*256
+     333 00000820     9402          move    *a0+,a2         ;Get # colors in pal
+     334 00000830     0d3f          callr   pal_set         ;Setup pal transfer
+         00000840     000e  
+     335 00000850     09af          mmfm    sp,a0,a1
+         00000860     0003  
+     336 00000870     caef          jrz     symerr          ;Failed to get transfer?
+     337 00000880     a201          move    a0,-*a1,L       ;Stuff palette *
+     338                    
+     339 00000890     0be3  getpn   subi    NUMPAL,a3       ;Compute palette #
+         000008a0     ffaf  
+     340 000008b0     03a3          neg     a3
+     341                    
+     342                            .if     PAL64
+     343                            movk    0fH,a1
+     344                            and     a3,a1           ;A2=4 low bits
+     345                            srl     4,a3            ;Move B4/B5 to B6/B7
+     346                            sll     6,a3
+     347                            add     a1,a3
+     348                            .endif
+     349                    
+     350 000008c0     4c60          move    a3,a0           ;Return palette #
+     351 000008d0     2503          sll     8,a3
+     352 000008e0     4060          add     a3,a0           ;Double it up for DMA
+     353                    
+     354 000008f0                   PULL    a2,a3
+     355 00000910     1021          addk    1,a1            ;Clr Z for OK
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    8
+
+     356 00000920     0960          rets
+     357                    
+     358                    
+     359                    *******************************
+     360                    * Setup palette transfer
+     361                    * A0=* to palette color data
+     362                    * A1=Bit 8-15 destination palette | Bit 0-7 start color
+     363                    * A2=Color count (0-255)
+     364                    * Rets: Z set if unable to setup transfer
+     365                    * Trashes scratch
+     366                    
+     367 00000930            SUBR   pal_set
+     368                    
+     369 00000930     4e61          move    a3,b1
+     370                    
+     371 00000940     09e3          movi    PALTRAM,a3
+         00000950 00000a50- 
+     372 00000970     09d0          movi    NUMPALT,b0      ;# of palette transfers allowed
+         00000980     003c  
+     373                    
+     374 00000990     946e  kaklp   move    *a3+,a14
+     375 000009a0     ca04          jrz     kakset          ;Cell free?
+     376 000009b0     0b03          addi    PALTSIZ-16,a3
+         000009c0     0030  
+     377 000009d0     3cb0          dsj     b0,kaklp
+     378                            .if     DEBUG
+     379                            LOCKUP
+     380                            eint
+     381                            .endif
+     382 000009e0     c004          jruc    kakx
+     383                    
+     384 000009f0     9203  kakset  move    a0,*a3+,L       ;Set PALSRC
+     385 00000a00     8023          move    a1,*a3          ;Set PALDEST
+     386 00000a10     b043          move    a2,*a3(-48)     ;Set PLDCNT (Must set last)
+         00000a20     ffd0  
+     387                    
+     388 00000a30     4e33  kakx    move    b1,a3
+     389 00000a40     4c10          move    b0,b0           ;Return Z (error) or NZ (ok)
+     390 00000a50     0960          rets
+     391                    
+     392                    
+     393                    
+     394                    *******************************
+     395                    * Transfer palette data
+     396                    * Called during vblank
+     397                    * Looks through PALTRAM for transfers
+     398                    * Trashes A0-A7
+     399                    
+     400 00000a60            SUBR   pal_transfer
+     401                    
+     402 00000a60     09e0          movi    PALTRAM,a0
+         00000a70 00000a50- 
+     403 00000a90     09c3          movi    NUMPALT,a3      ;# OF PALETTES
+         00000aa0     003c  
+     404                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE    9
+
+     405 00000ab0     56c6          clr     a6
+     406 00000ac0     09e7          movi    COLRAM,a7
+         00000ad0 01880000  
+     407                    
+     408 00000af0     8404  amolp   move    *a0,a4          ;Get count
+     409 00000b00     ca18          jrz     amox            ;End?
+     410                    
+     411              0000  PAL_DEBUG       equ     0
+     412                            .if PAL_DEBUG
+     413                            move    @HEBLNK,a1
+     414                            cmpi    HEBLNKINIT,a1
+     415                            jrnz    amohb_ok
+     416                            LOCKUP
+     417                    amohb_ok
+     418                            .endif
+     419                    
+     420 00000b10     90c0          move    a6,*a0+         ;Clear out tranfer count
+     421 00000b20     9601          move    *a0+,a1,L       ;Source address
+     422 00000b30     9402          move    *a0+,a2         ;Destination palette
+     423 00000b40     0522          zext    a2
+     424                    
+     425                            .if     PAL64
+     426                            move    a2,a5           ;Convert to color ram address
+     427                            sll     32-12,a5
+     428                            srl     32-12-4,a5      ;*16
+     429                            srl     14,a2           ;Move B14/15 to B6/7
+     430                            sll     6+4,a2
+     431                            add     a5,a2
+     432                            .else
+     433 00000b50     2482          sll     4,a2            ;*16 for word addr
+     434                            .endif
+     435                    
+     436 00000b60     40e2          add     a7,a2           ;+color ram base address
+     437                    
+     438 00000b70     26e4          sll     32-9,a4         ;Make 0-511
+     439 00000b80     2d04          srl     32-9+1,a4
+     440 00000b90     c901          jrnc    amo1            ;Even data count?
+     441 00000ba0     9822          move    *a1+,*a2+
+     442                    
+     443 00000bb0     2fe4  amo1    srl     1,a4            ;/2 data count
+     444 00000bc0     c901          jrnc    amo2            ;Even?
+     445 00000bd0     9a22          move    *a1+,*a2+,L
+     446                    
+     447 00000be0     2fe4  amo2    srl     1,a4            ;/2 data count
+     448 00000bf0     c902          jrnc    amo3            ;Even?
+     449 00000c00     9a22          move    *a1+,*a2+,L
+     450 00000c10     9a22          move    *a1+,*a2+,L
+     451 00000c20     ca05  amo3    jrz     amo5            ;Cnt=0?
+     452                    
+     453 00000c30     9a22  amo4    move    *a1+,*a2+,L
+     454 00000c40     9a22          move    *a1+,*a2+,L
+     455 00000c50     9a22          move    *a1+,*a2+,L
+     456 00000c60     9a22          move    *a1+,*a2+,L
+     457 00000c70     3ca4          dsj     a4,amo4
+     458                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   10
+
+     459 00000c80     3f43  amo5    dsj     a3,amolp
+     460                    
+     461 00000c90     0960  amox    rets
+     462                    
+     463                    
+     464                    
+     465                    *******************************
+     466                    * Black out selected palette
+     467                    * A0=* palette to black out
+     468                    * Trashes scratch
+     469                    
+     470 00000ca0            SUBR   pal_blacken
+     471                    
+     472 00000ca0                   PUSH    a2
+     473                    
+     474 00000cb0     0d3f          callr   pal_find
+         00000cc0     ff78  
+     475 00000cd0     ca10          jrz     pxkerr
+     476 00000ce0     2500          sll     8,a0
+     477 00000cf0     4c01          move    a0,a1
+     478 00000d00     09e0          movi    FADERAM,a0
+         00000d10 00001950- 
+     479 00000d30     1810          movk    32,b0
+     480 00000d40     5642          clr     a2
+     481 00000d50     9240  pxklp   move    a2,*a0+,L
+     482 00000d60     3c50          dsj     b0,pxklp
+     483 00000d70     09e0          movi    FADERAM,a0
+         00000d80 00001950- 
+     484 00000da0     09c2          movi    64,a2
+         00000db0     0040  
+     485 00000dc0     0d3f          callr   pal_set
+         00000dd0     ffb5  
+     486                    
+     487 00000de0           pxkerr  PULL    a2
+     488 00000df0     0960          rets
+     489                    
+     490                    
+     491                    ********************************
+     492                    * PUMP_RED PROCESS, CYCLE NUCLEAR REACTORS
+     493                    
+     494                    ;PUMP_RED
+     495                    ;       SLEEPK  18H
+     496                    ;       MOVI    REACTR,A0
+     497                    ;       MOVE    A0,@KPBASE,L
+     498                    ;       CALLR   find_pal
+     499                    ;       JRZ     REDOUT
+     500                    ;       SLL     8,A0
+     501                    ;       MOVE    A0,A11                   ;NEEDED LATER FOR pal_set
+     502                    ;
+     503                    ;       MOVI    25,A10                  ;PUMP RED A10 TIMES
+     504                    ;       MOVI    128,A8
+     505                    ;REDLOOP MOVI   FADERAM,A0
+     506                    ;       ADDK    10H,A8
+     507                    ;       CALLR   DO_MULT
+     508                    ;       SLEEPK  1
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   11
+
+     509                    ;       DSJ     A10,REDLOOP
+     510                    ;REDOUT
+     511                    ;       MOVK    25,A10                  ;PUMP RED A10 TIMES
+     512                    ;RED2   MOVI    FADERAM,A0
+     513                    ;       SUBI    10H,A8
+     514                    ;       CALLR   DO_MULT
+     515                    ;       SLEEPK  1
+     516                    ;       DSJ     A10,RED2
+     517                    ;       JRUC    PUMP_RED
+     518                    ;
+     519                    ;DO_MULT
+     520                    ;       MOVE    A8,A2
+     521                    ;       PUSH    a8,a10,a11
+     522                    ;
+     523                    ;       MOVE    @KPBASE,A1,L            ;REACTR,A1
+     524                    ;;PARAMS
+     525                    ;;      A0 - DEST RAM FOR PAL
+     526                    ;;      A1 - SRC FOR PAL
+     527                    ;;      A2 - COLOR MULTIPLIER
+     528                    ;; EACH COLOR IN PALETTE WILL BE MULTIPLIED BY A2 THEN DIVIDED BY 128
+     529                    ;
+     530                    ;       move    *a1+,a14
+     531                    ;       move    a14,*a0+
+     532                    ;       SLL     23,A14          ;TOP BITS OF FIELD ARE FLAGS
+     533                    ;       SRL     23,A14          ;ONLY 9 BITS NEEDED FOR # COLORS
+     534                    ;       MOVI    07C00H,A4       ;A4 - PRE MULT MASK FOR 5 BITS OF RED
+     535                    ;;      MOVI    003E0H,A6       ;A6 - PRE MULT MASK FOR 5 BITS OF GREEN
+     536                    ;;      MOVI    0001FH,A8       ;A8 - PRE MULT MASK FOR 5 BITS OF BLUE
+     537                    ;       MOVE    A4,A9
+     538                    ;;      MOVE    A6,A10
+     539                    ;;      MOVE    A8,A11
+     540                    ;       SLL     7,A9            ; A9 - POST MULT MAX FOR 5 BITS OF RED
+     541                    ;;      SLL     7,A10           ;A10 - POST MULT MAX FOR 5 BITS OF GREEN
+     542                    ;;      SLL     7,A11           ;A11 - POST MULT MAX FOR 5 BITS OF BLUE
+     543                    ;FADELPR
+     544                    ;       MOVE    *A1+,A3,W       ;A3 - RED
+     545                    ;       MOVE    A3,A5
+     546                    ;       ANDI    03FFH,A5
+     547                    ;;      MOVE    A3,A5           ;A5 - GREEN
+     548                    ;;      MOVE    A3,A7           ;A7 - BLUE
+     549                    ;       AND     A4,A3
+     550                    ;       CMPI    1001H,A3
+     551                    ;       JRC     REDOKR
+     552                    ;;      AND     A6,A5
+     553                    ;;      AND     A8,A7
+     554                    ;       MPYU    A2,A3
+     555                    ;;      MPYU    A2,A5
+     556                    ;;      MPYU    A2,A7
+     557                    ;       CMP     A9,A3
+     558                    ;       JRLE    REDOKR
+     559                    ;       MOVE    A9,A3
+     560                    ;REDOKR
+     561                    ;;      CMP     A10,A5
+     562                    ;;      JRLE    GREENOK
+     563                    ;;      MOVE    A10,A5
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   12
+
+     564                    ;;GREENOK
+     565                    ;;      CMP     A11,A7
+     566                    ;;      JRLE    BLUEOK
+     567                    ;;      MOVE    A11,A7
+     568                    ;;BLUEOK
+     569                    ;       AND     A9,A3
+     570                    ;       SRL     7,A3
+     571                    ;;      AND     A10,A5
+     572                    ;       OR      A5,A3
+     573                    ;;      OR      A7,A3
+     574                    ;;      SRL     7,A3
+     575                    ;       MOVE    A3,*A0+
+     576                    ;       DSJS    A14,FADELPR
+     577                    ;
+     578                    ;
+     579                    ;       PULL    a8,a10,a11
+     580                    ;
+     581                    ;       movi    FADERAM,a0      ;*Color data
+     582                    ;       move    a11,a1          ;Pal#
+     583                    ;       move    *a0+,a2         ;pxkColors
+     584                    ;       jruc    pal_set
+     585                    
+     586                    
+     587                    
+     588                    ********************************
+     589                    * Fade in all selected palettes from black
+     590                    * A0=*Palette list to fade in (autoerase + 0-8 pals)
+     591                    * A1=Fade delay in ticks
+     592                    * Trashes scratch,A7,A9-A10
+     593                    * If 1st entry not neg then it enables autoerase fading
+     594                    
+     595                    
+     596 00000e00            SUBR   pal_fadein
+     597                    
+     598 00000e00     4c09          move    a0,a9           ;A9=*Palette list
+     599 00000e10     4c2a          move    a1,a10          ;A10=Fade delay
+     600 00000e20                   CREATE0 fadein
+     601 00000e90     0960          rets
+     602                    
+     603 00000ea0           fadein
+     604 00000ea0     4da6          move    a13,a6
+     605 00000eb0     0b06          addi    PDATA,a6
+         00000ec0     0100  
+     606 00000ed0     1907          movk    FPALNUM,a7
+     607                    
+     608 00000ee0     4d2b          move    a9,a11
+     609 00000ef0     9760          move    *a11+,a0,L              ;!-=Autoerase color
+     610 00000f00     ce05          jrn     fi30
+     611 00000f10     0580          move    a0,@irqskyeo            ;Save color
+         00000f20 00051960- 
+     612                    
+     613 00000f40     9760  fi20    move    *a11+,a0,L              ;Get * palette
+     614 00000f50     ca07          jrz     fi70                    ;0=End
+     615 00000f60     0d3f  fi30    callr   pal_find
+         00000f70     ff4d  
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   13
+
+     616 00000f80     cb01          jrnz    fi60                    ;OK?
+     617 00000f90     03e0          not     a0                      ;Make neg (should = -256)
+     618 00000fa0     2500  fi60    sll     8,a0
+     619 00000fb0     9006          move    a0,*a6+                 ;Save palette #
+     620 00000fc0     3d27          dsj     a7,fi20
+     621                    
+     622 00000fd0     5708  fi70    clr     a8                      ;A8=Brightness
+     623                    
+     624                    
+     625 00000fe0     1108  fi100   addk    8,a8
+     626                    
+     627 00000ff0     09e5          movi    FADERAM,a5
+         00001000 00001950- 
+     628 00001020     4da6          move    a13,a6
+     629 00001030     0b06          addi    PDATA,a6
+         00001040     0100  
+     630 00001050     1907          movk    FPALNUM,a7
+     631                    
+     632 00001060     4d2b          move    a9,a11
+     633 00001070     8761          move    *a11,a1,L
+     634 00001080     ce04          jrn     fi200
+     635 00001090     100b          addk    32,a11
+     636 000010a0     4d02          move    a8,a2
+     637 000010b0     0d3f          callr   pal_fadeae
+         000010c0     006c  
+     638                    
+     639 000010d0     9761  fi200   move    *a11+,a1,L
+     640 000010e0     ca0f          jrz     fi400                   ;End?
+     641 000010f0     4ca0          move    a5,a0
+     642 00001100     4d02          move    a8,a2
+     643 00001110     0d3f          callr   pal_fade
+         00001120     0070  
+     644 00001130     4ca0          move    a5,a0                   ;*Palette colors
+     645 00001140     94c1          move    *a6+,a1                 ;Palette #
+     646 00001150     0b41          cmpi    -256,a1                 ;FF00
+         00001160     00ff  
+     647 00001170     ca03          jreq    fi230                   ;Couldn't find?
+     648 00001180     9402          move    *a0+,a2                 ;pxkColors
+     649 00001190     0d3f          callr   pal_set
+         000011a0     ff78  
+     650 000011b0     0b05  fi230   addi    FPALSZ,a5
+         000011c0     1000  
+     651 000011d0     3e27          dsj     a7,fi200
+     652                    
+     653 000011e0     4d40  fi400   move    a10,a0
+     654 000011f0     0d5f          calla   PRCSLP
+         00001200 00000000! 
+     655 00001220     0b48          cmpi    128,a8
+         00001230     ff7f  
+     656 00001240     c8d9          jrlo    fi100
+     657                    
+     658 00001250           fi800   DIE
+     659                    
+     660                    
+     661                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   14
+
+     662                    
+     663                    ********************************
+     664                    * Fade out all selected palettes to black
+     665                    * A0=*Palette list to fade out (autoerase + 0-8 pals)
+     666                    * A1=Fade delay in ticks
+     667                    * If 1st entry not neg then it enables autoerase fading
+     668                    
+     669                    
+     670 00001280            SUBR   pal_fadeout
+     671                    
+     672 00001280     574a          clr     a10
+     673 00001290     058a          move    a10,@palfmin
+         000012a0 00051950- 
+     674                    
+     675 000012c0            SUBR   pal_fadeout2
+     676                    
+     677 000012c0     4c09          move    a0,a9           ;A9=*Palette list
+     678 000012d0     4c2a          move    a1,a10          ;A10=Fade delay
+     679 000012e0                   CREATE0 fadeout
+     680 00001350     0960          rets
+     681                    
+     682 00001360           fadeout
+     683 00001360     4da6          move    a13,a6
+     684 00001370     0b06          addi    PDATA,a6
+         00001380     0100  
+     685 00001390     1907          movk    FPALNUM,a7
+     686                    
+     687 000013a0     4d2b          move    a9,a11
+     688 000013b0     9760          move    *a11+,a0,L              ;!-=Autoerase color
+     689 000013c0     ce08          jrn     fo30
+     690 000013d0     05a0          move    @IRQSKYE,a0             ;Save color
+         000013e0 00000000! 
+     691 00001400     0580          move    a0,@irqskyeo
+         00001410 00051960- 
+     692                    
+     693 00001430     9760  fo20    move    *a11+,a0,L              ;Get * palette
+     694 00001440     ca07          jrz     fo70                    ;0=End
+     695 00001450     0d3f  fo30    callr   pal_find
+         00001460     fefe  
+     696 00001470     cb01          jrnz    fo60
+     697 00001480     03e0          not     a0                      ;Make neg
+     698 00001490     2500  fo60    sll     8,a0
+     699 000014a0     9006          move    a0,*a6+                 ;Save palette #
+     700 000014b0     3d27          dsj     a7,fo20
+     701                    
+     702 000014c0     09c8  fo70    movi    128,a8                  ;A8=Brightness
+         000014d0     0080  
+     703                    
+     704                    
+     705 000014e0     1508  fo100   subk    8,a8
+     706                    
+     707 000014f0     09e5          movi    FADERAM,a5
+         00001500 00001950- 
+     708 00001520     4da6          move    a13,a6
+     709 00001530     0b06          addi    PDATA,a6
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   15
+
+         00001540     0100  
+     710 00001550     1907          movk    FPALNUM,a7
+     711                    
+     712 00001560     4d2b          move    a9,a11
+     713 00001570     9761          move    *a11+,a1,L
+     714 00001580     ce05          jrn     fo220
+     715 00001590     4d02          move    a8,a2
+     716 000015a0     0d3f          callr   pal_fadeae
+         000015b0     001d  
+     717                    
+     718 000015c0     9761  fo200   move    *a11+,a1,L
+     719 000015d0     ca0f          jrz     fo400
+     720 000015e0     4ca0  fo220   move    a5,a0
+     721 000015f0     4d02          move    a8,a2
+     722 00001600     0d3f          callr   pal_fade
+         00001610     0021  
+     723 00001620     4ca0          move    a5,a0                   ;*Palette colors
+     724 00001630     94c1          move    *a6+,a1                 ;Palette #
+     725 00001640     0b41          cmpi    -256,a1                 ;FF00
+         00001650     00ff  
+     726 00001660     ca03          jrz     fo250
+     727 00001670     9402          move    *a0+,a2                 ;pxkColors
+     728 00001680     0d3f          callr   pal_set
+         00001690     ff29  
+     729 000016a0     0b05  fo250   addi    FPALSZ,a5
+         000016b0     1000  
+     730 000016c0     3e27          dsj     a7,fo200
+     731                    
+     732 000016d0     4d40  fo400   move    a10,a0
+     733 000016e0     0d5f          calla   PRCSLP
+         000016f0 00000000! 
+     734 00001710     05a0          move    @palfmin,a0
+         00001720 00051950- 
+     735 00001740     4808          cmp     a0,a8
+     736 00001750     c7d8          jrgt    fo100
+     737                    
+     738 00001760           fo800   DIE
+     739                    
+     740                    
+     741                    ********************************
+     742                    * Fade autoerase color
+     743                    
+     744 00001790            SUBRP  pal_fadeae      ;A2=Brightness (0-128)
+     745                    
+     746 00001790                   PUSH    a3,a5,a7,a8
+     747                    
+     748 000017b0     09e0          movi    IRQSKYE,a0
+         000017c0 00000000! 
+     749 000017e0     09e1          movi    irqskyeo,a1
+         000017f0 00051960- 
+     750 00001810     182e          movk    1,a14
+     751 00001820     c006          jruc    pf1c
+     752                    
+     753                    
+     754                    ********************************
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   16
+
+     755                    * Fade a palette
+     756                    * Each color in palette will be multiplied by a2 then divided by 128
+     757                    * A0=*Ram for pal, A1=*Palette, A2=Brightness (0-128)
+     758                    * Trashes scratch
+     759                    
+     760 00001830            SUBRP  pal_fade
+     761                    
+     762 00001830                   PUSH    a3,a5,a7,a8
+     763                    
+     764 00001850     942e          move    *a1+,a14        ;# Colors
+     765 00001860     91c0          move    a14,*a0+
+     766                    
+     767 00001870     26ee          sll     32-9,a14        ;Remove any flags
+     768 00001880     2d2e          srl     32-9,a14        ;9 bits needed for # colors
+     769                    
+     770 00001890     1be8  pf1c    movk    01fH,a8         ;A8=5 bit color mask
+     771                    
+     772 000018a0     9423  pf100   move    *a1+,a3
+     773 000018b0     1be7          movk    01fH,a7
+     774 000018c0     5067          and     a3,a7           ;A7=Blue
+     775 000018d0     2f63          srl     5,a3
+     776 000018e0     1be5          movk    01fH,a5
+     777 000018f0     5065          and     a3,a5           ;A5=Green
+     778 00001900     2f63          srl     5,a3            ;A3=Red
+     779                    
+     780 00001910     5e43          mpyu    a2,a3
+     781 00001920     5e45          mpyu    a2,a5
+     782 00001930     5e47          mpyu    a2,a7
+     783 00001940     2f23          srl     7,a3            ;/128
+     784 00001950     2f25          srl     7,a5
+     785 00001960     2f27          srl     7,a7
+     786                    
+     787 00001970     4903          cmp     a8,a3
+     788 00001980     c201          jrls    pfrok
+     789 00001990     4d03          move    a8,a3
+     790                    
+     791 000019a0     4905  pfrok   cmp     a8,a5
+     792 000019b0     c201          jrls    pfgok
+     793 000019c0     4d05          move    a8,a5
+     794                    
+     795 000019d0     4907  pfgok   cmp     a8,a7
+     796 000019e0     c201          jrls    pfbok
+     797 000019f0     4d07          move    a8,a7
+     798                    
+     799 00001a00     2543  pfbok   sll     10,a3
+     800 00001a10     24a5          sll     5,a5
+     801 00001a20     54a3          or      a5,a3
+     802 00001a30     54e3          or      a7,a3
+     803 00001a40     9060          move    a3,*a0+         ;Save color
+     804 00001a50     3f8e          dsj     a14,pf100
+     805                    
+     806 00001a60                   PULL    a3,a5,a7,a8
+     807 00001a80     0960          rets
+     808                    
+     809                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   17
+
+     810                    
+     811                    **************************************************************************
+     812                    * Fade palettes from black to their normal colors except for list
+     813                    * A0=*List NOT to fade or 0
+     814                    * Trashes scratch
+     815                    
+     816 00001a90            SUBR   pal_fadeinx
+     817                    
+     818 00001a90                   PUSH    a2,a6,a7,a8,a9,a10
+     819 00001ab0     190a          movk    8,a10
+     820 00001ac0     c004          jruc    fbf10
+     821                    
+     822                    
+     823                    **************************************************************************
+     824                    * Fade palettes down to black except for list
+     825                    * A0=*List NOT to fade or 0
+     826                    * Trashes scratch
+     827                    
+     828 00001ad0            SUBR   pal_fadeoutx
+     829                    
+     830 00001ad0                   PUSH    a2,a6,a7,a8,a9,a10
+     831 00001af0     09ca          movi    -8,a10
+         00001b00     fff8  
+     832                    
+     833 00001b10     4c06  fbf10   move    a0,a6
+     834                                                            ;Start proc to fade each palette
+     835 00001b20     5729          clr     a9                      ;palette slot
+     836 00001b30     09e2          movi    PALRAM,a2               ;A2=*Palette table
+         00001b40 00000050- 
+     837                    
+     838 00001b60     9648  fbf20   move    *a2+,a8,L               ;Ptr to palette
+     839 00001b70     ca0e          jrz     fbf70
+     840 00001b80     4cc7          move    a6,a7                   ;A6=*List of palettes to skip
+     841 00001b90     ca05          jrz     fbf60
+     842                    
+     843 00001ba0     96e1  fbf50   move    *a7+,a1,L
+     844 00001bb0     ca03          jrz     fbf60
+     845 00001bc0     4828          cmp     a1,a8
+     846 00001bd0     ca08          jreq    fbf70                   ;Skip pal?
+     847 00001be0     c0fb          jruc    fbf50
+     848                    
+     849 00001bf0           fbf60   CREATE0 fadeonep
+     850                    
+     851 00001c60     1029  fbf70   addk    1,a9
+     852 00001c70     0b49          cmpi    NUMPAL,a9
+         00001c80     ffaf  
+     853 00001c90     c4ec          jrlt    fbf20
+     854                    
+     855 00001ca0           fbfx    PULL    a2,a6,a7,a8,a9,a10
+     856 00001cc0     0960          rets
+     857                    
+     858                    
+     859                    **************************************************************************
+     860                    * fadeonep - Fade one palette (Process)
+     861                    *
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   18
+
+     862                    * A8=*Palette to be faded
+     863                    * A9=Palette slot # (0 to NUMPAL-1)
+     864                    * A10=Add value per fade (!0)
+     865                    
+     866 00001cd0           fadeonep
+     867                    
+     868                            .if     PAL64
+     869                            movk    0fH,a2
+     870                            and     a9,a2           ;A2=4 low bits
+     871                            srl     4,a9            ;Move B4/B5 to B6/B7
+     872                            sll     6,a9
+     873                            add     a2,a9
+     874                            .endif
+     875                    
+     876 00001cd0     2509          sll     8,a9            ;B8-15 dest pal, B0-7 color (0)
+     877                    
+     878 00001ce0     576b          clr     a11             ;For up fade
+     879 00001cf0     4d4a          move    a10,a10
+     880 00001d00     c714          jrgt    fop60
+     881 00001d10     09cb          movi    128,a11         ;For dn fade
+         00001d20     0080  
+     882 00001d30     c011          jruc    fop60
+     883                                                    ;>Set up faded pal in process data space
+     884 00001d40           foplp
+     885 00001d40     4d62          move    a11,a2          ;A2=Color Multiplier
+     886 00001d50     4da0          move    a13,a0
+     887 00001d60     0b00          addi    PDATA,a0        ;A0=Dest Ram for Pal
+         00001d70     0100  
+     888 00001d80     4c05          move    a0,a5
+     889 00001d90     4d01          move    a8,a1           ;A1=Src for Pal
+     890 00001da0     0d3f          callr   pal_fade
+         00001db0     ffa7  
+     891                    
+     892 00001dc0     4ca0          move    a5,a0           ;>Move faded palette to palram
+     893 00001dd0     4d21          move    a9,a1
+     894 00001de0     9402          move    *a0+,a2         ;Get # colors in palette
+     895 00001df0     0d3f          callr   pal_set         ;Set transfer
+         00001e00     feb2  
+     896                    
+     897 00001e10                   SLEEPK  2
+     898 00001e50     414b  fop60   add     a10,a11
+     899 00001e60     0b4b          cmpi    128,a11
+         00001e70     ff7f  
+     900 00001e80     c2eb          jrls    foplp
+     901                    
+     902                    
+     903 00001e90                   SLEEPK  2               ;Wait on last pal_set
+     904 00001ed0                   DIE
+     905                    
+     906                    
+     907                    ****************************************************************
+     908                    * Fade palettes from white to their normal colors except for list
+     909                    * A0=*List NOT to fade or 0
+     910                    * A1=Do Autoerase (!0=Yes)
+     911                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   19
+
+     912 00001f00            SUBR   pal_fmwht
+     913                    
+     914 00001f00                   PUSH    a2,a6,a7,a8,a9,a10
+     915 00001f20     09ca          movi    -1,a10
+         00001f30     ffff  
+     916 00001f40     c009          jruc    ptw10
+     917                    
+     918                    
+     919                    ****************************************************************
+     920                    * Brighten palettes to white except for list
+     921                    * A0=*List NOT to fade or 0
+     922                    * A1=Do Autoerase (!0=Yes)
+     923                    
+     924 00001f50            SUBR   pal_towht
+     925                    
+     926 00001f50                   PUSH    a2,a6,a7,a8,a9,a10
+     927 00001f70     05a2          move    @IRQSKYE,a2             ;Save color
+         00001f80 00000000! 
+     928 00001fa0     0582          move    a2,@irqskyeo
+         00001fb0 00051960- 
+     929 00001fd0     182a          movk    1,a10
+     930                    
+     931 00001fe0     4c06  ptw10   move    a0,a6
+     932 00001ff0     4c21          move    a1,a1
+     933 00002000     ca07          jrz     ptw15                   ;Skip AE
+     934 00002010                   CREATE0 addbrt_ae
+     935                                                            ;Start proc to fade each palette
+     936 00002080     5729  ptw15   clr     a9                      ;palette slot
+     937 00002090     09e2          movi    PALRAM,a2               ;A2=*Palette table
+         000020a0 00000050- 
+     938                    
+     939 000020c0     9648  ptw20   move    *a2+,a8,L               ;Ptr to palette
+     940 000020d0     ca0e          jrz     ptw70
+     941 000020e0     4cc7          move    a6,a7                   ;A6=*List of palettes to skip
+     942 000020f0     ca05          jrz     ptw60
+     943                    
+     944 00002100     96e1  ptw50   move    *a7+,a1,L
+     945 00002110     ca03          jrz     ptw60
+     946 00002120     4828          cmp     a1,a8
+     947 00002130     ca08          jreq    ptw70                   ;Skip pal?
+     948 00002140     c0fb          jruc    ptw50
+     949                    
+     950 00002150           ptw60   CREATE0 brightenonep
+     951                    
+     952 000021c0     1029  ptw70   addk    1,a9
+     953 000021d0     0b49          cmpi    NUMPAL,A9
+         000021e0     ffaf  
+     954 000021f0     c4ec          jrlt    ptw20
+     955                    
+     956 00002200           ptwx    PULL    a2,a6,a7,a8,a9,a10
+     957 00002220     0960          rets
+     958                    
+     959                    
+     960                    ********************************
+     961                    * Brighten one palette (Process)
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   20
+
+     962                    * A8=*Palette to be faded
+     963                    * A9=Palette slot #
+     964                    * A10=Add value per loop (!0)
+     965                    
+     966 00002230           brightenonep
+     967                            .if     PAL64
+     968                            movk    0fH,a2
+     969                            and     a9,a2           ;A2=4 low bits
+     970                            srl     4,a9            ;Move B4/B5 to B6/B7
+     971                            sll     6,a9
+     972                            add     a2,a9
+     973                            .endif
+     974                    
+     975 00002230     2509          sll     8,a9            ;B8-15 dest pal, B0-7 color (0)
+     976                    
+     977 00002240     576b          clr     a11             ;For up fade
+     978 00002250     4d4a          move    a10,a10
+     979 00002260     c701          jrgt    bop20
+     980 00002270     1beb          movk    31,a11          ;For dn fade
+     981 00002280           bop20
+     982                                                    ;Set up faded pal in process data space
+     983 00002280     414b  boplp   add     a10,a11
+     984 00002290     0b4b          cmpi    31,a11
+         000022a0     ffe0  
+     985 000022b0     c312          jrhi    bopx
+     986 000022c0     4d62          move    a11,a2          ;A2=Brightness
+     987 000022d0     4da0          move    a13,a0
+     988 000022e0     0b00          addi    PDATA,a0        ;A0=Dest Ram for Pal
+         000022f0     0100  
+     989 00002300     4c05          move    a0,a5
+     990 00002310     4d01          move    a8,a1           ;A1=Src for Pal
+     991 00002320     0d3f          callr   pal_addb
+         00002330     002e  
+     992                    
+     993 00002340     4ca0          move    a5,a0           ;>Move faded palette to palram
+     994 00002350     4d21          move    a9,a1
+     995 00002360     9402          move    *a0+,a2         ;Get # colors in palette
+     996 00002370     0d3f          callr   pal_set         ;Set transfer
+         00002380     fe5a  
+     997                    
+     998 00002390                   SLEEPK  3
+     999 000023d0     c0ea          jruc    boplp
+    1000                    
+    1001 000023e0           bopx    SLEEPK  1               ;give last xfer a chance to go
+    1002 00002420                   DIE
+    1003                    
+    1004                    
+    1005                    ********************************
+    1006                    * Change brightness of autoerase (Process)
+    1007                    * A10=Add value per loop (!0)
+    1008                    
+    1009 00002450            SUBR   addbrt_ae
+    1010                    
+    1011 00002450     576b          clr     a11             ;For up fade
+    1012 00002460     4d4a          move    a10,a10
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   21
+
+    1013 00002470     c701          jrgt    abae20
+    1014 00002480     1beb          movk    31,a11          ;For dn fade
+    1015 00002490           abae20
+    1016 00002490     414b  abaelp  add     a10,a11
+    1017 000024a0     0b4b          cmpi    31,a11
+         000024b0     ffe0  
+    1018 000024c0     c308          jrhi    abaex
+    1019 000024d0     4d62          move    a11,a2          ;A2=Brightness
+    1020 000024e0     0d3f          callr   addbae
+         000024f0     0008  
+    1021                    
+    1022 00002500                   SLEEPK  3
+    1023 00002540     c0f4          jruc    abaelp
+    1024                    
+    1025 00002550           abaex   DIE
+    1026                    
+    1027                    
+    1028                    ********************************
+    1029                    * Change brightness of autoerase
+    1030                    * A2=Brightness (-31 to 31)
+    1031                    
+    1032 00002580            SUBRP  addbae
+    1033                    
+    1034 00002580                   PUSH    a3,a5,a7,a8
+    1035                    
+    1036 000025a0     09e0          movi    IRQSKYE,a0
+         000025b0 00000000! 
+    1037 000025d0     09e1          movi    irqskyeo,a1
+         000025e0 00051960- 
+    1038 00002600     182e          movk    1,a14
+    1039 00002610     c006          jruc    pb1c
+    1040                    
+    1041                    
+    1042                    ********************************
+    1043                    * Change brightness of a palette
+    1044                    * Each color in palette will have A2 added to its RGB
+    1045                    * A0=*Ram for pal, A1=*Palette, A2=Brightness (-31 to 31)
+    1046                    * Trashes scratch
+    1047                    
+    1048 00002620            SUBRP  pal_addb
+    1049                    
+    1050 00002620                   PUSH    a3,a5,a7,a8
+    1051                    
+    1052 00002640     942e          move    *a1+,a14        ;# Colors
+    1053 00002650     91c0          move    a14,*a0+
+    1054                    
+    1055 00002660     26ee          sll     23,a14          ;Remove any flags
+    1056 00002670     2d2e          srl     23,a14          ;9 bits needed for # colors
+    1057                    
+    1058 00002680     1be8  pb1c    movk    01fH,a8         ;A8=Mask for 5 bits of color
+    1059                    
+    1060 00002690     9423  pb100   move    *a1+,a3
+    1061 000026a0     1be7          movk    01fH,a7
+    1062 000026b0     5067          and     a3,a7           ;A7=Blue
+    1063 000026c0     2f63          srl     5,a3
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   22
+
+    1064 000026d0     1be5          movk    01fH,a5
+    1065 000026e0     5065          and     a3,a5           ;A5=Green
+    1066 000026f0     2f63          srl     5,a3            ;A3=Red
+    1067                    
+    1068 00002700     4043          add     a2,a3
+    1069 00002710     4045          add     a2,a5
+    1070 00002720     4047          add     a2,a7
+    1071                    
+    1072 00002730     4903          cmp     a8,a3
+    1073 00002740     c201          jrls    pbrok
+    1074 00002750     4d03          move    a8,a3
+    1075                    
+    1076 00002760     4905  pbrok   cmp     a8,a5
+    1077 00002770     c201          jrls    pbgok
+    1078 00002780     4d05          move    a8,a5
+    1079                    
+    1080 00002790     4907  pbgok   cmp     a8,a7
+    1081 000027a0     c201          jrls    pbbok
+    1082 000027b0     4d07          move    a8,a7
+    1083                    
+    1084 000027c0     2543  pbbok   sll     10,a3
+    1085 000027d0     24a5          sll     5,a5
+    1086 000027e0     54a3          or      a5,a3
+    1087 000027f0     54e3          or      a7,a3
+    1088 00002800     9060          move    a3,*a0+         ;Save color
+    1089 00002810     3f2e          dsj     a14,pb100
+    1090                    
+    1091 00002820                   PULL    a3,a5,a7,a8
+    1092 00002840     0960          rets
+    1093                    
+    1094                    
+    1095                    *****************************************************************************
+    1096                    *
+    1097                    * INPUT:        a10 = * list palettes not to fade (0 terminated)
+    1098                    * A11=Fade increment (1-256)
+    1099                    *-----------------------------------------------------------------------------
+    1100                    
+    1101 00002850            SUBR   fade_up
+    1102                    
+    1103 00002850     078a          move    a10,@fade_list,L
+         00002860 00000030- 
+    1104                    
+    1105 00002880     5600          clr     a0
+    1106 00002890     0580          move    a0,@fade_start
+         000028a0 00000000- 
+    1107                    
+    1108 000028c0     09c0          movi    256,a0
+         000028d0     0100  
+    1109 000028e0     0580          move    a0,@fade_end
+         000028f0 00000010- 
+    1110                    
+    1111 00002910     4d60          move    a11,a0                  ;movk 8
+    1112 00002920     0580          move    a0,@fade_inc
+         00002930 00000020- 
+    1113                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   23
+
+    1114 00002950     c034          jruc    do_fade
+    1115                    
+    1116                    *****************************************************************************
+    1117                    * Fade palettes down (process)
+    1118                    * A10=* list palettes not to fade (0 terminated)
+    1119                    * A11=Fade increment (1-256)
+    1120                    *-----------------------------------------------------------------------------
+    1121                    
+    1122 00002960            SUBR   fade_down
+    1123                    
+    1124 00002960     078a          move    a10,@fade_list,L
+         00002970 00000030- 
+    1125                    
+    1126 00002990     09c0          movi    256,a0
+         000029a0     0100  
+    1127 000029b0     0580          move    a0,@fade_start
+         000029c0 00000000- 
+    1128                    
+    1129 000029e0     5600          clr     a0
+    1130 000029f0     0580          move    a0,@fade_end
+         00002a00 00000010- 
+    1131                    
+    1132 00002a20     058b          move    a11,@fade_inc
+         00002a30 00000020- 
+    1133                    
+    1134 00002a50     c024          jruc    do_fade
+    1135                    
+    1136                    *****************************************************************************
+    1137                    *
+    1138                    * INPUT:        a10 = * list palettes not to fade (0 terminated)
+    1139                    *
+    1140                    *-----------------------------------------------------------------------------
+    1141                    
+    1142 00002a60            SUBR   fade_up_half
+    1143                    
+    1144 00002a60     078a          move    a10,@fade_list,L
+         00002a70 00000030- 
+    1145                    
+    1146 00002a90     09c0          movi    128,a0
+         00002aa0     0080  
+    1147 00002ab0     0580          move    a0,@fade_start
+         00002ac0 00000000- 
+    1148                    
+    1149 00002ae0     09c0          movi    256,a0
+         00002af0     0100  
+    1150 00002b00     0580          move    a0,@fade_end
+         00002b10 00000010- 
+    1151                    
+    1152 00002b30     1a00          movk    16,a0
+    1153 00002b40     0580          move    a0,@fade_inc
+         00002b50 00000020- 
+    1154                    
+    1155 00002b70     c012          jruc    do_fade
+    1156                    
+    1157                    *****************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   24
+
+    1158                    *
+    1159                    * INPUT:        a10 = * list palettes not to fade (0 terminated)
+    1160                    *
+    1161                    *-----------------------------------------------------------------------------
+    1162                    
+    1163 00002b80            SUBR   fade_down_half
+    1164                    
+    1165 00002b80     078a          move    a10,@fade_list,L
+         00002b90 00000030- 
+    1166                    
+    1167 00002bb0     09c0          movi    256,a0
+         00002bc0     0100  
+    1168 00002bd0     0580          move    a0,@fade_start
+         00002be0 00000000- 
+    1169                    
+    1170 00002c00     09c0          movi    128,a0
+         00002c10     0080  
+    1171 00002c20     0580          move    a0,@fade_end
+         00002c30 00000010- 
+    1172                    
+    1173 00002c50     1a00          movk    16,a0
+    1174 00002c60     0580          move    a0,@fade_inc
+         00002c70 00000020- 
+    1175                    
+    1176 00002c90     0300          jruc    do_fade
+    1177                    
+    1178                    *****************************************************************************
+    1179                    
+    1180 00002ca0            SUBRP  do_fade
+    1181                    
+    1182 00002ca0     05a0          move    @IRQSKYE,a0
+         00002cb0 00000000! 
+    1183 00002cd0     0580          move    a0,@irqskyeo
+         00002ce0 00051960- 
+    1184                    
+    1185 00002d00     05aa          move    @fade_start,a10
+         00002d10 00000000- 
+    1186 00002d30           avqfade_loop
+    1187                    
+    1188 00002d30     05ab          move    @irqskyeo,a11
+         00002d40 00051960- 
+    1189 00002d60     1be7          movk    01fH,a7
+    1190 00002d70     5167          and     a11,a7          ;A7  = Blue
+    1191 00002d80     2f6b          srl     5,a11
+    1192 00002d90     1be9          movk    01fH,a9
+    1193 00002da0     5169          and     a11,a9          ;A9  = Green
+    1194 00002db0     2f6b          srl     5,a11           ;A11 = Red
+    1195                    
+    1196 00002dc0     5f47          mpyu    a10,a7          ; X (0 - 32)
+    1197 00002dd0     2f07          srl     8,a7            ;/256
+    1198 00002de0     5f49          mpyu    a10,a9
+    1199 00002df0     2f09          srl     8,a9
+    1200 00002e00     5f4b          mpyu    a10,a11
+    1201 00002e10     2f0b          srl     8,a11
+    1202                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   25
+
+    1203 00002e20     254b          sll     10,a11          ;red
+    1204 00002e30     5567          or      a11,a7
+    1205 00002e40     24a9          sll     5,a9            ;green
+    1206 00002e50     5527          or      a9,a7
+    1207                    
+    1208 00002e60     0587          move    a7,@IRQSKYE
+         00002e70 00000000! 
+    1209                    
+    1210                    
+    1211 00002e90     09e4          movi    FADERAM,a4
+         00002ea0 00001950- 
+    1212 00002ec0     09e1          movi    PALRAM,a1
+         00002ed0 00000050- 
+    1213 00002ef0     09c3          movi    NUMPAL,a3
+         00002f00     0050  
+    1214 00002f10           avqnext_pal
+    1215 00002f10     9622          move    *a1+,a2,L       ;Get *palette
+    1216 00002f20     ca2b          jrz     avqempty_pal
+    1217                    
+    1218 00002f30     07a7          move    @fade_list,a7,L
+         00002f40 00000030- 
+    1219 00002f60     ca05          jrz     avqskip_check
+    1220 00002f70     c002          jruc    avqstart
+    1221                    
+    1222 00002f80           avqnext_check
+    1223 00002f80     4922          cmp     a9,a2
+    1224 00002f90     ca24          jreq    avqdone         ;skip this palette
+    1225 00002fa0           avqstart
+    1226 00002fa0     96e9          move    *a7+,a9,L
+    1227 00002fb0     cbfc          jrnz    avqnext_check
+    1228                    
+    1229 00002fc0           avqskip_check
+    1230                    
+    1231 00002fc0     9445          move    *a2+,a5         ;Number colours in palette
+    1232 00002fd0     4ca8          move    a5,a8
+    1233 00002fe0     4c86          move    a4,a6
+    1234                    
+    1235 00002ff0           avqcopy_loop
+    1236 00002ff0     944b          move    *a2+,a11
+    1237 00003000     1be7          movk    01fH,a7
+    1238 00003010     5167          and     a11,a7          ;A7  = Blue
+    1239 00003020     2f6b          srl     5,a11
+    1240 00003030     1be9          movk    01fH,a9
+    1241 00003040     5169          and     a11,a9          ;A9  = Green
+    1242 00003050     2f6b          srl     5,a11           ;A11 = Red
+    1243                    
+    1244 00003060     5f47          mpyu    a10,a7          ; X (0 - 32)
+    1245 00003070     2f07          srl     8,a7            ;/256
+    1246 00003080     5f49          mpyu    a10,a9
+    1247 00003090     2f09          srl     8,a9
+    1248 000030a0     5f4b          mpyu    a10,a11
+    1249 000030b0     2f0b          srl     8,a11
+    1250                    
+    1251 000030c0     254b          sll     10,a11          ;red
+    1252 000030d0     5567          or      a11,a7
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   26
+
+    1253 000030e0     24a9          sll     5,a9            ;green
+    1254 000030f0     5527          or      a9,a7
+    1255                    
+    1256 00003100     90e6          move    a7,*a6+         ;1 word
+    1257                    
+    1258 00003110     3e68          dsj     a8,avqcopy_loop
+    1259                    
+    1260                    
+    1261 00003120                   PUSH    a1,a2
+    1262 00003140     4c80          move    a4,a0           ;* colour data
+    1263 00003150     09c1          movi    NUMPAL,a1
+         00003160     0050  
+    1264 00003170     4461          sub     a3,a1           ;dest palette ( 0 - NUMPAL-1 )
+    1265 00003180     2501          sll     8,a1            ;
+    1266 00003190     4ca2          move    a5,a2           ;# colours
+    1267 000031a0     0d3f          callr   pal_set
+         000031b0     fd77  
+    1268 000031c0                   PULL    a1,a2
+    1269 000031e0           avqdone
+    1270 000031e0           avqempty_pal
+    1271 000031e0     0b04          addi    FPALSZ,a4
+         000031f0     1000  
+    1272 00003200     0d83          dsj     a3,avqnext_pal
+         00003210     ffcf  
+    1273                    
+    1274 00003220                   SLEEPK  1
+    1275                    
+    1276 00003260     05a0          move    @fade_start,a0
+         00003270 00000000- 
+    1277 00003290     05a1          move    @fade_end,a1
+         000032a0 00000010- 
+    1278 000032c0     4801          cmp     a0,a1
+    1279 000032d0     c309          jrhi    avqfading_up
+    1280                                                    ;fading_down
+    1281 000032e0     05a0          move    @fade_inc,a0    ;signed inc
+         000032f0 00000020- 
+    1282 00003310     440a          sub     a0,a10
+    1283 00003320     482a          cmp     a1,a10
+    1284 00003330     c59f          jrge    avqfade_loop
+    1285                    
+    1286 00003340                   DIE
+    1287                    
+    1288 00003370           avqfading_up
+    1289 00003370     05a0          move    @fade_inc,a0    ;signed inc
+         00003380 00000020- 
+    1290 000033a0     400a          add     a0,a10
+    1291 000033b0     482a          cmp     a1,a10
+    1292 000033c0     c296          jrls    avqfade_loop
+    1293                    
+    1294 000033d0                   DIE
+    1295                    
+    1296                    
+    1297                    ******************************************************************************
+    1298                    
+    1299                            .end
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:41 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+palette allocator and fader control                                  PAGE   27
+
+
+ No Errors,  No Warnings

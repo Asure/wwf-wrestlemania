@@ -763,7 +763,7 @@ SHOW_DAMAGE_POINTS	equ	0
 	sub	a2,a3
 	move	a3,*a9(YVAL),L
 
-;	movi	>2480,a0
+;	movi	02480H,a0
 
 	move	*a10(OBJ_ZPOSINT),a0
 	ori	1000h,a0
@@ -1122,7 +1122,7 @@ explosions_salt
 	sub	a2,a3
 	move	a3,*a9(YVAL),L
 
-;	movi	>2480,a0
+;	movi	02480H,a0
 
 	move	*a10(OBJ_ZPOSINT),a0
 	ori	1000h,a0
@@ -4439,7 +4439,7 @@ SIN_TABLE:
 	move	@_switch_addr,a0,L
 	move	*a0,a0
 	zext	a0
-	cmpi	>ffff,a0
+	cmpi	0ffffH,a0
 	jrnz	#tag1
 	clr	a11
 	jruc	#lp
@@ -4651,7 +4651,7 @@ P2_B	.EQU	0DFFFH
 	jreq	#nosleephack
 	;sleeping drone
 	neg	a4
-	addi	>7FFF,a4
+	addi	07FFFH,a4
 	add	a4,a14
 #nosleephack
 

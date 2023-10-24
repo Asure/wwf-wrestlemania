@@ -484,7 +484,7 @@
 	rets
 #out
 	move	*a10(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a10(ANIMODE)
 
 #done	calla	wres_collis_off

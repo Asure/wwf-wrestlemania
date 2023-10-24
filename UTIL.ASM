@@ -51,7 +51,7 @@
 	.ref	IGNORE_CHAR_WIDTH,debris_count,are_we_waiting_f
 	.ref	SPECIAL_DISPLAY_INIT,switches_cur,dirqtimer,pal_set
 	.ref	SYSCOPY,GET_ADJ,display_init,GAMSTATE,pal_find
-	.ref	pal_getf,dpageflip,SOUNDSUP,IRQSKYE,PSTATUS,PALRAM
+	.ref	pal_getf,dpageflip,SOUNDSUP,IRQSKYE,PSTATUS2,PALRAM
 	.ref	switches_down,gndstat,pal_init,BAKBITS,WFLG,WSPEED
 	.ref	COLRTEMP,ENDLESS_SOUND,get_but_val_cur,get_but_val_down
 	.ref	get_stick_val_cur,get_stick_val_down
@@ -169,7 +169,7 @@ KILUP
 	.else
 	srl	8,a0
 	sll	8,a0
-	movi	SYSCINIT&>ff,a1		;Don't touch 7seg LED
+	movi	SYSCINIT&0ffH,a1		;Don't touch 7seg LED
 	.endif
 
 	or	a1,a0
@@ -343,7 +343,7 @@ SSSL	.macro	a
 ;;	dsj	b0,#lp
 ;
 ;
-;	movi	ACTIVE,a2		;>Find end of list
+;	movi	ACTIVE,a2		;0FHind end of list
 ;#prlp
 ;	move	a2,a3
 ;	move	*a2,a2,L
@@ -411,7 +411,7 @@ SSSL	.macro	a
 	move	*a13(PROCID),a11
 	subi	ANIMPID,a11
 	srl	8,a11
-	sll	8,a11			;A11=ID offset (0->300)
+	sll	8,a11			;A11=ID offset (0-0300H)
 
 	clr	a1
 	move	a1,*a13(animsfnum)
@@ -467,7 +467,7 @@ ans100	move	*a9+,a2,L		;*Image
 	PULL	a8
 	jruc	anslp
 
-asFRA					;>FRANIM
+asFRA					;0FHRANIM
 	move	a11,a6			;Save a11
 	move	*a8+,a9,L		;Get data
 	move	*a13(PROCID),a1		;Inherit same ID+1
@@ -666,7 +666,7 @@ asLABR					;>Set label randomly
 asDSJS1					;>Sleep 1, dec and loop to label
 	SLEEPK	1
 
-asDSJ					;>Decrement and loop to label
+asDSJ					;0DecHrement and loop to label
 	move	*a13(animslp_p),a1,L
 	move	-*a1,a2
 	subk	1,a2
@@ -699,7 +699,7 @@ ans1450	move	*a13(animslobj_p),a0,L	;Get * to last obj
 	move	a4,*a0(OPAL)
 	jruc	anslp
 
-asANI					;>Do ANI on OID
+asANI					;0DHo ANI on OID
 	move	*a8+,a5,L
 	move	*a8+,a1			;OID
 	addi	CLSANIM,a1
@@ -721,7 +721,7 @@ ans1620	callr	obj_find
 	jrnz	ans1620			;More?
 	jruc	anslp
 
-asDEL					;>Delete obj
+asDEL					;0DeHlete obj
 	move	*a8+,a0
 	clr	a1
 asdel5	addi	CLSANIM,a0
@@ -729,7 +729,7 @@ asdel5	addi	CLSANIM,a0
 	calla	obj_delc
 	jruc	anslp
 
-asDELM					;>Delete obj with mask
+asDELM					;0DeHlete obj with mask
 	move	*a8+,a0
 	move	*a8+,a1
 	jruc	asdel5
@@ -752,10 +752,10 @@ asRUNI					;>Run a new anim script with ID
 	add	a11,a1			;+offset
 	jruc	asrun5
 
-asCRE					;>Create a process
+asCRE					;0CHreate a process
 	move	*a8+,a7,L
 	move	*a8+,a9,L		;Pass A9 to process
-	movi	ANIMPID+>ff,a1
+	movi	ANIMPID+0ffH,a1
 	add	a11,a1			;+offset
 	calla	GETPRC
 	jruc	anslp
@@ -802,13 +802,13 @@ asJMPNE					;>Jump to new location if != to mem
 	move	a2,a8			;Do jmp
 	jruc	anslp
 
-asSNDD					;>Do a snd call in demo
+asSNDD					;0DHo a snd call in demo
 	movk	ADJMUSIC,a0		;Get demo music ON/OFF
 	calla	GET_ADJ
 	jrz	asSND			;Do sounds?
 	addk	32,a8
 	jruc	anslp
-asSND					;>Do a snd call
+asSND					;0DHo a snd call
 	move	*a8+,a0,L
 	calla	snd_play1
 	jruc	anslp
@@ -828,7 +828,7 @@ asSHOW					;>Show an OID (X-5000)
 	movi	-5000,a4
 	jruc	ashide2
 
-asADDW					;>Add WORD to mem
+asADDW					;0AddH WORD to mem
 	move	*a8+,a0,L
 	move	*a8+,a1
 	move	*a0,a2
@@ -836,7 +836,7 @@ asADDW					;>Add WORD to mem
 	move	a2,*a0
 	jruc	anslp
 
-asADDWO					;>Add WORD to last obj+offset
+asADDWO					;0AddH WORD to last obj+offset
 	move	*a8+,a0
 	move	*a13(animslobj_p),a1,L	;Get * to last one
 	move	*a8+,a2			;Offset
@@ -846,7 +846,7 @@ asADDWO					;>Add WORD to last obj+offset
 	move	a2,*a1
 	jruc	anslp
 
-asADDLO					;>Add LONG # to last obj+offset
+asADDLO					;0AddH LONG # to last obj+offset
 	move	*a8+,a0,L
 	move	*a13(animslobj_p),a1,L	;Get * to last one
 	move	*a8+,a2			;Offset
@@ -856,7 +856,7 @@ asADDLO					;>Add LONG # to last obj+offset
 	move	a2,*a1,L
 	jruc	anslp
 
-asADLVO					;>Add LONG value to last obj+offset
+asADLVO					;0AddH LONG value to last obj+offset
 	move	*a8+,a0
 	move	*a13(animslobj_p),a1,L	;Get * to last one
 	add	a0,a1			;+Offset
@@ -889,7 +889,7 @@ asSVL					;>Set value to long
 	move	a0,*a13(animsv),L
 	jruc	anslp
 
-asBXY					;>Add # to BaseXY
+asBXY					;0AddH # to BaseXY
 	move	*a8+,a0,L
 	move	*a13(animsbx),a1,L
 	addxy	a0,a1
@@ -940,7 +940,7 @@ asEND	SLEEPK	1			;>Wait on FRANIMs before exit
 
  SUBRP	anims_franim		;A9=*FRAN list, A10=OID, A11=# Loops
 
-	move	@OBJLST,a8,L		;>Find object
+	move	@OBJLST,a8,L		;0FHind object
 anf100	move	*a8(OID),a0
 	cmp	a10,a0
 	jreq	anf300
@@ -995,11 +995,11 @@ anw10	SLEEPK	3
 	move	a0,@animscnt
 
 	movi	ANIMPID,a0	;>Kill processes
-	movi	>3ff,a1
+	movi	03ffH,a1
 	calla	KILALLN
 
-	movi	CLSANIM,a0	;>Delete objs
-	movi	>3ff,a1
+	movi	CLSANIM,a0	;0DeHlete objs
+	movi	03ffH,a1
 	jauc	obj_delc
 
 	.endif
@@ -1010,7 +1010,7 @@ anw10	SLEEPK	3
 * A0=*1st obj
 * A1=OID
 * A2=!Mask
-* >A0=*Obj or 0 (Z)
+* 0A0H=*Obj or 0 (Z)
 * Trashes A1,A3
 
  SUBRP	obj_find
@@ -1100,7 +1100,7 @@ FLASHME
 	clr	a0
 	move	a0,*a8(OCONST)		;Clr color
 	move	*a8(OCTRL),a0
-	andi	>fff5,a0		;Clr constant & nonzero
+	andi	0fff5H,a0		;Clr constant & nonzero
 	addk	2,a0			;Set nonzero
 	move	a0,*a8(OCTRL)
 #x	DIE
@@ -1146,7 +1146,7 @@ COLCYC1	MOVE	*A5+,A7		;TRANSFER IT TWICE
 	ADD	A0,A10			;COLRAM DESTINATION
 
 COLCYCB
-	MOVE	A8,*A13(PDATA+>20),L	;SAVE RAM ADDRESS
+	MOVE	A8,*A13(PDATA+020H),L	;SAVE RAM ADDRESS
 COLCYCBL
 	MOVE	A8,A0			;GET SOURCE ADDRESS
 	MOVE	A10,A1			;GET DESTINATION CONSTANT
@@ -1155,7 +1155,7 @@ COLCYCBL
 	SUBK	16,A8
 	CMP	A8,A9
 	JRLO	CCYCBSLP
-	MOVE	*A13(PDATA+>20),A8,L	;GET SOURCE TABLE START
+	MOVE	*A13(PDATA+020H),A8,L	;GET SOURCE TABLE START
 CCYCBSLP
 	MOVE	A11,A0		;GET SLEEP TIME
 	CALLA	PRCSLP
@@ -1202,7 +1202,7 @@ CYCLE_TABLE
 	calla	pal_set			;do the transfer
 	MOVE	A11,A0
 	CALLA	PRCSLP
-	ADDK	>10,A9
+	ADDK	010H,A9
 	MOVE	*A9,A0
 	JRN	RESTUFF
 	MOVE	*A13(PDATA+16),A1	;PDATA+16=ENTRY WE STOP AT
@@ -1217,7 +1217,7 @@ KILL_US
 ****************************************************************
 * Converts a 32 bit hex # to a null terminated ascii string
 * A8=#
-* >A8=*String
+* 0A8H=*String
 
 HEXTOASC
 	PUSH	a1,a2,a9
@@ -1330,21 +1330,21 @@ STRRNRM
 STRLNRMO
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
-	movi	>10000,a14
+	movi	010000H,a14
 	jruc	stringr1
 
 ;CENTER JUSTIFY, NORMAL, OBJECT LIST
 STRCNRMO
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
-	movi	>10001,a14
+	movi	010001H,a14
 	jruc	stringr1
 
 ;CENTER JUSTIFY, NORMAL, OBJECT LIST, MULTIPLE COLORS!
 STRCNRMO_1
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMAWNZ|M_NOCOLL,a4
-	movi	>10001,a14
+	movi	010001H,a14
 	move	a6,a5
 	jruc	stringr1_1
 
@@ -1352,7 +1352,7 @@ STRCNRMO_1
 STRCNRMO_2
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
-	movi	>10001,a14
+	movi	010001H,a14
 	move	a6,a5
 	jruc	stringr1_1
 
@@ -1360,7 +1360,7 @@ STRCNRMO_2
  SUBR	STRLNRMO_1
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMAWNZ|M_NOCOLL,a4
-	movi	>10000,a14
+	movi	010000H,a14
 	move	a6,a5
 	jruc	stringr1_1
 
@@ -1400,7 +1400,7 @@ strr10	movb	*a8,a1			;Get a character
 					;Save sleep time
 strr20	PUSH	a0
 
-	subk	1,a1			;>Calc table offset
+	subk	1,a1			;0CaHlc table offset
 	sll	5,a1			;*32
 	add	a11,a1
 	move	*a1,a1,L		;Get * image header
@@ -1425,7 +1425,7 @@ strr20	PUSH	a0
 
 
 	move	a4,a1
-	andi	>803f,a1		;Kill mode bits
+	andi	0803fH,a1		;Kill mode bits
 	or	a1,a3
 	move	a3,*a0(OCTRL),L		;&OFSET
 
@@ -1462,7 +1462,7 @@ strrdma	PUSH	a3			;>Simple DMA
 	move	a5,a1			;Constant:Palette
 	PULL	a5
 	PUSH	a4
-	andi	>803f,a4
+	andi	0803fH,a4
 	or	a4,a5			;Offset:Control
 	move	a3,a4			;SAG
 
@@ -1629,7 +1629,7 @@ OBJON
 ********************************
 * GETCPNT - Get the center xy position of an object
 * A8=*Object
-* >A0=Center Y:Center X
+* 0A0H=Center Y:Center X
 
  SUBR	GETCPNT
 
@@ -1638,7 +1638,7 @@ OBJON
 	movx	a0,a1
 	move	*a8(OSIZE),a0,L
 	srl	1,a0			;/2
-	andi	>7fff7fff,a0		;Clr bit 15
+	andi	07fff7fffH,a0		;Clr bit 15
 	addxy	a1,a0
 	rets
 
@@ -1669,7 +1669,7 @@ GETAX1	MOVE	*A8(OXPOS),A0
 ****************************************************************
 * Quickly produce a random # in range -X to +X
 * A0=+X
-* >A0=Random # (-A0 to +A0) (CC)
+* 0A0H=Random # (-A0 to +A0) (CC)
 * Trashes scratch
 
  SUBR	RNDRNGS
@@ -1682,7 +1682,7 @@ GETAX1	MOVE	*A8(OXPOS),A0
 * Quickly produce a random # in a given range
 * A0=Lower bound
 * A1=Upper bound
-* >A0=Random # (A0 to A1) (CC)
+* 0A0H=Random # (A0 to A1) (CC)
 * Trashes scratch
 
  SUBR	RNDRNG
@@ -1707,7 +1707,7 @@ GETAX1	MOVE	*A8(OXPOS),A0
 ********************************
 * Quickly produce a random # in range 0-X
 * A0=X
-* >A0=Random # (0 to A0) (No CC)
+* 0A0H=Random # (0 to A0) (No CC)
 * Trashes scratch
 
  SUBR	RNDRNG0
@@ -1728,7 +1728,7 @@ GETAX1	MOVE	*A8(OXPOS),A0
 ********************************
 * Random % routine
 * A0=Probability of event (0-1000) (0=0%, 1000=100%)
-* >A0=0-999 (CC) (jrls nope, jrhi happened)
+* 0A0H=0-999 (CC) (jrls nope, jrhi happened)
 * Trashes scratch
 
  SUBR	RNDPER
@@ -1996,7 +1996,7 @@ franl	move	*a9+,a1,L
 
 	move	*a8(OCTRL),a4		;Current flags
 	move	*a9+,a0			;Sleep time
-	cmpi	>100,a0
+	cmpi	0100H,a0
 	jrlo	fran2			;Just sleep?
 	
 	PUSH	a1,a2,a7
@@ -2090,7 +2090,7 @@ FRANIMQ
 
 #lp	move	*a8(OCTRL),a4		;Current flags
 	move	*a9+,a0			;Sleep time
-	cmpi	>100,a0
+	cmpi	0100H,a0
 	jrlo	frq70			;No special bits?
 	
 	btst	BFLIPBIT,a0		;New flip?
@@ -2133,12 +2133,12 @@ frq80	move	*a9+,a1,L		;Get frame
 
 #*****************************************************************************
 * Hardware security check code
-* >A0=0 if OK
+* 0A0H=0 if OK
 * Trashes scratch
 
-OFF	.equ	>7db0
-SEC	.equ	>1b14030-OFF
-FAKEO	.equ	->b00030+OFF
+OFF	.equ	07db0H
+SEC	.equ	01b14030H-OFF
+FAKEO	.equ	-0b00030H+OFF
 
  SUBR	security_chk
 
@@ -2179,90 +2179,90 @@ FAKEO	.equ	->b00030+OFF
 	getpc	a4
 	addi	#sec_t-$,a4,W
 	add	a4,a14
-	move	*a1(OFF+>19),a2	;Read 3rd sec value
+	move	*a1(OFF+019H),a2	;Read 3rd sec value
 	move	a2,b0
 	sll	16,b0
 	or	b0,b1
-	move	*a1(OFF+>29),a2	;Read 4th sec value
+	move	*a1(OFF+029H),a2	;Read 4th sec value
 	move	a2,b0
 	sll	8,b0
 	or	b0,b1
-	move	*a1(OFF+>39),a2	;Read 5th sec value
+	move	*a1(OFF+039H),a2	;Read 5th sec value
 	move	a2,b0
 	or	b0,b1
 	popst
 	move	*a14+,a2,L
 	move	b1,a1
-	andi	>3f3f3f3f,a1
+	andi	03f3f3f3fH,a1
 	xor	a1,a2		;A2=0 if OK
 
 #x	rets
 
 
-#sec_t	.long	>21283b3b	;0
-	.long	>2439383b
-	.long	>31283b3b
-	.long	>302b3938
-	.long	>31283b3b
-	.long	>302b3938
-	.long	>232f2f2f
-	.long	>26383b3b
-	.long	>21283b3b	;20
-	.long	>2439383b
-	.long	>312a1224
-	.long	>302b1120
-	.long	>312a1224
-	.long	>302b1120
-	.long	>232d283b
-	.long	>26383b3b
-	.long	>2b3b3b3b	;40
-	.long	>2e2e2e2e
-	.long	>39383b1b
-	.long	>383b3b1b
-	.long	>3b3b3b1b
-	.long	>3a3a3a1a
-	.long	>2b3b3b3b
-	.long	>2e2e2e2e
-	.long	>2b39383b	;60
-	.long	>2e2e2e2e
-	.long	>393a1a18
-	.long	>383b1b1b
-	.long	>3b3b1b1b
-	.long	>3a3a1a18
-	.long	>2b39383b
-	.long	>2e2e2e2e
-	.long	>01202b3b	;80
-	.long	>0431283b
-	.long	>11202b3b
-	.long	>1021283b
-	.long	>11202b3b
-	.long	>1021283b
-	.long	>03273b3b
-	.long	>06302b39
-	.long	>09302b39	;A0
-	.long	>0c232f2f
-	.long	>19322e06
-	.long	>18312a12
-	.long	>19322e06
-	.long	>18312a12
-	.long	>0b31283b
-	.long	>0e26383b
-	.long	>03273b3b	;C0
-	.long	>06302b39
-	.long	>11202b3b
-	.long	>1021283b
-	.long	>13273938
-	.long	>12243938
-	.long	>03273b3b
-	.long	>06302b39
-	.long	>0b31283b	;E0
-	.long	>0e26383b
-	.long	>19322e06
-	.long	>18312a12
-	.long	>1b332f05
-	.long	>1a302b11
-	.long	>0b31283b
-	.long	>0e26383b
+#sec_t	.long	021283b3bH	;0
+	.long	02439383bH
+	.long	031283b3bH
+	.long	0302b3938H
+	.long	031283b3bH
+	.long	0302b3938H
+	.long	0232f2f2fH
+	.long	026383b3bH
+	.long	021283b3bH	;20
+	.long	02439383bH
+	.long	0312a1224H
+	.long	0302b1120H
+	.long	0312a1224H
+	.long	0302b1120H
+	.long	0232d283bH
+	.long	026383b3bH
+	.long	02b3b3b3bH	;40
+	.long	02e2e2e2eH
+	.long	039383b1bH
+	.long	0383b3b1bH
+	.long	03b3b3b1bH
+	.long	03a3a3a1aH
+	.long	02b3b3b3bH
+	.long	02e2e2e2eH
+	.long	02b39383bH	;60
+	.long	02e2e2e2eH
+	.long	0393a1a18H
+	.long	0383b1b1bH
+	.long	03b3b1b1bH
+	.long	03a3a1a18H
+	.long	02b39383bH
+	.long	02e2e2e2eH
+	.long	001202b3bH	;80
+	.long	00431283bH
+	.long	011202b3bH
+	.long	01021283bH
+	.long	011202b3bH
+	.long	01021283bH
+	.long	003273b3bH
+	.long	006302b39H
+	.long	009302b39H	;A0
+	.long	00c232f2fH
+	.long	019322e06H
+	.long	018312a12H
+	.long	019322e06H
+	.long	018312a12H
+	.long	00b31283bH
+	.long	00e26383bH
+	.long	003273b3bH	;C0
+	.long	006302b39H
+	.long	011202b3bH
+	.long	01021283bH
+	.long	013273938H
+	.long	012243938H
+	.long	003273b3bH
+	.long	006302b39H
+	.long	00b31283bH	;E0
+	.long	00e26383bH
+	.long	019322e06H
+	.long	018312a12H
+	.long	01b332f05H
+	.long	01a302b11H
+	.long	00b31283bH
+	.long	00e26383bH
 	.def	secend
 secend
 
@@ -2695,7 +2695,7 @@ shakelp
 
 	clr	a1
 
-	move	@PSTATUS,a2
+	move	@PSTATUS2,a2
 
 	btst	0,a2
 	jrz	#no_player1
@@ -2723,7 +2723,7 @@ shakelp
 
 	clr	a1
 
-	move	@PSTATUS,a2
+	move	@PSTATUS2,a2
 
 	btst	0,a2
 	jrz	#no_player1
@@ -2784,7 +2784,7 @@ start_offs	.word	12h,15h
 
 	clr	a1
 
-	move	@PSTATUS,a2
+	move	@PSTATUS2,a2
 
 	btst	0,a2
 	jrz	#no_player1
@@ -2834,7 +2834,7 @@ start_offs	.word	12h,15h
 
 	clr	a1
 
-	move	@PSTATUS,a2
+	move	@PSTATUS2,a2
 
 	btst	0,a2
 	jrz	#no_player1
@@ -2885,7 +2885,7 @@ start_offs	.word	12h,15h
 
 	clr	a1
 
-	move	@PSTATUS,a2
+	move	@PSTATUS2,a2
 
 	btst	0,a2
 	jrz	#no_player1
@@ -2932,7 +2932,7 @@ start_offs	.word	12h,15h
 
 	clr	a1
 
-	move	@PSTATUS,a2
+	move	@PSTATUS2,a2
 
 	btst	0,a2
 	jrz	#no_player1
@@ -2972,7 +2972,7 @@ start_offs	.word	12h,15h
 #*****************************************************************************
 * Get random # with mask
 * A0=Mask
-* >A0=Rnd # (Pass CC)
+* 0A0H=Rnd # (Pass CC)
 * Trashes scratch
 
  SUBRP	rnd
@@ -2991,7 +2991,7 @@ start_offs	.word	12h,15h
 #*****************************************************************************
 * Quickly produce a random # in range 0-X
 * A0=X
-* >A0=Random # (0 to A0) (No CC)
+* 0A0H=Random # (0 to A0) (No CC)
 * Trashes scratch
 
  SUBR	rndrng0

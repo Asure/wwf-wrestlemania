@@ -798,7 +798,7 @@ DIAG_COLORS
 RGB	CALLR	TABDRIVE
 	.LONG	RGBTAB,DIAG_CRAM+30H
 	.WORD	8
-RGBTAB	.WORD	07C00H,001FH,>77A0,>741A,0FFFFH
+RGBTAB	.WORD	07C00H,001FH,077A0H,0741AH,0FFFFH
 
 *
 DECAY	CALLR	TABDRIVE
@@ -3170,7 +3170,7 @@ BLASTMESS:				;GUY ENTERED A WHOLE MESSAGE
 
 ********************************
 * Get joystick and buttons status
-* >A0=Status (0-6)
+* 0A0H=Status (0-6)
 
 om_getstick
 
@@ -3195,7 +3195,7 @@ om_getstick
 	move	@_switch2_addr,a1,L
 	move	*a1,a1,W
 	not	a1
-	andi	>7f,a1			;P3 draw/stick
+	andi	07fH,a1			;P3 draw/stick
 	or	a1,a0
 
 	btst	0,a0			;U
@@ -3218,7 +3218,7 @@ og4
 	movk	4,a0
 	jruc	#x
 og5
-	movi	>70,a1
+	movi	070H,a1
 	and	a0,a1
 	jrz	og6
 	movk	5,a0
@@ -3304,7 +3304,7 @@ OMADDCHAR
 	cmpi	'_',a0
 	jrne	#20
 
-	move	*a13(OP_LINE_CHAR),a1	;>Backspace
+	move	*a13(OP_LINE_CHAR),a1	;0BacHkspace
 	jrz	#x
 	dec	a1
 	move	a1,*a13(OP_LINE_CHAR)

@@ -55,9 +55,9 @@ SFREE	.long	0
 	.text
 
 
-********************************
+#********************************
 * Process list initialize
-* >A13=*Process active list
+* 0A13H=*Process active list
 * Trashes scratch
 
  SUBR	process_init
@@ -127,7 +127,7 @@ SFREE	.long	0
 
 	movi	OBJLST,a0
 	movk	1,a1			;Lowest Z
-	sll	31,a1			;Make >80000000
+	sll	31,a1			;Make 080000000H
 	clr	a8
 	jruc	yzlp
 
@@ -181,7 +181,7 @@ PRCSLP
 	PULL	a7			;Get *Wakeup
 
 	.if DEBUG
-	cmpi	>FF800000,a7
+	cmpi	0FF800000H,a7
 	jrhs	#psok
 	LOCKUP	;bad wake address!
 #psok
@@ -225,13 +225,13 @@ prcd1
 	jrgt	prcd1			;Not ready?
 
 
-	move	a13,a1			;>Dispatch
-	addi	>40,a1
+	move	a13,a1			;0DHispatch
+	addi	040H,a1
 	mmfm	a1,a7,a8,a9,a10,a11,a12	;*Wake, regs, *stack
 
 #go
 	.if DEBUG
-	cmpi	>FF800000,a7
+	cmpi	0FF800000H,a7
 	jrhs	#wake_ok
 	LOCKUP	;bad wake address!
 #wake_ok
@@ -331,7 +331,7 @@ killerr
 * Create a process
 * A1=PID, A7=PC, A8,A9,A10,A11 Passed parameters
 * A13=*Current process
-* >A0=*Created process (Flags invalid!)
+* 0A0H=*Created process (Flags invalid!)
 * Trashes A14,B0-B1
 
 GETPRC
@@ -361,7 +361,7 @@ nonelft
 *
 * A1=PID, A7=PC, A8,A9,A10,A11 Passed parameters
 * A13=*Current process
-* >A0=*Created process (Flags invalid!)
+* 0A0H=*Created process (Flags invalid!)
 * Trashes A14,B0-B1
 
 GETPRC_INSERT
@@ -408,7 +408,7 @@ GETPRC_INSERT
 * Create a super-process
 * A1=PID, A7=PC, A8,A9,A10,A11 Passed parameters
 * A13=*Current process
-* >A0=*Created process (Flags invalid!)
+* 0A0H=*Created process (Flags invalid!)
 * Trashes A14,B0-B1
 
  SUBR	GETSPRC
@@ -493,7 +493,7 @@ KILALLN
 	move	a2,b0
 	move	a3,b1
 
-	zext	a1		;Won't kill PIDS >8000+
+	zext	a1		;Won't kill PIDS 08000H+
 	andn	a1,a0		;Form match
 	movi	ACTIVE,a2
 

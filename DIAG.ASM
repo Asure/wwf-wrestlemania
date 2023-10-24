@@ -2577,7 +2577,7 @@ COLORBAR
 	MOVK	16, A2			;5 BITS / COLOR
 	MOVK	8, A6			;# COLOR BARS
 CB3
-	ADDI	>F00,A1			;STEP TO NEXT PALETTE
+	ADDI	0F00H,A1			;STEP TO NEXT PALETTE
 	MOVE	*A0+,A3			;STARTING COLOR
 	MOVE	*A0+,A4			;COLOR DECREMENT
 
@@ -4141,17 +4141,17 @@ $110	DRAV	A2,A0			; DRAW LINE
 bneg_apos
 	subxy	b10,b7
 	movx	b10,b7
-	movi	>ffff0000,b11
+	movi	0ffff0000H,b11
 	jruc	cmp_b_a
 bpos	jrnv	bpos_apos
 bpos_aneg
 	subxy	b10,b7
 	movy	b10,b7
-	movi	>1ffff,b11
+	movi	01ffffH,b11
 	jruc	cmp_b_a
 bpos_apos
 	move	b10,b7
-	movi	>10001,b11
+	movi	010001H,b11
 cmp_b_a	clr	b12
 
 	move	b7,b0
@@ -4329,7 +4329,7 @@ CIRCLE
 	movi  fill4,a7
 CIRC0
 	movi	SCRN_PTCH,DPTCH		;Restore screen pitch and convdp
-	movk	>13,b10			;this is faster
+	movk	013H,b10			;this is faster
 	MOVE	B10,@CONVDP
 	MOVE	A6,COLOR1
 	movi	[1,0],DYDX		 ; Y width always 1
@@ -5449,8 +5449,8 @@ I2_ZZ:
 *
 *		ROM chip definitions and checksums
 *
-CKSUM1	.equ	>8a5d	;9bd5
-CKSUM2	.equ	>9efe	;3bf0
+CKSUM1	.equ	08a5dH	;9bd5
+CKSUM2	.equ	09efeH	;3bf0
 
 PROMCHIPS
 	ROM_CHIP PROM2,1,0,16, 0FF800000H, 0FFFFFFF0H, CKSUM1	; U54
@@ -5458,8 +5458,8 @@ PROMCHIPS
 	.LONG	0
 
 * CHECKSUM PATCHES
-	.WORD	>ffff-CKSUM1	;1'S COMPLEMENT OF THE UJ12 CHECKSUM
-	.WORD	>ffff-CKSUM2	;1'S COMPLEMENT OF THE UG12 CHECKSUM
+	.WORD	0ffffH-CKSUM1	;1'S COMPLEMENT OF THE UJ12 CHECKSUM
+	.WORD	0ffffH-CKSUM2	;1'S COMPLEMENT OF THE UG12 CHECKSUM
 
 
 **************************************************************************

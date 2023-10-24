@@ -134,18 +134,18 @@
 	.ref	_soundirq_addr
 	.ref	_coin_counter_addr
 
-send	.set	>0001			; script command --> send sound code
-setpri	.set	>0002			; script command --> set priority
-endtune	.set	>0003			; script command --> end of tune script
-sleep	.set	>0004			; script command --> sleep next byte
-send2	.set	>0005
+send	.set	00001H			; script command --> send sound code
+setpri	.set	00002H			; script command --> set priority
+endtune	.set	00003H			; script command --> end of tune script
+sleep	.set	00004H			; script command --> sleep next byte
+send2	.set	00005H
 
 
 sndpri	.set	0			; priority offset
 snddur	.set	10h			; duration offset
 sndscp	.set	20h			; script pointer offset
 
-ex	.set	>8000			; flag: extended sound call !!
+ex	.set	08000H			; flag: extended sound call !!
 
 	.bss	chan1ram,0,1
 	BSSX	chan1pri,16,1		; sound channel #1 priority
@@ -225,7 +225,7 @@ sp_anncer	equ	100 << 8		; announcer speech
 *											     *
 *    TRIPLE SOUND TABLE format:								     *
 * 											     *
-*              .word   >aaaa,>bbbb							     *
+*              .word   0aaaaH,0bbbbH							     *
 * 											     *
 *       where:  aaaa = priority / duration						     *
 *               bbbb = channel 1 sound call					     *
@@ -234,14 +234,14 @@ sp_anncer	equ	100 << 8		; announcer speech
 
 triple_sndtab
 	.word	0,0			;  0 =
-	.word	sp_smack|17,>80		;  1 = face hit #0
-	.word	sp_smack|14,>84		;  2 = face hit #1
+	.word	sp_smack|17,080H		;  1 = face hit #0
+	.word	sp_smack|14,084H		;  2 = face hit #1
 	.word  	sp_system2|90,1480	;  3 = combo earned sound
-	.word	sp_mat2|15,>88		;  4 = body hit #0
-	.word	sp_smack|17,>8c		;  5 = body hit #1
-	.word	sp_smack|15,>90		;  6 = kick #0
-	.word	sp_mat2|13,>94		;  7 = kick #1
-	.word	sp_mat2|15,>98		;  8 = kick #2
+	.word	sp_mat2|15,088H		;  4 = body hit #0
+	.word	sp_smack|17,08cH		;  5 = body hit #1
+	.word	sp_smack|15,090H		;  6 = kick #0
+	.word	sp_mat2|13,094H		;  7 = kick #1
+	.word	sp_mat2|15,098H		;  8 = kick #2
 
 	.word	sp_mat2|13,156		;  9 = fall to mat #0
 	.word	sp_mat1|70,460		;  a = clock tick
@@ -249,51 +249,51 @@ triple_sndtab
 	.word	sp_mat1|53,416		;  c = mat rattle #0
 	.word	sp_mat1|39,424		;  d = mat rattle #2
 
-	.word	sp_woosh|21,>a8		;  e = whoosh #0
-	.word	sp_woosh|20,>ac		;  f = whoosh #1
-	.word	sp_woosh|21,>b0		; 10 = whoosh #2
-	.word	sp_woosh|13,>b4		; 11 = whoosh #3
-	.word	sp_woosh|12,>b8		; 12 = whoosh #4
-	.word	sp_woosh|10,>bc		; 13 = whoosh #5
-	.word	sp_woosh|13,>c0		; 14 = whoosh #6
-	.word	sp_woosh|15,>c4		; 15 = whoosh #7
-	.word	sp_woosh|14,>c8		; 16 = whoosh #8
-	.word	sp_woosh|11,>cc		; 17 = whoosh #9
+	.word	sp_woosh|21,0a8H		;  e = whoosh #0
+	.word	sp_woosh|20,0acH		;  f = whoosh #1
+	.word	sp_woosh|21,0b0H		; 10 = whoosh #2
+	.word	sp_woosh|13,0b4H		; 11 = whoosh #3
+	.word	sp_woosh|12,0b8H		; 12 = whoosh #4
+	.word	sp_woosh|10,0bcH		; 13 = whoosh #5
+	.word	sp_woosh|13,0c0H		; 14 = whoosh #6
+	.word	sp_woosh|15,0c4H		; 15 = whoosh #7
+	.word	sp_woosh|14,0c8H		; 16 = whoosh #8
+	.word	sp_woosh|11,0ccH		; 17 = whoosh #9
 
-	.word	sp_smack|20,>d0		; 18 = hard hit #0
-	.word	sp_smack|11,>d4		; 19 = hard hit #1
-	.word	sp_smack|21,>d8		; 1a = hard hit #2
-	.word	sp_smack|24,>dc		; 1b = hard hit #3
-	.word	sp_smack|20,>e0		; 1c = hard hit #4
+	.word	sp_smack|20,0d0H		; 18 = hard hit #0
+	.word	sp_smack|11,0d4H		; 19 = hard hit #1
+	.word	sp_smack|21,0d8H		; 1a = hard hit #2
+	.word	sp_smack|24,0dcH		; 1b = hard hit #3
+	.word	sp_smack|20,0e0H		; 1c = hard hit #4
 
-	.word	sp_system1|56,>e4		; 1d = New Deep Crunchy bone break (ALLDUCK)
-	.word	sp_attkv|40,>e8		; 1e = long effort grunt #1
-	.word	sp_attkv|29,>ec		; 1f = long effort grunt #2
-	.word	sp_attkv|42,>f0		; 20 = long effort grunt #3
-	.word	sp_attkv|36,>f4		; 21 = long effort grunt #4
-	.word	sp_attkv|26,>f8		; 22 = long effort grunt #5
-	.word	sp_attkv|31,>fc		; 23 = long effort grunt #6
-	.word	sp_attkv|34,>100	; 24 = long effort grunt #7
-	.word	sp_attkv|33,>104	; 25 = long effort grunt #8
-	.word	sp_attkv|30,>108	; 26 = long effort grunt #9
-	.word	sp_attkv|29,>10c	; 27 = long effort grunt #10
-	.word	sp_attkv|28,>110	; 28 = long effort grunt #11
-	.word	sp_attkv|42,>114	; 29 = long effort grunt #12
+	.word	sp_system1|56,0e4H		; 1d = New Deep Crunchy bone break (ALLDUCK)
+	.word	sp_attkv|40,0e8H		; 1e = long effort grunt #1
+	.word	sp_attkv|29,0ecH		; 1f = long effort grunt #2
+	.word	sp_attkv|42,0f0H		; 20 = long effort grunt #3
+	.word	sp_attkv|36,0f4H		; 21 = long effort grunt #4
+	.word	sp_attkv|26,0f8H		; 22 = long effort grunt #5
+	.word	sp_attkv|31,0fcH		; 23 = long effort grunt #6
+	.word	sp_attkv|34,0100H	; 24 = long effort grunt #7
+	.word	sp_attkv|33,0104H	; 25 = long effort grunt #8
+	.word	sp_attkv|30,0108H	; 26 = long effort grunt #9
+	.word	sp_attkv|29,010cH	; 27 = long effort grunt #10
+	.word	sp_attkv|28,0110H	; 28 = long effort grunt #11
+	.word	sp_attkv|42,0114H	; 29 = long effort grunt #12
 
-	.word	sp_attkv|19,>118	; 2a = short effort grunt #0
-	.word	sp_attkv|23,>11c	; 2b = short effort grunt #1
-	.word	sp_attkv|24,>120	; 2c = short effort grunt #2
-	.word	sp_attkv|13,>124	; 2d = short effort grunt #3
-	.word	sp_attkv|16,>128	; 2e = short effort grunt #4
-	.word	sp_attkv|26,>12c	; 2f = short effort grunt #5
-	.word	sp_attkv|20,>130	; 30 = short effort grunt #6
-	.word	sp_attkv|22,>134	; 31 = short effort grunt #7
-	.word	sp_attkv|23,>138	; 32 = short effort grunt #8
+	.word	sp_attkv|19,0118H	; 2a = short effort grunt #0
+	.word	sp_attkv|23,011cH	; 2b = short effort grunt #1
+	.word	sp_attkv|24,0120H	; 2c = short effort grunt #2
+	.word	sp_attkv|13,0124H	; 2d = short effort grunt #3
+	.word	sp_attkv|16,0128H	; 2e = short effort grunt #4
+	.word	sp_attkv|26,012cH	; 2f = short effort grunt #5
+	.word	sp_attkv|20,0130H	; 30 = short effort grunt #6
+	.word	sp_attkv|22,0134H	; 31 = short effort grunt #7
+	.word	sp_attkv|23,0138H	; 32 = short effort grunt #8
 	.word	sp_smack|70,236		; 33 = baseball bat smack
-	.word	sp_system2|24,>dc	; 34 = hard hit #3 (with higher priority)
-	.word	sp_system3|21,>b0	; 35 = whoosh (screen close)
+	.word	sp_system2|24,0dcH	; 34 = hard hit #3 (with higher priority)
+	.word	sp_system3|21,0b0H	; 35 = whoosh (screen close)
 	.word	0,0	; 36
-	.word	sp_mat2|77,>104		; 37 = CEMENT body slam outside the ring
+	.word	sp_mat2|77,0104H		; 37 = CEMENT body slam outside the ring
 	.word	0,0	; 38
 	.word	sp_system2|96,1616		; 39 = robo coinin
 	.word	0,0	; 3a
@@ -321,32 +321,32 @@ triple_sndtab
 	.word	sp_reacv|93,164	 	; 4f	=BOWLING PINS strike #1
 
 	;DOINK SPEECH
-	.word	sp_wspch|53,>20c	; 50 = wait a minute, wait a minute
-	.word	sp_wspch|29,>210	; 51 = time out
+	.word	sp_wspch|53,020cH	; 50 = wait a minute, wait a minute
+	.word	sp_wspch|29,0210H	; 51 = time out
 	.word	0,0			; 52 = 
-	.word	sp_wspch|23,>218	; 53 = times
-	.word	sp_wspch|39,>21c	; 54 = wait, wait
-	.word	sp_wspch|79,>220	; 55 = laugh #0
-	.word	sp_wspch|140,>224	; 56 = laugh #1
-	.word	sp_wspch|42,>228	; 57 = laugh #2
-	.word	sp_wspch|123,>22c	; 58 = laugh #3
-	.word	sp_wspch|91,>230	; 59 = yell as tossed
+	.word	sp_wspch|23,0218H	; 53 = times
+	.word	sp_wspch|39,021cH	; 54 = wait, wait
+	.word	sp_wspch|79,0220H	; 55 = laugh #0
+	.word	sp_wspch|140,0224H	; 56 = laugh #1
+	.word	sp_wspch|42,0228H	; 57 = laugh #2
+	.word	sp_wspch|123,022cH	; 58 = laugh #3
+	.word	sp_wspch|91,0230H	; 59 = yell as tossed
 
 	;RAZOR SPEECH
-	.word	sp_wspch|94,>300	; 5a = you picked the right guy
-	.word	sp_wspch|69,>304	; 5b = check me out, maing...
+	.word	sp_wspch|94,0300H	; 5a = you picked the right guy
+	.word	sp_wspch|69,0304H	; 5b = check me out, maing...
 	.word	0,0			; 5c
 	.word	0,0			; 5d
 	.word	0,0			; 5e
 	.word	0,0			; 5f
 
 	;SHAWN SPEECH
-;	.word	sp_wspch|269,>280	; 60 = lucky you...breaking bones
-	.word	sp_wspch|255,>280	; 60 = lucky you...breaking bones
-	.word	sp_wspch|130,>284	; 61 = wrestler o' 90's
-	.word	sp_wspch|132,>288	; 62 = how could...hurt so bad
-	.word	sp_wspch|26,>28c	; 63 = no no
-	.word	sp_wspch|21,>290	; 64 = please
+;	.word	sp_wspch|269,0280H	; 60 = lucky you...breaking bones
+	.word	sp_wspch|255,0280H	; 60 = lucky you...breaking bones
+	.word	sp_wspch|130,0284H	; 61 = wrestler o' 90's
+	.word	sp_wspch|132,0288H	; 62 = how could...hurt so bad
+	.word	sp_wspch|26,028cH	; 63 = no no
+	.word	sp_wspch|21,0290H	; 64 = please
 
 	;BAM BAM SPEECH
 	.word	0,0	             ; 65 = 
@@ -363,23 +363,23 @@ triple_sndtab
 
 
 	.word	0,0			; 70
-	.word	sp_reacv|30,>45c	; 71 = DOINK pain #1
-	.word	sp_reacv|40,>460	; 72 = DOINK pain #2
+	.word	sp_reacv|30,045cH	; 71 = DOINK pain #1
+	.word	sp_reacv|40,0460H	; 72 = DOINK pain #2
 
-	.word	sp_reacv|42,>464	; 73 = DOINK gut hit #0
-	.word	sp_reacv|40,>468	; 74 = DOINK gut hit #1
-	.word	sp_reacv|18,>46c	; 75 = DOINK gut hit #2
+	.word	sp_reacv|42,0464H	; 73 = DOINK gut hit #0
+	.word	sp_reacv|40,0468H	; 74 = DOINK gut hit #1
+	.word	sp_reacv|18,046cH	; 75 = DOINK gut hit #2
 
 	;low-priority mat crashes
-	.word	sp_losmack|75-25,>500	; 76 = Plywood crash #0
-	.word	sp_losmack|77-25,>508	; 77 = Plywood crash #2
-	.word	sp_losmack|83-25,>510	; 78 = Plywood crash #4
+	.word	sp_losmack|75-25,0500H	; 76 = Plywood crash #0
+	.word	sp_losmack|77-25,0508H	; 77 = Plywood crash #2
+	.word	sp_losmack|83-25,0510H	; 78 = Plywood crash #4
 
-	.word	sp_reacv|24,>47c	; 79 = RAZOR generic grunt #0
+	.word	sp_reacv|24,047cH	; 79 = RAZOR generic grunt #0
 	.word	0,0			; 7a
 	.word	0,0			; 7b
 
-	.word	sp_reacv|29,>488	; 7c = RAZOR gut hit #0
+	.word	sp_reacv|29,0488H	; 7c = RAZOR gut hit #0
 	.word	sp_system1|64,1528	; 7d	=SCREEN WIPE upward in pitch #1
 	.word	sp_system1|64,1536	; 7e	=SCREEN WIPE upward in pitch #3
 	.word	sp_system1|70,1544	; 7f	=SCREEN WIPE downward in pitch #1
@@ -390,22 +390,22 @@ triple_sndtab
 
 	.word	0,0	;* 83 = JASON effort grunt #0
 	.word	0,0	;* 84 = JASON effort grunt #1
-	.word	sp_attkv|39,>415	; 85 = JASON effort grunt #2
-	.word	sp_attkv|31,>418	; 86 = JASON effort grunt #3
-	.word	sp_attkv|31,>41b	; 87 = JASON effort grunt #4
-	.word	sp_attkv|39,>41e	; 88 = JASON effort grunt #5
-	.word	sp_attkv|40,>421	; 89 = JASON effort grunt #6
-	.word	sp_attkv|34,>424	; 8a = JASON effort grunt #7
-	.word	sp_attkv|27,>427	; 8b = JASON effort grunt #8
-	.word	sp_attkv|35,>42a	; 8c = CG effort grunt #0
-	.word	sp_attkv|44,>42d	; 8d = CG effort grunt #1
-	.word	sp_attkv|35,>430	; 8e = CG effort grunt #2
-	.word	sp_attkv|36,>433	; 8f = CG effort grunt #3
-	.word	sp_attkv|36,>433	; 90 = CG effort grunt #4
-	.word	sp_attkv|25,>436	; 91 = CG effort grunt #5
-	.word	sp_attkv|34,>439	; 92 = CG effort grunt #6
-	.word	sp_attkv|49,>43c	; 93 = CG effort grunt #7
-	.word	sp_attkv|57,>43f	; 94 = CG effort grunt #8
+	.word	sp_attkv|39,0415H	; 85 = JASON effort grunt #2
+	.word	sp_attkv|31,0418H	; 86 = JASON effort grunt #3
+	.word	sp_attkv|31,041bH	; 87 = JASON effort grunt #4
+	.word	sp_attkv|39,041eH	; 88 = JASON effort grunt #5
+	.word	sp_attkv|40,0421H	; 89 = JASON effort grunt #6
+	.word	sp_attkv|34,0424H	; 8a = JASON effort grunt #7
+	.word	sp_attkv|27,0427H	; 8b = JASON effort grunt #8
+	.word	sp_attkv|35,042aH	; 8c = CG effort grunt #0
+	.word	sp_attkv|44,042dH	; 8d = CG effort grunt #1
+	.word	sp_attkv|35,0430H	; 8e = CG effort grunt #2
+	.word	sp_attkv|36,0433H	; 8f = CG effort grunt #3
+	.word	sp_attkv|36,0433H	; 90 = CG effort grunt #4
+	.word	sp_attkv|25,0436H	; 91 = CG effort grunt #5
+	.word	sp_attkv|34,0439H	; 92 = CG effort grunt #6
+	.word	sp_attkv|49,043cH	; 93 = CG effort grunt #7
+	.word	sp_attkv|57,043fH	; 94 = CG effort grunt #8
 	.word	0,0	;* 95 = SAL pain grunt #0
 	.word	0,0	;* 96 = SAL pain grunt #1
 	.word	0,0	;* 97 = SAL pain grunt #2
@@ -423,27 +423,27 @@ triple_sndtab
 	.word	sp_attkv|81,1264	; a2	=BAMBAM jumps off the turnbuckle & flames up
 	.word	sp_attkv|235,1268	; a3	=BAMBAM's opponent explodes in flames
 	.word	0,0			; a4	=
-	.word	sp_system2|77-25,>508	; a5 = Plywood crash #2 (duplicate with higher priority)
+	.word	sp_system2|77-25,0508H	; a5 = Plywood crash #2 (duplicate with higher priority)
 	.word	0,0			; a6	=
 	.word	0,0			; a7	=
 	.word	sp_system1|212,232	; a8	= PERFECT VICTORY sparkly
-	.word	sp_system1|41,>628	; a9 = RAZOR slash whoosh
-	.word	sp_system1|42,>168	; aa = CARTOON richocet bonk
-	.word	sp_wspch|72,>4D4	; ab = BAMBAM morph out of mat
-	.word	sp_smack|40,>15C	; ac = CARTOON bong #2
-	.word	sp_smack|58,>170	; ad = CARTOON crash/bong #0
+	.word	sp_system1|41,0628H	; a9 = RAZOR slash whoosh
+	.word	sp_system1|42,0168H	; aa = CARTOON richocet bonk
+	.word	sp_wspch|72,04D4H	; ab = BAMBAM morph out of mat
+	.word	sp_smack|40,015CH	; ac = CARTOON bong #2
+	.word	sp_smack|58,0170H	; ad = CARTOON crash/bong #0
 	.word	sp_reacv|33,1220	; ae = SHAWN pain #1
 	.word	sp_reacv|33,1224	; af = SHAWN gut hit #0
 
 	;MISCELLANEOUS SOUNDS
-	.word	sp_mat1|29,>315	     ; b0 = some blip sound
+	.word	sp_mat1|29,0315H	     ; b0 = some blip sound
 	.word   sp_anncer|90,0148h	; b1 = round start bell
-	.word   sp_smack|19,>160	; b2 = squeeze horn honk #0
+	.word   sp_smack|19,0160H	; b2 = squeeze horn honk #0
 	.word   sp_smack|75,014fh	; b3 = twist - slam
 	.word	sp_mat1|46,344	     ; b4 = bong (temp!)
-	.word	sp_mat1|15,>1b2		; b5 = footstep on mat #1
+	.word	sp_mat1|15,01b2H		; b5 = footstep on mat #1
 
-	.word	sp_system1|34,>178	; b6 = Quick whistle for transitions
+	.word	sp_system1|34,0178H	; b6 = Quick whistle for transitions
 
 	.word	sp_system1|9,1364	; b7 = timer tick #0 
 	.word	sp_system1|11,1368	; b8 = timer tock #0
@@ -453,14 +453,14 @@ triple_sndtab
 
 	.word	sp_system1|118,1472	; bc	=ALARM companion to 1520
 	.word	sp_system1|126,1476	; bd	=ALARM snarl alarm #0
-	.word	sp_mat1|51,>17c		; be = wobble (danger!)
-	.word	sp_mat2|75-25,>500	; bf = Plywood crash #0
+	.word	sp_mat1|51,017cH		; be = wobble (danger!)
+	.word	sp_mat2|75-25,0500H	; bf = Plywood crash #0
 	.word	sp_mat1|39,316    	; c0 = fall to mat #0
-	.word	sp_mat2|77-25,>508	; c1 = Plywood crash #2
+	.word	sp_mat2|77-25,0508H	; c1 = Plywood crash #2
 	.word	sp_mat1|26,320    	; c2 = fall to mat #1
-	.word	sp_mat2|83-25,>510	; c3 = Plywood crash #4
+	.word	sp_mat2|83-25,0510H	; c3 = Plywood crash #4
 	.word	sp_mat2|74,1516		; c4	= VICTORY "w" flys up the screen
-	.word	sp_mat2|101,>518	; c5 = Chair crash #1
+	.word	sp_mat2|101,0518H	; c5 = Chair crash #1
 	.word	sp_smack|46,1580  	; c6	= HORIZON RING clatter/crash against fence #0
 	.word	sp_system1|9,1456	; c7	= player 1 moves cursor #1
 	.word	sp_system1|9,1460	; c8	= player 2 moves cursor #1
@@ -484,7 +484,7 @@ triple_sndtab
 	.word	sp_reacv|19,480		; da	=YOKO hams circle #1
 	.word	sp_reacv|18,484		; db	=YOKO fishes circle #0
 	.word	sp_reacv|31,488		; dc	=YOKO fishes circle #1
-	.word	sp_system1|20,>d0	; dd = random select sound (hard hit)
+	.word	sp_system1|20,0d0H	; dd = random select sound (hard hit)
 	.word	0,0			; de
 	.word	0,0			; df
 
@@ -1324,7 +1324,7 @@ MASTER_SOUND_TABLE
 #*****************************************************************************
 *
 * Play a sound from the tables.
-* >a0 = sound number (or'ed with 1000h for a random table)
+* 0a0H = sound number (or'ed with 1000h for a random table)
 *
 
  SUBR	table_sound
@@ -1724,7 +1724,7 @@ bell_snd	equ	0B1h
 * Runs the speech call for a given wrestler, after waiting for channel 1 to
 * clear.
 *
-*>a0=wrestler #
+*0a0H=wrestler #
 
  SUBR	select_speech
 
@@ -1796,7 +1796,7 @@ bell_snd	equ	0B1h
 * notwithstanding.  This isn't quite the same thing as SNDSND, tho, since
 * chanXpri, chanXdur, and chanXsnd are updated.
 *
-* >a0 = sound call (index), >a1=channel (1-4)
+* 0a0H = sound call (index), 0a1H=channel (1-4)
 *
 
  SUBR	channel_sound
@@ -1864,7 +1864,7 @@ bell_snd	equ	0B1h
 * talking, and if he's already saying something, the new call cuts off
 * the old one.
 *
-* >a0 = sound call (index into triple_sound table)
+* 0a0H = sound call (index into triple_sound table)
 * <a0 = sound call duration in ticks (-1 if not announcer speech)
 *
 
@@ -2018,7 +2018,7 @@ WHO_IS_IT
 *
 * performs a sound call from the master table for a wrestler
 *
-* >a10 = *wrestlerproc >a0 = sound call index (might be OR'ed with 8000h)
+* 0a10H = *wrestlerproc 0a0H = sound call index (might be OR'ed with 8000h)
 *
 
  SUBR	wrtable_sound
@@ -2484,7 +2484,7 @@ nos2	move	a0,*a1+,W		; zero u out !!!
 
 #*****************************************************************************
 * Sets the volume of the DCS.
-* >a0=volume (0-255)
+* 0a0H=volume (0-255)
 *
 
  SUBR	set_volume
@@ -2514,7 +2514,7 @@ nos2	move	a0,*a1+,W		; zero u out !!!
 
 #*****************************************************************************
 * Raw hardware sound call.
-* >a3=sound code (0-1ff)
+* 0a3H=sound code (0-1ff)
 
  SUBR	SNDSND
  SUBRP	send_code_a3
@@ -2654,7 +2654,7 @@ VINCE_START_GAME
 START_CHOSEN
 	movi	index1,a3
 	MOVI	index2,a8
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 	CMPI	3,A0
 	JREQ	USE_BOTH_INDEXES
 	MOVI	index1,a4
@@ -3788,13 +3788,13 @@ SPECIAL_LAST_STUFF
 
 	.ref	match_winner
 
-* >a0 = winning team (0 or 1)
+* 0a0H = winning team (0 or 1)
 
  SUBR	CALL_MATCH_OVER
 
 	movk	1,a8
 	sll	a0,a8		;turn winning team # into a match_winner
-	move	@PSTATUS,a9
+	move	@PSTATUS2,a9
 	CREATE	SOUND_PID,PROC_MATCH_OVER
 	RETS
 

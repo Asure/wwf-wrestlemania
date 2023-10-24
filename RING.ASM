@@ -22,7 +22,7 @@
 
 vln_right_rope
 ;	.word	RING_TOP,RING_BOT	;z1,z2
-;	.word	>400+168,>400+224	;x1,x2
+;	.word	0400H+168,0400H+224	;x1,x2
 
 	.word	1192+100,1023,1243+100,1345	;x1,z1,x2,z2
 
@@ -71,7 +71,7 @@ vln_right_rope
 
 vln_left_rope
 ;	.word	RING_TOP,RING_BOT	;z1,z2
-;	.word	>400-168,>400-224	;x1,x2
+;	.word	0400H-168,0400H-224	;x1,x2
 	.word	856,1023,805,1345	;x1,z1,x2,z2
 	.word	856,856,856,856,855,855,855,855
 	.word	855,855,854,854,854,854,854,854
@@ -118,7 +118,7 @@ vln_left_rope
 
 vln_right_matedge
 ;	.word	MAT_TOP,MAT_BOT    	;z1,z2
-;	.word	>400+>E2,>400+>13B
+;	.word	0400H+0E2H,0400H+013BH
 
 	.word	1250+100,967,1339+100,1521	;x1,z1,x2,z2
 
@@ -271,7 +271,7 @@ vln_left_matedge
 
 vln_right_matedge2
 ;	.word	MAT_TOP-5,MAT_BOT+5	;z1,z2
-;	.word	>400+>110,>400+>169
+;	.word	0400H+0110H,0400H+0169H
 
 	.word	1296+100,962,1385+100,1526	;x1,z1,x2,z2
 
@@ -350,7 +350,7 @@ vln_right_matedge2
 
 vln_left_matedge2
 ;	.word	MAT_TOP-5,MAT_BOT+5	;z1,z2
-;	.word	>400->110,>400->169
+;	.word	0400H-0110H,0400H-0169H
 	.word	757,962,668,1526	;x1,z1,x2,z2
 	.word	757,757,757,757,756,756,756,756
 	.word	756,756,755,755,755,755,755,755

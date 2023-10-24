@@ -145,7 +145,7 @@
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,12,47,49+8,23
 	.word	ANI_PAUSE,1
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#front_grabxc
+	WL	ANI_IFNOTSTATUS2,#front_grabxc
 
 	.word	ANI_OFFSET,5,0,0
 	WL	3,S3BH3A+FR1
@@ -170,7 +170,7 @@
 	.word	ANI_ZERO_XZVELS
 	WL	5,S3BH3A+FR7
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missedxc
+	WL	ANI_IFNOTSTATUS2,#missedxc
 	WL	ANI_IFBLOCKED,#missedxc
 
 ;got him
@@ -218,7 +218,7 @@
 	WL	4,S3BH3A+FR8
 	.word	ANI_XFLIP
 	WL	ANI_CODE,choose_2or4
-	WL	ANI_IFSTATUS,#4xc
+	WL	ANI_IFSTATUS2,#4xc
 	WL	1,S2ST2C+FR1
 	.word	ANI_FACEUP
 	WL	ANI_GOTO,#2xc
@@ -283,7 +283,7 @@
 	.word	ANI_PAUSE,1
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_4,2,2
-	WL	ANI_IFNOTSTATUS,#front_grab0
+	WL	ANI_IFNOTSTATUS2,#front_grab0
 	WL	ANI_IFBLOCKED,#front_grab0
 
 ;We need to pause opponent here!
@@ -309,7 +309,7 @@
 	.word	ANI_ZERO_XZVELS
 	WL	5,S3BH3A+FR7
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 ;	WL	ANI_IFBLOCKED,#missedb
 	WL	ANI_GOTO,#slam
 
@@ -364,7 +364,7 @@
 	.word	ANI_PAUSE,1
 	.word	ANI_ATTACK_OFF
 ;	.WORD	ANI_ADD_MOVE,MOVE_C_4,2,2
-	WL	ANI_IFNOTSTATUS,#front_grab
+	WL	ANI_IFNOTSTATUS2,#front_grab
 	WL	ANI_IFBLOCKED,#front_grab
 
 ;We need to pause opponent here!
@@ -390,7 +390,7 @@
 	.word	ANI_ZERO_XZVELS
 	WL	5,S3BH3A+FR7
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 ;	WL	ANI_IFBLOCKED,#missedb
 	WL	ANI_GOTO,#slam
 #common
@@ -400,7 +400,7 @@
 	.word	ANI_ZERO_XZVELS
 	WL	5,S3BH3A+FR7
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 #slam	;got him
@@ -457,7 +457,7 @@
 	WL	4,S3BH3A+FR8
 	.word	ANI_XFLIP
 	WL	ANI_CODE,choose_2or4
-	WL	ANI_IFSTATUS,#4
+	WL	ANI_IFSTATUS2,#4
 	WL	1,S2ST2C+FR1
 	.word	ANI_FACEUP
 	WL	ANI_GOTO,#2
@@ -642,7 +642,7 @@ rollout_tbl1
 	WWL	ANI_WAITHITOPP,10,S3ZI3A+FR2
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed_c
+	WL	ANI_IFNOTSTATUS2,#missed_c
 	WL	ANI_IFBLOCKED,#missedb_c
 	.word	ANI_CLR_STATUS
 
@@ -745,11 +745,11 @@ rollout_tbl1
 	.word	ANI_ATTACK_OFF
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 ;	.word	ANI_IFOPP,W_YOKO,-1
-;	WL	ANI_IFSTATUS,#tgt_yoko
+;	WL	ANI_IFSTATUS2,#tgt_yoko
 	.word	ANI_CLR_STATUS
 
 	;hit
@@ -858,7 +858,7 @@ release_table2
 #missedb
 
 ;	.word	ANI_IFOPP,W_YOKO,-1
-;	WL	ANI_IFSTATUS,#tgt_yoko
+;	WL	ANI_IFSTATUS2,#tgt_yoko
 
 ;we've hit a blocker.  mistake.
 ;uh, for now just abort.
@@ -1150,7 +1150,7 @@ recover_tbl
 	WWL	ANI_WAITHITOPP,6,S4SK3Y+FR8
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed_c
+	WL	ANI_IFNOTSTATUS2,#missed_c
 	.WORD	ANI_INC_COMBO
 	WL	ANI_CODE,CALL_ANI_AVERAGE_MOVE
 ;	.word	ANI_SET_ATTACH
@@ -1251,7 +1251,7 @@ recover_tbl
 	WL	ANI_GOTO,#cont
 
 #no_slide
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 	WL	ANI_CODE,CALL_ANI_AVERAGE_MOVE
 
@@ -1358,7 +1358,7 @@ recover_tbl
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_6,2,2
 ;	WL	ANI_IFBLOCKED,#missedb
-	WL	ANI_IFSTATUS,#gothim
+	WL	ANI_IFSTATUS2,#gothim
 
 ;miss
 	.word	ANI_WAITHITGND
@@ -1409,7 +1409,7 @@ recover_tbl
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_6,2,2
 	WL	ANI_IFBLOCKED,#missedb2
-	WL	ANI_IFSTATUS,#gothim
+	WL	ANI_IFSTATUS2,#gothim
 
 #missedb2
 ;miss
@@ -1452,7 +1452,7 @@ recover_tbl
 	.word	ANI_ATTACK_ON,AMODE_SHNSPDKIK2,40,76,49,30
 	WL	4,S4KI3Q+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFSTATUS,#gothim2
+	WL	ANI_IFSTATUS2,#gothim2
 
 ;miss
 	.word	ANI_WAITHITGND
@@ -1566,7 +1566,7 @@ recover_tbl
 	.word	ANI_ATTACK_OFF
 
 ;#common
-	WL	ANI_IFNOTSTATUS,#missed_c
+	WL	ANI_IFNOTSTATUS2,#missed_c
 	WL	ANI_IFBLOCKED,#missed_c
 
 	WL	ANI_CODE,CALL_OTHER_AVERAGE
@@ -1691,7 +1691,7 @@ recover_tbl
 	WWL	ANI_WAITHITOPP,4,S4GS3C+FR2
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedxc
+	WL	ANI_IFNOTSTATUS2,#missedxc
 	WL	ANI_IFBLOCKED,#missedxc
 
 	.word	ANI_ATTACHZ,0,0,10		;x & y don't matter.
@@ -1857,7 +1857,7 @@ recover_tbl
 	.word	ANI_ATTACK_OFF
 	WL	4,S4GS3C+FR2
 #cont
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 #got_him
@@ -1906,13 +1906,13 @@ recover_tbl
 #missedb
 ;	.ref	ck_hiptoss
 ;	WL	ANI_CODE,ck_hiptoss
-;	WL	ANI_IFNOTSTATUS,#got_him
+;	WL	ANI_IFNOTSTATUS2,#got_him
 
 	WL	10,S4GS3C+FR2
 ;Delay longer if 2nd hiptoss in quick succession!
 	.ref	hiptoss_delay
 	WL	ANI_CODE,hiptoss_delay
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	24,S4GS3C+FR2
 #missed
 	WL	ANI_CODE,CALL_MISSES
@@ -2113,7 +2113,7 @@ release_table
 	WL	4,S4GH3A+FR4
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2
@@ -2297,7 +2297,7 @@ release_table
 	.word	ANI_ATTACK_ON,AMODE_SPINKICK,22,91-24-20,47,19+20
 	WL	6,S4SK3Y+FR8
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missed
 	WL	ANI_CODE,CALL_ANI_AVERAGE_MOVE
 	.word	ANI_ZERO_XZVELS
@@ -2506,7 +2506,7 @@ release_table
 	.word	ANI_ATTACK_OFF
 
 	;check for a good hit
-	WL	ANI_IFNOTSTATUS,#missed_c
+	WL	ANI_IFNOTSTATUS2,#missed_c
 	WWL	ANI_IFOPPMODE,MODE_DEAD,#gothim
 	WWL	ANI_IFOPPMODE,~MODE_ONGROUND,#missed_c
 #gothim	.word	ANI_INC_COMBO
@@ -2580,7 +2580,7 @@ release_table
 	.word	ANI_ATTACK_OFF
 
 	;check for a good hit
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WWL	ANI_IFOPPMODE,MODE_ONGROUND,#hit
 	WWL	ANI_IFOPPMODE,MODE_DEAD,#hit
 #hit
@@ -2733,7 +2733,7 @@ release_table
 	.word	ANI_XFLIP
 	WWL	ANI_WAITHITOPP,10,S3SK3A+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed_c
+	WL	ANI_IFNOTSTATUS2,#missed_c
 	WL	ANI_IFBLOCKED,#blocked_c
 
 	;hit.  toss him over.
@@ -2855,7 +2855,7 @@ release_table
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
 
 ;	.word	ANI_IFOPP,W_SHAWN,-1
-;	WL	ANI_IFNOTSTATUS,#missed
+;	WL	ANI_IFNOTSTATUS2,#missed
 
 	.word	ANI_STARTATTACK,AT_PUPPET,15
 
@@ -2877,7 +2877,7 @@ release_table
 	WWL	ANI_WAITHITOPP,10,S3SK3A+FR6
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_8,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#blocked
 
 	;hit.  toss him over.
@@ -3085,12 +3085,12 @@ release_table
 ;	WL	4,S4FG3A+FR2
 ;	;temp!  Don't throw the attack if we don't know the guy.
 ;	.word	ANI_IFOPP,W_SHAWN,-1
-;	WL	ANI_IFNOTSTATUS,#missed
+;	WL	ANI_IFNOTSTATUS2,#missed
 
 	.word	ANI_ATTACK_ON,AMODE_PUPPET,31,59,42,32
 	WWL	ANI_WAITHITOPP,4,S4FG3A+FR1
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 ;	WWL	ANI_IFOPPMODE,~MODE_PUPPET,#missed
 
 ;got him
@@ -3313,7 +3313,7 @@ release_table
 	.word	ANI_ATTACK_ON, AMODE_PUPPET_HDGRAB,32,60,62,45 ;mode,x,y,w,h
 	WWL	ANI_WAITHITOPP,7,S4GH3C+FR3
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 	WL	ANI_GOTO,#gothim
 
@@ -3337,7 +3337,7 @@ release_table
 	WWL	ANI_WAITHITOPP,6,S4GH3C+FR3
 
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 #gothim
@@ -3494,7 +3494,7 @@ release_table
 	.word	ANI_ATTACK_ON,AMODE_PUPPET,-13,32,68,79 ;mode,x,y,w,h
 	WWL	ANI_WAITHITOPP,8,S4TD3F+FR4
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed_c
+	WL	ANI_IFNOTSTATUS2,#missed_c
 	WL	ANI_IFBLOCKED,#missedb_c
 	.WORD	ANI_INC_COMBO
 	WL	ANI_CODE,CALL_SPECIAL_MOVE
@@ -3589,7 +3589,7 @@ release_table
 	WWL	ANI_WAITHITOPP,4,S4TD3F+FR4
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_9,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 	WL	ANI_CODE,CALL_SPECIAL_MOVE
 
@@ -3877,7 +3877,7 @@ release_table
 	.word	ANI_ATTACK_ON,AMODE_PUPPET,31,59,42,32
 	WWL	ANI_WAITHITOPP,4,S4GH3C+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2
@@ -3923,7 +3923,7 @@ release_table
 	.word	ANI_ATTACK_ON,AMODE_PUPPET,31,59,42,32
 	WWL	ANI_WAITHITOPP,4,S4GH3C+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2

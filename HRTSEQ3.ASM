@@ -135,7 +135,7 @@
 	WL	3,H4MF4B+FR9
 
 	WL	ANI_CODE,#inc_loop
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 
 ;Fall out of overhead hold by reversing thru pickup frames
 	.word	ANI_DETACH
@@ -174,13 +174,13 @@
 ;	jrz	#breakout
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #breakout
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -320,7 +320,7 @@
 	.word	ANI_ATTACK_OFF
 
 	WL	ANI_IFBLOCKED,#missedbc
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 
 	WL	ANI_CODE,DO_GRUNT
 
@@ -467,7 +467,7 @@ SLAM_HIM
 	WL	4,H3HT3X+FR3
 #cont
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 #got_him
@@ -554,13 +554,13 @@ SLAM_HIM
 #missedb
 ;	.ref	ck_hiptoss
 ;	WL	ANI_CODE,ck_hiptoss
-;	WL	ANI_IFNOTSTATUS,#got_him
+;	WL	ANI_IFNOTSTATUS2,#got_him
 
 	WL	10,H3HT3X+FR3
 ;Delay longer if 2nd hiptoss in quick succession!
 	.ref	hiptoss_delay
 	WL	ANI_CODE,hiptoss_delay
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	24,H3HT3X+FR3
 #missed
 	WL	ANI_CODE,CALL_MISSES
@@ -736,7 +736,7 @@ SLAM_HIM
 	WL	4,H3BF3A+FR5
 	WL	4,H3BF3A+FR6
 	WL	ANI_CODE,#inc_loop
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 
 ;Continue into break...
 
@@ -783,13 +783,13 @@ SLAM_HIM
 ;	jrz	#breakout
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #breakout
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -884,7 +884,7 @@ SLAM_HIM
 	WL	3,H4GH3Z+FR3
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
@@ -1119,7 +1119,7 @@ SLAM_HIM
 	WWL	ANI_WAITHITOPP,3,H4GH3C+FR3
 	WWL	ANI_WAITHITOPP,4,H4GH3C+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 	WL	ANI_GOTO,#gothim
 
@@ -1144,7 +1144,7 @@ SLAM_HIM
 	WWL	ANI_WAITHITOPP,3,H4GH3C+FR5
 
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 #gothim
@@ -1300,7 +1300,7 @@ SLAM_HIM
 	WWL	ANI_WAITHITOPP,4,H1TL5A+FR5
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	.word	ANI_SOUND,82h			;Effort grunt
 
 ;got him
@@ -1547,7 +1547,7 @@ draw_ddt_name
 	WWL	ANI_WAITHITOPP,4,H3DD3Z+FR3
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc
 	.WORD	ANI_INC_COMBO
 
@@ -1633,7 +1633,7 @@ draw_ddt_name
 	WWL	ANI_WAITHITOPP,4,H3DD3Z+FR3
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 	WL	ANI_CODE,#half_vels
@@ -1809,7 +1809,7 @@ draw_ddt_name
 	WWL	ANI_WAITHITOPP,4,H3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 
 	.word	ANI_SET_RPTCOUNT,3	;5 times
 ;got him
@@ -1893,7 +1893,7 @@ draw_ddt_name
 	WWL	ANI_WAITHITOPP,4,H3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 
@@ -2106,7 +2106,7 @@ draw_ddt_name
 	WWL	ANI_WAITHITOPP,4,H3PG3A+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
@@ -2391,7 +2391,7 @@ draw_ddt_name
 	WWL	ANI_WAITHITOPP,6,H4RF3A+FR4
 
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc
 	.WORD	ANI_INC_COMBO
 
@@ -2482,7 +2482,7 @@ draw_ddt_name
 
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 #gothim
@@ -2510,7 +2510,7 @@ draw_ddt_name
 	.word	ANI_DAMAGEOPP,D_FACERAKE,RD_FACERAKE
 
 	WL	ANI_CODE,#ck_dead_opp
-	WL	ANI_IFSTATUS,#dead
+	WL	ANI_IFSTATUS2,#dead
 
 	WL	ANI_SLAVEANIM,#react_tbl
 	.word	ANI_DETACH
@@ -2563,12 +2563,12 @@ draw_ddt_name
 	jrnz	#ok
 ;Dead
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 #ok
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -2665,28 +2665,28 @@ draw_ddt_name
 #loopc
 	WL	2,H3FR3A+FR2
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	3,H3FR3A+FR3
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	2,H3FR3A+FR4
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	3,H3FR3A+FR5
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	2,H3FR3A+FR6
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	3,H3FR3A+FR7
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	2,H3FR3A+FR8
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	3,H3FR3A+FR9
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercutc
+	WL	ANI_IFSTATUS2,#do_uppercutc
 	WL	ANI_GOTO,#loopc
 
 #standc
@@ -2717,7 +2717,7 @@ draw_ddt_name
 	.word	ANI_ATTACK_OFF
 	WL	ANI_SET_YVEL,40000h
 
-	WL	ANI_IFNOTSTATUS,#no_hitc
+	WL	ANI_IFNOTSTATUS2,#no_hitc
 	WL	ANI_IFBLOCKED,#blockedc
 	.word	ANI_INC_COMBO
 
@@ -2785,28 +2785,28 @@ draw_ddt_name
 	.word	ANI_STARTATTACK,AT_PUNCH,20
 	WL	2,H3FR3A+FR2
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	3,H3FR3A+FR3
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	2,H3FR3A+FR4
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	3,H3FR3A+FR5
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	2,H3FR3A+FR6
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	3,H3FR3A+FR7
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	2,H3FR3A+FR8
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	3,H3FR3A+FR9
 	WL	ANI_CODE,#rope_check
-	WL	ANI_IFSTATUS,#do_uppercut
+	WL	ANI_IFSTATUS2,#do_uppercut
 	WL	ANI_GOTO,#loop
 
 #stand
@@ -2833,7 +2833,7 @@ draw_ddt_name
 
 	.word	ANI_ADD_MOVE,MOVE_C_2,2,2
 	WL	ANI_IFBLOCKED,#blocked
-	WL	ANI_IFNOTSTATUS,#no_hit
+	WL	ANI_IFNOTSTATUS2,#no_hit
 
 	.ref	MAKE_HIM_SCREAM
 	WL	ANI_CODE,MAKE_HIM_SCREAM

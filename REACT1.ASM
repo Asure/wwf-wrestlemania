@@ -1882,7 +1882,7 @@ hitblock_flail_tbl
 
 	;WAIT!  If I'm dead, just do a hitonground instead.
 	WL	ANI_CODE,#dead_or_dying
-	WL	ANI_IFSTATUS,#dead
+	WL	ANI_IFSTATUS2,#dead
 	WL	ANI_CHANGEANIM_TBL,#getup_tbl
 #dead	WL	ANI_CHANGEANIM_TBL,hitonground_tbl
 
@@ -1902,7 +1902,7 @@ hitblock_flail_tbl
 
 	;set status if I'm dead or my I_WILL_DIE flag is set.
 	move	*a13(ANIMODE),a14
-	andni	MODE_STATUS,a14
+	andni	MODE_STATUS2,a14
 	move	a14,*a13(ANIMODE)
 
 	move	*a13(I_WILL_DIE),a14
@@ -1913,7 +1913,7 @@ hitblock_flail_tbl
 	jrnz	#ok
 
 #die	move	*a13(ANIMODE),a14
-	ori	MODE_STATUS,a14
+	ori	MODE_STATUS2,a14
 	move	a14,*a13(ANIMODE)
 
 #ok	rets

@@ -340,7 +340,7 @@
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
 ;	.word	ANI_END
@@ -558,7 +558,7 @@
 	WL	3,H4AM3A+FR8
 
 	.word	ANI_CHECKWORD,USR_VAR1
-	WL	ANI_IFNOTSTATUS,#reg
+	WL	ANI_IFNOTSTATUS2,#reg
 
 	WL	5,H4TI4B+FR1
 	WL	5,H4TI4B+FR2
@@ -737,7 +737,7 @@
 	.ref	am_I_dead
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
 ;	.word	ANI_END
@@ -1000,7 +1000,7 @@
 	.word	ANI_SETSPEED,100h
 
 	WL	ANI_CODE,choose_2or4
-	WL	ANI_IFSTATUS,#getup_in_4
+	WL	ANI_IFSTATUS2,#getup_in_4
 
 #getup_in_2
 	WL	2,H3GU2A+FR1
@@ -1017,11 +1017,11 @@
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,11,83,70,20
 	WL	1,H3GU2A+FR10
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -1058,12 +1058,12 @@
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss1
+	WL	ANI_IFNOTSTATUS2,#no_freetoss1
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,11,83,70,20
 	.ref	hrt_4_push_anim
 	WL	1,H3GU4A+FR10
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss1
+	WL	ANI_IFNOTSTATUS2,#no_freetoss1
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -1081,12 +1081,12 @@
 choose_2or4
 
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 
 	move	*a13(NEW_FACING_DIR),a14
 	btst	MOVE_UP_BIT,a14
 	jrnz	#choose_2
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 #choose_2
 	move	a0,*a13(ANIMODE)
 	rets
@@ -1112,11 +1112,11 @@ choose_2or4
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,11,83,70,20
 	WL	1,H3GU4A+FR10
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -1425,7 +1425,7 @@ choose_2or4
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
 ;	.word	ANI_END
@@ -1734,7 +1734,7 @@ choose_2or4
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
 ;	.word	ANI_END
@@ -1772,7 +1772,7 @@ choose_2or4
 	WL	1,H4GH3Z+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 ;got him
 	.word	ANI_DRAW_NAME,5
 	.word	ANI_ATTACHZ,0,0,-4		;x & y don't matter.

@@ -301,7 +301,7 @@ aama_message
 	JSRP	do_the_grad_thang
 
 	clr	a0
-	movi	[>1111,0000],a6		;pal 0, color 17
+	movi	[01111H,0000],a6		;pal 0, color 17
 	movi	#ln1,a8
 	movi	[54+60-20,200],a9
  	movk	1,a10
@@ -309,31 +309,31 @@ aama_message
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	[>1111,0000],a6		;pal 0, color 17
+	movi	[01111H,0000],a6		;pal 0, color 17
 	movi	#ln2,a8
-	movi	[54+60,>b1],a9
+	movi	[54+60,0b1H],a9
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	[>0606,0000],a6		;pal 0, color 17
+	movi	[00606H,0000],a6		;pal 0, color 17
 	movi	#ln2b,a8
-	movi	[54+60,>104],a9
+	movi	[54+60,0104H],a9
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	[>1111,0000],a6		;pal 0, color 17
+	movi	[01111H,0000],a6		;pal 0, color 17
 	movi	#ln3,a8
 	movi	[54+71,200],a9
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	[>1111,0000],a6		;pal 0, color 17
+	movi	[01111H,0000],a6		;pal 0, color 17
 	movi	#ln4,a8
 	movi	[54+82,200],a9
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	[>1111,0000],a6		;pal 0, color 17
+	movi	[01111H,0000],a6		;pal 0, color 17
 	movi	#ln5,a8
 	movi	[54+93,200],a9
 	JSRP	STRCNRMO_2
@@ -392,7 +392,7 @@ aama_message
 
 ;	calla	display_on
 ;	calla	view_page_0
-;	movi	>40*6,a10
+;	movi	040H*6,a10
 ;	JSRP	fadein_jsrp
 ;	jruc	amode_fade_retp
 
@@ -415,26 +415,26 @@ do_the_grad_thang
 	SLEEPK	2
 
 	clr	a3
-    	movi	>00000101,a1
+    	movi	000000101H,a1
 
 	movi	31,a10
-loop	movi	>00020190,a2
-	movi	>2000000,a4
-	movi	>800c,a5
+loop	movi	000020190H,a2
+	movi	02000000H,a4
+	movi	0800cH,a5
 	calla	QDMAN	;dman
-	addi	>01010000,a1
-	addi	>00020000,a3
+	addi	001010000H,a1
+	addi	000020000H,a3
 	dsj	a10,loop
 
-	addi	>00840000,a3
+	addi	000840000H,a3
 
 	movi	32,a10
-loop2	movi	>00020190,a2
-	movi	>2000000,a4
-	movi	>800c,a5
+loop2	movi	000020190H,a2
+	movi	02000000H,a4
+	movi	0800cH,a5
 	calla	QDMAN	;dman
-	subi	>01010000,a1
-	addi	>00020000,a3
+	subi	001010000H,a1
+	addi	000020000H,a3
 	dsj	a10,loop2
 
 	SLEEPK	4
@@ -685,7 +685,7 @@ SOUNDS_SHOULD_BE_ON
  SUBR	show_operatormsg
 
 	calla	ADJ_PAGE
-	movk	CMESS_LINES,a2		;>Check for a message
+	movk	CMESS_LINES,a2		;0CHheck for a message
 	movi	CUSTOM_MESSAGE,a7
 #cmlp
 	calla	RC_BYTEI
@@ -695,7 +695,7 @@ SOUNDS_SHOULD_BE_ON
 	jruc	#x
 #msg
 	JSRP	GENERIC_DISPLAY
-	movk	CMESS_LINES,a2		;>Check for a message
+	movk	CMESS_LINES,a2		;0CHheck for a message
 	movi	CUSTOM_MESSAGE,a7
 	movi	[50,200],a9
 #prtlp
@@ -731,7 +731,7 @@ SOUNDS_SHOULD_BE_ON
 	jrz	#oend
 	move	*a14(ODATA_p),a0,L
 	jrnz	#olp
-	movi	[>320,>320],a1
+	movi	[0320H,0320H],a1
 	move	a1,*a14(ODATA_p),L
 	jruc	#olp
 #oend
@@ -1109,7 +1109,7 @@ osgfont_t
 	SLEEPK	2
 
 	clr	a0
-	movi	[>1111,0000],a6		;pal 0, color 17
+	movi	[01111H,0000],a6		;pal 0, color 17
 	movi	#ln1,a8
 	movi	[50+60,200],a9
  	movk	1,a10
@@ -1202,7 +1202,7 @@ osgfont_t
 
 
 	clr	a0
-	movi	[>1111,0000],a6		;pal 0, color 17
+	movi	[01111H,0000],a6		;pal 0, color 17
 	movi	#ln10,a8
 	movi	[50+60,200],a9
  	movk	1,a10
@@ -2935,7 +2935,7 @@ swt_loop
 	BADCHK	a0,0,255,28		;reg, lo, hi, val if bad
 	calla	set_volume
 
-	movi	>b6,a0
+	movi	0b6H,a0
 	calla	triple_sound
 
 	move	@TEMP,a0
@@ -3033,8 +3033,8 @@ swt_loop
 ;	RETP
 ;
 ;
-;#vince_x	equ	(400->186)/2
-;#vince_y	equ	(256->F5)/2
+;#vince_x	equ	(400-0186H)/2
+;#vince_y	equ	(256-0F5H)/2
 
 
 #*****************************************************************************
@@ -3042,7 +3042,7 @@ swt_loop
 
 ; SUBRP	page_flip
 ;
-;	movi	->1004,a0
+;	movi	-01004H,a0
 ;	move	@dpage,a14
 ;	jrz	#tp1
 ;	movi	-4,a0
@@ -3468,7 +3468,7 @@ ERRORLOG
 ;	MOVE	@GAMSTATE,A3	;A2 = [PSTATUS:GAMSTATE]
 ;	MOVX	A3,A2
 ;
-;	MOVE	@PSTATUS,A3	;A2 = [ERROR CODE:PSTATUS]
+;	MOVE	@PSTATUS2,A3	;A2 = [ERROR CODE:PSTATUS]
 ;	MOVX	A3,A2
 ;;	MOVE	*SP(0C0H),A3,L	;A3=GET THE RETURN ADDRESS
 ;	MOVE	*SP(0E0H),A1,L	;A1=CALLING ADDRESS
@@ -3894,12 +3894,12 @@ OCTOBTN	.macro	VAL,TIMEOUT
 	jrn	attract_mode
 
 	;octopus
-	OCTOBTN	>fffeffff,TSEC/3	;kick
-	OCTOBTN	>ffffffdf,TSEC/3	;block
-	OCTOBTN	>ffffffbf,TSEC/3	;pwr pnch
-	OCTOBTN	>ffffffef,TSEC/3	;pnch
-	OCTOBTN	>ffffffdf,TSEC/3	;block
-	OCTOBTN	>fffdffff,TSEC/3	;pwr kick
+	OCTOBTN	0fffeffffH,TSEC/3	;kick
+	OCTOBTN	0ffffffdfH,TSEC/3	;block
+	OCTOBTN	0ffffffbfH,TSEC/3	;pwr pnch
+	OCTOBTN	0ffffffefH,TSEC/3	;pnch
+	OCTOBTN	0ffffffdfH,TSEC/3	;block
+	OCTOBTN	0fffdffffH,TSEC/3	;pwr kick
 
 	;success!
 	movi	DIAGP,a14

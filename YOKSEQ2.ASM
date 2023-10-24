@@ -187,7 +187,7 @@
 	WL	15,Y4PS3A+FR6
 #no_hit
 	WL	3,Y4PS3A+FR6
-	WL	ANI_IFSTATUS,#hit
+	WL	ANI_IFSTATUS2,#hit
 ;If missed on push, hold a little longer
 	WL	5,Y4PS3A+FR6
 #hit
@@ -226,7 +226,7 @@
 	.word	ANI_ATTACK_ON_Z,AMODE_HITCHECK,4,4,-40,34,31,50
 	WL	1,Y2PF2A+FR3
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFSTATUS,#skip_leapat
+	WL	ANI_IFSTATUS2,#skip_leapat
 
 	.word	ANI_TARGET,TGT_CHEST,TGT_CHEST,ATM_CLOSEST
 	;	ticks,range max,hiX,hiZ,hiYvel,tgt,Xoff,Yoff,Zoff
@@ -254,7 +254,7 @@
 	.word	ANI_ATTACK_ON_Z, AMODE_LBOWDROP,0,0,-40,42,39,50
 	WL	4,Y2PF2A+FR8
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#hit
+	WL	ANI_IFNOTSTATUS2,#hit
 
 	WL	ANI_CODE,CALL_MISSES
 #hit
@@ -291,7 +291,7 @@
 	.word	ANI_ATTACK_ON_Z,AMODE_HITCHECK,14,4,-10,32,30,50
 	WL	1,Y3PF3A+FR4
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFSTATUS,#skip_leapat
+	WL	ANI_IFSTATUS2,#skip_leapat
 
 	.word	ANI_TARGET,TGT_CHEST,TGT_CHEST,ATM_CLOSEST
 	;	ticks,range max,hiX,hiZ,hiYvel,tgt,Xoff,Yoff,Zoff
@@ -316,7 +316,7 @@
 	.word	ANI_ATTACK_ON_Z,AMODE_LBOWDROP,10,0,-10,40,38,50
 	WL	4,Y3PF3A+FR8
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#hit
+	WL	ANI_IFNOTSTATUS2,#hit
 
 	WL	ANI_CODE,CALL_MISSES
 #hit
@@ -351,7 +351,7 @@
 	.word	ANI_ATTACK_ON, AMODE_KICK,35,62,56,34
 	WL	1,Y4KM3A+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_hit_2
+	WL	ANI_IFNOTSTATUS2,#no_hit_2
 	WL	ANI_IFBLOCKED,#no_hit_2
 	.word	ANI_INC_COMBO
 	WLLL	ANI_SETOPPVELS,000H,10000h,0h		;x,y,z vels
@@ -386,7 +386,7 @@
 	.word	ANI_ATTACK_ON, AMODE_KICK,35,62,56,34
 	WL	1,Y4KM3A+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_hit_2
+	WL	ANI_IFNOTSTATUS2,#no_hit_2
 	WL	ANI_IFBLOCKED,#no_hit_2
 ;	.word	ANI_SET_ATTACH
 	WLLL	ANI_SETOPPVELS,000H,10000h,0h		;x,y,z vels
@@ -574,7 +574,7 @@
 	.word	ANI_ATTACK_ON_Z,AMODE_HITCHECK,4,-5,-40,38,43,50
 	WL	1,Y2MP2A+FR2
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#leapat_stomp
+	WL	ANI_IFNOTSTATUS2,#leapat_stomp
 
 	WL	2,Y2MP2A+FR3
 	WL	3,Y2MP2A+FR4
@@ -584,7 +584,7 @@
 	WL	3,Y2MP2A+FR7
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2
-	WL	ANI_IFSTATUS,#hit
+	WL	ANI_IFSTATUS2,#hit
 	WL	ANI_CODE,CALL_MISSES
 #hit
 	.word	ANI_SHAKER,30
@@ -614,7 +614,7 @@
 	.word	ANI_ATTACK_ON_Z,AMODE_STOMP,4,-5,-40,38,43,50
 	WL	3,Y2MP2A+FR7
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFSTATUS,#leapat_hit
+	WL	ANI_IFSTATUS2,#leapat_hit
 	WL	ANI_CODE,CALL_MISSES
 #leapat_hit
 	WL	3,Y2MP2A+FR8
@@ -651,7 +651,7 @@
 	.word	ANI_ATTACK_ON_Z,AMODE_HITCHECK,15,-7,-10,40,36,50
 	WL	1,Y4MP4A+FR2
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#leapat_stomp
+	WL	ANI_IFNOTSTATUS2,#leapat_stomp
 
 	WL	2,Y4MP4A+FR3
 	WL	3,Y4MP4A+FR4
@@ -661,7 +661,7 @@
 	WL	3,Y4MP4A+FR7
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2
-	WL	ANI_IFSTATUS,#hit
+	WL	ANI_IFSTATUS2,#hit
 	WL	ANI_CODE,CALL_MISSES
 #hit
 	.word	ANI_SHAKER,30
@@ -691,7 +691,7 @@
 	.word	ANI_ATTACK_ON_Z,AMODE_STOMP,15,-7,-10,40,36,50
 	WL	3,Y4MP4A+FR7
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFSTATUS,#leapat_hit
+	WL	ANI_IFSTATUS2,#leapat_hit
 	WL	ANI_CODE,CALL_MISSES
 #leapat_hit
 	WL	3,Y4MP4A+FR8
@@ -735,7 +735,7 @@
 	.word	ANI_SHAKEALL,2
 	WL	ANI_CODE,HIT_THE_MAT
 
-	WL	ANI_IFNOTSTATUS,#missc
+	WL	ANI_IFNOTSTATUS2,#missc
 
 	;bounce off the guy
 	.WORD	ANI_INC_COMBO
@@ -807,7 +807,7 @@
 	WL	ANI_CODE,HIT_THE_MAT
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_4,2,2
-	WL	ANI_IFNOTSTATUS,#miss
+	WL	ANI_IFNOTSTATUS2,#miss
 
 #hit
 	WL	ANI_CODE,create_bucket_salt
@@ -1008,7 +1008,7 @@
 	.word	ANI_ATTACK_OFF
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_3,2,2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb		;Yes, I hit blocker
 
 	.word	ANI_SHAKER,30
@@ -1088,7 +1088,7 @@
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb		;Yes, I hit blocker
 
 	.word	ANI_SHAKER,30
@@ -1108,7 +1108,7 @@
 	.word	ANI_SHAKER,20
 
 	WL	ANI_CODE,skick_delay
-	WL	ANI_IFNOTSTATUS,#none0
+	WL	ANI_IFNOTSTATUS2,#none0
 	WL	15,Y4KB3A+FR6
 #none0
 
@@ -1131,7 +1131,7 @@
 
 	.ref	skick_delay
 	WL	ANI_CODE,skick_delay
-	WL	ANI_IFNOTSTATUS,#none
+	WL	ANI_IFNOTSTATUS2,#none
 	WL	15,Y4KB3A+FR6
 #none
 
@@ -1165,7 +1165,7 @@
 	WLW	ANI_SET_ZVEL,0h,AM_ABS
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc		;Yes, I hit blocker
 ;	.word	ANI_SET_ATTACH
 	WLLL	ANI_SETOPPVELS,000H,10000h,0h		;x,y,z vels
@@ -1193,7 +1193,7 @@
 	WL	2,Y4KB3A+FR6
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc		;Yes, I hit blocker
 ;	.word	ANI_SET_ATTACH
 	WLLL	ANI_SETOPPVELS,000H,10000h,0h		;x,y,z vels
@@ -1505,7 +1505,7 @@
 	.word	ANI_ZEROVELS
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2
-	WL	ANI_IFSTATUS,#hit
+	WL	ANI_IFSTATUS2,#hit
 
 ;missed
 	WL	ANI_CODE,CALL_MISSES
@@ -1587,7 +1587,7 @@
 	WWL	ANI_WAITHITOPP,2,Y4GF3B+FR3
 	.word	ANI_ATTACK_OFF
 	.WORD	ANI_ADD_MOVE,MOVE_C_5,2,2
-	WL	ANI_IFNOTSTATUS,#missedb
+	WL	ANI_IFNOTSTATUS2,#missedb
 	WL	ANI_IFBLOCKED,#missedb
 
 ;got him
@@ -1622,7 +1622,7 @@
 #missedb
 	.ref	fling_delay
 	WL	ANI_CODE,fling_delay
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	25,Y4GF3B+FR3
 #missed
 	WL	ANI_CODE,CALL_MISSES
@@ -1739,7 +1739,7 @@
 	.ref	am_I_dead
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	.word	ANI_SETPLYRMODE,MODE_DEAD
 	.word	ANI_END
@@ -1930,7 +1930,7 @@
 
 	;lie down
 	WL	ANI_CODE,#ckspin
-	WL	ANI_IFSTATUS,#dir4
+	WL	ANI_IFSTATUS2,#dir4
 
 ;Facing #2, spin first!
 	WL	3,Y1TT5Z+FR2
@@ -1978,12 +1978,12 @@
 	jrnz	#faceup
 
 	move	*a13(ANIMODE),a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 	RETS
 #faceup
 	move	*a13(ANIMODE),a0
-	ANDI	0FFFFH-MODE_STATUS,a0
+	ANDI	0FFFFH-MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 	rets
 
@@ -2045,7 +2045,7 @@
 
 	;lie down
 	WL	ANI_CODE,#set_zvel1
-	WL	ANI_IFSTATUS,#dir4
+	WL	ANI_IFSTATUS2,#dir4
 ;Facing #2
 	WL	3,Y1TT5Z+FR2
 	WL	3,Y1TT5Z+FR3
@@ -2090,13 +2090,13 @@
 	btst	0,a14
 	jrz	#facedwn
 	move	*a13(ANIMODE),a0
-	ANDI	0FFFFH-MODE_STATUS,a0
+	ANDI	0FFFFH-MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 	rets
 
 #facedwn
 	move	*a13(ANIMODE),a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 	rets
 
@@ -2354,7 +2354,7 @@
 	WL	ANI_IF_RPTCOUNT,#lp0
 
 	WL	ANI_CODE,check_raisearm_bit
-	WL	ANI_IFSTATUS,#wakeup
+	WL	ANI_IFSTATUS2,#wakeup
 
 	;don't wake up.
 #floop	WL	1000,Y5RV5A+FR12
@@ -2388,7 +2388,7 @@
 	.word	ANI_ATTACK_ON, AMODE_UPRCUT,20,34,80,70	;mode,x,y,w,h
 	WL	2,Y4UP3B+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc		;Yes, I hit blocker
 ;Got him
 ;Hit, spray some explosions
@@ -2446,7 +2446,7 @@
 	.word	ANI_ATTACK_ON, AMODE_UPRCUT,20,24,40,80	;mode,x,y,w,h
 	WL	2,Y4UP3B+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb		;Yes, I hit blocker
 ;Got him
 ;Hit, spray some explosions
@@ -2544,7 +2544,7 @@
 	.word	ANI_ZEROVELS
 	WL	ANI_GOTO,#missed
 #no_hit2
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb		;Yes, I hit blocker
 
 	.word	ANI_IMMOBILIZE,20
@@ -2623,7 +2623,7 @@
 	WL	1,Y4JB3A+FR3
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc		;Yes, I hit blocker
 	WLLL	ANI_SETOPPVELS,0,10000h,0h		;x,y,z vels
 	.WORD	ANI_INC_COMBO
@@ -2658,7 +2658,7 @@
 	WL	1,Y4JB3A+FR3
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc		;Yes, I hit blocker
 ;	.word	ANI_SET_ATTACH
 	WLLL	ANI_SETOPPVELS,000H,10000h,0h		;x,y,z vels
@@ -2788,7 +2788,7 @@
 
 	.word	ANI_OFFSET,0,0,20
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb		;Yes, I hit blocker
 ;Got him
 	WL	ANI_CODE,HIT_THE_MAT
@@ -2814,7 +2814,7 @@
 
 	.ref	spunch_delay
 	WL	ANI_CODE,spunch_delay
-	WL	ANI_IFNOTSTATUS,#none
+	WL	ANI_IFNOTSTATUS2,#none
 	WL	15,Y4PU4G+FR7
 #none
 
@@ -2835,7 +2835,7 @@
 	WWL	ANI_SETLONG,DEBRIS_X,0		;Y,X of head
 
 	WL	ANI_CODE,spunch_delay
-	WL	ANI_IFNOTSTATUS,#none1
+	WL	ANI_IFNOTSTATUS2,#none1
 	WL	15,Y4PU4G+FR7
 #none1
 
@@ -2908,7 +2908,7 @@
 	WWL	ANI_SETLONG,DEBRIS_X,[19,28]	;Y,X of head
 	WL	3,Y4PU4G+FR6
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb		;Yes, I hit blocker
 
 ;Got him
@@ -2935,7 +2935,7 @@
 
 #poo
 	WL	ANI_CODE,spunch_delay
-	WL	ANI_IFNOTSTATUS,#none2
+	WL	ANI_IFNOTSTATUS2,#none2
 	WWL	ANI_SETLONG,DEBRIS_X,0		;Y,X of head
 	WL	10,Y4PU4G+FR7
 	WL	4,Y4PU4G+FR8
@@ -2996,7 +2996,7 @@
 	.word	ANI_ATTACK_OFF
 	WLW	ANI_SET_XVEL,00h,AM_FACE_REL
 
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 	WL	ANI_IFBLOCKED,#missedbc		;Yes, I hit blocker
 	.WORD	ANI_INC_COMBO
 

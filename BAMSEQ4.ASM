@@ -193,7 +193,7 @@
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,bam_fall_back_anim
 ;	.word	ANI_END

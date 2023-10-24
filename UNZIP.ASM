@@ -44,7 +44,7 @@ PAGE1ADR	.equ	PAGE1YO*512*8
 
 ;CARYTEST	.equ	0		;1 for Cary's board testing
 ERRORTEST	.equ	0		;1 for random pixel test
-DEBUGPORT	.equ	>1d01010
+DEBUGPORT	.equ	01d01010H
 
 
 	STRUCTPD
@@ -77,7 +77,7 @@ RamBuffer	.usect	"unzip",RAMBUFSIZ
 ;	move	a1,*a0(PTIME)
 ;	
 ;	movi	[9,0],a9
-;	movi	[>8c,0],a10
+;	movi	[08cH,0],a10
 ;	movi	(24+83*512)*8,a11	;XY
 ;
 ;	move	@last_score,a0,L
@@ -85,8 +85,8 @@ RamBuffer	.usect	"unzip",RAMBUFSIZ
 ;	jrz	#tm1
 ;
 ;	movi	[9+216,0],a9
-;	movi	[>8c,0],a10
-;	movi	>53780,a11		;XY
+;	movi	[08cH,0],a10
+;	movi	053780H,a11		;XY
 ;
 ;#tm1	callr	show_edging		;Turn on clip borders
 ;
@@ -98,7 +98,7 @@ RamBuffer	.usect	"unzip",RAMBUFSIZ
 ;	move	a11,a10
 ;	JSRP	movie_run
 ;
-;	movi	>2001,a0
+;	movi	02001H,a0
 ;	calla	obj_del1c
 ;
 ;	movk	10,a1			;Delay tv score panel
@@ -117,7 +117,7 @@ RamBuffer	.usect	"unzip",RAMBUFSIZ
 ;	movi	livet,a2
 ;	movi	19989,a3		;z pos - Below buyin box
 ;	movi	DMAWNZ|M_NOCOLL|M_SCRNREL,a4
-;	movi	>2001,a5
+;	movi	02001H,a5
 ;	clr	a6
 ;	clr	a7
 ;	calla	BEGINOBJ2
@@ -172,7 +172,7 @@ RamBuffer	.usect	"unzip",RAMBUFSIZ
 ;	move	@_coin_addr,a1,L
 ;	move	*a1,a1,W
 ;	not	a1
-;	andi	>624,a1
+;	andi	0624H,a1
 ;	jrz	#lp2
 ;
 ;	move	@SYSCOPY,a0
@@ -316,7 +316,7 @@ RamBuffer	.usect	"unzip",RAMBUFSIZ
 * Get a movie palette
 * A7=# of colors
 * A8=* to color data
-* >A0=Color map allocated (0000-cfcf)
+* 0A0H=Color map allocated (0000-cfcf)
 * Z set if no palette free
 * Trashes scratch
 
@@ -342,11 +342,11 @@ RamBuffer	.usect	"unzip",RAMBUFSIZ
 * Get movie info
 * A8=* to compressed data
 *Rets:
-* >A0=!0 if error (CC)
-* >A4=# frames
-* >A6/B9=X
-* >A7=# colors in palette
-* >B3=Y
+* 0A0H=!0 if error (CC)
+* 0A4H=# frames
+* 0A6H/B9=X
+* 0A7H=# colors in palette
+* 0B3H=Y
 * Trashes scratch
 
 movie_parsehdr
@@ -433,7 +433,7 @@ movie_parsehdr
 * Uncompress a tree
 * A7=* to tree table
 * A8=* to compressed data
-* >A0=!0 if error (CC)
+* 0A0H=!0 if error (CC)
 
 UncompressTree:
 
@@ -443,11 +443,11 @@ UncompressTree:
 
 	clr	a4
 	PUSH	a8
-				;>Determine how many codes of each bit length
+				;0DeHtermine how many codes of each bit length
 	setf	8,0,0
 	move	*a8+,a0		;# compressed bytes to describe tree - 1
 	addk	1,a0
-	movk	>f,a3		;Constant
+	movk	0fH,a3		;Constant
 	clr	a6		;Total number of codes in tree
 utr0
 	move	*a8+,a1		;(# codes - 1 << 4) | bit lngth - 1
@@ -518,7 +518,7 @@ nonewmin
 
 	dsjs	a9,utr2
 
-				;>Compute the codes
+				;0CHompute the codes
 	clr	a11		;Code
 	clr	a1		;CodeInc
 	clr	a2		;LastBitLength
@@ -784,7 +784,7 @@ swappg
 
 #abort
 	callr	movie_waitdma
-					;>Copy visible frame to other page
+					;0CHopy visible frame to other page
 	move	*a13(PIXPERFRM),a14,L	;# of pixels in a frame
 
 	move	b4,*b8			;Set pallette
@@ -936,7 +936,7 @@ notmaxs
 	add	b6,b5	    	;Adjust pixel counter for this line
 
 copys
-	move	*a2+,*a9+	;>Copy
+	move	*a2+,*a9+	;0CHopy
 	and	a0,a2
 	and	a0,a9
 	dsj	a7,copys
@@ -949,7 +949,7 @@ copys
 * A5=*Tree table
 * A8=*Compressed data
 * Field 1 = 16 bits
-* >A7=Data
+* 0A7H=Data
 *
 * Trashes: A2-A5,A14,B6
 *

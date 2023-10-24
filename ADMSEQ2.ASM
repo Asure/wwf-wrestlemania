@@ -429,7 +429,7 @@ TSEC 	equ	53
 	WL	4,A3GD2A+FR3
 	WL	4,A3GD2A+FR4
 	WL	ANI_CODE,#choose_dir
-	WL	ANI_IFSTATUS,#getup_in_2
+	WL	ANI_IFSTATUS2,#getup_in_2
 #getup_in_4
 	WL	4,A3GD4A+FR5
 	WL	4,A3GD4A+FR6
@@ -464,7 +464,7 @@ TSEC 	equ	53
 	ori	MOVE_DOWN,a1
 
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	move	*a13(NEW_FACING_DIR),a0
@@ -472,7 +472,7 @@ TSEC 	equ	53
 	jrz	#cd_done
 
 	move	*a13(ANIMODE),a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	andni	MOVE_DOWN,a1
@@ -1040,7 +1040,7 @@ carry4_anim
 	WL	#GRABFLNG_SPD,A4GF3A+FR3
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFSTATUS,#gothim
+	WL	ANI_IFSTATUS2,#gothim
 ;missed
 	WL	8,A4GF3A+FR3
 	WL	4,A4GF3A+FR2
@@ -1105,7 +1105,7 @@ carry4_anim
 	WL	6,A3PO4B+FR4
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFSTATUS,#gothim
+	WL	ANI_IFSTATUS2,#gothim
 ;missed
 	WL	3,A3PO4B+FR3
 	WL	3,A3PO4B+FR2
@@ -1130,7 +1130,7 @@ carry4_anim
 	WL	6,A3PO4B+FR4
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFSTATUS,#gothim
+	WL	ANI_IFSTATUS2,#gothim
 ;missed
 	WL	6,A3PO4B+FR4
 	WL	3,A3PO4B+FR3

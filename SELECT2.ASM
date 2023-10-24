@@ -59,7 +59,7 @@
 	.ref	CYCLE_TABLE
 
 	;from WRESTLE.ASM
-	.ref	HALT,PSTATUS,PCNT
+	.ref	HALT,PSTATUS2,PCNT
 	.ref	change_image
 
 	;for LIFEBAR.ASM
@@ -180,7 +180,7 @@ SKIP_SELECT	equ	0
 
 
 	;initialize flags
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	move	a14,@active_flag
 
 	clr	a14
@@ -271,7 +271,7 @@ crouton_pos_table
 
 #*****************************************************************************
 * Process that handles player selection for one player.
-* >a10 = player (0 or 1)
+* 0a10H = player (0 or 1)
 
 	STRUCTPD
 	LONG		#HILITE			;UHL *hilite ring
@@ -350,7 +350,7 @@ crouton_pos_table
 	move	a8,*a13(#NAME),L
 
 	;active?
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	a10,a14
 	jrnz	#begin_select
 
@@ -382,7 +382,7 @@ crouton_pos_table
 
 	callr	#blink
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	a10,a14
 	jrz	#start_waitloop
 
@@ -1085,13 +1085,13 @@ scramble_table	;swap bret and doink on the select page
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-#p1name	.word	>51,184,name_z
+#p1name	.word	051H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
 	.long	0,0
 
-#p2name	.word	>142,184,name_z
+#p2name	.word	0142H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
@@ -1168,11 +1168,11 @@ name_tbl
 
 #reset
 	movi	#select_time,a9
-	move	@PSTATUS,a8
+	move	@PSTATUS2,a8
 
 #waitloop
 	SLEEPK	1
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmp	a14,a8
 	jrne	#reset			;new buyin.  reset
 

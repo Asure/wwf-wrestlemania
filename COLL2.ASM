@@ -280,7 +280,7 @@ PScnLp1	move	*a6+,a2,L
 	cmp	a9,a0
 	jrle	PScnLp1			;X2Max <= X1Min?
 
-	callr	ColFunc			;>Call colfunc for obj A1 and A2
+	callr	ColFunc			;0CaHll colfunc for obj A1 and A2
 	move	b0,b1			;B1=*Collision routine for obj A1
 	SWAP	a1,a2
 	callr	ColFunc
@@ -672,7 +672,7 @@ PIXSCAN
 
 *A11=XOFF0
 *A12=XOFF1
-	move	a3,a2		;>Calc XOFF0,XOFF1,XSCAN
+	move	a3,a2		;0CaHlc XOFF0,XOFF1,XSCAN
 	subxy	a4,a2
 	sext	a2
 	jrnn	clx1	
@@ -694,7 +694,7 @@ clx3	subxy	a6,a13
 clx4	sext	a13
 	neg	a13		;A13=XSCAN
 
-				;>Calc YOFF0,YOFF1,YSCAN
+				;0CaHlc YOFF0,YOFF1,YSCAN
 	sra	16,a3		;Kill X half
 	sra	16,a4
 	sra	16,a5
@@ -911,9 +911,9 @@ CL1HVF	MOVE	*A7(ISIZEY),A1	;GET HEIGHT
 *A13=WIDTH COUNT XSCAN
 *A14=HEIGHT COUNT YSCAN
 
-CSH	cmpi	>80,a14		;no scan if xscan, yscan values out of range
+CSH	cmpi	080H,a14		;no scan if xscan, yscan values out of range
 	jrhs	CSFAIL
-	cmpi	>80,a13
+	cmpi	080H,a13
 	jrhs	CSFAIL
 
 	dint

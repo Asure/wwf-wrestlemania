@@ -247,7 +247,7 @@
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,shn_fall_back_anim
 ;	.word	ANI_END
@@ -491,7 +491,7 @@
 	WL	2,S4AM3A+FR8
 
 	.word	ANI_CHECKWORD,USR_VAR1
-	WL	ANI_IFNOTSTATUS,#reg
+	WL	ANI_IFNOTSTATUS2,#reg
 
 ;162
 	WL	9,S4TI4B+FR1
@@ -605,7 +605,7 @@
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,shn_fall_back_anim
 ;	.word	ANI_END
@@ -965,7 +965,7 @@
 
 	WL	3,S3GU2A+FR1
 	WL	ANI_CODE,choose_2or4
-	WL	ANI_IFSTATUS,#getup_in_4
+	WL	ANI_IFSTATUS2,#getup_in_4
 
 #getup_in_2
 	WL	2,S3GU2A+FR2
@@ -984,11 +984,11 @@
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,33,85,44,17
 	WL	1,S3GU2A+FR9
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -1020,11 +1020,11 @@
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss2
+	WL	ANI_IFNOTSTATUS2,#no_freetoss2
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,33,85,44,17
 	WL	1,S3GU4A+FR9
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss2
+	WL	ANI_IFNOTSTATUS2,#no_freetoss2
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -1051,12 +1051,12 @@
  SUBR	choose_2or4
 
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 
 	move	*a13(NEW_FACING_DIR),a14
 	btst	MOVE_UP_BIT,a14
 	jrnz	#choose_2
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 #choose_2
 	move	a0,*a13(ANIMODE)
 	rets
@@ -1109,7 +1109,7 @@
 	WL	4,S3MF3B+FR7
 
 	WL	ANI_CODE,#inc_loop
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 
 ;Fall out of overhead hold by reversing thru pickup frames
 	.word	ANI_DETACH
@@ -1148,13 +1148,13 @@
 ;	jrz	#breakout
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #breakout
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -1411,7 +1411,7 @@
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,shn_fall_back_anim
 ;	.word	ANI_END
@@ -1455,7 +1455,7 @@
 	WL	4,S3BF3A+FR6
 	WL	4,S3BF3A+FR7
 	WL	ANI_CODE,#inc_loop
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 
 ;Continue into break...
 
@@ -1502,13 +1502,13 @@
 ;	jrz	#breakout
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #breakout
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -1577,7 +1577,7 @@
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,shn_fall_back_anim
 ;	.word	ANI_END

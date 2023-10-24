@@ -47,7 +47,7 @@
 	.ref	civanic,CR_STRTP,get_process_ptr,wres_collis_off
 	.ref	GET_ADJ,p2winstreak,ANIM_CROWD,update_timer,GAMSTATE
 	.ref	fight_debug,RNDRNG0,pal_getf,ring_bell,BEGINOBJ_TBL
-	.ref	PSTATUS,match_over,p1rounds,is_8_on_1
+	.ref	PSTATUS2,match_over,p1rounds,is_8_on_1
 	.ref	OPEN_VERT_SCREEN_LINE,process_ptrs,SET_LOWER_VOL
 	.ref	GET_CREDITS,BINBCD,get_all_buttons_cur2,LINES_VERT
 	.ref	current_round,p1winstreak,CLEAR_SPEECH_REPEAT,p2rounds
@@ -272,8 +272,8 @@ TURBO_MAX	.equ	84<<8		;max turbo value
 
 #*****************************************************************************
 *
-* >a8 = PLYRNUM for left meter
-* >a9 = PLYRNUM for right meter
+* 0a8H = PLYRNUM for left meter
+* 0a9H = PLYRNUM for right meter
 
 P1CNTR	.equ	PDATA
 P2CNTR	.equ	PDATA+16
@@ -365,7 +365,7 @@ JUST_DISPLAY_THEM
 
 ;Blink CPU controlled name with insert coins/press start
 	movi	meter_data,a1
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	btst	0,a0
 	jrnz	#p2
 ;Plyr 1 is drone
@@ -419,7 +419,7 @@ JUST_DISPLAY_THEM
 #p2
 	movi	meter_data,a1
 	addi	MD_SIZE,a1
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	btst	1,a0
 	jrnz	#ok
 
@@ -612,7 +612,7 @@ rname	.word	rname_x,name_y,name_z			;X, Y, Z
 
  SUBRP	replace_wins
 	move	@match_winner,a1
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 	AND	A1,A0
 	JRZ	#EXIT
 
@@ -885,7 +885,7 @@ WHICH_SIZE_BAR
 	jrnz	#rumble
 
 	;quit if we're a two-player game
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	3,a14
 	jreq	#die
 
@@ -1075,7 +1075,7 @@ WHICH_SIZE_BAR
 
 #*****************************************************************************
 * 'rewires' a meter display for a different wrestler
-* >a0 = display(0 or 1), >a1= playernum (0 to NUM_WRES-1)
+* 0a0H = display(0 or 1), 0a1H= playernum (0 to NUM_WRES-1)
 
  SUBR	rewire_meter
 
@@ -1252,7 +1252,7 @@ shortname_tbl
 
 #*****************************************************************************
 * Updates (resizes) the bars on a meter display.
-* >a0 = meter (0 or 1)
+* 0a0H = meter (0 or 1)
 
  SUBRP	update_meter
 
@@ -1322,7 +1322,7 @@ we_are_a_drone_ignore
 
 #*****************************************************************************
 * Returns the remaining health for a player
-* >a1 = PLYRNUM
+* 0a1H = PLYRNUM
 * <a0 = life (also returns Z bit based on life remaining)
 
 
@@ -1339,9 +1339,9 @@ we_are_a_drone_ignore
 #*****************************************************************************
 *
 * Adjusts a player's health total
-* >a0 = amount to add to player's health total
-* >a1 = PLYRNUM
-* >a10= attacker's process ptr
+* 0a0H = amount to add to player's health total
+* 0a1H = PLYRNUM
+* 0a10H= attacker's process ptr
 *
 * Returns carry bit set if we're dead at the end of this, even if we
 * were dead when the function was called.  Returns carry clear if we're
@@ -1492,7 +1492,7 @@ DO_NORMAL_ADJUST_CHECK
 
 	clr	a3
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	jrz	#adc_set
 
 	movi	process_ptrs+40h,a1
@@ -1576,7 +1576,7 @@ DO_NORMAL_ADJUST_CHECK
 	clr	a3
 
 	;if we're in attract mode, don't die!
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	jrnz	#norm1
 	MOVI	LIFE_MAX,a3
 
@@ -2017,7 +2017,7 @@ DO_NORMAL_ADJUST_CHECK
 
 #*****************************************************************************
 * Moves PLT_CLIFE toward PLT_LIFE if it isn't already there.
-* >a0 = PLYRNUM
+* 0a0H = PLYRNUM
 
 #lifebar_deltavee	equ	2	;pixels per tick of motion
 
@@ -2060,7 +2060,7 @@ DO_NORMAL_ADJUST_CHECK
 
 #*****************************************************************************
 * Flash the background of the life meter for the current player.
-* >a10 = plyrnum
+* 0a10H = plyrnum
 
 danger_snd	equ	0b9h
 
@@ -2274,7 +2274,7 @@ announce_match
 	clr	a0
 	move	a0,*a13(BLINK_PROC),L
 
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	jrnz	#noamode
 	clr	a0
 	move	a0,@HALT
@@ -2487,7 +2487,7 @@ X2B_ADDED
 
 ;Slide everthing onto screen
 
-	movi	>b6,a0
+	movi	0b6H,a0
 	calla	triple_sound
 
 	movi	20h,a10	;30
@@ -2525,7 +2525,7 @@ X2B_ADDED
 	.ref	wait_on_butn
 	JSRP	wait_on_butn
 
-	movi	>b6,a0
+	movi	0b6H,a0
 	calla	triple_sound
 
 	movi	16h,a10	;23
@@ -3047,7 +3047,7 @@ MUSIC_ALREADY_GOING
 	NOT	A1
 	CALLA	KILALL		;STOP BAR MOTION IF NEED BE
 
-	MOVE	@PSTATUS,A5
+	MOVE	@PSTATUS2,A5
 	CMPI	3,A5
 	JREQ	RESET_HUMAN_VS_HUMAN
 
@@ -3644,7 +3644,7 @@ exit_reversal
 * Returns carry set if everyone on winning team is unharmed.
 * Exception:  Never returns C if final match.
 *
-* >a10 = proc of a wrestler on the winning team (anyone will do)
+* 0a10H = proc of a wrestler on the winning team (anyone will do)
 *
 
  SUBRP	is_perfect
@@ -5275,7 +5275,7 @@ DISQUAL_DISSOLVE_ANIM
 #*****************************************************************************
 *
 * Clears a combo meter.
-* >a13 = process of victim
+* 0a13H = process of victim
 
  SUBR	clear_combo_meter
 
@@ -5286,7 +5286,7 @@ DISQUAL_DISSOLVE_ANIM
 #*****************************************************************************
 *
 * Sets a combo meter to half-size.
-* >a13 = process of victim
+* 0a13H = process of victim
 
  SUBR	halve_combo_meter
 
@@ -5305,7 +5305,7 @@ DISQUAL_DISSOLVE_ANIM
 #*****************************************************************************
 *
 * Clears a life bar.
-* >a13 = process of victim
+* 0a13H = process of victim
 
  SUBR	clear_lifebar
 

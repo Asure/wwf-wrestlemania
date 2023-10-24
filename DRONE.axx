@@ -1,0 +1,3231 @@
+ ;Yoko tb on out of ring opp
+ ;UT pin bug
+ ;Atk sometimes instead of blk
+;Chk dnk buzz blk
+ ;No leap head grab
+;Don't have drones do power moves unless human has.
+;Yoko should take advantage of salt throw
+ ;Drones wait in your face for too long.
+ ;DL blk for hiptoss
+ ;Harder
+ ;Atk down opp
+ ;Anti run code, esp out of ctrl
+ ;Fling and chase
+ ;Short repeat atks
+ ;Do more head holds from in close - thru block
+ ;Seek on a blocker, do headhold
+ ;Make multi drones easier...
+ ;Too many runs
+ ;Break out of runs more...
+;Climb TB after a toss out
+ ;Sometimes, drone won't move from top of TB
+ ;Don't let go charge moves if opp is blocking
+ ;In multi-wrestler matches, delay longer on power moves from headhold or revs
+;Yoko can run right into drone and knock him down.
+;Get smart on big boots, missed/blocked buzzers, etc.
+ ;Ignore pushes from opponent, try an attack
+;Specific combo paths
+ ;Pin fast
+ ;Multi wres spacing
+ ;Get in ring
+ ;Check blocking
+;Fix seek_dirdist out of ring
+ ;Slide htoss on flying opp
+**************************************************************
+*
+* Software:		Shawn Liptak
+* Initiated:		11/21/94
+*
+* Modified:		Shawn Liptak, 11/21/94	-Started wrestling
+*
+* COPYRIGHT (C) 1994 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 6/29/95 15:42
+**************************************************************
+	.file	"drone.asm"
+	.title	"wrestling drone code"
+	.width	132
+	.option	b,d,l,t
+	.mnolist
+
+
+	.include	"macros.h"
+	.include	"mproc.equ"
+	.include	"display.equ"
+	.include	"gsp.equ"
+	.include	"sys.equ"
+	.include	"audit.equ"
+	.include	"game.equ"
+	.include	"anim.equ"
+	.include	"plyr.equ"
+	.include	"ring.equ"
+	.include	"damage.equ"
+
+
+;sounds external
+
+
+;symbols externally defined
+
+	.ref	process_ptrs,PSTATUS
+	.ref	PCNT,round_tickcount
+
+	.ref	CHECK_COMBO_GO
+
+	.ref	GET_ADJ
+	.ref	p1winstreakd,p1rounds,current_round
+	.ref	LADDER,CURRENT_LADDER
+
+	.ref	change_anim1a
+	.ref	hrt_4_taunt_anim,rzr_4_taunt_anim,und_4_taunt_anim
+	.ref	yok_4_taunt_anim,shn_4_taunt_anim,bam_4_taunt_anim
+	.ref	dnk_4_taunt_anim,lex_4_taunt_anim
+
+
+;symbols defined in this file
+
+
+;uninitialized ram definitions
+
+	BSSX	droneoff	,16		;!0=Drone code off
+	.bss	atkcnt_t,AT_NUM*NUM_WRES*16	;# times hit by each atk
+
+
+;equates for this file
+
+BLKTEST	.equ	0
+
+U_M	.equ	MOVE_UP<<5
+D_M	.equ	MOVE_DOWN<<5
+L_M	.equ	MOVE_LEFT<<5
+R_M	.equ	MOVE_RIGHT<<5
+
+P_M	.equ	PLAYER_PUNCH_VAL
+B_M	.equ	PLAYER_BLOCK_VAL
+SP_M	.equ	PLAYER_SPUNCH_VAL
+K_M	.equ	PLAYER_KICK_VAL
+SK_M	.equ	PLAYER_SKICK_VAL
+
+	.if	MODE_NORMAL!=0
+	.emsg	"FIX code!"
+	.endif
+
+
+	.text
+
+***************************************************************
+* Main drone logic
+* A13 = *Plyr process
+* Trashes scratch, A2-A10, B2-B7
+
+ SUBR	drone_main
+
+	.if	DEBUG
+	move	@droneoff,a0
+	jrnz	kgixx
+	.endif
+
+
+	move	*a13(DRN_BUT),a6	;A6=Old buts
+	move	*a13(DRN_JOY),a7	;A7=Old joy
+
+	move	*a13(CLOSEST_NUM),a14
+	X32	a14
+	addi	process_ptrs,a14
+	move	*a14,a8,L		;A8=*Closest's proc
+
+;	callr	drone_getcurskillo
+;	move	a0,a10
+	move	*a13(DRN_SKILL),a10
+	X16	a10			;A10=Skill for indexing (*16)
+
+	move	*a13(PLYRMODE),a0
+	move	a0,b6			;B6=My pmode
+	move	*a8(PLYRMODE),a0
+	move	a0,b7			;B7=Opp pmode
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0FHind friendly wrestlers
+
+	movi	process_ptrs,a2
+	movk	NUM_WRES,b0
+	clr	b2			;B2=Team dist ranking (0-2)
+	clr	b3			;B3=# alive on my team (0-3)
+kgifflp
+	move	*a2+,a3,L
+	jrz	kgiffnxt
+
+	move	*a13(PLYR_SIDE),a0
+	move	*a3(PLYR_SIDE),a1
+	cmp	a0,a1
+	jrne	kgiffnxt			;Not on my team?
+
+	move	*a3(PLYRMODE),a0
+	subk	MODE_DEAD,a0
+	jreq	kgiffnxt
+
+	addk	1,b3
+
+	move	*a13(CLOSEST_NUM),a0
+	move	*a3(CLOSEST_NUM),a1
+	cmp	a0,a1
+	jrne	kgiffnxt			;Diff opponents?
+
+	move	*a13(CLOSEST_DIST),a0
+	move	*a3(CLOSEST_DIST),a1
+	cmp	a1,a0
+	jrle	kgiffnxt			;I'm closer?
+
+	addk	1,b2
+kgiffnxt
+	dsj	b0,kgifflp
+
+kgiffdn
+	move	b2,b2
+	jrz	kgiffdoit			;I'm closest?
+
+	move	*a13(DRN_ACT_p),a9,L
+	jrnz	kgiffx			;Script running?
+
+	move	*a13(DRN_MODE),a0
+	movi	-3,a1
+	move	a1,*a13(DRN_MODE)	;Set mode
+	addk	3,a0
+	jrne	kginewmdm3		;Init hang back?
+	jruc	kgiffx
+
+kgiffdoit
+	move	*a13(DRN_MODE),a0
+	addk	3,a0
+	jreq	kginewmd			;Set new mode if in hang back?
+
+kgiffx
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Random mode changes
+
+	move	@PCNT,a0
+	sll	32-5,a0
+	jrnz	kginomdchk
+
+	movk	3,a0
+	callr	rnd
+	jrnz	kginomdchk
+
+	move	*a13(DRN_MODE),a0
+	addk	3,a0
+	jrle	kgimcnosc			;Hang back?
+kginewmd
+	movk	1,a0			;No aggressive
+	move	@CURRENT_LADDER,a1,L	;* to position
+	cmpi	LADDER,a1
+	jreq	kgimdeasy			;1st ladder?
+
+	movk	3,a0			;Range
+	cmpi	13*16,a10
+	jrle	kgimdeasy
+	addk	1,a0			;More aggressive
+kgimdeasy
+	callr	rndrng0
+	subk	2,a0
+	move	a0,*a13(DRN_MODE)	;-2 to 2
+
+	move	*a13(DRN_ACT_p),a9,L
+	jrnz	kgimcnosc			;Script running?
+	clr	a0
+	move	a0,*a13(DRN_JOY)	;So we don't walk into ropes
+kgimcnosc
+kginewmdm3
+	movk	4,a2			;Rgt side
+	move	*a13(OBJ_XPOSINT),a0
+	move	*a8(OBJ_XPOSINT),a1
+	sub	a1,a0
+	jrge	kgimetorgt
+	movk	12,a2			;Left side
+kgimetorgt
+	move	a2,*a13(DRN_SEEKDIR)
+
+	movk	4,a0
+	callr	rndrng0
+
+	move	*a13(DRN_MODE),a1
+	addk	3,a1
+	jrne	kginodhb			;!Hang back?
+	ANDK	1,a0			;Make 3-4 or 4-5
+	addk	2,a0
+	move	b2,a14
+	add	a14,a0
+kginodhb
+	move	a0,*a13(DRN_SEEKDIST)
+
+kginomdchk
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Passive mode movement
+
+	.if	BLKTEST
+	jruc	kgiskmv
+	.endif
+
+	move	*a13(DRN_MODE),a0
+	jrge	kgiskmv			;Aggressive?
+
+	move	b6,b6
+	jrnz	kgiskmv			;!MODE_NORMAL?
+
+	move	*a13(DRN_ACT_p),a9,L
+	jrnz	kgiskmv			;Script running?
+
+	callr	drone_seekdirdist
+kgiskmv
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0DecH charge delay
+
+	move	*a13(DRN_BUTCHRG),a0
+	jrz	kginochrgn
+
+	move	*a13(DRN_BUTCHRGDLY),a0
+	subk	1,a0
+	move	a0,*a13(DRN_BUTCHRGDLY)
+kginochrgn
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Handle getup time
+
+	move	*a13(GETUP_TIME),a2
+	jrle	kginogt
+
+	movi	99,a0
+	callr	rndrng0
+	move	a10,a1
+	addi	kgigetup_t,a1
+	move	*a1,a1
+	cmp	a1,a0
+	jrge	kgidsabt
+
+	subk	5,a2
+	jrge	kgigtok
+	clr	a2
+kgigtok	move	a2,*a13(GETUP_TIME)
+	jruc	kgidsabt
+kginogt
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+	move	*a13(DRN_DELAY),a0
+	subk	1,a0
+	jrle	kginewact
+	move	a0,*a13(DRN_DELAY)
+	jruc	kgix
+kginewact
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0BHlock detection
+
+	move	*a8(ATTACK_TIME),a4
+	move	@round_tickcount,a5
+	sub	a5,a4			;-=Attack passed, +=Ticks till atk
+	jrlt	kginoblk
+
+	movi	50,a1			;Closer Z allowed
+	move	*a8(ATTACK_TYPE),a2
+	cmpi	AT_PUSH,a2
+	jreq	kginoblk
+	cmpi	AT_MSL,a2
+	jreq	kgimsla			;Missile atk?
+
+	move	*a13(CLOSEST_XDIST),a0
+	cmpi	180,a0
+	jrgt	kginoblk			;Too far?
+	movi	100,a1
+kgimsla
+	move	*a13(CLOSEST_ZDIST),a0
+	cmp	a1,a0
+	jrgt	kginoblk			;Too far?
+
+	move	*a8(GETUP_TIME),a14
+	jrgt	kginoblk			;Out of control?
+
+	cmpi	MODE_INAIR2,b7
+	jreq	kginoblk			;Jumping on me?
+
+	btst	PLAYER_BLOCK_BIT,a6
+	jrnz	kgix			;Trying to blk?
+
+	move	*a8(ATTACK_TYPE),a2
+	move	*a13(PLYRNUM),a0
+	movi	AT_NUM,a3
+	mpys	a0,a3
+	add	a2,a3
+	X16	a3
+	addi	atkcnt_t,a3
+
+	move	*a3,a2			;# missed blks
+	cmpi	10,a2
+	jrlo	kgiacok
+	movk	9,a2
+kgiacok
+	X16	a2
+	addi	kgiblkatk_t,a2
+	move	*a2,a2			;Get %
+
+	move	b3,a14			;# on team
+	subk	1,a14
+	X32	a14
+	sub	a14,a2			;Decrease per extra bud
+
+	.if	BLKTEST
+	movi	100,a2
+	.endif
+
+	movi	99,a0
+	callr	rndrng0
+	move	a10,a1
+	addi	kgiblkbase_t,a1
+	move	*a1,a1			;Base %
+	add	a2,a1
+	cmp	a1,a0
+	jrge	kgimissb
+
+	cmpi	15,a4
+	jrge	kgiminbtok		;Min time OK?
+	movk	15,a4
+kgiminbtok
+
+	move	*a8(ATTACK_TYPE),a2
+	cmpi	AT_LEAPING,a2
+	jrne	kgisblk			;!Leaping?
+
+;	LOCKUP
+
+	move	a10,a0
+	srl	4+2,a0			;Skill/4
+	callr	rndrng0
+	move	a0,a0
+	jrz	kgisblk			;Skip?
+
+	move	a5,*a8(ATTACK_TIME)	;Cancel
+
+	movi	slhtoss,a9		;Flip opp
+	jruc	kginewsc
+
+kgisblk
+	move	a4,*a13(DRN_DELAY)
+
+	movk	B_M,a0			;Block it
+	move	a0,*a13(DRN_BUT)
+
+	cmpi	AT_PUPPET,a2
+	jrne	kgidsabt			;!Hip toss?
+
+	movi	B_M+L_M+D_M,a0		;Special block
+	move	a4,a3			;Dly
+	clr	a9
+	jruc	kgisetbx
+
+kgimissb
+	move	a5,*a8(ATTACK_TIME)	;Cancel
+
+	move	*a3,a0			;Cnt+1
+	addk	1,a0
+	move	a0,*a3
+
+kginoblk
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>New script selection
+
+	move	*a13(DRN_ACT_p),a9,L	;A9=*Script
+	jrnz	kgicact			;Continue script?
+
+
+	clr	a2
+
+	cmpi	MODE_BLOCK,b6
+	jrne	kginps			;!Blking?
+	btst	PLAYER_PUNCH_BIT,a6
+	jrnz	kginps			;Already pushed?
+
+	.if	BLKTEST
+	jruc	kginps
+	.endif
+
+	movk	7,a0
+	callr	rndrng0
+	move	a0,a0
+	jrnz	kginps			;Skip 88%?
+
+	move	*a13(CLOSEST_XDIST),a0
+	cmpi	110,a0
+	jrgt	kginps			;Too far?
+	move	*a13(CLOSEST_ZDIST),a0
+	cmpi	40,a0
+	jrgt	kginps			;Too far?
+	movk	P_M+B_M,a2		;Push
+	move	a2,*a13(DRN_BUT)
+	jruc	kgix
+kginps
+	move	a2,*a13(DRN_BUT)
+
+	.if	BLKTEST
+	jruc	kgix
+	.endif
+
+
+	move	b6,b6
+	jrnz	kgidoact			;!MODE_NORMAL?
+
+
+	move	*a13(INRING),a0
+	jrz	kgiringok			;In ring?
+
+	move	*a8(INRING),a0
+	jrnz	kgiringok			;Opp out?
+
+	movi	drn_enterring,a9
+	jruc	kginewsc
+kgiringok
+
+	move	*a13(DRN_MODE),a3
+	cmpi	-3,a3
+	jrle	kgipass			;Hang back?
+
+	cmpi	MODE_ONGROUND,b7
+	jreq	kgidoact			;Atk?
+
+	cmpi	MODE_INAIR2,b7
+	jrne	kgionia
+	movi	drn_opinair,a9		;Avoid jump
+	jruc	kginewsc
+kgionia
+	cmpi	MODE_RUNNING,b7
+	jrne	kgionrun
+	move	*a13(CLOSEST_XDIST),a0
+	cmpi	80,a0
+	jrle	kgionrun			;Too close?
+	movi	drn_oprun,a9		;Anti run
+	jruc	kginewsc
+kgionrun
+
+	move	*a8(ATTACK_TIME),a0
+	move	@round_tickcount,a1
+	sub	a1,a0			;-=Attack passed, +=Ticks till atk
+	addk	15,a0
+	jrge	kgidoact			;Get him after his atk (or no blk)?
+
+
+	move	a3,a3
+	jrlt	kgipass			;Passive?
+
+	movk	1fh,a0			;.6 sec
+	cmpi	22*16,a10
+	jrle	kgicat
+	movk	7,a0			;.15 sec
+kgicat
+	callr	rnd
+	jrz	kgidoactpup		;Atk?
+
+
+kgipass
+	move	@PCNT,a0		;Chk every 16
+	addk	1,a0
+	sll	32-4,a0
+	jrnz	kgix
+
+	move	*a13(CLOSEST_XDIST),a1
+	move	*a13(CLOSEST_ZDIST),a14
+	cmp	a1,a14
+	jrge	kgibig
+	move	a1,a14
+kgibig
+	cmpi	70,a14
+	jrlt	kgidoactpup		;Opp in my face? Attack!
+
+	move	*a13(DRN_MODE),a0
+	addk	3,a0
+	jrle	kgix			;Hang back?
+
+	move	@CURRENT_LADDER,a1,L	;* to position
+	cmpi	LADDER,a1
+	jreq	kginratk			;1st ladder?
+
+	movk	0fh,a0			;Avg 4.8 sec
+	callr	rnd
+	jrz	kgidoactpup		;Random attack?
+kginratk
+	move	b7,b7
+	jrz	kgix			;Opp MODE_NORMAL? Be passive
+kgidoactpup
+	move	b7,a0
+	subk	MODE_PUPPET2,a0
+	jreq	kgix
+	subk	MODE_PUPPET-MODE_PUPPET2,a0
+	jreq	kgix
+	cmpi	MODE_HEADHELD,b7
+	jreq	kgix
+	cmpi	MODE_HEADHOLD,b7
+	jreq	kgix
+	cmpi	MODE_ATTACHED,b7
+	jreq	kgix
+
+
+kgidoact
+	cmpi	MODE_HEADHELD,b6
+	jreq	kgislctscrpt
+
+	cmpi	MODE_ONGROUND,b6
+	jrne	kginognd
+	movi	drn_roll,a9
+	jruc	kginewsc
+kginognd
+	cmpi	MODE_INAIR2,b6
+	jrne	kginin2
+	movi	drn_inair,a9
+	jruc	kginewsc
+kginin2
+	cmpi	MODE_ONTURNBKL,b6
+	jrne	kginotb
+	movi	drn_ontb,a9
+	jruc	kginewsc
+kginotb
+	cmpi	MODE_DEAD,b6
+	jrne	kgindead
+	movk	7,a0
+	callr	rnd
+	jruc	kgibutx
+kgindead
+	move	*a13(ANIMODE),a0
+	btst	MODE_UNINT_BIT,a0
+	jrnz	kgiunint			;Wait?
+
+	cmpi	MODE_RUNNING,b6
+	jrne	kginrun
+	movi	drn_run,a9
+	jruc	kginewsc
+kginrun
+
+	cmpi	MODE_HEADHOLD,b6
+	jrne	kginhh
+
+	clr	a0
+	move	a0,*a13(DRN_BUTCHRG)	;Clr it
+
+;	movk	1,a0			;50%
+;	callr	rnd
+;	jrnz	kginhh			;Don't combo?
+
+	move	a8,a3
+	move	a13,a8
+	calla	CHECK_COMBO_GO
+	jrlt	kgincmb			;Can't combo?
+	move	a3,a8
+	movi	drn_combo,a9
+	jruc	kginewsc
+kgincmb
+	move	a3,a8
+kginhh
+
+	move	*a13(DRN_BUTCHRG),a0
+	jrz	kginochrg
+
+	move	*a13(DRN_BUTCHRGDLY),a0
+	jrgt	kginochrg
+
+	cmpi	MODE_BLOCK,b7
+	jreq	kginochrg			;Opp blking?
+
+	move	*a13(DRN_BUTCHRG_p),a9,L ;Fire charge
+	jruc	kginewsc
+kginochrg
+
+	move	*a13(CLOSEST_DIST),a14
+	cmpi	200,a14
+	jrgt	kgiopnb
+
+	cmpi	MODE_BLOCK,b7
+	jrne	kgiopnb			;!Blking?
+
+	move	*a13(CLOSEST_ZDIST),a14
+	cmpi	40,a14
+	jrgt	kgibsk
+
+	move	*a13(CLOSEST_XDIST),a14
+	cmpi	60,a14
+	jrgt	kgibsk
+
+	move	*a8(STICK_REL_CUR),a14
+	cmpi	MOVE_DOWN_LEFT,a14
+	jreq	kgibht			;Hip toss blocked?
+
+	movi	M_shrtblkr,a9		;Attack
+	jruc	kgigetscrpt
+kgibht
+	movi	M_shrtblkrdl,a9		;Attack
+	jruc	kgigetscrpt
+;	movi	hgrab,a9
+;	jruc	kginewsc
+kgibsk
+	movi	drn_seekclose,a9
+	jruc	kginewsc
+kgiopnb
+
+	cmpi	MODE_DEAD,b7
+	jrne	kgiopnd
+
+	movi	drn_oppdead,a9
+	jruc	kginewsc
+kgiopnd
+
+kgislctscrpt
+
+	move	*a13(WRESTLERNUM),a0
+	X32	a0
+	addi	kgiwnshort_t,a0
+
+	move	*a13(CLOSEST_XDIST),a1
+	move	*a13(CLOSEST_ZDIST),a14
+	X2	a14			;Z*2
+	cmp	a1,a14
+	jrge	kgihavebig
+	move	a1,a14
+kgihavebig
+	cmpi	100,a14
+	jrlt	kgishrt
+	addi	kgiwnmed_t-kgiwnshort_t,a0
+
+	cmpi	180,a14
+	jrlt	kgimed
+	addi	kgiwnlong_t-kgiwnmed_t,a0
+kgishrt
+kgimed
+	move	*a0,a9,L		;Get * mode list
+	move	b6,a2
+	move	b7,a3
+kgimdlp
+	movb	*a9,a0			;My mode #
+	addk	8,a9
+	movb	*a9,a14			;His mode #
+	addk	8,a9
+	move	*a9+,a1,L		;* script * table
+
+	move	a0,a0
+	jrn	kgiinochk			;Don't chk?
+	cmp	a2,a0
+	jrne	kgimdlp			;Not in mode?
+kgiinochk
+	move	a14,a14
+	jrn	kgidef			;Don't chk?
+	cmp	a3,a14
+	jrne	kgimdlp			;Not in mode?
+kgidef
+	move	a1,a9
+kgigetscrpt
+	move	*a9+,a0			;# entries
+	jrge	kgineok			;!Headhold?
+	abs	a0
+	cmpi	26*16,a10
+	jrle	kgineok			;!Hard?
+	movk	1,a0			;Only do first two
+kgineok
+	callr	rndrng0
+	X32	a0
+	add	a0,a9
+	move	*a9,a9,L		;* new script
+
+kginewsc
+	move	b6,a0
+	move	a0,*a13(DRN_SPMODE)
+
+
+	cmpi	MODE_HEADHOLD,b6
+	jrne	kginhh2
+
+	movk	1,a3
+	cmpi	2,b3
+	jrlt	kgihhd1			;1 opp?
+	movk	22,a3
+kgihhd1
+	movi	sklhhdly_t,a0
+	add	a10,a0			;+Offset
+	move	*a0,a0
+	callr	rndrng0
+	add	a0,a3			;Increase per extra bud
+
+	move	@PCNT,a0
+	sll	32-1,a0
+	jrz	kgihhdok			;Skip half of checks?
+
+	cmpi	65,a3
+	jrle	kgihhdok
+	movi	65,a3			;Max delay
+kgihhdok
+	clr	a0
+	jruc	kgisetbx
+kginhh2
+
+	cmpi	MODE_HEADHELD,b6
+	jrne	kginhhe
+
+	clr	a0
+	move	a0,*a13(DRN_BUTCHRG)	;Clr it
+
+	move	b3,a3			;# on team
+	movk	7,a0
+	callr	rnd
+	jrz	kgihrskmp			;12% skip multiplyr delay?
+	subk	1,a3
+	X16	a3
+kgihrskmp
+	movi	sklhrdly_t,a0
+	add	a10,a0			;+Offset
+	move	*a0,a0
+	callr	rndrng0
+	addk	1,a0
+	add	a0,a3			;Increase per extra bud
+
+	move	@PCNT,a0
+	sll	32-1,a0
+	jrz	kgihrdok			;Skip half of checks?
+
+	cmpi	70,a3
+	jrle	kgihrdok
+	movi	70,a3			;Max delay
+kgihrdok
+	clr	a0
+	jruc	kgisetbx
+kginhhe
+
+
+kgicact
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CHhk script for mode change
+
+	move	b6,a0
+	jrz	kgimdsame			;MODE_NORMAL?
+	subk	MODE_BLOCK,a0
+	jreq	kgimdsame			;Treat as normal?
+	move	*a13(DRN_SPMODE),a0
+	move	b6,a1
+	cmp	a1,a0
+	.if	DEBUG
+	jreq	kgidsok
+	jruc	kgidsabt			;For breakpoint
+kgidsok
+	.endif
+	jrne	kgidsabt
+
+kgimdsame
+
+	.if	DEBUG
+	move	a9,a9			;Chk script *
+	jrz	kgia9ok
+	cmpi	0ff000000h,a9
+	jrhs	kgia9ok
+	LOCKUP
+kgia9ok
+	.endif
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Read script command
+kgiscplp
+	move	*a9+,a0
+	jrge	kginocd			;No command?
+
+	sll	32-14,a0
+	jrc	kgidsdone			;Done? (Bit 14)
+
+	srl	32-14,a0
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Seek until 0
+
+	subk	1,a0			;kgi1
+	jrne	kginseekt0
+
+	callr	drone_seek
+	jrz	kgiscplp
+
+	subk	16,a9
+	jruc	kgidsdone
+kginseekt0
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Random skill lvl abort
+
+	subk	1,a0			;kgi2
+	jrne	kginrnda
+
+	cmpi	MODE_BLOCK,b7
+	jreq	kgidsabt			;Blking?
+
+	move	*a9+,a3,L		;*Skill table
+
+;	clr	a2
+;	cmpi	sklrev_t,a3
+;	jrne	kginsr
+;	move	b3,a2			;# on team
+;	subk	1,a2
+;	X16	a2
+;kginsr
+	movi	99,a0
+	callr	rndrng0
+	add	a10,a3			;+Offset
+	move	*a3,a1
+;	sub	a2,a1			;Decrease per extra bud
+	cmp	a1,a0
+	jrlt	kgiscplp			;Cont?
+
+	movk	10,a0
+	move	a0,*a13(DRN_DELAY)
+
+	jruc	kgidsabt
+kginrnda
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Wait till interruptable
+
+	subk	1,a0			;kgi3
+	jrne	kginwtint
+
+	move	*a13(ANIMODE),a0
+	btst	MODE_UNINT_BIT,a0
+	jrz	kgiscplp			;Off?
+
+	subk	16,a9
+	jruc	kgidsdone
+kginwtint
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0AbHort if opponent blocking
+
+	subk	1,a0			;kgi4
+	jrne	kginaib
+
+	cmpi	MODE_BLOCK,b7
+	jrne	kgiscplp			;!Blocked?
+
+	jruc	kgidsabt
+kginaib
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CaHll code
+
+	subk	1,a0			;kgi5
+	jrne	kgincall
+
+	move	*a9+,a0,L
+	call	a0
+
+	jruc	kgiscplp
+kgincall
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Rnd jump
+
+	subk	1,a0			;kgi6
+	jrne	kginrj
+
+	movi	99,a0
+	callr	rndrng0
+	move	*a9+,a1			;Percent to jmp
+	move	*a9+,a2,L
+	cmp	a1,a0
+	jrge	kgiscplp
+
+	move	a2,a9			;New addr
+	jruc	kgiscplp
+kginrj
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Jump
+
+	subk	1,a0			;kgi7
+	jrne	kginjmp
+
+	move	*a9+,a9,L
+	jruc	kgiscplp
+kginjmp
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CaHll function
+
+	exgpc	a9
+	jruc	kgiscplp
+kginocd
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Joy & button bits
+
+	move	*a9+,a3			;Get delay
+kgisetbx
+	move	a0,a1
+	sll	32-5,a0
+	srl	32-5,a0
+	move	a0,*a13(DRN_BUT)
+
+	srl	5,a1
+	move	*a13(FACING_DIR),a14
+	btst	PLAYER_RIGHT_BIT,a14
+	jrnz	kgirgt			;Facing rgt?
+
+	move	a1,a0			;0FHlip L&R bits
+	move	a1,a14
+	sll	32-2,a1
+	srl	3,a0			;Bit0=Rgt
+	sll	32-3,a14
+	srl	31,a14
+	sll	1,a14			;Bit1=Left
+	or	a0,a1
+	or	a14,a1
+	rl	2,a1
+kgirgt
+	move	a1,*a13(DRN_JOY)
+
+	move	a3,*a13(DRN_DELAY)
+	move	a3,a3
+	jrgt	kgidsdone
+kgidsabt
+	clr	a9
+kgidsdone
+	move	a9,*a13(DRN_ACT_p),L
+
+kgiunint
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CaHlc ctrl bit transitions
+kgix
+	move	*a13(DRN_BUT),a0
+kgibutx
+	move	*a13(DRN_BUTCHRG),a14
+	or	a14,a0
+	move	a0,*a13(DRN_BUT)
+	xor	a0,a6
+	move	a6,a1
+	and	a0,a6
+	move	a6,*a13(DRN_BUTDT)
+	andn	a0,a1
+	move	a1,*a13(DRN_BUTUT)
+
+	move	*a13(DRN_JOY),a0
+	xor	a0,a7
+	move	a7,a1
+	and	a0,a7
+	move	a7,*a13(DRN_JOYDT)
+	andn	a0,a1
+	move	a1,*a13(DRN_JOYUT)
+
+kgixx
+	rets
+
+
+SKLM	.macro	w,ad
+	.word	:w:,:w:+:ad:,:w:+:ad:*2,:w:+:ad:*3,:w:+:ad:*4
+	.endm
+
+kgigetup_t				;% to bump getup time
+	SKLM	10,2
+	SKLM	20,2
+	SKLM	30,2
+	SKLM	40,2
+	SKLM	50,2
+	SKLM	60,10
+kgiblkbase_t				;Base % to block
+	SKLM	10,2
+	SKLM	20,2
+	SKLM	30,1
+	SKLM	35,1
+	SKLM	40,1
+	SKLM	47,7
+kgiblkatk_t				;% to block per attack
+	.word	0,10,20,30,40
+	.word	50,50,50,50,50
+sklhhdly_t				;Max delay on hh
+	SKLM	150,-6
+	SKLM	120,-6
+	SKLM	90,-6
+	SKLM	60,-6
+	SKLM	28,-3
+	SKLM	13,-2
+sklhrdly_t				;Max delay on hh rev
+	SKLM	150,-6
+	SKLM	120,-6
+	SKLM	90,-6
+	SKLM	60,-6
+	SKLM	28,-3
+	SKLM	13,-2
+sklrep_t				;% to repeat
+	SKLM	20,4
+	SKLM	45,2
+	SKLM	55,4
+	SKLM	75,2
+	SKLM	85,2
+	SKLM	90,3
+
+
+;kgigetup_t				;% to bump getup time
+;	SKLM	5,2
+;	SKLM	15,1
+;	SKLM	20,2
+;	SKLM	30,2
+;	SKLM	40,4
+;	SKLM	60,10
+;kgiblkbase_t				;Base % to block
+;	SKLM	5,1
+;	SKLM	10,2
+;	SKLM	20,2
+;	SKLM	30,1
+;	SKLM	35,2
+;	SKLM	45,7
+;kgiblkatk_t				;% to block per attack
+;	.word	0,10,20,30,40
+;	.word	50,50,50,50,50
+;sklhhdly_t				;Max delay on hh
+;	SKLM	200,-10
+;	SKLM	150,-6
+;	SKLM	120,-9
+;	SKLM	70,-8
+;	SKLM	35,-4
+;	SKLM	15,-2
+;sklhrdly_t				;Max delay on hh rev
+;	SKLM	200,-10
+;	SKLM	150,-6
+;	SKLM	120,-8
+;	SKLM	70,-4
+;	SKLM	50,-7
+;	SKLM	15,-2
+;sklrep_t				;% to repeat
+;	SKLM	6,3
+;	SKLM	20,4
+;	SKLM	40,2
+;	SKLM	50,4
+;	SKLM	70,4
+;	SKLM	90,3
+;
+
+kgiwnshort_t
+	.long	bret_s_t,raz_s_t,utak_s_t,yoko_s_t
+	.long	shawn_s_t,bam_s_t,doink_s_t,doink_s_t,lex_s_t
+kgiwnmed_t
+	.long	bret_m_t,raz_m_t,utak_m_t,yoko_m_t
+	.long	shawn_m_t,bam_m_t,doink_m_t,doink_m_t,lex_m_t
+kgiwnlong_t
+	.long	bret_l_t,raz_l_t,utak_l_t,yoko_l_t
+	.long	shawn_l_t,bam_l_t,doink_l_t,doink_l_t,lex_l_t
+
+
+*******************************
+* Drone script commands
+
+BBL	.macro	w,w2,l
+	.byte	:w:,:w2:
+	.long	:l:
+	.endm
+
+DS_CODE	.macro
+	.word	8000h+0
+	.endm
+DS_CODEEND	.macro
+	exgpc	a9
+	.endm
+DS_SEEKTIL0	.macro
+	.word	8000h+1
+	.endm
+DS_RNDA	.macro	l
+	.word	8000h+2
+	.long	:l:
+	.endm
+DS_WTINT	.macro
+	.word	8000h+3
+	.endm
+DS_ABIFBLK	.macro
+	.word	8000h+4
+	.endm
+DS_CALL	.macro	a
+	.word	8000h+5
+	.long	:a:
+	.endm
+DS_RJMP	.macro	p,a
+	.word	8000h+6,:p:
+	.long	:a:
+	.endm
+DS_JMP	.macro	a
+	.word	8000h+7
+	.long	:a:
+	.endm
+DS_SLP1	.macro
+	.word	0c000h+0
+	.endm
+DS_END	.macro
+	.word	0,0
+	.endm
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		0BaHm bam scripts
+
+bam_s_t
+	BBL	MODE_HEADHOLD,-1,baM_hh
+	BBL	MODE_HEADHELD,-1,baM_hhr
+	BBL	MODE_OPPOVERHEAD,-1,baM_ooh
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,baM_n
+bam_m_t
+	BBL	MODE_HEADHOLD,-1,baM_hh
+	BBL	MODE_HEADHELD,-1,baM_hhr
+	BBL	MODE_OPPOVERHEAD,-1,baM_ooh
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,baMm_n
+
+baM_n	;Normal
+	.word	(baM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtpspx
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtpllsk		;Karate kick
+	.long	dtpspsk		;Pickup
+baM_n_
+baMm_n
+	.word	(baMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtpllsk		;Karate kick
+	.long	dtpspsk		;Pickup
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+baMm_n_
+baM_hh	;Holding head
+;	.word	1-1
+;	.long	dtpbahh
+	.word	-(7-1)
+	.long	dtpbahhpg		;Pogo
+	.long	dtplrrsp		;Pile drvr
+	.long	dtpjk		;Pickup
+	.long	dtpbahhrsk	;Knees (3 way)
+	.long	dtpbahhrsk
+	.long	dtpbahhrsk
+	.long	dtpspsk2		;Neck brkr
+
+baM_hhr ;Head held reversals
+	.word	4-1
+	.long	dtpk
+	.long	dtpbahhpg		;Pogo
+	.long	dtplrrsp		;Pile drvr
+	.long	dtpspsk2		;Neck brkr
+
+baM_ooh ;Holding opp over head
+	.word	2-1
+	.long	dtpk		;Slam
+	.long	dtpdsk		;Back brkr
+
+dtpbahhrsk ;Knees
+	.word	R_M+SK_M,2
+	.word	0,5
+;FIX! - chk timing
+	.word	SK_M,4, 0,4, SK_M,4, 0,4, SK_M,4, 0,4
+	DS_RNDA	sklrep_t
+	.word	SK_M,4, 0,4, SK_M,4, 0,4, SK_M,4, 0,4
+	DS_RJMP	33,dtpk		;Hip toss
+	DS_RJMP	33,dtpsp		;Pickup
+	.word	D_M+SP_M,0	;Pile drvr
+dtpbahhpg
+	.word	U_M,2, D_M,2, 0,2, D_M,2, SK_M,50
+	DS_RNDA	sklrep_t
+	.word	SP_M,2, 0,2, SP_M,2, 0,2, SP_M,2, 0,15	;Repeat
+	DS_RNDA	sklrep_t
+	.word	SP_M,2, 0,2, SP_M,2, 0,2, SP_M,2, 0,15
+	.word	SP_M,2, 0,2, SP_M,2, 0,2, SP_M,0
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Undertaker scripts
+
+utak_s_t
+	BBL	MODE_HEADHOLD,-1,utM_hh
+	BBL	MODE_HEADHELD,-1,M_hhr
+	BBL	MODE_CHOKEHOLD,-1,utM_chold
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,utM_n
+utak_m_t
+	BBL	MODE_HEADHOLD,-1,utM_hh
+	BBL	MODE_HEADHELD,-1,M_hhr
+	BBL	MODE_CHOKEHOLD,-1,utM_chold
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,utMm_n
+
+utM_n	;Normal
+;	.word	1-1
+;	.long	dtput
+	.word	(utM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpspx
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtpucut
+	.long	dtputshootps	;Fire push ghosts
+	.long	dtputshootpl	;Fire pull ghosts
+	.long	dtputtombhit	;Smash with tombstone
+	.long	dtpjp		;Slide choke
+utM_n_
+utMm_n
+;	.word	1-1
+;	.long	dtputshootpl
+	.word	(utMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtputshootps	;Fire push ghosts
+	.long	dtputshootpl	;Fire pull ghosts
+	.long	dtputtombhit	;Smash with tombstone
+	.long	dtpjp		;Slide choke
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+utMm_n_
+utM_hh	;Holding head
+	.word	-(6-1)
+	.long	dtpuddsk		;Pile drv
+	.long	dtplrrsp		;Neck brkr
+	.long	dtputhhrp
+	.long	dtpucut
+	.long	dtputtombhit	;Smash with tombstone
+	.long	dtputdk		;Face slam
+
+utM_chold ;Choke holding opp by neck
+	.word	7-1
+	.long	dtpp
+	.long	dtpk
+	.long	dtphtoss
+	.long	dtpucut
+	.long	dtputchup
+	.long	dtputdk		;Face slam
+	.long	dtpdsk		;Slam
+
+dtputshootps
+	.word	R_M,2, 0,2, R_M,2, K_M,2, 0,2
+	DS_WTINT
+	DS_ABIFBLK
+	.word	P_M+K_M,0
+dtputshootpl
+	.word	L_M,2, 0,2, L_M,2, K_M,2, 0,2
+	DS_WTINT
+	DS_ABIFBLK
+	.word	D_M+SP_M,0
+dtputtombhit
+	.word	R_M,2, 0,2, R_M,2, SK_M,5
+	DS_RNDA	sklrep_t
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,4, 0,4	;Repeat
+	DS_ABIFBLK
+	DS_RNDA	sklrep_t
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,4, 0,4
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,0
+
+dtputhhrp ;Knee & hdbuts
+	.word	R_M+P_M,2
+	.word	0,5
+;FIX! - chk timing
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+	DS_RNDA	sklrep_t
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+	DS_RJMP	50,dtpsp		;Fly kick
+	.word	K_M,0		;Neck brkr
+
+dtputchup ;Knee & hdbuts
+	.word	U_M+P_M,2
+	.word	0,5
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+	DS_RNDA	sklrep_t
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+	DS_RJMP	50,dtpsp		;Fly kick
+	.word	K_M,0		;Neck brkr
+
+dtputdk	;Face slam
+	.word	D_M,2, 0,2, D_M+K_M,2
+	DS_RNDA	sklrep_t
+	.word	0,5
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4	;Repeat
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+	DS_RNDA	sklrep_t
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,0
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		0DHoink scripts
+
+doink_s_t
+	BBL	MODE_HEADHOLD,-1,doM_hh
+	BBL	MODE_HEADHELD,-1,doM_hhr
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,doM_n
+doink_m_t
+	BBL	MODE_HEADHOLD,-1,doM_hh
+	BBL	MODE_HEADHELD,-1,doM_hhr
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,doMm_n
+
+doM_n	;Normal
+;	.word	1-1
+;	.long	dtpeslap
+	.word	(doM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpspx
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtpucut
+	.long	dtpdoham		;Hammer
+	.long	dtpdoeslap	;Ear slap
+	.long	dtpdopbig		;Boxing punch
+doM_n_
+doMm_n
+;	.word	1-1
+;	.long	dtpdoeslap
+	.word	(doMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtpdoham		;Hammer
+	.long	dtpdoeslap	;Ear slap
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+doMm_n_
+doM_hh	;Holding head
+	.word	-(8-1)
+	.long	dtpuddskk		;Face slam
+	.long	dtplrrsp		;Pile drv
+	.long	dtpdoham
+	.long	dtpj2p		;Buzz
+	.long	dtphhp3k		;P & fly kick
+	.long	dtphhp4
+	.long	dtphhp3pd		;P & pdrv
+	.long	dtphhsk3pd	;K & pdrv
+
+doM_hhr ;Head held reversals
+	.word	3-1
+	.long	dtpk
+	.long	dtpuddskk		;Face slam
+	.long	dtplrrsp		;Pile drv
+
+dtpdoham	.word	R_M,2, 0,2, R_M,2, SK_M,10
+	DS_RNDA	sklrep_t
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,4, 0,4	;Repeat
+	DS_RNDA	sklrep_t
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,4, 0,4
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,0
+
+dtpdoeslap
+	.word	D_M,2, D_M+R_M,2, R_M,2, P_M,2
+	DS_RNDA	sklrep_t
+	.word	0,5, P_M,5, 0,5, P_M,5			;Repeat
+	DS_RNDA	sklrep_t
+	.word	0,5, P_M,5, 0,5, P_M,5
+	.word	0,5, P_M,5, 0,5, P_M,0
+
+dtpdopbig	.word	P_M,2, 0,2, P_M,2, 0,2, P_M,2, 0,2, P_M,2, 0,2
+	.word	P_M,2, 0,2, P_M,2, 0,2, P_M,0
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Yoko scripts
+
+yoko_s_t
+	BBL	MODE_HEADHOLD,-1,yoM_hh
+	BBL	MODE_HEADHELD,-1,M_hhr
+	BBL	MODE_OPPOVERHEAD,-1,yoM_ooh
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,yoM_n
+yoko_m_t
+	BBL	MODE_HEADHOLD,-1,yoM_hh
+	BBL	MODE_HEADHELD,-1,M_hhr
+	BBL	MODE_OPPOVERHEAD,-1,yoM_ooh
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,yoMm_n
+
+yoM_n	;Normal
+;	.word	1-1
+;	.long	dtpeslap
+	.word	(yoM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpspx
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtpjp		;Speed jab
+	.long	dtprrsk		;Scissor squish
+	.long	dtprrp		;Gut push
+	.long	dtpspsk		;Pickup
+yoM_n_
+yoMm_n
+;	.word	1-1
+;	.long	dtpdoeslap
+	.word	(yoMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtpjp		;Speed jab
+	.long	dtprrsk		;Scissor squish
+	.long	dtpspsk		;Pickup
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+yoMm_n_
+yoM_hh	;Holding head
+	.word	-(4-1)
+	.long	dtpuddsk		;Vert suplex
+	.long	dtplrrsp		;Scissor squish
+	.long	dtpj2p		;Salt
+	.long	dtpucut
+
+yoM_ooh ;Holding opp over head
+	.word	2-1
+	.long	dtpk		;Slam
+	.long	dtpdsk		;Spinning slam
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Shawn scripts
+
+shawn_s_t
+	BBL	MODE_HEADHOLD,-1,shM_hh
+	BBL	MODE_HEADHELD,-1,shM_hhr
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,shM_n
+shawn_m_t
+	BBL	MODE_HEADHOLD,-1,shM_hh
+	BBL	MODE_HEADHELD,-1,shM_hhr
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,shMm_n
+
+shM_n	;Normal
+;	.word	1-1
+;	.long	dtpeslap
+	.word	(shM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpspx
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtpllsk		;Karate kick
+	.long	dtpjkk		;Speed kick
+	.long	dtprrsk		;Frankensteiner
+	.long	dtprrk		;Sliding kick toss
+	.long	dtpjisp		;Flipslam
+shM_n_
+shMm_n
+;	.word	1-1
+;	.long	dtpdoeslap
+	.word	(shMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtpllsk		;Karate kick
+	.long	dtpjkk		;Speed kick
+	.long	dtprrsk		;Frankensteiner
+	.long	dtprrk		;Sliding kick toss
+	.long	dtpjisp		;Flipslam
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+shMm_n_
+shM_hh	;Holding head
+	.word	-(8-1)
+	.long	dtpuddsk		;German suplex
+	.long	dtplrrsp		;Frankensteiner
+	.long	dtprsk4k		;Quick knees
+	.long	dtpjkk		;Speed kick
+	.long	dtprp		;Arm break
+	.long	dtprsp4		;Jmp head butt
+	.long	dtprk4		;Speed kick
+	.long	dtplrrk		;Kick toss
+
+shM_hhr ;Head held reversals
+	.word	5-1
+	.long	dtpk
+	.long	dtpuddsk		;German suplex
+	.long	dtplrrsp		;Frankensteiner
+	.long	dtplrrk		;Kick toss
+	.long	dtpjkk		;Speed kick
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		0BHret scripts
+
+bret_s_t
+	BBL	MODE_HEADHOLD,-1,brM_hh
+	BBL	MODE_HEADHELD,-1,brM_hhr
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,brM_n
+bret_m_t
+	BBL	MODE_HEADHOLD,-1,brM_hh
+	BBL	MODE_HEADHELD,-1,brM_hhr
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,brMm_n
+
+brM_n	;Normal
+;	.word	1-1
+;	.long	dtpeslap
+	.word	(brM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtpspx
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtpucut
+	.long	dtpddp		;Leap ucut
+	.long	dtpjp		;Face rake
+	.long	dtpj2sp		;Rolling ucut
+	.long	dtpllsk		;Fast kick
+brM_n_
+brMm_n
+;	.word	1-1
+;	.long	dtpdoeslap
+	.word	(brMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtpddp		;Leap ucut
+	.long	dtpjp		;Face rake
+	.long	dtpj2sp		;Rolling ucut
+	.long	dtpllsk		;Fast kick
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+brMm_n_
+brM_hh	;Holding head
+	.word	-(7-1)
+	.long	dtpuddsk		;Neck DDT
+	.long	dtplrrsp		;Pile drvr
+	.long	dtpucut
+	.long	dtpjpx		;Face drvr
+;FIX! - broke
+	.long	dtprp		;Arm break
+	.long	dtprsp		;Head to knee
+;FIX! - broke
+	.long	dtplrrp		;Knee to face
+
+brM_hhr ;Head held reversals
+	.word	4-1
+	.long	dtpk
+	.long	dtpuddsk		;Neck DDT
+	.long	dtplrrsp		;Pile drvr
+	.long	dtplrrp		;Kick toss
+;	.long	dtpjk		;
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Razor scripts
+
+raz_s_t
+	BBL	MODE_HEADHOLD,-1,rzM_hh
+	BBL	MODE_HEADHELD,-1,rzM_hhr
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,rzM_n
+raz_m_t
+	BBL	MODE_HEADHOLD,-1,rzM_hh
+	BBL	MODE_HEADHELD,-1,rzM_hhr
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,rzMm_n
+
+rzM_n	;Normal
+;	.word	1-1
+;	.long	dtpeslap
+	.word	(rzM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtpspx
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtpucut
+	.long	dtpjp		;Down slash
+	.long	dtprrk		;Rug slam
+rzM_n_
+rzMm_n
+;	.word	1-1
+;	.long	dtpdoeslap
+	.word	(rzMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtpjp		;Down slash
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+rzMm_n_
+rzM_hh	;Holding head
+	.word	-(6-1)
+	.long	dtpuddsk		;P drvr
+	.long	dtplrrsp		;Razors edge
+	.long	dtprzup4		;Slashes up
+	.long	dtprzdp4		;Slashes dn
+	.long	dtpucut
+	.long	dtprzuddksp	;Rug shake
+
+rzM_hhr ;Head held reversals
+	.word	4-1
+	.long	dtpk
+	.long	dtpuddsk		;P drvr
+	.long	dtplrrsp		;Razors edge
+	.long	dtprzuddksp	;Rug shake
+
+dtprzup4	.word	U_M+P_M,5, 0,5, P_M,5, 0,5, P_M,5, 0,5, P_M,0
+dtprzdp4	.word	D_M+P_M,5, 0,5, P_M,5, 0,5, P_M,5, 0,5, P_M,0
+
+dtprzuddksp
+	.word	U_M,2, D_M,2, 0,2, D_M,2, K_M,2
+	DS_RNDA	sklrep_t
+	.word	0,20
+	.word	SP_M,6, 0,6, SP_M,6, 0,6, SP_M,6, 0,6	;Repeat
+	DS_RNDA	sklrep_t
+	.word	SP_M,6, 0,6, SP_M,6, 0,6, SP_M,0
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Lex scripts
+
+lex_s_t
+	BBL	MODE_HEADHOLD,-1,lxM_hh
+	BBL	MODE_HEADHELD,-1,lxM_hhr
+	BBL	MODE_OPPOVERHEAD,-1,lxM_ooh
+	BBL	-1,MODE_ONGROUND,M_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,lxM_n
+lex_m_t
+	BBL	MODE_HEADHOLD,-1,lxM_hh
+	BBL	MODE_HEADHELD,-1,lxM_hhr
+	BBL	MODE_OPPOVERHEAD,-1,lxM_ooh
+	BBL	-1,MODE_ONGROUND,Mm_og
+	BBL	-1,MODE_ONTURNBKL,M_opptbkl
+	BBL	-1,MODE_CLIMBTURNBKL,M_opptbkl
+	WL	-1,lxMm_n
+
+lxM_n	;Normal
+;	.word	1-1
+;	.long	dtpeslap
+	.word	(lxM_n_-$)/32-1
+	.long	dtprun
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtpspx
+	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtphtoss,dtphtoss
+	.long	dtprrp		;Elbow to gut
+	.long	dtpspsk		;Pickup
+lxM_n_
+lxMm_n
+;	.word	1-1
+;	.long	dtpdoeslap
+	.word	(lxMm_n_-$)/32-1
+	.long	drn_seek
+	.long	drn_retreat
+	.long	dtprun
+	.long	dtpsp
+	.long	dtpsk
+;	.long	dtphgrab,dtphgrab,dtphgrab
+	.long	dtpflng
+	.long	dtprrp		;Elbow to gut
+	.long	dtpspsk		;Pickup
+	.long	dtpfast		;Hyper
+	.long	dtpchrg
+lxMm_n_
+lxM_hh	;Holding head
+	.word	-(4-1)
+	.long	dtpuddsk		;Neck DDT
+	.long	dtplrrsp		;Vert suplex
+	.long	dtprsk4k		;Quick knees & v suplex
+	.long	dtpjk		;Pickup
+
+lxM_hhr ;Head held reversals
+	.word	4-1
+	.long	dtpk
+	.long	dtpuddsk		;Neck DDT
+	.long	dtplrrsp		;V suplex
+	.long	dtpjk		;Pickup
+
+lxM_ooh ;Holding opp over head
+	.word	3-1
+	.long	dtpp		;Slam
+	.long	dtpusp		;Head slam
+	.long	dtpusk		;Back brkr
+
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Generic scripts
+
+M_og	;Opp on gnd
+	.word	6-1
+;	.long	drn_retreat
+	.long	dtpp,dtpsp,dtpk,dtpsk
+	.long	dtpoghg,dtpoghg
+Mm_og
+	.word	3-1
+	.long	drn_seek
+;FIX! - Rzr rug shake
+	.long	dtpseeksp
+	.long	dtpseeksk
+
+M_opptbkl ;Opp on turnbkl
+	.word	1-1
+	.long	dtprun
+
+M_hhr	;Head held reversals
+	.word	3-1
+	.long	dtpk
+	.long	dtpuddsk
+	.long	dtplrrsp
+
+M_shrtblkr
+	.word	2-1
+	.long	dtphgrab
+	.long	dtphtoss
+M_shrtblkrdl
+	.word	2-1
+	.long	dtphgrab
+	.long	dtpspx
+;	.long	drn_climbtb
+
+dtpspx	.word	SP_M,2, 0,2, SP_M,2, 0,2, SP_M,2
+	.word	SP_M,2, 0,2, SP_M,2, 0,2, SP_M,0
+
+dtpp	.word	P_M,0
+dtpsp	.word	SP_M,0
+dtpk	.word	K_M,0
+dtpsk	.word	SK_M,0
+dtpspsk	.word	SP_M+SK_M,0
+dtprp	.word	R_M+P_M,0
+dtprsp	.word	R_M+SP_M,0
+dtprsp4	.word	R_M+SP_M,4, 0,4, SP_M,4, 0,4, SP_M,4, 0,4, SP_M,0
+dtprk4	.word	R_M+K_M,4, 0,4, K_M,4, 0,4, K_M,4, 0,4, K_M,0
+dtprsk	.word	R_M+SK_M,0
+dtprsk4k	.word	R_M+SK_M,4, 0,4, SK_M,4, 0,4, SK_M,4, 0,4, SK_M,4, K_M,0
+dtprrp	.word	R_M,2, 0,2, R_M,2, P_M,0
+dtprrk	.word	R_M,2, 0,2, R_M,2, K_M,0
+dtprrsk	.word	R_M,2, 0,2, R_M,2, SK_M,0
+dtpllsk	.word	L_M,2, 0,2, L_M,2, SK_M,0
+dtpdp	.word	D_M+P_M,0
+dtpdk	.word	D_M+K_M,0
+dtpdsk	.word	D_M+SK_M,0
+dtpddp	.word	D_M,2, 0,2, D_M,2, P_M,0
+dtpusp	.word	U_M+SP_M,0
+dtpusk	.word	U_M+SK_M,0
+
+dtprun
+	DS_CALL	drone_chkrun
+	.word	P_M+K_M,0	;Skipped if bad
+	DS_END
+hgrab
+dtphgrab	.word	R_M,2, 0,2, R_M,2, SP_M,0
+dtpflng	.word	L_M,2, 0,2, L_M+SP_M,0		;Grab fling
+slhtoss	.word	L_M,2, 0,2, L_M,2, P_M,0	;Hip toss
+dtphtoss	.word	L_M,2, 0,2, L_M+P_M,0		;Hip toss
+dtpucut	.word	D_M+SP_M,0			;Uppercut
+
+dtpseeksp
+	DS_SEEKTIL0
+	.word	SP_M,0
+dtpseeksk
+	DS_SEEKTIL0
+	.word	SK_M,0
+dtpchrg
+	DS_CALL	drone_chrg
+	DS_END
+
+dtpoghg	;Opp on gnd head grab
+	.word	D_M,2, SP_M,0
+
+dtpfast	;Works once
+	.word	L_M,2, L_M+D_M,2, D_M,2, D_M+R_M,2
+	.word	R_M,2, R_M+U_M,2, U_M,2, U_M+L_M,0
+
+;dtplrrspp	;Pile drvr/Neck brkr
+;	.word	L_M,2, R_M,2, 0,2, R_M,2, SP_M,2
+;	DS_RNDA	sklrep_t
+;	.word	0,5
+;	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4	;Repeat
+;	DS_RNDA	sklrep_t
+;	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+;	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,0
+
+dtphhp3k	;Punch*3, kick
+	.asg	6,T
+	.word	R_M+P_M,T, R_M,T, R_M+P_M,T, R_M,T
+	.word	R_M+P_M,T, R_M,T, R_M+P_M,T, R_M,T
+	.word	R_M+K_M,2
+	.word	0,10
+	DS_END
+
+dtphhp4	;Punch*4
+	.asg	6,T
+	.word	R_M+P_M,T, R_M,T, R_M+P_M,T, R_M,T
+	.word	R_M+P_M,T, R_M,T, R_M+P_M,T, R_M,T
+	.word	R_M+P_M,T, R_M,T, R_M+P_M,2
+	.word	0,10
+	DS_END
+
+dtphhp3pd	;Punch*3, piledriver
+	.asg	6,T
+	.word	R_M+P_M,T, R_M,T, R_M+P_M,T, R_M,T
+	.word	R_M+P_M,T, R_M,T, R_M+P_M,T, R_M,T+5
+	.word	D_M+SP_M,2
+	.word	0,10
+	DS_END
+
+dtphhsk3pd ;Knee*3, piledriver
+	.asg	6,T
+	.word	R_M+SK_M,T, R_M,T, R_M+SK_M,T, R_M,T
+	.word	R_M+SK_M,T, R_M,T, R_M+SK_M,T, R_M,T
+	.word	SP_M,2
+	.word	0,10
+	DS_END
+
+dtpj2p	.word	L_M+D_M,2
+dtpjp	.word	D_M,2, D_M+R_M,2, R_M,2, P_M,0
+dtpj2sp	.word	L_M+D_M,2
+dtpjsp	.word	D_M,2, D_M+R_M,2, R_M,2, SP_M,0
+dtpjk	.word	D_M,2, D_M+R_M,2, R_M,2, K_M,0
+dtpjkk	.word	D_M,2, D_M+R_M,2, R_M,2, K_M,4
+	.word	0,4, K_M,4, 0,4, K_M,4
+	.word	0,4, K_M,4, 0,4, K_M,0
+dtpjisp	.word	U_M,2, U_M+R_M,2, R_M,2, SP_M,0
+
+dtpjpx	.word	D_M,2, D_M+R_M,2, R_M,2, P_M,0
+	DS_RNDA	sklrep_t
+;FIX - chk
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,0
+
+	;Reversals
+
+dtpuddsk
+	.word	U_M,2, D_M,2, 0,2, D_M,2, SK_M,0
+
+dtpuddskk	;Face slam/Pile drv
+	.word	U_M,2, D_M,2, 0,2, D_M,2, SK_M,2
+	DS_RNDA	sklrep_t
+	.word	0,8
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,4, 0,4	;Repeat
+	DS_RNDA	sklrep_t
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,4, 0,4
+	.word	K_M,4, 0,4, K_M,4, 0,4, K_M,0
+
+dtpuddsksp ;Repeat SP
+	.word	U_M,2, D_M,2, 0,2, D_M,2, SK_M,2
+	DS_RNDA	sklrep_t
+	.word	SP_M,4, 0,4, SP_M,4, 0,4, SP_M,0
+dtplrrp
+	.word	L_M,2, R_M,2, 0,2, R_M,2, P_M,0
+dtplrrsp
+	.word	L_M,2, R_M,2, 0,2, R_M,2, SP_M,0
+dtplrrk
+	.word	L_M,2, R_M,2, 0,2, R_M,2, K_M,0
+dtpspsk2
+	.word	SP_M,2, SK_M,2, SP_M,2, SK_M,0
+
+
+********************************
+
+bret_l_t
+raz_l_t
+utak_l_t
+yoko_l_t
+shawn_l_t
+bam_l_t
+doink_l_t
+lex_l_t
+	BBL	-1,MODE_ONGROUND,dtpmdog
+	WL	-1,dtpmdn
+dtpmdn
+;	.word	1-1
+;	.long	drn_climbtb
+	.word	4-1
+	.long	drn_seek
+	.long	dtprun
+	.long	drn_climbtb
+	.long	drn_taunt
+dtpmdog
+	.word	3-1
+	.long	drn_seek
+	.long	drn_seek
+	.long	dtprun
+
+
+*******************************
+
+ SUBRP	drone_chrg
+
+	move	*a13(DRN_BUTCHRG),a14
+	jrnz	tjxx			;Already charging?
+
+	movk	20h,a0
+	callr	rnd
+
+	move	*a13(WRESTLERNUM),a1
+	X64	a1
+	addi	tjxwres_t,a1
+	add	a0,a1
+	move	*a1,a1,L		;Get * script
+
+	move	*a1+,a0
+	move	a0,*a13(DRN_BUTCHRG)
+;FIX!-all same
+	move	*a1+,a0
+	move	a0,*a13(DRN_BUTCHRGDLY)
+	move	a1,*a13(DRN_BUTCHRG_p),L
+
+tjxx
+	rets
+
+tjxwres_t
+	.long	tjxbrt,tjxbrt
+	.long	tjxraz,tjxraz2
+	.long	tjxut,tjxut2
+	.long	tjxyok,tjxyok
+	.long	tjxshn,tjxshn2
+	.long	tjxbam,tjxbam2
+	.long	tjxdnk,tjxdnk2
+	.long	0,0
+	.long	tjxlex,tjxlex2
+
+tjxraz
+	.word	SP_M,TSEC*2		;Slashes
+	DS_JMP	tjxrun
+tjxut
+	.word	P_M,TSEC*2		;Neck breaker
+	DS_JMP	tjxrun
+tjxyok
+	.word	P_M,TSEC*2		;Salt throw
+	DS_CODE
+	movk	1,a0
+	move	a0,*a13(DRN_MODE)	;Aggressive
+	DS_CODEEND
+	DS_JMP	tjxrun
+tjxshn
+	.word	P_M,TSEC*2		;Suplex
+	DS_JMP	tjxrun
+tjxbam
+	.word	P_M,TSEC*2		;Fire punch
+	DS_CODE
+	clr	a0
+	move	a0,*a13(DRN_BUTCHRG)	;Fire it
+	DS_CODEEND
+	.word	0,4
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4	;Repeat
+	DS_RNDA	sklrep_t
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+	DS_RNDA	sklrep_t
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,4, 0,4
+	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,0
+tjxbam2
+	.word	SP_M,TSEC*2		;Neck brkr
+	DS_JMP	tjxrun
+tjxdnk
+	.word	P_M,TSEC*2		;Buzzer
+	DS_JMP	tjxrun
+tjxdnk2
+	.word	P_M,TSEC*2		;Buzzer (leap)
+	.word	R_M,2
+	DS_CODE
+	clr	a0
+	move	a0,*a13(DRN_BUTCHRG)	;Fire it
+	DS_CODEEND
+	.word	R_M,2			;Need?
+	DS_END
+tjxlex
+	.word	P_M,TSEC*2		;Smash
+	DS_JMP	tjxrun
+tjxlex2
+tjxbrt
+tjxraz2
+tjxut2
+tjxshn2
+	.word	SK_M,TSEC*2		;Flying kick
+;	DS_JMP	tjxrun
+
+tjxrun
+	DS_CALL	drone_chkrun
+	.word	P_M+K_M,0		;Run & end
+	DS_CODE
+
+	move	*a13(OBJ_XPOSINT),a0
+	move	*a8(OBJ_XPOSINT),a14
+	sub	a14,a0
+	abs	a0
+	cmpi	150,a0
+	jrge	tjxrx			;X too far?
+
+	move	*a13(OBJ_ZPOSINT),a1
+	move	*a8(OBJ_ZPOSINT),a14
+	sub	a14,a1
+	abs	a1
+	cmpi	40,a1
+	jrge	tjxrx			;Z too far?
+
+	clr	a0
+	move	a0,*a13(DRN_BUTCHRG)	;Fire it
+tjxrx
+	DS_CODEEND
+	DS_END
+
+
+
+*******************************
+
+ SUBRP	drn_combo
+
+	DS_CODE
+
+	move	*a13(WRESTLERNUM),a0
+	X32	a0
+	addi	wyhwres_t,a0
+	move	a9,a1
+	move	*a0,a9,L		;Get * script
+	jump	a1			;Ret
+
+wyhwres_t
+	.long	wyhbrt,wyhraz,wyhut,wyhyok
+	.long	wyhshn,wyhbam,wyhdnk,wyhdnk,wyhlex
+wyhbrt
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhbrt2
+	.word	P_M,2
+	DS_JMP	wyhcstrt
+wyhbrt2
+	.word	SK_M,2
+	DS_JMP	wyhcstrt
+
+wyhraz
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhraz2
+	.word	SP_M,2
+	DS_JMP	wyhcstrt
+wyhraz2
+	.word	K_M,2
+	DS_JMP	wyhcstrt
+
+wyhut
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhut2
+	.word	SK_M,2
+	DS_JMP	wyhcstrt
+wyhut2
+	.word	K_M,2
+	DS_JMP	wyhcstrt
+
+wyhyok
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhyok2
+	.word	SP_M,2
+	DS_JMP	wyhcstrt
+wyhyok2
+	.word	P_M,2
+	DS_JMP	wyhcstrt
+
+wyhshn
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhshn2
+	.word	P_M,2
+	DS_JMP	wyhcstrt
+wyhshn2
+	.word	K_M,2
+	DS_JMP	wyhcstrt
+
+wyhbam
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhbam2
+	.word	SP_M,2
+	DS_JMP	wyhcstrt
+wyhbam2
+	.word	P_M,2
+	DS_JMP	wyhcstrt
+
+wyhdnk
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhdnk2
+	.word	SP_M,2
+	DS_JMP	wyhcstrt
+wyhdnk2
+	.word	SK_M,2
+	DS_JMP	wyhcstrt
+
+wyhlex
+	.word	R_M,2, 0,2, R_M,2, 0,2
+	DS_RJMP	50,wyhlex2
+	.word	SK_M,2
+	DS_JMP	wyhcstrt
+wyhlex2
+	.word	K_M,2
+	DS_JMP	wyhcstrt
+
+	.asg	6,T
+wyhcstrt
+	.word	0,2
+	DS_RJMP	25,wyhcsk
+	DS_RJMP	25,wyhcp
+	DS_RJMP	25,wyhck
+wyhcsp
+	.word	SP_M,T, 0,T, SP_M,T, 0,T
+	.word	SP_M,T, 0,T, SP_M,T, 0,T
+	DS_RNDA	sklrep_t
+	DS_JMP	wyhcstrt
+wyhcsk
+	.word	SK_M,T, 0,T, SK_M,T, 0,T
+	.word	SK_M,T, 0,T, SK_M,T, 0,T
+	DS_RNDA	sklrep_t
+	DS_JMP	wyhcstrt
+wyhcp
+	.word	P_M,T, 0,T, P_M,T, 0,T
+	.word	P_M,T, 0,T, P_M,T, 0,T
+	DS_RNDA	sklrep_t
+	DS_JMP	wyhcstrt
+wyhck
+	.word	K_M,T, 0,T, K_M,T, 0,T
+	.word	K_M,T, 0,T, K_M,T, 0,T
+	DS_RNDA	sklrep_t
+	DS_JMP	wyhcstrt
+
+
+
+*******************************
+
+tpglp
+	DS_CODEEND
+	DS_SLP1
+
+ SUBRP	drn_seek
+
+	DS_CODE
+
+	move	b6,a0
+	jrz	tpgskok
+	subk	MODE_BLOCK,a0
+	jrne	tpgx
+tpgskok
+	movi	3fh,a0
+	callr	rnd
+	jrz	tpgx
+	callr	drone_seek
+	jrnz	tpglp
+tpgx
+	DS_CODEEND
+	DS_END
+
+
+*******************************
+* Get real close
+
+ylulp
+	DS_CODEEND
+	DS_SLP1
+
+ SUBRP	drn_seekclose
+
+	DS_CODE
+
+	move	b6,a0
+	jrz	yluskok
+	subk	MODE_BLOCK,a0
+	jrne	ylux
+yluskok
+	movi	3fh,a0
+	callr	rnd
+	jrz	ylux
+
+	move	*a13(OBJ_XPOSINT),a14
+	movk	32,a2
+	move	*a8(OBJ_XPOSINT),a0
+	cmp	a0,a14
+	jrge	ylutorgt
+	neg	a2
+ylutorgt
+	add	a2,a0
+
+	move	*a8(OBJ_ZPOSINT),a1
+	movk	23,a2
+	callr	drone_seekxz
+	jrnz	ylulp
+ylux
+	DS_CODEEND
+	DS_END
+
+
+*******************************
+
+ SUBRP	drn_retreat
+
+	DS_CODE
+	movk	4,a0			;Far
+	move	a0,*a13(DRN_SEEKDIST)
+isplp
+	callr	drone_seekdirdist
+	DS_CODEEND
+	DS_SLP1
+	DS_CODE
+	movk	1fh,a0
+	callr	rnd
+	jrnz	isplp
+
+	DS_CODEEND
+	DS_END
+
+
+*******************************
+* Check if running would be OK
+* A9+32 if bad
+
+ SUBRP	drone_chkrun
+
+	move	*a13(OBJ_XPOSINT),a0
+	move	*a13(OBJ_ZPOSINT),a1
+
+	move	*a13(FACING_DIR),a2
+
+	move	*a13(INRING),a14
+	jrnz	cayout			;Out of ring?
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+	cmpi	MODE_ONGROUND,b7
+	jreq	cayx
+;	subk	MODE_INAIR2,a14
+;	jreq	cayx			;Jumping on me?
+
+	move	*a13(CLOSEST_ZDIST),a1
+	cmpi	70,a1
+	jrge	cayx			;Z far enough?
+
+	subk	30,a1
+	jrle	cayx			;Z close enough?
+
+	move	*a13(CLOSEST_XDIST),a0
+	cmpi	150,a0
+	jrge	cayx			;X far enough?
+
+;	btst	PLAYER_RIGHT_BIT,a2
+;	jrz	cayl			;Facing left?
+
+	jruc	caybad
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+cayout
+	btst	PLAYER_RIGHT_BIT,a2
+	jrz	cayol			;Facing left?
+
+	cmpi	RING_X_CENTER+500,a0
+	jrge	caybad			;Hit rgt crowd?
+
+	cmpi	RING_TOP-10,a1
+	jrlt	cayrrok
+	cmpi	RING_BOT+10,a1
+	jrgt	cayrrok
+	cmpi	RING_X_CENTER,a0
+	jrge	cayrrok
+	cmpi	RING_X_CENTER-300,a0
+	jrge	caybad			;Hit rgt ring?
+cayrrok
+	jruc	cayx
+cayol
+	cmpi	RING_X_CENTER-500,a0
+	jrle	caybad			;Hit lft crowd?
+
+	cmpi	RING_TOP-10,a1
+	jrlt	caylrok
+	cmpi	RING_BOT+10,a1
+	jrgt	caylrok
+	cmpi	RING_X_CENTER,a0
+	jrle	caylrok
+	cmpi	RING_X_CENTER+300,a0
+	jrle	caybad			;Hit lft ring?
+caylrok
+;FIX!
+	jruc	cayx
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+caybad
+	addk	32,a9			;Skip script run buttons
+
+cayx
+	rets
+
+
+*******************************
+* Control runner
+
+gcarsk
+	movk	10,a2
+	callr	drone_seek2
+	andni	MOVE_LEFT+MOVE_RIGHT,a0		;0 lft & rgt
+	move	a0,*a13(DRN_JOY)
+	DS_CODEEND
+	DS_SLP1
+
+ SUBRP	drn_run
+
+	DS_CODE
+	move	b6,a0
+	subk	MODE_RUNNING,a0
+	jreq	gcamdok
+	subk	MODE_BOUNCING-MODE_RUNNING,a0
+	jrne	gcaabrt
+gcamdok
+	movi	01ffh,a0		;9.6 sec
+	callr	rnd
+	jrz	gcabrkrun			;Breakout?
+
+	move	*a13(OBJ_XVEL+16),a4
+	sll	3,a4			;*8
+	move	*a8(OBJ_XVEL+16),a1
+	sll	5,a1			;*32
+
+	move	*a8(OBJ_XPOSINT),a0
+	add	a1,a0
+	move	*a13(OBJ_XPOSINT),a1
+	add	a4,a1
+	move	a1,a3
+	sub	a1,a0
+	move	a4,a1
+	xor	a0,a1
+	abs	a0
+
+	move	*a13(CLOSEST_ZDIST),a2
+
+	move	*a13(INRING),a14
+	jrz	gcainr			;In ring?
+
+	cmpi	300,a0
+	jrgt	gcaering			;Too far?
+
+	move	a1,a1
+	jrn	gcabrkrun			;Running away?
+
+	subk	30,a2
+	jrgt	gcabrkseek		;Too far?
+
+	jruc	gcacont
+
+gcainr
+	move	a4,a4
+	jrn	gcalrp			;Towards L rope?
+
+	cmpi	RING_X_CENTER+210,a3
+	jrlt	gcarpok			;Won't hit R rope?
+	jruc	gcachkopp
+gcalrp
+	cmpi	RING_X_CENTER-210,a3
+	jrgt	gcarpok			;Won't hit L rope?
+gcachkopp
+	move	*a8(GETUP_TIME),a14
+	jrgt	gcarpok			;Out of control?
+
+	cmpi	MODE_ONGROUND,b7
+	jreq	gcarpok
+
+	cmpi	300,a0
+	jrgt	gcarpok			;Opp X far?
+
+	cmpi	MODE_RUNNING,b7
+	jreq	gcaoprun
+
+	cmpi	180,a0
+	jrgt	gcarpok			;Opp X far?
+gcaoprun
+	cmpi	90,a2
+	jrlt	gcabrkrun			;Opp Z close?
+
+gcarpok
+
+	move	a1,a1
+	jrn	gcarsk			;Running away?
+gcacont
+	cmpi	MODE_INAIR2,b7
+	jreq	gcabrkrun
+
+
+	subk	30,a2
+	jrgt	gcarsk			;Z too far?
+
+	cmpi	250,a0
+	jrgt	gcarsk			;X too far?
+
+	move	a0,a2
+
+	movi	120,a0
+	callr	rndrng0
+	addi	130,a0
+
+	cmp	a0,a2
+	jrgt	gcarsk			;X too far?
+
+
+;	movk	3,a0
+;	callr	rnd
+;	jrz	gcaigpup			;25% ignore?
+
+	move	b7,a0
+	subk	MODE_PUPPET2,a0
+	jreq	gcabrkrun
+	subk	MODE_PUPPET-MODE_PUPPET2,a0
+	jreq	gcabrkrun
+	cmpi	MODE_HEADHELD,b7
+	jreq	gcabrkrun
+	cmpi	MODE_HEADHOLD,b7
+	jreq	gcabrkrun
+	cmpi	MODE_ATTACHED,b7
+	jreq	gcabrkrun
+;gcaigpup
+
+	move	*a13(DRN_BUTCHRG),a0
+	jrz	gcanchrg
+	move	*a13(DRN_BUTCHRGDLY),a0
+	jrgt	gcanchrg
+	clr	a0
+	move	a0,*a13(DRN_BUTCHRG)	;Fire it
+	jruc	gcaabrt
+gcanchrg
+	DS_CODEEND
+	DS_RJMP	33,gcak
+	DS_RJMP	33,gcask
+	.word	SP_M,0
+gcak	.word	K_M,0
+gcask	.word	SK_M,0
+
+gcaabrt
+	DS_CODEEND
+	DS_END
+
+gcabrkrun
+	DS_CODEEND
+	.word	L_M,0
+
+gcaering
+	DS_CODEEND
+	.word	L_M,2
+	DS_JMP	drn_enterring
+
+gcabrkseek
+	DS_CODEEND
+	.word	L_M,2
+	DS_JMP	drn_seek
+
+
+
+*******************************
+* Opponent running
+
+ SUBRP	drn_oprun
+
+	DS_CODE
+
+	movk	7,a0
+	callr	rnd
+	jrnz	cqnabrt			;Skip?
+
+	move	*a8(OBJ_XPOSINT),a0
+	move	*a13(OBJ_XPOSINT),a1
+;	move	a1,a3
+	sub	a1,a0
+	move	*a8(OBJ_XVEL+16),a1
+;	move	a1,a4
+	xor	a0,a1
+	abs	a0
+
+	move	*a13(CLOSEST_ZDIST),a2
+	cmp	a0,a2
+	jrgt	cqnabrt			;Z dist > X dist?
+
+	move	a1,a1
+	jrn	cqnrun			;Running away?
+
+	move	*a8(GETUP_TIME),a14
+	jrgt	cqnrun			;Out of control?
+
+cqnabrt
+	DS_CODEEND
+	DS_END
+
+cqnrun
+	DS_CODEEND
+	.word	P_M+K_M,0	;Run
+
+
+
+*******************************
+
+ SUBRP	drn_roll
+
+	DS_CODE
+	callr	drone_chrg
+
+	jruc	arastrt
+
+aralp
+	DS_CODEEND
+	DS_SLP1
+	DS_CODE
+arastrt
+	cmpi	MODE_ONGROUND,b6
+	jrne	arax
+
+	move	*a13(CLOSEST_XDIST),a0
+	cmpi	150,a0
+	jrgt	arax			;Safe dist?
+
+	move	*a13(CLOSEST_ZDIST),a0
+	cmpi	70,a0
+	jrgt	arax			;Safe dist?
+
+	clr	a2
+	callr	drone_seek2
+	jrz	arax
+
+	movk	3,a1			;Flip up & down
+	xor	a1,a0
+	move	a0,*a13(DRN_JOY)
+
+	movi	7fh,a0
+	callr	rnd
+	jrnz	aralp
+
+arax
+	DS_CODEEND
+	.word	B_M,TSEC-10		;Block while standing
+	DS_END
+
+
+*******************************
+* Climb closest turnbuckle
+
+ SUBRP	drn_climbtb
+
+	DS_CODE
+	move	b3,a0
+	subk	1,a0
+	jrle	jmslp			;Only 1 on team?
+
+	movk	1,a0
+	callr	rnd
+	jrnz	jmsx			;Skip 50%?
+
+jmslp
+	DS_CODEEND
+	DS_SLP1
+
+ SUBRP	drn_ontb
+
+	DS_CODE
+
+	move	b7,a2
+
+	cmpi	MODE_ONTURNBKL,b6
+	jrne	jmsnot
+
+	subk	MODE_ONTURNBKL,a2
+	jreq	jmsdn			;He's up, so get dn?
+
+	jruc	jmsjmp
+
+jmsnot
+	move	*a13(INRING),a0
+	jrnz	jmsering			;!In ring?
+
+	move	*a13(WRESTLERNUM),a0
+	subk	3,a0
+	jrne	jmsny			;!Yoko?
+	move	*a8(INRING),a0
+	jrnz	jmsx			;!In ring?
+jmsny
+	subk	MODE_ONTURNBKL,a2
+	jreq	jmsx
+	subk	MODE_INAIR2-MODE_ONTURNBKL,a2
+	jreq	jmsx
+
+	movi	RING_X_CENTER-225,a0
+	move	*a13(OBJ_XPOSINT),a1
+	cmpi	RING_X_CENTER,a1
+	jrle	jmslrp
+	movi	RING_X_CENTER+225,a0
+jmslrp
+	move	a0,a3
+	movi	RING_TOP,a1
+	movk	32,a2
+	callr	drone_seekxz		;Seek to visinity
+	jrnz	jmsnclose
+
+	move	a3,a0
+	movi	RING_TOP-10,a1
+	clr	a2
+	callr	drone_seekxz		;Push into turnbuckle
+
+jmsnclose
+	move	*a13(CLOSEST_XDIST),a0
+	cmpi	120,a0
+	jrgt	jmslp			;Safe dist?
+
+	move	*a13(CLOSEST_ZDIST),a0
+	cmpi	70,a0
+	jrgt	jmslp			;Safe dist?
+
+jmsx
+	DS_CODEEND
+	DS_END
+
+jmsjmp
+	clr	a6			;So we get dn transition
+	DS_CODEEND
+	.word	K_M,0
+jmsdn
+	DS_CODEEND
+	.word	D_M,0
+jmsering
+	DS_CODEEND
+	DS_JMP	drn_enterring
+
+
+*******************************
+* I'm in air
+
+qgrlp
+	DS_CODEEND
+	DS_SLP1
+
+ SUBRP	drn_inair
+
+	DS_CODE
+	clr	a2
+	callr	drone_seek2
+
+	cmpi	MODE_INAIR2,b6
+	jreq	qgrlp
+
+	DS_CODEEND
+	DS_END
+
+
+*******************************
+* Opponent in air
+
+ SUBRP	drn_opinair
+
+	DS_CODE
+
+	movk	1,a0
+	callr	rnd
+	jrnz	ninrun			;Skip?
+ninlp
+	cmpi	MODE_INAIR2,b7
+	jrne	nink
+
+	DS_CODEEND
+	DS_SLP1
+	DS_CODE
+
+	move	*a13(CLOSEST_XDIST),a1
+	move	*a13(CLOSEST_ZDIST),a14
+	cmp	a1,a14
+	jrge	ninbig
+	move	a1,a14
+ninbig
+	cmpi	150,a14
+	jrgt	ninlp			;Opp far?
+nink
+	DS_CODEEND
+	.word	K_M,0			;Jump up
+
+ninrun
+	DS_CODEEND
+	.word	L_M+P_M+K_M,2	;Run away
+	DS_END
+
+
+
+*******************************
+* Enter ring at closest entry point
+
+aqylp
+	DS_CODEEND
+	DS_SLP1
+
+ SUBRP	drn_enterring
+
+	DS_CODE
+
+	move	*a8(INRING),a0
+	jrnz	aqyx			;Opp out?
+
+	move	*a13(INRING),a0
+	jrz	aqyx			;In ring?
+
+	move	*a13(OBJ_XPOSINT),a14
+
+	movi	RING_Z_CENTER,a1
+	movi	RING_X_CENTER-260,a0
+	cmp	a0,a14
+	jrle	aqysk
+	movi	RING_X_CENTER+260,a0
+	cmp	a0,a14
+	jrge	aqysk
+
+	move	*a13(OBJ_ZPOSINT),a14
+
+	movi	RING_X_CENTER,a0
+	movi	RING_TOP-10,a1
+	cmp	a1,a14
+	jrle	aqysk
+	movi	RING_BOT+10,a1
+aqysk
+	movk	10,a2
+	callr	drone_seekxz		;Seek to visinity
+	jrnz	aqylp
+
+	DS_CODEEND
+	.word	P_M+SP_M+K_M+SK_M+B_M,0	;Enter
+
+aqyx
+	DS_CODEEND
+	DS_END
+
+
+*******************************
+
+ SUBRP	drn_taunt
+
+	DS_CODE
+
+	move	*a8(OBJ_ZPOSINT),a0
+	move	*a13(OBJ_ZPOSINT),a1
+	sub	a1,a0
+	cmpi	100,a0
+	jrlt	qdkx
+
+	move	*a8(OBJ_XPOSINT),a0
+	move	*a13(OBJ_XPOSINT),a1
+	sub	a1,a0
+	abs	a0
+	cmpi	300,a0
+	jrgt	qdkx
+
+;Time to execute high-risk move!
+	movi	8000h+6*60,a0
+	move	a0,*a13(RISK)
+
+	move	*a13(WRESTLERNUM),a0
+	X32	a0
+	addi	qdktaunt_t,a0
+	move	*a0,a0,L
+	calla	change_anim1a
+qdkx
+	DS_CODEEND
+	DS_END
+
+
+qdktaunt_t
+	.long	hrt_4_taunt_anim		;0 Bret Hart
+	.long	rzr_4_taunt_anim		;1 Razor Ramon
+	.long	und_4_taunt_anim		;2 Undertaker
+	.long	yok_4_taunt_anim		;3 Yokozuna
+	.long	shn_4_taunt_anim		;4 Shawn Michaels
+	.long	bam_4_taunt_anim		;5 Bam Bam
+	.long	dnk_4_taunt_anim		;6 Doink
+	.long	0		  		;7 spare
+	.long	lex_4_taunt_anim		;8 Lex Luger
+
+
+*******************************
+
+ SUBRP	drn_oppdead
+
+	DS_CODE
+ijolp
+	clr	a0			;Close
+	move	a0,*a13(DRN_SEEKDIR)
+	move	a0,*a13(DRN_SEEKDIST)
+
+	callr	drone_seekdirdist
+	DS_CODEEND
+	DS_SLP1
+	DS_CODE
+
+	movk	32,a1
+	move	*a13(WRESTLERNUM),a0
+	subk	2,a0
+	jreq	ijout			;Undertaker?
+	movi	90,a1
+ijout
+	move	*a13(CLOSEST_DIST),a0
+	cmp	a1,a0
+	jrle	ijox
+;	jruc	ijonotut
+
+	move	*a8(ANIMODE),a0		;Let ut walk through dead opps
+	ori	MODE_OVERLAP,a0
+	move	a0,*a8(ANIMODE)
+ijonotut
+
+	move	*a13(DRN_JOY),a0
+	jrnz	ijolp
+ijox
+	DS_CODEEND
+	.word	P_M,0
+
+
+
+*******************************
+* Push stick to move drone towards his opp dir/dist seek position
+* A7 = Old joy bits
+* A8 = *Closest opp proc
+* Trashes scratch, A2-A5
+
+ SUBRP	drone_seekdirdist
+
+	move	*a13(DRN_SEEKDIR),a4	;0-f
+	move	*a13(DRN_SEEKDIST),a3	;0-4
+	move	a3,a0
+	X16	a3
+	X4	a0
+	add	a0,a3			;*20
+
+	move	a4,a2
+	callr	exgdrn_getxz
+	jrnz	exgok
+
+	movk	7,b0
+	move	a4,a5
+exglp
+	addk	1,a4
+	sll	32-4,a4
+	srl	32-4,a4
+	move	a4,a2
+	callr	exgdrn_getxz
+	jrnz	exgnewok
+
+	subk	1,a5
+	sll	32-4,a5
+	srl	32-4,a5
+	move	a5,a2
+	callr	exgdrn_getxz
+	jrnz	exgnew5ok
+
+	dsj	b0,exglp
+
+	clr	a0
+	move	a0,*a13(DRN_JOY)
+
+	rets
+
+exgnew5ok
+	move	a5,a4
+exgnewok
+	move	a4,*a13(DRN_SEEKDIR)
+exgok
+	movk	30,a2
+	callr	drone_seekxz
+	jrnz	exgx
+
+	move	*a13(DRN_MODE),a0
+	addk	1,a0
+	jrge	exgx			;Was -1? Skip dir change
+
+	move	a7,*a13(DRN_JOY)	;Restore to lessen glitch
+
+	movk	3,a0			;>Get rnd +-2/3
+	callr	rnd
+	subk	1,a0
+	jrnz	exgrnz
+	subk	2,a0			;0 into -2
+exgrnz
+	addk	1,a0
+	jrgt	exgrpos
+	subk	2,a0
+exgrpos
+
+	add	a0,a4
+	sll	32-4,a4
+	srl	32-4,a4
+	move	a4,*a13(DRN_SEEKDIR)
+
+exgx
+	rets
+
+
+exgdrn_getxz
+	add	a3,a2
+	X16	a2
+	addi	exgsine_t,a2
+
+	move	*a2(4*16),a14
+	move	*a8(OBJ_XPOSINT),a0
+	add	a14,a0
+
+	cmpi	RING_X_CENTER-220,a0
+	jrlt	exgxzbad
+	cmpi	RING_X_CENTER+220,a0
+	jrgt	exgxzbad
+
+	move	*a2,a14
+	move	*a8(OBJ_ZPOSINT),a1
+	add	a14,a1
+
+	cmpi	RING_TOP,a1
+	jrlt	exgxzbad
+	cmpi	RING_BOT,a1
+	jrle	exgxzok
+exgxzbad
+	clr	a2			;Set Z
+exgxzok
+	move	a2,a2
+	rets
+
+exgsine_t
+	.word	-50,-46,-35,-19
+	.word	0,19,35,46,50,46,35,19
+	.word	0,-19,-35,-46,-50,-46,-35,-19
+
+	.word	-100,-92,-71,-38
+	.word	0,38,71,92,100,92,71,38
+	.word	0,-38,-71,-92,-100,-92,-71,-38
+
+	.word	-150,-139,-106,-57
+	.word	0,57,106,139,150,139,106,57
+	.word	0,-57,-106,-139,-150,-139,-106,-57
+
+	.word	-200,-185,-141,-76
+	.word	0,76,141,185,200,185,141,76
+	.word	0,-76,-141,-185,-200,-185,-141,-76
+
+	.word	-250,-231,-177,-95
+	.word	0,95,177,231,250,231,177,95
+	.word	0,-95,-177,-231,-250,-231,-177,-95
+
+	.word	-300,-277,-212,-115
+	.word	0,114,212,277,300,277,212,114
+	.word	0,-114,-212,-277,-300,-277,-212,-115
+
+
+*******************************
+* Push stick to move drone towards closest opp
+
+ SUBRP	drone_seek
+
+	movi	70,a2
+
+ SUBRP	drone_seek2
+
+	move	*a8(OBJ_XPOSINT),a0
+	move	*a8(OBJ_ZPOSINT),a1
+
+
+*******************************
+* Push stick to move drone towards an XZ location
+* A0 = X to seek
+* A1 = Z
+* A2 = Range to stop
+* A13= *Plyr proc
+*0A0H = Joy bits set or 0 (Pass CC)
+* Trashes scratch
+
+ SUBRP	drone_seekxz
+
+	move	a3,b0
+
+	move	*a13(OBJ_XPOSINT),a3
+	sub	a0,a3
+
+	clr	a0
+
+	move	a3,a14
+	abs	a3
+	sub	a2,a3
+	jrle	mjdonx
+	move	a14,a14
+	jrlt	mjdnolft
+	subk	4,a0			;Left
+
+mjdnolft	addk	8,a0			;Rgt
+mjdonx
+	move	*a13(OBJ_ZPOSINT),a3
+
+	sub	a1,a3
+	move	a3,a14
+	abs	a3
+	sub	a2,a3
+	jrle	mjdonz
+	move	a14,a14
+	jrlt	mjdnoup
+	subk	1,a0			;Up
+
+mjdnoup	addk	2,a0			;Dn
+mjdonz
+	move	a0,*a13(DRN_JOY)
+
+	move	b0,a3
+	move	a0,a0
+	rets
+
+
+*******************************
+* Adjust drone skill level (called each round)
+* 8 is typical starting difficulty
+* A13 = *Plyr proc
+* Trashes scratch, A2-A5
+
+ SUBR	drone_calcskill
+
+	move	*a13(PLYR_TYPE),a0
+	jrz	plbx			;Human?
+
+	move	*a13(DRN_SKILLRNDM),a0
+
+	move	@current_round,a3	;1-3
+	subk	1,a3
+	jrgt	plbn1st
+
+	movk	4,a0
+	callr	rndrng0
+	subk	2,a0
+	move	a0,*a13(DRN_SKILLRNDM)
+plbn1st
+	move	@CURRENT_LADDER,a5,L	;* to position
+	subi	LADDER,a5
+	sra	5,a5			;/32 (Gives 0-6)
+	move	a5,a1
+	sra	1,a1			;0-3
+	add	a1,a5			;A5=0-9
+	add	a0,a5			;-2 to 2 randomness
+
+	clr	a4
+	move	@PSTATUS2,a0
+	btst	0,a0
+	jrnz	plbp1
+	movk	16,a4
+plbp1
+	movi	p1winstreakd,a0
+	add	a4,a0
+	move	*a0,a0
+	jrlt	plbloser			;Lost? (-2 per match lost)
+
+
+
+	X2	a0
+;	add	a0,a5			;+1 per match won
+;	add	a0,a5			;+1 per match won
+
+
+
+	add	a0,a5			;+1 per match won
+plbloser
+	X2	a0
+	add	a0,a5			;+2 per match won
+
+;	X2	a0
+;	add	a0,a5			;+2 per match won
+;plbloser
+;	X2	a0
+;	add	a0,a5			;+4 per match won
+
+	movi	p1rounds,a0
+	add	a4,a0
+	move	*a0,a0
+	add	a0,a5			;+3 per round won
+	X2	a0
+	add	a0,a5
+
+	X2	a3
+	sub	a3,a5			;-2 per round past 1st
+
+
+	movk	ADJDIFF,a0		;Get difficulty level (1-10)
+	calla	GET_ADJ
+	subk	2,a0
+	X2	a0
+	add	a0,a5			;+8 default
+	jrge	plbminok
+	clr	a5
+plbminok
+	cmpi	29,a5
+	jrle	plbmaxok
+	movk	29,a5
+plbmaxok
+	move	a5,*a13(DRN_SKILL)
+
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CHlr attack count
+
+	clr	a0
+	movi	atkcnt_t,a1
+	movi	AT_NUM*NUM_WRES,b0
+plbaclp
+	move	a0,*a1+
+	dsj	b0,plbaclp
+
+plbx
+	rets
+
+
+
+********************************
+* Get random # with mask
+* A0 = Mask
+*0A0H = Rnd # (Pass CC)
+* Trashes scratch
+
+ SUBRP	rnd
+
+	move	@RAND,a1,L
+	rl	a1,a1
+	move	@HCOUNT,a14
+	rl	a14,a1
+	add	sp,a1
+	move	a1,@RAND,L
+
+	and	a1,a0
+	rets
+
+
+********************************
+* Quickly produce a random # in range 0-X
+* A0 = X
+*0A0H = Random # (0 to A0) (No CC)
+* Trashes scratch
+
+ SUBRP	rndrng0
+
+	move	@RAND,a1,L
+	rl	a1,a1
+	move	@HCOUNT,a14
+	rl	a14,a1
+	add	sp,a1
+	move	a1,@RAND,L
+
+	addk	1,a0
+	mpyu	a1,a0		;Condition codes not valid!
+
+	rets
+
+
+
+
+
+
+********************************
+
+	.end
+

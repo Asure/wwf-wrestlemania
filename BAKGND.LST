@@ -1,0 +1,1003 @@
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    **************************************************************
+       2                    *
+       3                    * Software:     Todd Allen, Mark Turmell, Shawn Liptak
+       4                    * Initiated:    1988?
+       5                    *
+       6                    * Modified:     Shawn Liptak, 9/16/91   -Minor improvements (Total carnage)
+       7                    *               Shawn Liptak, 11/15/91  -CREATE0
+       8                    *               Shawn Liptak, 2/10/92   -Started basketball
+       9                    *               Shawn Liptak, 5/4/92    -Works with DMA2
+      10                    *
+      11                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+      12                    *
+      13                    *.Last mod - 9/23/92 12:26
+      14                    **************************************************************
+      15                            .file   "bakgnd.asm"
+      17                            .option b,d,l
+      18                            .mnolist
+      19                    
+      20                            .include        "mproc.equ"
+      21                            .include        "display.equ"
+      22                            .include        "gsp.equ"
+      23                            .include        "sys.equ"
+      24                            .include        "game.equ"
+      25                            .include        "macros.h"
+      26                    
+      27                            .include        "fontsimg.glo"
+      28                            .include        "bgndtbl.glo"           ;background equates
+      29                    
+      30                    
+      31                    ******************************************************************************
+      32                    * EXTERNAL REFERENCES
+      33                    
+      34                            .ref    pal_getf
+      35                    
+      36                            .REF    DO_FLASH,DO_JASON_CROWD,DO_TONY_CROWD
+      37                            .REF    DO_VOGEL_CROWD
+      38                    
+      39                    ******************************************************************************
+      40                    
+      41                    
+      42                    
+      43                    ;defs
+      44                    
+      45                    
+      46                    
+      47                    ;uninitialized ram definitions
+      48                    
+      49                    
+      50 00000000                   .bss    BGNDPALTBL      ,32
+      51 00000020                   .bss    MOD_POS         ,32
+      52 00000000                   BSSX    BAKBITS         ,10000
+      53                    
+      54 00000000                   BSSX    BAKMODS         ,32
+      55                    
+      56                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    2
+
+      57 00000000                   .text
+      58                    
+      59                    ********************************
+      60                    
+      61                    *BACKGROUND UPDATER EQUATES
+      62              8000  BLSTSTRT        .EQU    08000H
+      63              8001  BLSTEND         .EQU    08001H
+      64                    
+      65                    ************* LOCAL CONSTANTS FOR UPD **************
+      66                    
+      67          00200040  DISP_PAD        .SET    [20h,40h]       ;Y:X
+      68                    ;DISP_PAD       .SET    [20h,20h]       ;Y:X
+      69                    
+      70                    ;DISP_PAD2      .SET    [80h,20h]       ;Y:X
+      71                    
+      72              00fa  WIDEST_BLOCK    .SET    250
+      73                    
+      74                    * MUST KEEP THE SIZE OF THESE STRUCTURES A MULTIPLE OF 16
+      75                    ;MAP_ZFLAGSPAL  .SET    0
+      76              0000  MAP_PAL         .SET    0       ;SIZE 4 - PALETTE SELECT
+      77              0004  MAP_FLAGS       .SET    4       ;SIZE 4 - BIT 0 HFLIP, BIT 1 YFLIP
+      78              0008  MAP_Z           .SET    8       ;SIZE 8
+      79              0010  MAP_X           .SET    16      ;SIZE 16
+      80              0020  MAP_Y           .SET    32      ;SIZE 16
+      81              0030  MAP_HDR         .SET    48      ;SIZE 16 - OFFSET IN LONG WORDS FROM BLOCK_HDR_TBL
+      82                                                    ; BITS 12-15 ARE BITS 4-7 OF PAL
+      83                                                    ; MAP_HDR SET TO 0FFFFH IF BLOCK IS NOT ALLOCATED
+      84              0040  BLOCK_SIZE      .SET    64      ;Uses shifts!
+      85                    
+      86                    * Offsets for a BLOCK HDR structure
+      87                    ;MAP_SIZE       .set    0
+      88              0000  MAP_W           .set    0       ;Word
+      89              0010  MAP_H           .set    16      ;Word
+      90              0020  MAP_DATAPTR     .set    32      ;Long
+      91              0040  MAP_CTRL        .equ    64      ;DMA ctrl word
+      92                    ;BLOCK_HDR_SIZE .set    80
+      93                    
+      94                    
+      95                    ************************************************************************
+      96                    * SCAN A MODULE LIST TO FIND OUT WHICH MODULE CONTAINS BLOCKS
+      97                    * WHICH NEED TO BE CHECKED
+      98                    * A0=XPOS FOR WHICH HEIGHT OF BACKGROUND NEEDS TO BE DETERMINED
+      99                    *RETURNS A0 -
+     100                    *       MINIMUM YPOS (MAX HEIGHT) OF PRIMARY BACKGROUND WHICH OVERLAPS
+     101                    *       SPECIFIED XPOS
+     102                    *       A0 = 0 IF XPOS IS INVALID
+     103                    
+     104 00000000           BGNDHGHT
+     105 00000000     098f          MMTM    SP,A1,A2,A3,A4,A7,A8,A9,A10,A11
+         00000010     79f0  
+     106 00000020     4c01          MOVE    A0,A1
+     107                    
+     108 00000030     574a          CLR     A10             ;INIT PACKED Y:X STARTING POSITION
+     109 00000040     576b          CLR     A11
+     110                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    3
+
+     111 00000050     07a0          MOVE    @BAKMODS,A0,L   ;* A0- PTR TO THE MODULE LIST
+         00000060 00002750- 
+     112 00000080     9608  MODLP0  MOVE    *A0+,A8,L       ;LOAD MODULE PTR
+     113 00000090     ca2a          jrz     MODX0           ;End?
+     114 000000a0     9709          MOVE    *A8+,A9,L       ;LOAD PACKED Y:X SIZE
+     115                    
+     116 000000b0     9403          MOVE    *A0+,A3         ;X START POSITION
+     117 000000c0     0523          ZEXT    A3
+     118 000000d0     0b63          CMPI    BLSTSTRT,A3
+         000000e0 ffff7fff  
+     119 00000100     cb03          JRNZ    NOTLSTSTRTX
+     120 00000110     4d63          MOVE    A11,A3          
+     121 00000120     e323          SUBXY   A9,A3
+     122 00000130     c005          JRUC    GOTNEWX0
+     123 00000140           NOTLSTSTRTX
+     124 00000140     0b63          CMPI    BLSTEND,A3
+         00000150 ffff7ffe  
+     125 00000170     cb01          JRNZ    GOTNEWX0
+     126 00000180     4d63          MOVE    A11,A3
+     127 00000190           GOTNEWX0
+     128 00000190     9404          MOVE    *A0+,A4         ;Y START POSITION
+     129 000001a0     0524          ZEXT    A4
+     130 000001b0     0b64          CMPI    BLSTSTRT,A4
+         000001c0 ffff7fff  
+     131 000001e0     cb03          JRNZ    NOTLSTSTRTY
+     132 000001f0     4d64          MOVE    A11,A4          
+     133 00000200     e324          SUBXY   A9,A4
+     134 00000210     c007          JRUC    GOTNEWY0
+     135 00000220           NOTLSTSTRTY
+     136 00000220     0b64          CMPI    BLSTEND,A4
+         00000230 ffff7ffe  
+     137 00000250     cb02          JRNZ    NOTLSTENDY
+     138 00000260     4d64          MOVE    A11,A4
+     139 00000270     c001          JRUC    GOTNEWY0
+     140 00000280           NOTLSTENDY
+     141 00000280     2604          SLL     16,A4
+     142 00000290           GOTNEWY0
+     143 00000290     ee83          MOVY    A4,A3
+     144 000002a0     4c6a          MOVE    A3,A10
+     145                    
+     146                    ;       CMPXY   A10,A1
+     147                    ;       JRV     MODX0           ;JUMP TO EXIT LOOP IF MOD START X > X SOUGHT
+     148                    
+     149                            ;IF MOD END X < X SOUGHT KEEP SEARCHING MOD LIST
+     150 000002b0     4d4b          MOVE    A10,A11
+     151 000002c0     e12b          ADDXY   A9,A11          ;A11 IS MODULE Y:X END
+     152                    
+     153 000002d0     9509          MOVE    *A8+,A9         ;LOAD # OF BLOCKS
+     154 000002e0     4127          ADD     A9,A7           ;A7 IS NEW BAKBITS PTR
+     155 000002f0     e561          CMPXY   A11,A1
+     156 00000300     cdd7          JRNV    MODLP0          ;SKIP IF AX < BX
+     157                    
+     158 00000310     4d40          MOVE    A10,A0
+     159 00000320     2e00          SRL     16,A0
+     160 00000330     c001          JRUC    GOTHGHT
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    4
+
+     161                    
+     162 00000340     5600  MODX0   CLR     A0
+     163 00000350     09af  GOTHGHT MMFM    SP,A1,A2,A3,A4,A7,A8,A9,A10,A11
+         00000360     0f9e  
+     164 00000370     0960          RETS
+     165                    
+     166                    
+     167                    ********************************
+     168                    * PARMS
+     169                    * A0=XPos of block
+     170                    * A1=*Start of bkgnd block table
+     171                    * A2=*End of block table
+     172                    * 0A0H=ADDRESS OF FIRST BLOCK WITH X COORDINATE >= PARM
+     173                    *       IF NEW X IS HIGHEST RETURNS NEXT EMPTY BLOCK
+     174                    *       IF NO BLOCKS WITH >= X, RETURN 0
+     175                    
+     176                    * A1 = BLOCK TABLE BASE + OFFSET TO X VAL
+     177                    * A14 - THRESHHOLD FOR SWITCHING FROM BINARY TO LINEAR SEARCH
+     178                    * A9 = LOW # -- # GREATEST BACKGROUND BLOCK
+     179                    * A10 = MID # -- (HIGH + LOW) >> 1
+     180                    * A2 = HIGH # -- # OF LOWEST BACKGROUND BLOCK
+     181                    
+     182 00000380            SUBRP  bgnd_get1stx
+     183                    
+     184 00000380                   PUSH    a1,a2,a8,a9,a10
+     185                    
+     186 000003a0     5729          clr     a9              ;set low = 0
+     187 000003b0     4422          sub     a1,a2
+     188 000003c0     2f42          srl     6,a2            ;div by size of block (64)
+     189 000003d0     0b01          addi    MAP_X,a1        ;block tbl base + x offset
+         000003e0     0010  
+     190 000003f0     18ae          movk    5,a14           ;threshhold for switching from binary to linear search
+     191                    
+     192 00000400     4c4a  vsllp   move    a2,a10
+     193 00000410     452a          sub     a9,a10          ;if (high - low) <= 5 finish with linear search
+     194 00000420     49ca          cmp     a14,a10
+     195 00000430     c60c          jrle    lsrch
+     196                    
+     197 00000440     2fea          srl     1,a10           ;/2
+     198 00000450     412a          add     a9,a10
+     199                    
+     200 00000460     4d48          move    a10,a8          ;Get mid X
+     201 00000470     24c8          sll     6,a8            ;multiply by block size (64)
+     202 00000480     4028          add     a1,a8
+     203 00000490     8508          move    *a8,a8          ;get x coor of the block
+     204 000004a0     4808          cmp     a0,a8
+     205 000004b0     c402          jrlt    blow
+     206                    
+     207 000004c0     4d42          move    a10,a2          ;high = mid
+     208 000004d0     c0f2          jruc    vsllp
+     209 000004e0     4d49  blow    move    a10,a9          ;low = mid
+     210 000004f0     c0f0          jruc    vsllp
+     211                    
+     212 00000500           lsrch
+     213                            ;* FINISH WITH A LINEAR SEARCH OF BLOCK TABLE FROM LOW TO HIGH
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    5
+
+     214                            ;* ENDING WITH FIRST BLOCK X COOR THAT IS >= A0
+     215                            ;* A0 = X VAL BEING SEARCHED FOR
+     216                            ;* A9 = LOW ADDRESS -- PTS TO X OFFSET OF BLOCK
+     217                            ;* A2 = HIGH ADDRESS -- PTS TO X OFFSET OF BLOCK
+     218                    
+     219 00000500     24c9          SLL     6,A9            ;LOW BLOCK # TO LOW BLOCK OFFSET
+     220 00000510     24c2          SLL     6,A2            ;HIGH BLOCK # TO HIGH BLOCK OFFSET
+     221 00000520     4029          ADD     A1,A9
+     222 00000530     4022          ADD     A1,A2
+     223 00000540     09c8          MOVI    BLOCK_SIZE,A8
+         00000550     0040  
+     224 00000560           vsllinlp
+     225 00000560     852a          MOVE    *A9,A10         ;X COOR
+     226 00000570     480a          CMP     A0,A10
+     227 00000580     c505          JRGE    GOTB            ;IF LOW->X >= A0 GOTO FOUND
+     228 00000590     4109          ADD     A8,A9
+     229 000005a0     4849          CMP     A2,A9
+     230 000005b0     c6fa          jrle    vsllinlp
+     231 000005c0     5600          clr     a0              ;block not found, return 0
+     232 000005d0     c003          jruc    vslx
+     233                    
+     234 000005e0           GOTB
+     235 000005e0     4d20          move    a9,a0           ;return a ptr to the block
+     236 000005f0     0be0          subi    MAP_X,a0
+         00000600     ffef  
+     237                    
+     238 00000610           vslx
+     239 00000610                   PULL    a1,a2,a8,a9,a10
+     240 00000630     0960          rets
+     241                    
+     242                    
+     243                    *********************** BAK END *******************************
+     244                    ;* SCAN A MODULE LIST AND RETURN THE PACKED Y:X END POINT
+     245                    ;PARMS
+     246                            ;A0 - MODULE LIST
+     247                    ;RETURNS
+     248                            ;A0 - PACKED Y:X END OF WAVE
+     249                    ;BAK_END
+     250                    ;       MMTM    SP,A3,A4,A8,A9,A10,A11
+     251                    ;
+     252                    ;       CLR     A10     ;CLR PACKED Y:X STARTING POSITION
+     253                    ;       CLR     A11
+     254                    ;
+     255                    ;
+     256                    ;WEMODLP
+     257                    ;       MOVE    *A0+,A8,L               ;LOAD MODULE PTR
+     258                    ;       JRZ     WEMODX                  ;END OF THE MODULE TBL
+     259                    ;       MOVE    *A8+,A9,L               ;LOAD PACKED Y:X SIZE
+     260                    ;
+     261                    ;       MOVE    *A0+,A3,W               ;X START POSITION
+     262                    ;       ZEXT    A3,W
+     263                    ;       CMPI    BLSTSTRT,A3
+     264                    ;       JRNZ    WENOTLASTSTARTX
+     265                    ;       MOVE    A11,A3          
+     266                    ;       SUBXY   A9,A3
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    6
+
+     267                    ;       JRUC    WEGOTNEWX
+     268                    ;WENOTLASTSTARTX
+     269                    ;       CMPI    BLSTEND,A3
+     270                    ;       JRNZ    WEGOTNEWX
+     271                    ;       MOVE    A11,A3
+     272                    ;WEGOTNEWX
+     273                    ;       MOVE    *A0+,A4,W               ;Y START POSITION
+     274                    ;       ZEXT    A4,W
+     275                    ;       CMPI    BLSTSTRT,A4
+     276                    ;       JRNZ    WENOTLASTSTARTY
+     277                    ;       MOVE    A11,A4          
+     278                    ;       SUBXY   A9,A4
+     279                    ;       JRUC    WEGOTNEWY
+     280                    ;WENOTLASTSTARTY
+     281                    ;       CMPI    BLSTEND,A4
+     282                    ;       JRNZ    WENOTLASTENDY
+     283                    ;       MOVE    A11,A4
+     284                    ;       JRUC    WEGOTNEWY
+     285                    ;WENOTLASTENDY
+     286                    ;       SLL     16,A4
+     287                    ;WEGOTNEWY
+     288                    ;       MOVY    A4,A3
+     289                    ;       MOVE    A3,A10
+     290                    ;       
+     291                    ;       MOVE    A10,A11
+     292                    ;       ADDXY   A9,A11  ;A11 IS MODULE Y:X END
+     293                    ;
+     294                    ;       JRUC    WEMODLP
+     295                    ;
+     296                    ;WEMODX
+     297                    ;       MOVE    A11,A0
+     298                    ;       MMFM    SP,A3,A4,A8,A9,A10,A11
+     299                    ;       RETS
+     300                    
+     301                    
+     302                    *********************** BAK START *******************************
+     303                    * SCAN A MODULE LIST AND RETURN THE PACKED Y:X STARTING POINT
+     304                    *PARMS
+     305                    *A0 - MODULE LIST
+     306                    *RETURNS
+     307                    *A0 - PACKED Y:X START OF WAVE
+     308                    ;BAK_STRT
+     309                    ;       MMTM    SP,A3,A4,A8,A9,A11
+     310                    ;
+     311                    ;       CLR     A11
+     312                    ;       MOVE    *A0+,A8,L               ;LOAD MODULE PTR
+     313                    ;       JRZ     WSMODX                  ;END OF THE MODULE TBL
+     314                    ;       MOVE    *A8+,A9,L               ;LOAD PACKED Y:X SIZE
+     315                    ;
+     316                    ;       MOVE    *A0+,A3,W               ;X START POSITION
+     317                    ;       ZEXT    A3,W
+     318                    ;       CMPI    BLSTSTRT,A3
+     319                    ;       JRNZ    WSNOTLASTSTARTX
+     320                    ;       MOVE    A11,A3          
+     321                    ;       SUBXY   A9,A3
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    7
+
+     322                    ;       JRUC    WSGOTNEWX
+     323                    ;WSNOTLASTSTARTX
+     324                    ;       CMPI    BLSTEND,A3
+     325                    ;       JRNZ    WSGOTNEWX
+     326                    ;       MOVE    A11,A3
+     327                    ;WSGOTNEWX
+     328                    ;       MOVE    *A0+,A4,W               ;Y START POSITION
+     329                    ;       ZEXT    A4,W
+     330                    ;       CMPI    BLSTSTRT,A4
+     331                    ;       JRNZ    WSNOTLASTSTARTY
+     332                    ;       MOVE    A11,A4          
+     333                    ;       SUBXY   A9,A4
+     334                    ;       JRUC    WSGOTNEWY
+     335                    ;WSNOTLASTSTARTY
+     336                    ;       CMPI    BLSTEND,A4
+     337                    ;       JRNZ    WSNOTLASTENDY
+     338                    ;       MOVE    A11,A4
+     339                    ;       JRUC    WSGOTNEWY
+     340                    ;WSNOTLASTENDY
+     341                    ;       SLL     16,A4
+     342                    ;WSGOTNEWY
+     343                    ;       MOVY    A4,A3
+     344                    ;       MOVE    A3,A0
+     345                    ;
+     346                    ;WSMODX
+     347                    ;       MMFM    SP,A3,A4,A8,A9,A11
+     348                    ;       RETS
+     349                    
+     350                    
+     351                    ****************************************************************
+     352                    * Update disp list for main bakgnd
+     353                    * Deletes all display objects which are not on the screen
+     354                    * Insures all background blocks on screen are on the disp list
+     355                    * Input: WORLDTL, SCRNTL, SCRNLR, BAKLST, BAKBITS, BAKMODS
+     356                    * Trashes scratch
+     357                    
+     358 00000640            SUBR   BGND_UD1
+     359                    
+     360 00000640                   PUSH    a2,a3,a4,a5,a6,a7,a8,a9,a10,a11
+     361                    ;       PUSH    b2
+     362                    
+     363 00000660     07a3          move    @WORLDTL,a3,L
+         00000670 00000000! 
+     364 00000690     4c64          move    a3,a4
+     365 000006a0     07a0          move    @SCRNTL,a0,L
+         000006b0 00000000! 
+     366 000006d0     e003          addxy   a0,a3
+     367 000006e0     07a0          move    @SCRNLR,a0,L
+         000006f0 00000000! 
+     368 00000710     e004          addxy   a0,a4           
+     369                    
+     370 00000720     09e0          movi    DISP_PAD,a0     ;XY border pad
+         00000730 00200040  
+     371                    
+     372 00000750     e203          subxy   a0,a3           ;A3=DISP_TL
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    8
+
+     373 00000760     e004          addxy   a0,a4           ;A4=DISP_LR
+     374 00000770     09e8          movi    BAKLST,a8       ;A8=*bakgnd list
+         00000780 00000000! 
+     375 000007a0     0d3f          callr   bgnd_delnonvis
+         000007b0     01a4  
+     376                    
+     377 000007c0     07a0          move    @BAKMODS,a0,L   ;*Module list
+         000007d0 00002750- 
+     378 000007f0     09e7          movi    BAKBITS,a7      ;Bit table for block being on disp list
+         00000800 00000040- 
+     379                    ;       movi    INSBOBJ,b2      ;*Insert routine
+     380 00000820     0d3f          callr   bgnd_scanmod
+         00000830     0003  
+     381                    
+     382                    ;       PULL    b2
+     383 00000840                   PULL    a2,a3,a4,a5,a6,a7,a8,a9,a10,a11
+     384 00000860     0960          rets
+     385                    
+     386                    
+     387                    *******************************
+     388                    * Scan a module list to find out which modules contain blocks
+     389                    * which need to be checked for addition to the display list.
+     390                    * A0=*Module list
+     391                    * A3=DISP_TL
+     392                    * A4=DISP_LR
+     393                    * A7=*Bakbits table
+     394                    * B2=*Insert routine
+     395                    * Trashes A0-A2,A5,A6,A8-A11,A14,B0-B1
+     396                    
+     397 00000870            SUBRP  bgnd_scanmod
+     398                    
+     399 00000870     4ce6          move    a7,a6           ;a6 will point to bakbits after mod
+     400 00000880     c02d          jruc    xhanext
+     401                            .align
+     402                    
+     403 00000a00           xhalp
+     404 00000a00     9609          move    *a0+,a9,L       ;Y:X start
+     405                    
+     406 00000a10     970b          move    *a8+,a11,L      ;Mod Y:X size
+     407 00000a20     e12b          addxy   a9,a11          ;Mod Y:X end
+     408                    
+     409 00000a30     9502          move    *a8+,a2         ;# of blocks
+     410 00000a40     4046          add     a2,a6           ;A6=*Next bakbits
+     411                    
+     412 00000a50     e46b          cmpxy   a3,a11
+     413 00000a60                   jrxlt   xhanext         ;Mod x end < tl x ?
+     414 00000a70                   jrylt   xhanext         ;Mod y end < tl y ?
+     415                    
+     416 00000a80     e524          cmpxy   a9,a4
+     417 00000a90                   jrxlt   xhanext         ;Mod x start > br x ?
+     418 00000aa0                   jrylt   xhanext         ;Mod y start > br y ?
+     419                    
+     420 00000ab0     24c2          sll     6,a2            ;*64 (each block is 4 words)
+     421 00000ac0     9701          move    *a8+,a1,L       ;A1=*block table
+     422 00000ad0     4022          add     a1,a2           ;A2=*block table end
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE    9
+
+     423                    
+     424 00000ae0     9705          move    *a8+,a5,L       ;A5=*hdrs
+     425 00000af0     970a          move    *a8+,a10,L      ;A10=*PAL table
+     426 00000b00     e323          subxy   a9,a3
+     427 00000b10     e324          subxy   a9,a4
+     428 00000b20     0d3f          callr   bgnd_addmod
+         00000b30     0006  
+     429 00000b40     e123          addxy   a9,a3
+     430 00000b50     e124          addxy   a9,a4
+     431                    
+     432 00000b60     4cc7  xhanext move    a6,a7
+     433 00000b70     9608          move    *a0+,a8,L       ;* module
+     434 00000b80     cbe7          jrnz    xhalp           ;!End?
+     435                    
+     436                    
+     437 00000b90     0960  xhax    rets
+     438                    
+     439                    
+     440                    *******************************
+     441                    * This function adds all module blocks in the given range of module
+     442                    * relative coors to the display list.
+     443                    * The boundries are included in the group to add.
+     444                    *
+     445                    * A1=*Bakgnd block table
+     446                    * A2=*Bakgnd block table end
+     447                    * A3=DISP_TL relative to the module start pos
+     448                    * A4=DISP_LR ^
+     449                    * A5=*Bakgnd hdr table
+     450                    * A7=*Bakbits table
+     451                    * A9=Module start position Y:X
+     452                    * A10=*Palette table for new block
+     453                    * B2=*Bakground insert routine primary|secondary
+     454                    *
+     455                    * Trashes A1,A8,A14,B0-B1
+     456                    
+     457 00000ba0            SUBRP  bgnd_addmod
+     458                    
+     459 00000ba0                   PUSH    a0,a6,a7
+     460                    
+     461 00000bc0     ec60          movx    a3,a0           ;find 1st universe block with x >= a9
+     462 00000bd0     0500          sext    a0
+     463 00000be0     0be0          subi    WIDEST_BLOCK,a0 ;1st x coordinate of a block
+         00000bf0     ff05  
+     464 00000c00     0d3f          callr   bgnd_get1stx
+         00000c10     ff76  
+     465 00000c20     ca4e          jrz     vrux            ;no blocks with > X ?
+     466                    
+     467 00000c30     09c6          movi    BLOCK_SIZE,a6
+         00000c40     0040  
+     468                    
+     469 00000c50     4c08          move    a0,a8           ;A0=*Block
+     470 00000c60     4428          sub     a1,a8           ;subtract off start of table
+     471 00000c70     2f48          srl     6,a8            ;divide by block size (64)
+     472 00000c80     40e8          add     a7,a8           ;a8=ptr to bit which indicates block on list
+     473 00000c90     1508          subk    8,a8            ;after inc a8, use movb *a8 to load sign bit
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   10
+
+     474 00000ca0     44c0          sub     a6,a0           ;subtract block size
+     475 00000cb0     4c07          move    a0,a7
+     476                    
+     477 00000cc0           vrusclp1
+     478 00000cc0     1028          addk    1,a8
+     479 00000cd0     40c7          add     a6,a7           ;Next block
+     480 00000ce0     4847          cmp     a2,a7
+     481 00000cf0     c541          jrge    vrux            ;End?
+     482                    
+     483 00000d00     8f00          movb    *a8,a0          ;Check bakbit
+     484 00000d10     cefa          jrn     vrusclp1                ;Already displayed?
+     485                    
+     486 00000d20     b4e1          move    *a7(MAP_X),a1
+         00000d30     0010  
+     487 00000d40     e461          cmpxy   a3,a1
+     488 00000d50                   JRXGE   vruqscanstrt    ;Block X >= TL X ? (Do quicker scan)
+     489                    
+     490 00000d60     b4ee          move    *a7(MAP_HDR),a14
+         00000d70     0030  
+     491 00000d80     268e          sll     32-12,a14       ;Bits 0-11 are hdr offset
+     492 00000d90     2e0e          srl     32-12-4,a14     ;*16
+     493 00000da0     4dc0          move    a14,a0          ;>*5
+     494 00000db0     2440          sll     2,a0
+     495 00000dc0     400e          add     a0,a14
+     496 00000dd0     40ae          add     a5,a14          ;A14=*Img hdr
+     497                    
+     498 00000de0     85c0          move    *a14,a0         ;MAP_W
+     499 00000df0     4001          add     a0,a1
+     500 00000e00     e461          cmpxy   a3,a1
+     501 00000e10                   JRXLT   vrusclp1                ;Block X+W < TL X ? (not in range)
+     502                    
+     503 00000e20     b4e1          move    *a7(MAP_Y),a1
+         00000e30     0020  
+     504 00000e40     2601          sll     16,a1
+     505 00000e50     e481          cmpxy   a4,a1
+     506 00000e60                   JRYGE   vrusclp1        ;Block Y >= BR Y ?
+     507                    
+     508 00000e70     b5c0          move    *a14(MAP_H),a0
+         00000e80     0010  
+     509 00000e90     2600          sll     16,a0
+     510 00000ea0     4001          add     a0,a1
+     511 00000eb0     e461          cmpxy   a3,a1
+     512 00000ec0                   JRYLT   vrusclp1                ;Block Y+H < TL Y ?
+     513                    
+     514 00000ed0     0d3f          callr   bgnd_addblk
+         00000ee0     0025  
+     515 00000ef0     c9dc          jrnc    vrusclp1
+     516                    
+     517 00000f00     c020          jruc    vrux            ;No more blocks!
+     518                    
+     519                    
+     520                    * Since blocks are sorted from left to right, we can do a quicker scan
+     521                    * once block left > display left
+     522                    
+     523 00000f10           vrusclp2
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   11
+
+     524 00000f10     1028          addk    1,a8
+     525 00000f20     40c7          add     a6,a7           ;Next block
+     526 00000f30     4847          cmp     a2,a7
+     527 00000f40     c51c          jrge    vrux            ;End?
+     528                    
+     529 00000f50     8f00          movb    *a8,a0          ;Check bakbit
+     530 00000f60     cefa          jrn     vrusclp2                ;Already displayed?
+     531                    
+     532 00000f70           vruqscanstrt
+     533 00000f70     b4e1          move    *a7(MAP_Y),a1
+         00000f80     0020  
+     534 00000f90     2601          sll     16,a1
+     535 00000fa0     e481          cmpxy   a4,a1
+     536 00000fb0                   JRYGE   vrusclp2        ;Block Y >= BR Y ?
+     537                    
+     538 00000fc0     b4ee          move    *a7(MAP_HDR),a14
+         00000fd0     0030  
+     539 00000fe0     268e          sll     32-12,a14       ;Bits 0-11 are hdr offset
+     540 00000ff0     2e0e          srl     32-12-4,a14     ;*16
+     541 00001000     4dc0          move    a14,a0          ;>*5
+     542 00001010     2440          sll     2,a0
+     543 00001020     400e          add     a0,a14
+     544 00001030     40ae          add     a5,a14          ;A14=*Img hdr
+     545                    
+     546 00001040     b5c0          move    *a14(MAP_H),a0
+         00001050     0010  
+     547 00001060     2600          sll     16,a0
+     548 00001070     4001          add     a0,a1
+     549 00001080     e461          cmpxy   a3,a1
+     550 00001090                   JRYLT   vrusclp2                ;Block Y+H < TL Y ?
+     551                    
+     552 000010a0     b4e1          move    *a7(MAP_X),a1
+         000010b0     0010  
+     553 000010c0     e481          cmpxy   a4,a1
+     554 000010d0                   JRXGE   vrux            ;BLOCK X > BR X ?
+     555                    
+     556 000010e0     0d3f          callr   bgnd_addblk
+         000010f0     0004  
+     557 00001100     c9e0          jrnc    vrusclp2
+     558                    
+     559                    
+     560 00001110           vrux    PULL    a0,a6,a7
+     561 00001130     0960          rets
+     562                    
+     563                    
+     564                    *******************************
+     565                    * Add a block (object) to a list
+     566                    * A5=*Base of background block hdr
+     567                    * A7=*Background block
+     568                    * A8=*Bakbit for obj
+     569                    * A9=Module start position Y:X
+     570                    * A10=*Palette table for new block
+     571                    * B2=*Ins routine
+     572                    * Trashes A1,A14,B0-B1
+     573                    * C set if getobj fails
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   12
+
+     574                    
+     575                    
+     576 00001140            SUBRP  bgnd_addblk
+     577                    
+     578 00001140                   PUSH    a0,a2,a3,a4
+     579                    
+     580                    
+     581 00001160     0d5f          calla   GETOBJ
+         00001170 00000000! 
+     582 00001190     ca00          jrz     sdnx
+         000011a0     008b  
+     583                    
+     584 000011b0     8f0e          movb    *a8,a14         ;set bit in bitmap for block on list
+     585 000011c0     0bae          ori     080H,a14
+         000011d0 00000080  
+     586 000011f0     8dc8          movb    a14,*a8
+     587                    
+     588 00001200     b300          move    a8,*a0(OPLINK),L ;OPLINK = *Bakbit for obj
+         00001210     01a0  
+     589                    
+     590 00001220     5621          clr     a1
+     591 00001230     b020          move    a1,*a0(OID)
+         00001240     0190  
+     592 00001250     b020          move    a1,*a0(OFLAGS)
+         00001260     00e0  
+     593 00001270     b220          move    a1,*a0(OXVEL),L
+         00001280     0020  
+     594 00001290     b220          move    a1,*a0(OYVEL),L
+         000012a0     0040  
+     595 000012b0     09e1          movi    01000100H,a1
+         000012c0 01000100  
+     596 000012e0     b220          move    a1,*a0(OSCALE),L
+         000012f0     0240  
+     597                    
+     598 00001300     b6e1          move    *a7(MAP_X),a1,L ;A1=ypos:xpos of block from mod base
+         00001310     0010  
+     599 00001320     e121          addxy   a9,a1           ;+module base position
+     600 00001330     b020          move    a1,*a0(OXPOS)
+         00001340     0090  
+     601 00001350     2e01          srl     16,a1
+     602 00001360     b020          move    a1,*a0(OYPOS)
+         00001370     00b0  
+     603 00001380     84e4          move    *a7,a4          ;A4=map_z,8:map_flags,4:map_pal,4
+     604 00001390     4c83          move    a4,a3
+     605 000013a0     0523          zext    a3
+     606 000013b0     2f03          srl     8,a3
+     607 000013c0     b060          move    a3,*a0(OZPOS)
+         000013d0     00d0  
+     608                    
+     609 000013e0     b4e1          move    *a7(MAP_HDR),a1
+         000013f0     0030  
+     610 00001400     ec2e          movx    a1,a14
+     611 00001410     260e          sll     32-16,a14
+     612 00001420     2c8e          srl     32-4,a14
+     613 00001430     252e          sll     4+5,a14         ;Bits 12-15 are bits 4-7 of pal index *32
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   13
+
+     614                            
+     615 00001440     2681          sll     32-12,a1        ;Bits 0-11 are hdr offset
+     616 00001450     2e01          srl     32-12-4,a1      ;*16
+     617 00001460     4c23          move    a1,a3           ;>*5
+     618 00001470     2441          sll     2,a1
+     619 00001480     4061          add     a3,a1
+     620                    
+     621 00001490     40a1          add     a5,a1           ;A1=*Img hdr
+     622                    
+     623 000014a0     4c83          move    a4,a3           ;A4=Map_z,8: map_flags,4: map_pal,4
+     624 000014b0     2784          sll     32-4,a4         ;Last four bits for *pal
+     625 000014c0     2d24          srl     32-4-5,a4       ;*32
+     626 000014d0     41c4          add     a14,a4
+     627 000014e0     4144          add     a10,a4          ;+Pal_t base
+     628 000014f0     4c02          move    a0,a2           ;Save A0
+     629 00001500     8680          move    *a4,a0,L        ;Get *PAL
+     630 00001510     4c24          move    a1,a4
+     631                            .if     NMBPAL
+     632                            calla   pal_getb
+     633                            .else
+     634 00001520     0d5f          calla   pal_getf
+         00001530 00000000! 
+     635                            .endif
+     636 00001550     cb01          jrnz    bsetpal         ;No PAL?
+     637 00001560     5600          clr     a0
+     638 00001570           bsetpal
+     639 00001570     0520          zext    a0
+     640 00001580     b202          move    a0,*a2(OPAL),L
+         00001590     0150  
+     641 000015a0     4c40          move    a2,a0                   ;Restore A0
+     642 000015b0     4c81          move    a4,a1                   ;^ A1
+     643 000015c0     b220          move    a1,*a0(OIMG),L          ;A1=Data block pointer
+         000015d0     0170  
+     644                    
+     645 000015e0     b424          move    *a1(MAP_CTRL),a4        ;Get DMA ctrl
+         000015f0     0040  
+     646 00001600     0ba4          ori     08002H,a4               ;A4=flags (08000H dma go, 2)
+         00001610 00008002  
+     647 00001630     2f83          srl     4,a3                    ;remove palette bits
+     648 00001640     27c3          sll     32-2,a3
+     649 00001650     c801          jrc     sdntrans                        ;Transparent?
+     650 00001660     1024          addk    1,a4
+     651 00001670     2cc3  sdntrans        srl     26,a3                   ;Line up flip bits
+     652 00001680     5464          or      a3,a4
+     653                    
+     654 00001690     9622          move    *a1+,a2,L               ;ISIZE
+     655 000016a0     8623          move    *a1,a3,L                ;Get SAG
+     656 000016b0     0524          zext    a4                      ;Zero offset in A4
+     657                    
+     658 000016c0     4c01          move    a0,a1
+     659 000016d0     0b01          addi    OSIZE+32,a1
+         000016e0     0150  
+     660 000016f0     0981          mmtm    a1,a2,a3,a4             ;Stuff OSIZE,OSAG,OFFSET,OCTRL
+         00001700     3800  
+     661                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   14
+
+     662 00001710     b404          move    *a0(OZPOS),a4
+         00001720     00d0  
+     663                    
+     664 00001730     0b44          cmpi    80,a4                   ;> 80?
+         00001740     ffaf  
+     665 00001750     c429          jrlt    sdnnormz                        ;Normal?
+     666                    
+     667 00001760     0b44          cmpi    100,a4
+         00001770     ff9b  
+     668 00001780     c50a          jrge    no_call_routine
+     669 00001790     4c8e          move    a4,a14
+     670 000017a0     0bee          subi    80,a14
+         000017b0     ffaf  
+     671 000017c0                   X32     a14
+     672 000017d0     0b2e          addi    z_t,a14
+         000017e0 00001bf0' 
+     673 00001800     87ce          move    *a14,a14,L
+     674 00001810     092e          call    a14
+     675 00001820     c009          jruc    sdnend_clever_stuff
+     676                    
+     677 00001830           no_call_routine
+     678                    
+     679 00001830     0be4          subi    100,a4
+         00001840     ff9b  
+     680 00001850                   X16     a4
+     681 00001860     0b24          addi    sdnztbl,a4
+         00001870 00001aa0' 
+     682 00001890     8484          move    *a4,a4
+     683 000018a0     b080          move    a4,*a0(OZPOS)
+         000018b0     00d0  
+     684                    
+     685                    
+     686                     .if 0
+     687                    ;       sll     5,a4                    ;*32
+     688                    ;       addi    z_t,a4
+     689                    ;       move    *a4,a4,L
+     690                    ;       call    a4                      ;Call special code
+     691                    
+     692                            move    a4,*a0(OZPOS)
+     693                    
+     694                            subi    20,a4                   ;> 100?
+     695                            jrgt    sdnno_rel
+     696                            move    *a0(OFLAGS),a4
+     697                            ori     M_SCRNREL,a4
+     698                            move    a4,*a0(OFLAGS)
+     699                            move    *a0(OYPOS),a4
+     700                            andi    0ffh,a4
+     701                            move    a4,*a0(OYPOS)
+     702                    sdnno_rel
+     703                     .endif
+     704                    
+     705 000018c0           sdnend_clever_stuff
+     706 000018c0     b404          move    *a0(OFLAGS),a4
+         000018d0     00e0  
+     707 000018e0     0ba4          ori     M_BOBJ,a4
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   15
+
+         000018f0 00004000  
+     708 00001910     b080          move    a4,*a0(OFLAGS)
+         00001920     00e0  
+     709                    
+     710 00001930     5684          clr     a4
+     711 00001940     b280          move    a4,*a0(OXVEL),L
+         00001950     0020  
+     712 00001960     b280          move    a4,*a0(OYVEL),L
+         00001970     0040  
+     713                    
+     714 00001980     0d5f          calla   INSOBJ                  ;Put on objlst
+         00001990 00000000! 
+     715 000019b0     0320          clrc
+     716 000019c0                   PULL    a0,a2,a3,a4
+     717 000019e0     0960          rets
+     718                    
+     719 000019f0           sdnnormz
+     720                    ;       call    b2                      ;Call insert routine
+     721 000019f0     0d5f          calla   INSBOBJ
+         00001a00 00000000! 
+     722 00001a20     0320          clrc
+     723 00001a30                   PULL    a0,a2,a3,a4
+     724 00001a50     0960          rets
+     725                    
+     726 00001a60     0de0  sdnx    setc                            ;failure to get object
+     727 00001a70                   PULL    a0,a2,a3,a4
+     728 00001a90     0960          rets
+     729                    
+     730                    
+     731                    
+     732 00001aa0           sdnztbl
+     733 00001aa0     13c7          .word   013c7h  ;100    mat
+     734 00001ab0     13c8          .word   013c8h  ;101    back posts
+     735 00001ac0     13c9          .word   013c9h  ;102    back buckles
+     736 00001ad0     1500          .word   01500h  ;103    front buckles
+     737 00001ae0     1501          .word   01501h  ;104    front posts
+     738 00001af0     1502          .word   01502h  ;105    front mat
+     739                    ;       .word   015aah  ;103    front buckles
+     740                    ;       .word   015abh  ;104    front posts
+     741                    ;       .word   015ach  ;105    front mat
+     742 00001b00     1769          .word   01769h  ;106    front gate
+     743 00001b10     0000          .word   0       ;107
+     744 00001b20     0000          .word   0       ;108
+     745 00001b30     0000          .word   0       ;109
+     746 00001b40     0000          .word   0       ;110
+     747 00001b50     0000          .word   0       ;111
+     748 00001b60     0000          .word   0       ;112
+     749 00001b70     0000          .word   0       ;113
+     750 00001b80     0000          .word   0       ;114
+     751 00001b90     0000          .word   0       ;115
+     752 00001ba0     0000          .word   0       ;116
+     753 00001bb0     0000          .word   0       ;117
+     754 00001bc0     0000          .word   0       ;118
+     755 00001bd0     0000          .word   0       ;119
+     756 00001be0     0000          .word   0       ;120
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   16
+
+     757                    
+     758                    
+     759                    
+     760                    ********************************
+     761                    * These functions are called when a block has the appropriate Z
+     762                    * A0=*Obj
+     763                    * You can trash A1-A4,A14,B0,B1
+     764                    
+     765 00001bf0           z_t
+     766                    ;80
+     767 00001bf0 00002130'         .long   bak_null,bak_null,bak_null,bak_null,bak_null
+     768 00001c90 00002130'         .long   bak_null,DO_FLASH,DO_JASON_CROWD,DO_TONY_CROWD,DO_VOGEL_CROWD
+     769                    ;90
+     770 00001d30 00002130'         .long   bak_null,bak_null,bak_null,bak_null,bak_null
+     771 00001dd0 00002130'         .long   bak_null,bak_null,bak_null,bak_null,bak_null
+     772 00001e70 00002130'         .long   bak_null,bak_null,bak_null,bak_null,bak_null
+     773 00001f10 00002130'         .long   bak_null,bak_null,bak_null,bak_null,bak_null
+     774 00001fb0 00002130'         .long   bak_null,bak_null,bak_null,bak_null,bak_null
+     775 00002050 00002130'         .long   bak_null,bak_null,bak_null,bak_null,bak_null
+     776 000020f0 00002130'         .long   bak_null,bak_null
+     777                    
+     778                    
+     779 00002130           bak_null
+     780                    
+     781 00002130     0960          rets
+     782                    
+     783                    
+     784                    
+     785                    *******************************
+     786                    * This function deletes all objs outside the given range
+     787                    * of coors from the display list.
+     788                    * The boundries are not included in the group to delete.
+     789                    * A3=DISP_TL
+     790                    * A4=DISP_LR
+     791                    * A8=*Bakgnd list
+     792                    * Trashes A0,A6-A9
+     793                            .align
+     794 00002200            SUBR   bgnd_delnonvis
+     795                    
+     796 00002200     4d09  zydlp   move    a8,a9                   ;ptr to prev in a9
+     797 00002210     8708          move    *a8,a8,L                ;ptr to next in a8
+     798 00002220     ca25          jrz     zydx                    ;End?
+     799                    
+     800 00002230     b507  zydlp2  MOVE    *A8(OXPOS),A7
+         00002240     0090  
+     801 00002250     e4e4          CMPXY   A7,A4
+     802 00002260                   JRXLT   DEL_IT                  ;JUMP IF BR X < BLOCK X
+     803                    
+     804 00002270     b500          MOVE    *A8(OYPOS),A0
+         00002280     00b0  
+     805 00002290     2600          SLL     16,A0
+     806 000022a0     e404          CMPXY   A0,A4
+     807 000022b0                   JRYLT   DEL_IT                  ;JUMP IF BR Y < BLOCK Y
+     808                    
+     809 000022c0     b701          MOVE    *A8(OIMG),A1,L
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 12:08:44 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+background handlers                                                  PAGE   17
+
+         000022d0     0170  
+     810 000022e0     8426          MOVE    *A1,A6                  ;A6 BLOCK WIDTH
+     811 000022f0     40c7          ADD     A6,A7
+     812 00002300     e467          CMPXY   A3,A7
+     813 00002310                   JRXLT   DEL_IT                  ;JUMP IF TL X > BLOCK X+W
+     814                    
+     815 00002320     b427          MOVE    *A1(MAP_H),A7           ;A7 BLOCK HEIGHT
+         00002330     0010  
+     816 00002340     2607          SLL     16,A7
+     817 00002350     40e0          ADD     A7,A0
+     818 00002360     e460          CMPXY   A3,A0
+     819 00002370                   JRYGE   zydlp                   ;JUMP IF TL Y <= BLOCK Y+H
+     820                    
+     821 00002380           DEL_IT
+     822 00002380     b700          move    *a8(OPLINK),a0,L        ;0CHlr the on display list bit
+         00002390     01a0  
+     823 000023a0     8e07          movb    *a0,a7
+     824 000023b0     2727          sll     32-7,a7
+     825 000023c0     2ce7          srl     32-7,a7
+     826 000023d0     8ce0          movb    a7,*a0
+     827                    
+     828 000023e0     8b09          move    *a8,*a9,L               ;Unlink
+     829 000023f0     07a0          move    @OFREE,a0,L
+         00002400 00000000! 
+     830 00002420     8208          move    a0,*a8,L
+     831 00002430     0788          move    a8,@OFREE,L             ;Put on free list
+         00002440 00000000! 
+     832 00002460     8728          move    *a9,a8,L                ;A8=*Next obj
+     833 00002470     cbdb          jrnz    zydlp2                  ;More?
+     834                    
+     835 00002480     0960  zydx    rets
+     836                    
+     837                    
+     838                    ******************************************************************************
+     839                    
+     840                            .end
+
+ No Errors,  No Warnings

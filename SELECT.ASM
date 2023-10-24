@@ -52,7 +52,7 @@
 	.ref	GET_ADJ,get_but_val_down,get_process_ptr,get_start_cur
 	.ref	get_stick_val_cur,get_stick_val_down,match_time
 	.ref	NEXT_ANN_QUEUE,no_pin_check,PCNT,pin_speed_check
-	.ref	PIN_SPEED_TAB,PSTATUS,PUT_UP_PROGRESS,RNDPER,RNDRNG0
+	.ref	PIN_SPEED_TAB,PSTATUS2,PUT_UP_PROGRESS,RNDPER,RNDRNG0
 	.ref	SPECIAL_WIPEOUT,start_credbox
 	.ref	NEXT_IN_LADDER,INIT_LADDER_TABLE
 	.ref	NUM_OF_OPPS,CURRENT_LADDER,get_all_buttons_cur2
@@ -104,7 +104,7 @@
 	BSSX	player_pal_pref,120*2
 	.bss	cursor_procs,16
 	BSSX	rr_loss,16
-	.BSS	TEMP_PSTATUS,16
+	.BSS	TEMP_PSTATUS2,16
 
 #*****************************************************************************
 
@@ -182,7 +182,7 @@ TO_CONTINUE_YPOS	.equ	CREDIT_LINE_YPOS+15
 	MOVE	@royal_rumble,A10
 	JRNZ	WE_PLAYED_A_TAG_TEAM
 
-	move	@PSTATUS,A10
+	move	@PSTATUS2,A10
 	srl	1,a10
 	move	a10,a8
 
@@ -353,7 +353,7 @@ hstd_mod
 ******************************************************************************
 
  SUBR	pin_speed_in_case
-	MOVE	@PSTATUS,@TEMP_PSTATUS
+	MOVE	@PSTATUS2,@TEMP_PSTATUS
 
 	move	@total_matches,a14
 	jrz	no_need_for_input
@@ -455,8 +455,8 @@ are_we_waiting3
 	jruc	are_we_waiting3
 
 no_need_for_input
-	MOVE	@TEMP_PSTATUS,A14
-	MOVE	@PSTATUS,A1
+	MOVE	@TEMP_PSTATUS2,A14
+	MOVE	@PSTATUS2,A1
 	CMP	A1,A14
 	JREQ	NORMAL_EXIT	
 
@@ -803,7 +803,7 @@ NO_NEW_TUNE
 	calla	start_credbox
 
 ;Initialize flags
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	move	a14,@active_flag
 
 	clr	a14
@@ -844,7 +844,7 @@ no_we_are_not
 	move	@active_flag,a14
 	jrnz	waitloop
 
-	move	@OLD_PSTATUS,a14
+	move	@OLD_PSTATUS2,a14
 	jrnz	waitloop
 
 
@@ -872,7 +872,7 @@ no_we_are_not
 
 ;Draw the croutons and their associated pix
 
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 ;	jrnz	#gocrut
 ;	SLEEPK	1
 ;	jruc	display_croutons
@@ -957,7 +957,7 @@ crouton_pos_table
 
 #*****************************************************************************
 * Process that handles player selection for one player.
-* >a10 = player (0 or 1)
+* 0a10H = player (0 or 1)
 
 	STRUCTPD
 	LONG		#HILITE			;UHL *hilite ring
@@ -1031,11 +1031,11 @@ crouton_pos_table
 	movk	30,a0
 	move	a0,*a13(#CNTR)
 	;active?
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	a10,a14
 	jrnz	#begin_select
 
-	move	@OLD_PSTATUS,a14
+	move	@OLD_PSTATUS2,a14
 	btst	a10,a14
 	jrz	#norm
 
@@ -1130,18 +1130,18 @@ FINISHED_INPUTTING
 	calla	civanic
 
 #start_waitloop1
-	move	@OLD_PSTATUS,a14
+	move	@OLD_PSTATUS2,a14
 	btst	a10,a14
 	jrnz	#okz
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	a10,a14
 	jrnz	#okz
 ;Timer has run out on this player
 	move	a10,a8
 	calla	clear_icon_total
 	calla	del_bonus_icons
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	jrnz	#still
 	move	@rr_loss,a0
 	jrz	do_game_over
@@ -1303,7 +1303,7 @@ LN2b_setup
 
 	callr	#blink
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	a10,a14
 	jrz	#enough_money1
 
@@ -1498,7 +1498,7 @@ no_need_to_create_name
 
 	callr	#blink
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	a10,a14
 	jrz	#enough_money
 
@@ -1590,7 +1590,7 @@ no_need_to_create_name
 	move	a0,@are_we_waiting_f
 no_set_it_later
 
-;	move	@PSTATUS,A0
+;	move	@PSTATUS2,A0
 ;	CMPI	3,A0
 ;	JREQ	are_we_waiting2
 ;
@@ -1905,7 +1905,7 @@ redcyc_tbl
 
 	move	*a13(#RND_DEST),a14
 	jrn	#move_sound_ok
-	movi	>DD,a0
+	movi	0DDH,a0
 #move_sound_ok
 
 	calla	triple_sound
@@ -2542,13 +2542,13 @@ attbars
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-#p1name	.word	>51,184,name_z
+#p1name	.word	051H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
 	.long	0,0
 
-#p2name	.word	>142,184,name_z
+#p2name	.word	0142H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
@@ -2633,11 +2633,11 @@ select_time	equ	TSEC*15
 
 #reset
 	movi	select_time,a9
-	move	@PSTATUS,a8
+	move	@PSTATUS2,a8
 
 #waitloop
 	SLEEPK	1
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmp	a14,a8
 	jrne	#reset			;new buyin.  reset
 
@@ -2646,7 +2646,7 @@ select_time	equ	TSEC*15
 ;If other player is still thinking about buying in or is
 ;still entering his initials, then go to #reset
 
-	move	@OLD_PSTATUS,a0
+	move	@OLD_PSTATUS2,a0
 	jrnz	#reset
 
 	movk	1,a14
@@ -2675,7 +2675,7 @@ clock_digits
 	move	@time_out,a0
 	janz	KILL_THIS_DIGIT
 
-	move	@OLD_PSTATUS,a0
+	move	@OLD_PSTATUS2,a0
 	jrnz	#loop0
 
      	move	*a10(PA9),a0
@@ -2729,7 +2729,7 @@ digits_tbl
 #noskp
  .endif
 
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	cmpi	3,a0
 	jrnz	#oneplyrgm
 
@@ -3136,7 +3136,7 @@ not_rr1
 	calla	BEGINOBJP
 	PULL	a6,a7
 
-	move	@PSTATUS,a9
+	move	@PSTATUS2,a9
 	movi	TSEC*2,a10
 	movi	#cont_timer,a11
 
@@ -3146,7 +3146,7 @@ not_rr1
 	PULLP	a6,a7
 
 ;Buyin check
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	move	*a13(PDATA+16),a0
 	btst	a0,a14
 	jrne	#buyin
@@ -3255,7 +3255,7 @@ setup_clock_sound
 	move	*a13(PDATA+16),a14
 	addk	1,a14
 	not	a14
-	move	@OLD_PSTATUS,a0
+	move	@OLD_PSTATUS2,a0
 	and	a14,a0
 	move	@cursor_procs,a14
 	dec	a14
@@ -3288,7 +3288,7 @@ setup_clock_sound
 	move	*a13(PDATA+16),a14
 	addk	1,a14
 	not	a14
-	move	@OLD_PSTATUS,a0
+	move	@OLD_PSTATUS2,a0
 	and	a14,a0
 	move	@cursor_procs,a14
 	dec	a14

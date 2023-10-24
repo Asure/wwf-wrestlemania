@@ -209,7 +209,7 @@ lp?
 	BSSX	p2pins,16
 
 	.ref	match_time,ck_live_teammates
-	.ref	PSTATUS,royal_rumble
+	.ref	PSTATUS2,royal_rumble
 	.ref	process_ptrs
 	.ref	p1winstreak
 	.ref	p2winstreak
@@ -1033,11 +1033,11 @@ lp?
 	PUSH	a9
 	movb	*a10(PLYR_SIDE),a9
 	jrz	#i_am_player1
-	move	@PSTATUS,a9
+	move	@PSTATUS2,a9
 	andi	01b,a9
 	jruc	#gaioih_award
 #i_am_player1
-	move	@PSTATUS,a9
+	move	@PSTATUS2,a9
 	andi	10b,a9
 #gaioih_award
 	jrz	#gaioih_done
@@ -1433,7 +1433,7 @@ lp?
 	sll	16,a1
 	sub	a1,a0
 	move	*a9,a2,L
-	movi	>2000,a3
+	movi	02000H,a3
 	movi	DMAWNZ|M_SCRNREL,a4
 	movi	CLSNEUT,a5
 	clr	a6
@@ -1657,7 +1657,7 @@ f_done
 ; A10 = message number (1 - 4)
  SUBR	display_dufus_message
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	move	a9,a9				; Player 1?
 	jrz	#p1_is_dufus			; br = yes
 	move	@p2winstreak,a0,W		; Is this player on a winstreak?
@@ -1694,7 +1694,7 @@ f_done
 	move	a2,@dboxes_on,L
 	move	*a3,a2,L			; Get image pointer (text)
 	movi	[DUFUS_BOX_YPOS,0],a1		; Vertical Position
-	movi	>2000,a3			; Z Position
+	movi	02000H,a3			; Z Position
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; DMACTRL
 	movi	CLSNEUT,a5			; Object ID
 	clr	a6				; X Velocity 
@@ -2016,7 +2016,7 @@ f_done
  SUBRP	drone_meters_powerup_check
 
 	;only in one-player games
-	move	@PSTATUS,a11
+	move	@PSTATUS2,a11
 	cmpi	3,a11
 	jrz	#onep_only
 
@@ -2397,7 +2397,7 @@ f_done
 #*
 ;a8 = player number
  SUBRP	show_player_options
-	move	@PSTATUS,a9
+	move	@PSTATUS2,a9
 	btst	a8,a9
 	jrz	#spo_die
 

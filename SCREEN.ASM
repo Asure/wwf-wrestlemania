@@ -455,7 +455,7 @@ dma_it_out
 
 	dint
 
-	setf	1,0,0			;>Enable DMA int
+	setf	1,0,0			;0EHnable DMA int
 	movk	1,a1
 	move	a1,@INTENB+1		;X1E
 	setf	16,1,0

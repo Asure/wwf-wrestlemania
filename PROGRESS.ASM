@@ -40,7 +40,7 @@
 	.ref	RNDRNG0,HALT,dtype,dpageflip,IRQSKYE,WORLDTLX,WORLDTLY
 	.ref	BAKMODS,BGND_UD1,set_process_ptr,animate_wrestler
 	.ref	animate_wrestler1,animate_wrestler2,wrestler_veladd
-	.ref	ani_init,PSTATUS,pal_getf,PCNT,index1,index2,obj_look
+	.ref	ani_init,PSTATUS2,pal_getf,PCNT,index1,index2,obj_look
 	.ref	set_images,change_anim1a,change_anim2a,match_time
 	.ref	process_ptrs,reduce_bog
 	.ref	hrt_run2_anim,rzr_run2_anim,und_run2_anim,yok_run2_anim
@@ -648,7 +648,7 @@ SPKR1_ANIM
 	;it's a multiple-wrestler fight.  Scramble the current entry.
 	callr	scramble_table_entry
 
-	;sort so that shawn ends up in the third slot: >03040x0x
+	;sort so that shawn ends up in the third slot: 003040Hx0x
 	CLR	A3
 	CLR	A4
 	MOVX	A1,A3
@@ -750,7 +750,7 @@ WE_HAVE_COMPANY
 SETUP_LOGOS
 	move	@royal_rumble,a1
 	jrz	#head_to_head
-	move	@PSTATUS,a1
+	move	@PSTATUS2,a1
 	cmpi	3,a1
 	jrz	#do_rr_vs
 #head_to_head
@@ -758,7 +758,7 @@ SETUP_LOGOS
 
 	MOVE	@index1,a1
 	MOVI	-200,A6
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 	JRZ	INDEX_SET_1
 	SRL	1,A0
 	JRC	INDEX_SET_1
@@ -775,7 +775,7 @@ INDEX_SET_1
 	CALLR	SETUP_THIS_LOGO_DAG
 
 	MOVE	@index2,a1
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 ;	JRZ	WE_HAVE_COMPANY
 	CMPI	3,A0
 	JREQ	WE_HAVE_COMPANY
@@ -1083,7 +1083,7 @@ ALREADY_FLASHING
 	RETS
 
 SET_GAME_FLASHES
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 	CMPI	3,A0
 	JREQ	ALWAYS_DO_FLASH
 	MOVE	@NUM_OPPS,A0
@@ -1546,9 +1546,9 @@ FINAL_BATTLE	equ	7	;14th battle is last one. (keep up-to-date)
 	; swap a3 and a4.  Then look at a3 again, and if one still matches,
 	; rotate it 16 bits.
 	move	a3,a5
-	andi	>00FF,a5
+	andi	000FFH,a5
 	move	a3,a6
-	andi	>FF00,a6
+	andi	0FF00H,a6
 	srl	8,a6
 
 	cmp	a1,a5
@@ -1564,9 +1564,9 @@ FINAL_BATTLE	equ	7	;14th battle is last one. (keep up-to-date)
 #swap	SWAP	a3,a4
 
 	move	a3,a5
-	andi	>00FF,a5
+	andi	000FFH,a5
 	move	a3,a6
-	andi	>FF00,a6
+	andi	0FF00H,a6
 	srl	8,a6
 
 	cmp	a1,a5
@@ -2697,7 +2697,7 @@ NO_DEAD_BODIES
 	movi	PSIDE_PLYR1,a9			;side on
 	clr	a10
 	move	@index1,a11			;wrestler
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 	SRL	1,A0
 	JRC	INDEX_SET
 	move	@index2,a11			;wrestler
@@ -4054,7 +4054,7 @@ NO_NAMES_P1
 	MOVK	1,A2
 	MOVE	A2,@NAMES_POWER2
 NO_NAMES_P2
-	MOVE	@PSTATUS,A2
+	MOVE	@PSTATUS2,A2
 	CMPI	3,A2
 	JRNE	NO_ALLOW_BONUS_POWER
 	MOVE	A0,A1
@@ -4137,7 +4137,7 @@ WHICH_SKIRT_PALLETE
 
 	;figure out who our human is, and put his wrestlernum in a6
 	;if we're in attract mode (PSTATUS==0), look in index1.
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	move	@index2,a6
 	btst	1,a14
 	jrnz	#pset
@@ -4267,7 +4267,7 @@ WHICH_SKIRT_PALLETE
 
 **********
 * Get a random wrestler among those available.
-* >a7 = excluded wrestler mask  >a8 = excluded wrestler count
+* 0a7H = excluded wrestler mask  0a8H = excluded wrestler count
 * <a0 = choice among those available
 
  SUBR	get_rnd_wrestler

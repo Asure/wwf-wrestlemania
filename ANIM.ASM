@@ -38,7 +38,7 @@
 
 	.ref	p2rounds,p1rounds,xxx_dead_anim,is_final_match,FINAL_PTR
 	.ref	get_opp_process
-	.ref	PSTATUS,round_award
+	.ref	PSTATUS2,round_award
 	.ref	PCNT,slowmo,do_roll,match_over,triple_sound,is_8_on_1
 	.ref	match_winner,process_ptrs,square_root,set_target_offsets
 	.ref	calc_line_x,RNDPER,wrtable_sound,rope_command,no_debris
@@ -173,7 +173,7 @@ _next_command1
 	move	*a4+,a0,L		;* * multi image object
 
 	.if DEBUG
-	cmpi	>ff800000,a0
+	cmpi	0ff800000H,a0
 	jrhs	#img_ok
 	LOCKUP	;bogus image pointer
 #img_ok
@@ -447,7 +447,7 @@ _ani_attack_on	;6
 ;The start of each attack on will clear MODE_STATUS!
 
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	move	*a13(ANIMODE),a0
@@ -971,7 +971,7 @@ _ani_attack_on_Z ;14
 ;The start of each attack on will clear MODE_STATUS!
 
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	move	*a13(ANIMODE),a0
@@ -1473,9 +1473,9 @@ _ani_leapatpos	;39
 	add	a0,a1
 	divu	a8,a1			;a1 = a1/a8 ( ((y-y0)+(1/2*a*t^2)) / t )
 
-	cmpi	>0f0000,a1
+	cmpi	00f0000H,a1
 	jrlt	#yok
-	movi	>0f0000,a1
+	movi	00f0000H,a1
 #yok	move	a1,*a13(OBJ_YVEL),L
 
 
@@ -1869,7 +1869,7 @@ _ani_checkword	;49
 
 ;hit.  set mode_status
 	move	*a13(ANIMODE),a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	jruc	_next_command
@@ -1878,7 +1878,7 @@ _ani_checkword	;49
 #clr
 ;clear mode_status
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	jruc	_next_command
@@ -2019,7 +2019,7 @@ _ani_start_dizzy ;57
 _ani_clr_status ;58
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 
 	move	a4,*a10(OANIPC),L
@@ -3070,7 +3070,7 @@ _ani_waitroll	;84
 	; if there is, store his number and become a zombie.
 
 	;first, tho, give the guy who killed us some life.
-	move	@PSTATUS,a1
+	move	@PSTATUS2,a1
 	dec	a1
 
 	;but not if he's already dead!
@@ -3095,7 +3095,7 @@ _ani_waitroll	;84
 	addk	8,a0
 	move	a0,@FINAL_PTR,L
 
-	;7->8 hack
+	;7-08H hack
 	cmpi	7,a1
 	jrne	#vok
 	movk	8,a1
@@ -3168,7 +3168,7 @@ _ani_ifopp		;86
 
 	;clear mode_status
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	;compare loop
@@ -3180,7 +3180,7 @@ _ani_ifopp		;86
 
 	;hit.  set mode_status
 	move	*a13(ANIMODE),a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	;run off the rest of the list

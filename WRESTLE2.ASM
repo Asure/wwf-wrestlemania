@@ -41,7 +41,7 @@
 ******************************************************************************
 * EXTERNAL REFERENCES
 
-	.ref	PSTATUS,triple_sound,change_anim1a,set_rotate_anim
+	.ref	PSTATUS2,triple_sound,change_anim1a,set_rotate_anim
 	.ref	get_rope_x,round_tickcount,get_process_ptr,NUM_OPPS
 	.ref	PALFRAM,HALT,dma_bog,GAMSTATE,pal_getf,process_ptrs
 	.ref	change_anim2a,announce_rnd_winner,GET_ADJ,pin_prompt
@@ -1503,7 +1503,7 @@ OFFSCR_X	equ	221
 * Gets the animation point of a multipart object.  Find the highest x and y
 * offset values among all the pieces.
 *
-* >a0 = object table pointer
+* 0a0H = object table pointer
 * <a0 = [Yoff,Xoff]
 
  SUBR	get_mpart_offsets
@@ -1560,7 +1560,7 @@ OFFSCR_X	equ	221
 * Gets the combined X size of a multi-part object.  The correct answer is
 * (hi anipt) + hi (size - anipt)
 *
-* >a0 = object table pointer
+* 0a0H = object table pointer
 * <a0 = Xsize
 
  SUBR	get_mpart_xsize
@@ -1695,7 +1695,7 @@ LIMITYB	.EQU	[97h,0]
 	jrnz	#rumble
 
 	;check for two human players
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	jrz	#no_humans
 	cmpi	3,a0
 	jrne	#one_human
@@ -2180,7 +2180,7 @@ LIMITYB	.EQU	[97h,0]
  SUBR	keep_onscreen
 
 	;confine only in two-player game.
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	3,a14			;is it a 2-player game?
 	jrne	#no_2_player
 
@@ -2447,7 +2447,7 @@ PATCH FOR SCROLLER
 
 #MAX_DIST	equ	380
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	3,a14			;is it a 2-player game?
 	jrne	#no_2_player
 
@@ -3160,7 +3160,7 @@ but_offs2	.word	20h-3,24h-3
 	movi	DIAGP,a0
 	calla	pal_getf
 	move	a0,a1
-	ori	>0E0E0000,a1
+	ori	00E0E0000H,a1
 	movi	[1,400],a2
 	move	@dma_bog,a3
 	sll	16,a3
@@ -3176,7 +3176,7 @@ but_offs2	.word	20h-3,24h-3
 	movi	DIAGP,a0
 	calla	pal_getf
 	move	a0,a1
-	ori	>0D0D0000,a1
+	ori	00D0D0000H,a1
 	movi	[1,400],a2
 	move	@CPUAVG,a3
 	sll	14,a3
@@ -3299,7 +3299,7 @@ but_offs2	.word	20h-3,24h-3
 	.if 1
 	; First check to see if there are 2 human players and they are
 	; playing the same wrestler
-	move	@PSTATUS,a14		; Get status
+	move	@PSTATUS2,a14		; Get status
 	cmpi	3,a14			; Do we have 2 humans playing ?
 	jrnz	#pp_go			; br = no
 
@@ -3411,7 +3411,7 @@ but_offs2	.word	20h-3,24h-3
 #*****************************************************************************
 * Sets PLYR_TYPE to PTYPE_PLAYER if PLYRNUM < 2.
 *
-* >a13 = process *
+* 0a13H = process *
 
  SUBR	drone_change_back
 
@@ -3504,7 +3504,7 @@ but_offs2	.word	20h-3,24h-3
 
 #x_flip
 	move	*a13(FACING_DIR),a14
-	xori	>0C,a14
+	xori	00CH,a14
 	move	a14,*a13(FACING_DIR)
 	rets
 
@@ -3767,7 +3767,7 @@ but_offs2	.word	20h-3,24h-3
 * Change into another wrestler and re-enter the battle.  This should probably
 * only be used in the king of the ring match.
 *
-* >a13 = pointer to process to change
+* 0a13H = pointer to process to change
 *
 
  SUBR	change_wrestler
@@ -4119,7 +4119,7 @@ but_offs2	.word	20h-3,24h-3
 	jrnz	#isrum
 
 	;slow the clock (2/3 speed) if it's 1v3.
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	jrz	#nfin
 	cmpi	3,a14
 	jreq	#nfin
@@ -4128,7 +4128,7 @@ but_offs2	.word	20h-3,24h-3
 	cmpi	3,a14
 	jrne	#nfin
 
-#isrum	movi	>AAAA,a14
+#isrum	movi	0AAAAH,a14
 	mpyu	a14,a1
 	srl	16,a1
 
@@ -4205,7 +4205,7 @@ but_offs2	.word	20h-3,24h-3
 	jrnc	#crb
 
 #ck8_1	;check the 8-on-1 case
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	and	a3,a14		;a3 is bit of live team
 	jrz	#crb		;on z, human team is dead
 	jruc	#dtd		;else dead team is drones
@@ -4417,7 +4417,7 @@ timer_table
 ;Turn on remaining word
 	movi	[126h,0],a0
 	clr	a11
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	3,a14
 	jrz	#no_adj
 	btst	1,a14
@@ -4500,7 +4500,7 @@ digit_tbl
 	move	@reduce_bog,a1
 	jrnz	#die
 	MOVE	@WORLDTLY,A0,L
-	CMPI	[>ff97,0],A0
+	CMPI	[0ff97H,0],A0
 	JRGT	#top
 	CALLA	START_HI_FLASHES
 	SLEEPK	30
@@ -4531,12 +4531,12 @@ digit_tbl
 	jrz	#set
 
 #clr	move	*a13(ANIMODE),a14
-	andni	MODE_STATUS,a14
+	andni	MODE_STATUS2,a14
 	move	a14,*a13(ANIMODE)
 	rets
 
 #set	move	*a13(ANIMODE),a14
-	ori	MODE_STATUS,a14
+	ori	MODE_STATUS2,a14
 	move	a14,*a13(ANIMODE)
 	rets
 
@@ -4624,7 +4624,7 @@ digit_tbl
 
  SUBR	loser_snd
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	3,a14
 	jrne	#rets
 
@@ -4677,14 +4677,14 @@ digit_tbl
 
 	;increment AUD_VSHUMF or AUD_VSCPUF (and AUD_CPUWIN)
 	movi	AUD_VSHUMF,a0
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	03h,a14
 	jreq	#vshum
 	movi	AUD_VSCPUF,a0
 #vshum	calla	AUD1
 
 	;add to AUD_2PBTIME, AUD_CPUWINTIME, or AUD_CPULOSETIME
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	03h,a14
 	jreq	#2pbtime
 
@@ -4724,7 +4724,7 @@ NO_UPDATE_ANYTHING
 	calla	AUD
 
 	;update record speeds
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	03h,a14
 	jreq	#fast_2p
 
@@ -4780,7 +4780,7 @@ NO_UPDATE_ANYTHING
 
 	;increment the proper wrestler use thingies
 
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 	CMPI	3,A0
 	JREQ	#2pmatch
 
@@ -4811,7 +4811,7 @@ AUDIT_THE_HUMAN
 	inc	a2
 #vok0
 
-	move	@PSTATUS,a1
+	move	@PSTATUS2,a1
 	xori	3,a1
 	srl	1,a1		;CPU side in a3 (!PSTATUS >> 1)
 
@@ -4850,7 +4850,7 @@ AUDIT_THE_HUMAN
 	X64	a2			;x 4 words
 	addi	wrestler_audits,a2
 
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	btst	A1,a0
 	jrnz	#p1hum
 	addi	20h,a2			;skip 2 words
@@ -4967,7 +4967,7 @@ AUDIT_THE_HUMAN
  SUBR	free_toss_check
 
 	move	*a13(ANIMODE),a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 
 	move	*a13(CLOSEST_NUM),a14
 	X32	a14
@@ -4991,7 +4991,7 @@ AUDIT_THE_HUMAN
 	cmpi	PLAYER_BLOCK_VAL,a14
 	jreq	#set
 ;#clr
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 #set
 	move	a0,*a13(ANIMODE)
 	rets

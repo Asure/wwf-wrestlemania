@@ -4596,7 +4596,7 @@ COLTAB_REDGOLD
 
 ******************************************************************************
 * adds to score
-* >a0 amount to add
+* 0a0H amount to add
 
  SUBRP	score_points
 
@@ -4618,7 +4618,7 @@ COLTAB_REDGOLD
 
 ******************************************************************************
 * Draws the frame
-* >a0=color value
+* 0a0H=color value
 *
 
  SUBRP	draw_frame
@@ -4768,8 +4768,8 @@ COLTAB_REDGOLD
 #*****************************************************************************
 * Check to see if an object is completely on the playfield
 * a8=OBJ
-* >a0=walls hit (bit 0=top, 1=right, 2=bottom, 3=left)
-* >a2=degree of overlap (in pixels)
+* 0a0H=walls hit (bit 0=top, 1=right, 2=bottom, 3=left)
+* 0a2H=degree of overlap (in pixels)
 * Trashes scratch
 
  SUBRP	bounds_check
@@ -5005,7 +5005,7 @@ robotron_ascii
 #*****************************************************************************
 *
 * Sound section
-* >a0 = snd call
+* 0a0H = snd call
 
 RS_GRUNT	.equ	0
 RS_DIE		.equ	1

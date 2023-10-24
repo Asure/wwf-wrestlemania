@@ -357,7 +357,7 @@ dma_objlst2d
 
 	dint
 
-	setf	1,0,0			;>Enable DMA int
+	setf	1,0,0			;0EHnable DMA int
 	movk	1,a1
 	move	a1,@INTENB+1		;X1E
 	setf	16,1,0
@@ -583,7 +583,7 @@ dma_objlst3d
 
 	dint
 
-	setf	1,0,0			;>Enable DMA int
+	setf	1,0,0			;0EHnable DMA int
 	movk	1,a1
 	move	a1,@INTENB+1		;X1E
 	setf	16,1,0
@@ -768,7 +768,7 @@ dma_background
 
 	dint
 
-	setf	1,0,0			;>Enable DMA int
+	setf	1,0,0			;0EHnable DMA int
 	movk	1,a1
 	move	a1,@INTENB+1		;X1E
 	setf	16,1,0
@@ -871,7 +871,7 @@ DISPLAY
 
 	move	b2,a5
 
-#lp	move	-*a1,-*a4,L		;>Copy manual DMAQ to end of Q
+#lp	move	-*a1,-*a4,L		;0CHopy manual DMAQ to end of Q
 	move	-*a1,-*a4,L
 	move	-*a1,-*a4,L
 	move	-*a1,a0,L
@@ -890,7 +890,7 @@ DISPLAY
 	move	b13,b13
 	jrn	#noman			;DMA int done?
 
-	setf	1,0,0			;>Enable DMA int
+	setf	1,0,0			;0EHnable DMA int
 	movk	1,a1
 	move	a1,@INTENB+1		;X1E
 	setf	16,1,0
@@ -909,7 +909,7 @@ DISPLAY
 
 
 ;Null dma data
-nulldma	.long	>80000000,IROM,0,>00010001,0,>1000100
+nulldma	.long	080000000H,IROM,0,000010001H,0,01000100H
 
 
 #*****************************************************************************
@@ -1032,7 +1032,7 @@ CFRAC	.equ	2
 	sll	5+CFRAC,a6
 
 
-	movi	NSTARS,a5		;>Find a free star
+	movi	NSTARS,a5		;0FHind a free star
 	movi	STARBUF,a2
 	movk	3,a3
 #flp	move	*a2,a0,L		;X
@@ -1041,23 +1041,23 @@ CFRAC	.equ	2
 #fnxt	dsj	a5,#flp
 	jruc	#nofree
 
-#found	movi	[200,0],a0		;>Create star
+#found	movi	[200,0],a0		;0CHreate star
 	move	a0,*a2+,L		;X
 	movi	[252,0],a0
 	move	a0,*a2+,L		;Y
 
 	clr	a0
 	move	a0,*a2+,L		;XV
-	movi	->3e000,a0
+	movi	-03e000H,a0
 	move	a0,*a2+,L		;YV
 
-	movi	>7ff,a0
+	movi	07ffH,a0
 	callr	rnd
-	subi	>3ff,a0
+	subi	03ffH,a0
 	move	a0,*a2+,L		;XA
-	movi	>3ff,a0
+	movi	03ffH,a0
 	callr	rnd
-	addi	>7ff,a0
+	addi	07ffH,a0
 	move	a0,*a2+,L		;YA
 
 	move	a6,*a2+			;Color type
@@ -1206,7 +1206,7 @@ CFRAC	.equ	2
 ********************************
 * Get random # with mask
 * A0=Mask
-* >A0=Rnd # (Pass CC)
+* 0A0H=Rnd # (Pass CC)
 * Trashes scratch
 
  SUBRP	rnd
@@ -1249,7 +1249,7 @@ so20	move	*a1,a1,L
 
 	movi	OBJLST,a0
 	movk	1,a1			;Lowest Z
-	sll	31,a1			;Make >80000000
+	sll	31,a1			;Make 080000000H
 	jruc	yzlp
 
 yz0
@@ -1403,7 +1403,7 @@ scrtf_d	movk	4,a0
 
 	movi	-1,b13			;DMAQ cnt
 
-	clr	a1			;>Clr video mem
+	clr	a1			;0CHlr video mem
 	movi	(SCRNE-512*8*2)/64,b0
 #clp	move	a0,*a1+,L
 	move	a0,*a1+,L
@@ -1465,7 +1465,7 @@ clear_objs
 ********************************
 * Get a free object block
 * Trashes scratch
-* >A0=*Object or 0 (Z)
+* 0A0H=*Object or 0 (Z)
 
 GETOBJ
 	move	@OFREE,a0,L
@@ -1724,7 +1724,7 @@ obj_delc
 * Check objlst for an object with a certain OID
 * A0=OID
 * A1=!Mask (Bits to remove)
-* >A0=*Obj or 0 (Z)
+* 0A0H=*Obj or 0 (Z)
 * Trashes scratch
 
 EXISTOBJ
@@ -1749,7 +1749,7 @@ EXISTOBJ
 #*******************************
 * Check if object on free list
 * A0=*Obj
-* >A0=*Obj or 0 (Z)
+* 0A0H=*Obj or 0 (Z)
 * Trashes scratch
 
 ;ISFREE
@@ -1760,7 +1760,7 @@ EXISTOBJ
 ********************************
 * Check if object on OBJLST
 * A0=*Obj
-* >A0=*Obj or 0 (Z)
+* 0A0H=*Obj or 0 (Z)
 * Trashes scratch
 
 ISOBJ
@@ -1870,8 +1870,8 @@ SCRNRELV
 * A3=New XVAL
 * A4=New FLAGS (Only DMA bits)
 * Trashes A1,A14,B0-B1
-* >A2=Adjusted YVAL
-* >A3=Adjusted XVAL
+* 0A2H=Adjusted YVAL
+* 0A3H=Adjusted XVAL
 
 GANISAG
 	PUSH	a4,a6,a7
@@ -1889,7 +1889,7 @@ GANISAG
 	move	a2,*a0(OYVAL),L
 
 	move	*a1(ICTRL),a1		;Get DMA flags
-	andi	>803f,a4		;Kill mode bits
+	andi	0803fH,a4		;Kill mode bits
 	or	a1,a4
 	move	a4,*a0(OCTRL),L		;&OFFSET
 
@@ -1900,7 +1900,7 @@ GANISAG
 ******************************************************************************
 * Begin an object
 * A0=XVAL, A1=YVAL, A2=*IMG, A3=ZPOS, A4=FLAGS, A5=OID, A6=XVEL, A7=YVEL
-* >A8=*Obj
+* 0A8H=*Obj
 * Trashes scratch
 
 BEGINOBJW
@@ -1964,7 +1964,7 @@ bo20	move	@OFREE,a8,L		;Pointer to next available obj block
 	move	a3,*a8(OSAG),L
 	move	a4,*a8(OFLAGS)
 	move	*a1(ICTRL),a0		;Get DMA flags
-	andi	>803f,a4		;Kill mode bits
+	andi	0803fH,a4		;Kill mode bits
 	or	a0,a4
 	move	a4,*a8(OCTRL),L		;&OFSET
 
@@ -2000,7 +2000,7 @@ begobjerr
 * Begin an object with specified palette
 * A0=XVAL, A1=YVAL, A2=*IMG, A3=ZPOS, A4=FLAGS, A5=OID, A6=XVEL, A7=YVEL
 * B0=*Palette
-* >A8=*Obj
+* 0A8H=*Obj
 * Trashes scratch
 
 BEGINOBJWP
@@ -2064,7 +2064,7 @@ BEGINOBJP
 	move	a3,*a8(OSAG),L
 	move	a4,*a8(OFLAGS)
 	move	*a1(ICTRL),a0		;Get DMA flags
-	andi	>803f,a4		;Kill mode bits
+	andi	0803fH,a4		;Kill mode bits
 	or	a0,a4
 	move	a4,*a8(OCTRL),L		;&OFSET
 
@@ -2126,7 +2126,7 @@ BEGINOBJP
 	zext	a4			;Zero offset in A4
 
 	move	a8,a6			;Get push address of octrl,osag,osize
-	addi	OCTRL+>60,a6
+	addi	OCTRL+060H,a6
 	mmtm	a6,a2,a3,a4		;Save new data
 
 	subi	OCTRL-OXVAL,a6
@@ -2212,8 +2212,8 @@ anierr
 #*******************************
 * Get an objects anipt XY (Doesn't check VFLIP)
 * A8=*Obj
-* >A0=Scaled Ani X (16:16)
-* >A1=Scaled Ani Y
+* 0A0H=Scaled Ani X (16:16)
+* 0A1H=Scaled Ani Y
 * Trashes scratch
 
  SUBRP	anipt_getxy
@@ -2347,8 +2347,8 @@ anierr
 * Get the x and y positions of an objects animation point
 * A8=*Object
 * Trashes scratch
-* >A2=Ani pt Y 16:16
-* >A3=Ani pt X 16:16
+* 0A2H=Ani pt Y 16:16
+* 0A3H=Ani pt X 16:16
 
 GETANIXY
 	PUSH	a4,a6,a7
@@ -2422,7 +2422,7 @@ GANIOF
 	move	@gndstat,a0
 	PUSHP	a0
 
-	movi	>160,a0
+	movi	0160H,a0
 	move	a0,@scrnscl
 
 	movi	#initcode,a0
@@ -2442,7 +2442,7 @@ GANIOF
 	srl	3,a0
 	add	a0,a5
 	move	a5,*a14
-	cmpi	>7000,a5
+	cmpi	07000H,a5
 	jrlt	#lp
 
 	clr	a0
@@ -2498,7 +2498,7 @@ GANIOF
 	move	@dcode_p,a0,L
 	PUSHP	a0
 
-	movi	>7000,a0
+	movi	07000H,a0
 	move	a0,@scrnscl
 
 	movi	#initcode,a0
@@ -2510,7 +2510,7 @@ GANIOF
 
 
 	.if	DEBUG
-;	movi	>1a0,a0
+;	movi	01a0H,a0
 ;	move	a0,@scrnscl
 ;	SLEEP	TSEC*2
 	.endif
@@ -2524,7 +2524,7 @@ GANIOF
 	srl	2,a0
 	sub	a0,a5
 	move	a5,*a14
-	cmpi	>100,a5
+	cmpi	0100H,a5
 	jrgt	#lp
 
 
@@ -2558,7 +2558,7 @@ GANIOF
 
 	move	b2,a0
 	srl	16,a0
-	xori	>100,a0			;Flip to the page being shown
+	xori	0100H,a0			;Flip to the page being shown
 	sll	12,a0			;*512*8
 	addi	SCRNXP*8,a0		;A0=*Scrn mem
 	PUSH	a0
@@ -2643,7 +2643,7 @@ GANIOF
 
 	PUSH	a4,a14
 
-	movi	>140,a5
+	movi	0140H,a5
 
 	move	b2,a1
 	srl	16,a1
@@ -2704,7 +2704,7 @@ GANIOF
 
 	PUSH	a4,a14
 
-	movi	>180,a5
+	movi	0180H,a5
 
 	move	b2,a1
 	srl	16,a1
@@ -2765,9 +2765,9 @@ GANIOF
  SUBRP	scrn_scale
 
 	move	@scrnscl,a5
-	cmpi	>168,a5
+	cmpi	0168H,a5
 	jrlt	scrn_scale140
-	cmpi	>190,a5
+	cmpi	0190H,a5
 	jrlt	scrn_scale180
 
 	PUSH	a4,a14
@@ -2871,7 +2871,7 @@ GANIOF
 
 #*****************************************************************************
 * Create an object from one of jason's special header blocks.
-* >a0=*block
+* 0a0H=*block
 * <a8=*obj
 * Trashes a14
 
@@ -2932,9 +2932,9 @@ PLACE_SHADOWS
 shad_1	move	*b0,b3,W
 	jrn	shad_1	 	; wait for dma while busy
 
-	movi	>01000100,a2
+	movi	001000100H,a2
 	move	a2,@DMASCALEX,L	 	; dma input #1 = scale
-;	movi	bpal_black*>10000,a2
+;	movi	bpal_black*010000H,a2
 *TEMP
 	movi	010101010h,a2
 ;	CLR	A2
@@ -3117,9 +3117,9 @@ shad9
 ;shad_1	move	*b0,b3,W
 ;	jrn	shad_1	 	; wait for dma while busy
 ;
-;	movi	>01000100,a2
+;	movi	001000100H,a2
 ;	move	a2,@DMASCALEX,L	 	; dma input #1 = scale
-;;	movi	bpal_black*>10000,a2
+;;	movi	bpal_black*010000H,a2
 ;*TEMP
 ;	CLR	A2
 ;*TEMP

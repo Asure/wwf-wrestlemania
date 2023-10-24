@@ -24,7 +24,7 @@
 	WL	#CLIMB_SPD,D2CT2A07
 	.word	ANI_OFFSET,0,9,0			;x,y,z
 	WL	#CLIMB_SPD,D2CT2A09
-	.word	ANI_OFFSET,0,>a,0			;x,y,z
+	.word	ANI_OFFSET,0,0aH,0			;x,y,z
 	WL	#CLIMB_SPD,D2CT2A12
 	.word	ANI_ZEROVELS
 

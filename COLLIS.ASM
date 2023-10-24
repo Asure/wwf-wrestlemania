@@ -655,7 +655,7 @@
 	move	a0,*a10(PLYR_HIT_SIDE)
 
 	move	*a10(ANIMODE),a0
-	ori	MODE_STATUS,a0		;this flag set whenever
+	ori	MODE_STATUS2,a0		;this flag set whenever
 	move	a0,*a10(ANIMODE)	;a successful hit
 
 	calla	wrestler_hit

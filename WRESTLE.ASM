@@ -119,6 +119,8 @@ COL_DEBUG	equ	0
 	.ref	is_8_on_1,bncoff_gate,fall_back_tbl
 	.ref	show_wrestler_end_story,do_fireworks
 	.ref	p1pins,p2pins,finish_completed
+* need to check if errors
+	.ref	PSTATUS2,OLD_PSTATUS2
 
 
 ******************************************************************************
@@ -342,7 +344,7 @@ box_matedge2
 	calla	InitPIC
 
 ;	.if	DEBUG
-;	move	a0,@>1e00000		;Clr FPGA rom protect
+;	move	a0,@01e00000H		;Clr FPGA rom protect
 ;	.endif
 
 					;>Manual sound board reset
@@ -675,7 +677,7 @@ are_we_waiting_for_inits
 	cmpi	INPARTY,a0
 	jreq	#die			;don't interrupt the win sequence
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	a8,a14
 	jrnz	#die			;Player already started?
 
@@ -724,7 +726,7 @@ are_we_waiting_for_inits
 
 	PULL	a0
 
-	move	@OLD_PSTATUS,a14
+	move	@OLD_PSTATUS2,a14
 	btst	a8,a14
 	jrz	#reg			;Player on buyin screen?
 ;On the buyin screen.
@@ -887,7 +889,7 @@ are_we_waiting_for_inits
 #set_pstatus_and_die
 	movk	1,a0			;set the player bit in PSTATUS
 	sll	a8,a0
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	or	a0,a14
 	move	a14,@PSTATUS
 	MOVE	@PSTARTS,A14
@@ -1076,7 +1078,7 @@ do_pregame
 	inc	a0
 	move	a0,@match_cnt
 
-	move	@PSTATUS,A0
+	move	@PSTATUS2,A0
 	CMPI	3,A0
 	JREQ	NOT_FINISHED_GAME
 
@@ -1135,7 +1137,7 @@ NOT_FINISHED_GAME
 	jrnz	#finished_rumble
 
 	;Did a human player lose?
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	move	@match_winner,a1
 	andn	a1,a0
 	jrnz	#go_buyin
@@ -1158,11 +1160,11 @@ NOT_FINISHED_GAME
 	calla	loser_snd
 
 	;save old PSTATUS
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	move	a0,@OLD_PSTATUS
 
 	;did a human win?  Check by ANDing match_winner with PSTATUS.
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	move	@match_winner,a1
 	and	a1,a0
 	jrnz	#human_won
@@ -1205,7 +1207,7 @@ NOT_FINISHED_GAME
 #finished_rumble
 
 	;save old PSTATUS
-;	move	@PSTATUS,a14
+;	move	@PSTATUS2,a14
 ;	move	a14,@OLD_PSTATUS
 
 	;...no, DON'T save the old PSTATUS.  For whatever reason, the
@@ -1276,7 +1278,7 @@ NOT_FINISHED_GAME
 	move	a14,@rr_loss
 	move	a14,@royal_rumble
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	jrnz	do_pregame
 
 	;nobody bought in.  drop to game over
@@ -1451,7 +1453,7 @@ pct_damage_setup
 	move	a14,@p2oldwinstreak
 
 	move	@match_winner,a0
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	and	a14,a0
 
 	;inc/clear p1winstreak
@@ -1477,7 +1479,7 @@ pct_damage_setup
 ;	btst	0,a0
 ;	jrz	#clrp1d			;clr if we lost
 ;	move	@p1winstreakd,a1
-;	move	@PSTATUS,a14
+;	move	@PSTATUS2,a14
 ;	btst	1,a14
 ;	jrz	#incp1d			;inc if vs drone
 ;	jruc	#p1dset			;else no increment
@@ -1509,7 +1511,7 @@ pct_damage_setup
 ;	btst	1,a0
 ;	jrz	#clrp2d			;clr if we lost
 ;	move	@p2winstreakd,a1
-;	move	@PSTATUS,a14
+;	move	@PSTATUS2,a14
 ;	btst	0,a14
 ;	jrz	#incp2d			;inc if vs drone
 ;	jruc	#p2dset			;else no increment
@@ -1525,7 +1527,7 @@ pct_damage_setup
 	; 3. 1p match, player loses.  set both winstreaks to -1, unless
 	;     they're already negative, in which case we dec both.
 
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	cmpi	3,a14
 	jreq	#do_nothing
 
@@ -1568,7 +1570,7 @@ pct_damage_setup
  SUBR	start_match
 
 	;skip some of this if we're in attract mode
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	jrz	#amode_battle
 
 	move	@total_matches,a14,W
@@ -1687,7 +1689,7 @@ pct_damage_setup
 
 ****	;increment the battles started audit
 	movi	AUD_VSHUMS,a0
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	JRZ	NO_BATLES_AT_ALL
 	cmpi	03h,a14
 	jreq	#aud_vshumf
@@ -1705,7 +1707,7 @@ NO_BATLES_AT_ALL
 ****	;create wrestler processes
 
 	;figure out if it's a 0-, 1-, or 2-player game, and branch.
-	MOVE	@PSTATUS,A0
+	MOVE	@PSTATUS2,A0
 	jrz	#0plyr
 	CMPI	3,A0
 	JREQ	#2plyr
@@ -1748,7 +1750,7 @@ NO_BATLES_AT_ALL
 	;set PLYR_SIDE for ENEMY drones--All these drones are bad guys.
 	;In a 2v2 match, we can't use this code.
 	movi	PSIDE_PLYR2,a9
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	btst	0,a14			;plyr 1 human?
 	jrnz	#pside_set
 	movi	PSIDE_PLYR1,a9
@@ -1801,7 +1803,7 @@ NO_BATLES_AT_ALL
 #2plyr	;2-player game
 
 	movi	PTYPE_PLAYER,a8			;player type
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	btst	0,a0
 	jrnz	#ok
 	movi	PTYPE_DRONE,a8			;player type
@@ -1813,7 +1815,7 @@ NO_BATLES_AT_ALL
 	CREATE	GETUP_PID,getup_meter
 
 	movi	PTYPE_PLAYER,a8			;player type
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	btst	1,a0
 	jrnz	#ok1
 	movi	PTYPE_DRONE,a8			;player type
@@ -1960,7 +1962,7 @@ music_selected
 	dec	a14
 	jrnz	#no_vince_intro
 	CREATE	SKIRT_PID,CHANGE_SKIRTS
-	move	@PSTATUS,A0
+	move	@PSTATUS2,A0
 	CMPI	3,A0
 	JRNE	#no_vince_intro
 
@@ -1984,7 +1986,7 @@ INTRO_DONE
 
 	clr	a8				;left meter for player 0
 	movk	1,a9				;right meter for player 1
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	jrz	drone_pointers
 
 	move	@royal_rumble,a14
@@ -2109,7 +2111,7 @@ DONT_OPEN_ANYTHING
 	.endif
 
 	;if we're in attract mode, roll the clock around
-	move	@PSTATUS,a14
+	move	@PSTATUS2,a14
 	jrnz	#norm
 
 #wraparound
@@ -2433,7 +2435,7 @@ NO_POINT_ITS_A_DRONE
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_KOD,a14
 	jrz	#slp
-	movi	>7fff,a0
+	movi	07fffH,a0
 #slp	SLEEPR	a0
 ;	TINTON
 
@@ -2703,7 +2705,7 @@ reset_start
 	move	*a14(PLYR_SIDE),a14
 	cmp	a14,a0
 	jrne	#loop0
-	inc	a2		;lower PSTATUS, same PLYR_SIDE, so inc index
+	inc	a2		;lower PSTATUS2, same PLYR_SIDE, so inc index
 	jruc	#loop0
 	
 #set0	;a2 is index.
@@ -3254,7 +3256,7 @@ obj_look
 	move	*a13(OBJ_XVEL),a0,L
 	movi	[3,0001],a7
 	move	a7,*a13(OBJ_XVEL),L
-	andi	>ffff,a0
+	andi	0ffffH,a0
 	cmpi	1,a0
 	jrz	#no_l
 
@@ -3401,7 +3403,7 @@ obj_look
 	move	*a13(OBJ_XVEL),a0,L
 	movi	[-3,0001],a7
 	move	a7,*a13(OBJ_XVEL),L
-	andi	>ffff,a0
+	andi	0ffffH,a0
 	cmpi	1,a0
 	jrz	#no_r
 
@@ -4689,7 +4691,7 @@ just_ignore_me
 	move	a13,a2
 	addi	PUNCHB_COUNT,a2
 #loop
-	srl	1,a0		;button-->Carry
+	srl	1,a0		;button--0CaHrry
 	jrnc	#no_but
 
 	move	*a2,a14
@@ -5978,7 +5980,7 @@ setup_each_right_table
  SUBR	get_leap
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 
 	move	*a13(OBJ_XVEL),a14,L
@@ -6002,7 +6004,7 @@ setup_each_right_table
 
 #novel
 	move	*a13(ANIMODE),a0
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 	move	a0,*a13(ANIMODE)
 
 	rets
@@ -6238,7 +6240,7 @@ gottime
 	clr	a0				;x pos
 	clr	a1				;y pos
 	movi	jmeter,a2			;* image
-	movi	>1601,a3			;z pos
+	movi	01601H,a3			;z pos
 	movi	DMACAL|M_3D,a4			;DMA flags
 	clr	a5				;object ID
 	clr	a6				;x vel
@@ -6371,7 +6373,7 @@ gottime
 #loop
 	SLEEPK	1
 
-	movi	>1600,a0
+	movi	01600H,a0
 	move	@debug_collis,a14
 	cmpi	2,a14
 	jrne	#not_2

@@ -58,7 +58,7 @@ OLDINTEN	.word	0
 	andni	X2E|DIE,a0
 	move	a0,@INTPEND
 
-	move	a0,@>1e00000		;Clr FPGA rom protect
+	move	a0,@01e00000H		;Clr FPGA rom protect
 
 	PULL	a0
 	rets

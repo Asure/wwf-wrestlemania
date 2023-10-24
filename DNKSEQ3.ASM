@@ -50,7 +50,7 @@
 	.ref	dnk_faceup_getup_anim,dnk_hitonground_xflip_anim
 	.ref	dnk_4_combo_butt_anim,DO_COMBO_MESS,dnk_4_box_anim
 	.ref	dnk_4_knee_fall_anim,dnk_flying_kick_anim,NUM_OPPS
-	.ref	MAYBE_SHOCKING,target_whoihit,PSTATUS,royal_rumble
+	.ref	MAYBE_SHOCKING,target_whoihit,PSTATUS2,royal_rumble
 	.ref	punch_dtime1,change_anim_anim,dnk_combo_box_anim
 	.ref	dnk_fall_back_anim,dnk_combo_knee_fall_anim
 	.ref	pal_getf,lex_break_face2_anim,dnk_combo_flying_kick_anim
@@ -115,7 +115,7 @@ TSEC 	equ	53
 	WWL	ANI_WAITHITOPP,35,D4BZ3A+FR2
 	.word	ANI_ATTACK_OFF
 #cont4
-	WL	ANI_IFSTATUS,#gothim
+	WL	ANI_IFSTATUS2,#gothim
 
 
 	WL	35,D4BZ3A+FR2
@@ -219,7 +219,7 @@ TSEC 	equ	53
 	WL	3,D4BZ3A+FR1
 
 	WL	ANI_CODE,get_leap
-	WL	ANI_IFNOTSTATUS,#normal
+	WL	ANI_IFNOTSTATUS2,#normal
 
 	.word	ANI_ZEROVELS
 	.word	ANI_CLR_STATUS
@@ -250,7 +250,7 @@ TSEC 	equ	53
 	WL	3,D4BZ3A+FR1
 
 	WL	ANI_CODE,get_leap
-	WL	ANI_IFNOTSTATUS,#normalc
+	WL	ANI_IFNOTSTATUS2,#normalc
 
 	.word	ANI_ZEROVELS
 	.word	ANI_CLR_STATUS
@@ -403,7 +403,7 @@ start_sparks
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS,#nodead
+	WL	ANI_IFNOTSTATUS2,#nodead
 
 	WL	ANI_CHANGEANIM,dnk_fall_back_anim
 ;	.word	ANI_END
@@ -414,13 +414,13 @@ start_sparks
 
  SUBR 	am_I_dizzy
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_DEAD,a0
 	jrz	#not_dizzy
 	move	*a13(PLYR_DIZZY),a0
 	jrz	#not_dizzy
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 #not_dizzy
 	move	a1,*a13(ANIMODE)
 	rets
@@ -432,18 +432,18 @@ start_sparks
 	jrnz	#notdead
 
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	movi	MODE_DEAD,a1
 	move	a1,*a13(PLYRMODE)
 	rets
 #notdead
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_DEAD,a0
 	jrnz	#not_dead
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 #not_dead
 	move	a1,*a13(ANIMODE)
 	rets
@@ -547,7 +547,7 @@ start_sparks
 	WWL	ANI_WAITHITOPP,4,D4GH3A+FR8	;D3PP3Z+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;Check to see if I have tried to pile drive Yokozuna!
 
@@ -624,11 +624,11 @@ start_sparks
 	.word	ANI_SAFE_TIME,30
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,37,88,63,9
 	WL	1,D3GU4A+FR9
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -696,11 +696,11 @@ start_sparks
 	.word	ANI_SAFE_TIME,30
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss2
+	WL	ANI_IFNOTSTATUS2,#no_freetoss2
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,37,88,63,9
 	WL	1,D3GU4A+FR9
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss2
+	WL	ANI_IFNOTSTATUS2,#no_freetoss2
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -733,12 +733,12 @@ start_sparks
 ;Yes, this is Yoko!
 
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 #ok
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -897,7 +897,7 @@ start_sparks
 	WWL	ANI_WAITHITOPP,3,D4GH3A+FR8
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missedc
+	WL	ANI_IFNOTSTATUS2,#missedc
 
 ;got him
 	.word	ANI_ATTACHZ,0,0,-2		;x & y don't matter.
@@ -1009,11 +1009,11 @@ start_sparks
 	.word	ANI_SAFE_TIME,30
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,37,88,63,9
 	WL	1,D3GU4A+FR9
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,#no_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -1052,7 +1052,7 @@ start_sparks
 	WWL	ANI_WAITHITOPP,3,D4GH3A+FR8
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.word	ANI_SOUND,82h			;Effort grunt
@@ -1168,11 +1168,11 @@ start_sparks
 
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS,#no_freetoss3
+	WL	ANI_IFNOTSTATUS2,#no_freetoss3
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,37,88,63,9
 	WL	1,D3GU4A+FR9
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#no_freetoss3
+	WL	ANI_IFNOTSTATUS2,#no_freetoss3
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
@@ -1414,7 +1414,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_PUPPET_HDGRAB,32,60,62,45 ;mode,x,y,w,h
 	WWL	ANI_WAITHITOPP,7,D4GH3A+FR4
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_7,2,2
@@ -1440,7 +1440,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_PUPPET,32,60,62,45 ;mode,x,y,w,h
 	WWL	ANI_WAITHITOPP,5,D4GH3A+FR4
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	WL	ANI_IFBLOCKED,#missedb
 
 #gothim
@@ -1644,7 +1644,7 @@ start_sparks
 	WL	4,D3BF3A+FR8
 	WL	4,D3BF3A+FR1
 	WL	ANI_CODE,#inc_loop
-	WL	ANI_IFNOTSTATUS,#loop
+	WL	ANI_IFNOTSTATUS2,#loop
 
 ;Continue into break...
 
@@ -1689,13 +1689,13 @@ start_sparks
 ;	jrz	#breakout
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #breakout
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -1769,7 +1769,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_HEADKNEES,20,42,68,36
 	WL	4,D4KM3A+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 	WWWL	ANI_IF_BUTCOUNT_LT,SKICKB_COUNT,1,#exit
 	.word	ANI_DEC_RPTCOUNT
@@ -1787,7 +1787,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_HEADKNEES,20,42,68,36
 	WL	4,D4KM3A+FR5
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 	WWWL	ANI_IF_BUTCOUNT_GE,SPUNCHB_COUNT,1,#do_pile
 
@@ -1870,7 +1870,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_UPRCUT,44,57,32,37 ;mode,x,y,w,h
 	WL	2,D4GP3C+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 	.WORD	ANI_ADD_MOVE,MOVE_C_4,2,2
 	WL	ANI_IFBLOCKED,#missedb		;Yes, I hit blocker
 ;Got him
@@ -1941,7 +1941,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_KNEE,44,37,32,57 ;mode,x,y,w,h
 	WL	1,D4GP3C+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#miss
+	WL	ANI_IFNOTSTATUS2,#miss
 	WL	ANI_CODE,SET_OPTIMAL_POSITION
 	.WORD	ANI_INC_COMBO
 ;	.word	ANI_SET_ATTACH
@@ -1961,7 +1961,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_KNEE,44,37,32,57 ;mode,x,y,w,h
 	WL	1,D4GP3C+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#miss
+	WL	ANI_IFNOTSTATUS2,#miss
 	.WORD	ANI_INC_COMBO
 ;	.word	ANI_SET_ATTACH
 	WLLL	ANI_SETOPPVELS,0,0h,0h		;x,y,z vels
@@ -1979,7 +1979,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_KNEE,44,37,32,57 ;mode,x,y,w,h
 	WL	1,D4GP3C+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#miss
+	WL	ANI_IFNOTSTATUS2,#miss
 	.WORD	ANI_INC_COMBO
 ;	.word	ANI_SET_ATTACH
 	WLLL	ANI_SETOPPVELS,0,0h,0h		;x,y,z vels
@@ -1996,7 +1996,7 @@ start_sparks
 	.word	ANI_ATTACK_ON, AMODE_KNEE,44,37,32,57 ;mode,x,y,w,h
 	WL	1,D4GP3C+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#miss
+	WL	ANI_IFNOTSTATUS2,#miss
 	.WORD	ANI_INC_COMBO
 ;	.word	ANI_SET_ATTACH
 	WLLL	ANI_SETOPPVELS,0,0h,0h		;x,y,z vels
@@ -2063,7 +2063,7 @@ NO_NEED_TO_NEG_XDIR
 	.word	ANI_ATTACK_ON, AMODE_HEADKNEES,44,57,32,37 ;mode,x,y,w,h
 	WL	3,D4GP3C+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 	.word	ANI_SET_ATTACH
 	.word	ANI_DEBRISAT,250,1,10,50,0	;%chance, tbl index, x,y,z off
@@ -2090,7 +2090,7 @@ NO_NEED_TO_NEG_XDIR
 	.word	ANI_ATTACK_ON, AMODE_HEADKNEES,44,57,32,37 ;mode,x,y,w,h
 	WL	3,D4GP3C+FR6
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 	WL	ANI_CODE,#go_high
 
@@ -2138,10 +2138,10 @@ NO_NEED_TO_NEG_XDIR
 
 #chk_count
 	move	*a13(ANIMODE),a0
-	andni	MODE_STATUS,a0
+	andni	MODE_STATUS2,a0
 	move	*a13(BUT_COUNT),a14
 	jrz	#fail
-	ori	MODE_STATUS,a0
+	ori	MODE_STATUS2,a0
 #fail
 	move	a0,*a13(ANIMODE)
 	rets
@@ -2191,7 +2191,7 @@ NO_NEED_TO_NEG_XDIR
 
 
 	WL	ANI_CODE,spunch_delay
-	WL	ANI_IFNOTSTATUS,#none
+	WL	ANI_IFNOTSTATUS2,#none
 	WL	15,D2BS3A+FR6
 #none
 
@@ -2242,7 +2242,7 @@ NO_NEED_TO_NEG_XDIR
 	WL	5,D4BS3A+FR6
 
 	WL	ANI_CODE,spunch_delay
-	WL	ANI_IFNOTSTATUS,#none
+	WL	ANI_IFNOTSTATUS2,#none
 	WL	15,D4BS3A+FR6
 #none
 
@@ -2257,7 +2257,7 @@ NO_NEED_TO_NEG_XDIR
 
      	move	@royal_rumble,a0
 	jrnz	#ok
-	move	@PSTATUS,a0
+	move	@PSTATUS2,a0
 	subk	3,a0
 	jrz	#cont
 	move	@NUM_OPPS,a0
@@ -2273,12 +2273,12 @@ NO_NEED_TO_NEG_XDIR
 
 ;This blocked fling attempt is too close (in terms of time) to most recent grab
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
 #ok	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 	rets
 
@@ -2321,7 +2321,7 @@ NO_NEED_TO_NEG_XDIR
 
 	.WORD	ANI_ADD_MOVE,MOVE_C_8,2,2
 	WL	ANI_IFBLOCKED,#contz
-	WL	ANI_IFSTATUS,#gothim
+	WL	ANI_IFSTATUS2,#gothim
 
 #cont
 	WL	10,D3ES3A+FR6
@@ -2458,7 +2458,7 @@ NO_NEED_TO_NEG_XDIR
 
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFSTATUS,#gothimc
+	WL	ANI_IFSTATUS2,#gothimc
 	WL	12,D3ES3A+FR6
 	WL	ANI_GOTO,#no_hit2c
 
@@ -2486,7 +2486,7 @@ NO_NEED_TO_NEG_XDIR
 	WL	3,D3ES3A+FR6
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#no_hit2c
+	WL	ANI_IFNOTSTATUS2,#no_hit2c
 	.WORD	ANI_INC_COMBO
 
 	.word	ANI_DEC_RPTCOUNT
@@ -2695,13 +2695,13 @@ GRAV		equ	04000h	;9000h	;a000h	;6000h
 
  SUBR	one_spark
 
-	movk	>a,a0
+	movk	0aH,a0
 	calla	RNDRNG0
 	subk	5,a0
 	sll	14,a0			;XVel
 	move	a0,a6
 
-	movk	>3,a0
+	movk	03H,a0
 	calla	RNDRNG0
 	addk	1,a0
 	sll	16,a0			;YVel
@@ -2739,7 +2739,7 @@ GRAV		equ	04000h	;9000h	;a000h	;6000h
 	movi	CLSDEAD,a5
 	calla	BEGINOBJ
 
-	movk	>f,a0
+	movk	0fH,a0
 	calla	RNDRNG0
 	subk	7,a0
 	sll	14,a0
@@ -2816,7 +2816,7 @@ clb_spark
 	sra	1,a0
 	add	a0,a6
 
-	movk	>5,a0
+	movk	05H,a0
 	calla	RNDRNG0
 	addk	2,a0
 	sll	16,a0			;YVel
@@ -2854,7 +2854,7 @@ clb_spark
 	movi	CLSDEAD,a5
 	calla	BEGINOBJ
 
-	movk	>f,a0
+	movk	0fH,a0
 	calla	RNDRNG0
 	subk	7,a0
 	sll	14,a0
@@ -3051,7 +3051,7 @@ clb_spark
 	WL	4,D3PP3A+FR3
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS,#missed
+	WL	ANI_IFNOTSTATUS2,#missed
 
 ;got him
 	.word	ANI_CLR_BUTCOUNT
@@ -3097,7 +3097,7 @@ clb_spark
  SUBR	ck_getup
 
 	move	*a13(ANIMODE),a1
-	andni	MODE_STATUS,a1
+	andni	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 
 	move	*a13(WHOIHIT),a0,L
@@ -3106,7 +3106,7 @@ clb_spark
 	jrz	#misshim
 
 	move	*a13(ANIMODE),a1
-	ori	MODE_STATUS,a1
+	ori	MODE_STATUS2,a1
 	move	a1,*a13(ANIMODE)
 
 #misshim

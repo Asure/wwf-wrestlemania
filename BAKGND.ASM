@@ -59,8 +59,8 @@
 ********************************
 
 *BACKGROUND UPDATER EQUATES
-BLSTSTRT	.EQU	>8000
-BLSTEND 	.EQU	>8001
+BLSTSTRT	.EQU	08000H
+BLSTEND 	.EQU	08001H
 
 ************* LOCAL CONSTANTS FOR UPD **************
 
@@ -80,7 +80,7 @@ MAP_X		.SET	16	;SIZE 16
 MAP_Y		.SET	32	;SIZE 16
 MAP_HDR		.SET	48	;SIZE 16 - OFFSET IN LONG WORDS FROM BLOCK_HDR_TBL
 				; BITS 12-15 ARE BITS 4-7 OF PAL
-				; MAP_HDR SET TO >FFFF IF BLOCK IS NOT ALLOCATED
+				; MAP_HDR SET TO 0FFFFH IF BLOCK IS NOT ALLOCATED
 BLOCK_SIZE	.SET	64	;Uses shifts!
 
 * Offsets for a BLOCK HDR structure
@@ -92,7 +92,7 @@ MAP_CTRL	.equ	64	;DMA ctrl word
 ;BLOCK_HDR_SIZE	.set	80
 
 
-************************************************************************
+#************************************************************************
 * SCAN A MODULE LIST TO FIND OUT WHICH MODULE CONTAINS BLOCKS
 * WHICH NEED TO BE CHECKED
 * A0=XPOS FOR WHICH HEIGHT OF BACKGROUND NEEDS TO BE DETERMINED
@@ -169,7 +169,7 @@ GOTHGHT	MMFM	SP,A1,A2,A3,A4,A7,A8,A9,A10,A11
 * A0=XPos of block
 * A1=*Start of bkgnd block table
 * A2=*End of block table
-* >A0=ADDRESS OF FIRST BLOCK WITH X COORDINATE >= PARM
+* 0A0H=ADDRESS OF FIRST BLOCK WITH X COORDINATE >= PARM
 *	IF NEW X IS HIGHEST RETURNS NEXT EMPTY BLOCK
 *	IF NO BLOCKS WITH >= X, RETURN 0
 
@@ -582,7 +582,7 @@ GOTB
 	jrz	#x
 
 	movb	*a8,a14		;set bit in bitmap for block on list
-	ori	>80,a14
+	ori	080H,a14
 	movb	a14,*a8
 
 	move	a8,*a0(OPLINK),L ;OPLINK = *Bakbit for obj
@@ -643,7 +643,7 @@ bsetpal
 	move	a1,*a0(OIMG),L		;A1=Data block pointer
 
 	move	*a1(MAP_CTRL),a4	;Get DMA ctrl
-	ori	>8002,a4		;A4=flags (>8000 dma go, 2)
+	ori	08002H,a4		;A4=flags (08000H dma go, 2)
 	srl	4,a3			;remove palette bits
 	sll	32-2,a3
 	jrc	#trans			;Transparent?
@@ -819,7 +819,7 @@ bak_null
 	JRYGE	#lp			;JUMP IF TL Y <= BLOCK Y+H
 
 DEL_IT
-	move	*a8(OPLINK),a0,L	;>Clr the on display list bit
+	move	*a8(OPLINK),a0,L	;0CHlr the on display list bit
 	movb	*a0,a7
 	sll	32-7,a7
 	srl	32-7,a7

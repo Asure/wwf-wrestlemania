@@ -69,7 +69,7 @@
 
 ******************************************************************************
 *
-* >a0=wrestler ptr, <a0=height (word)
+* 0a0H=wrestler ptr, <a0=height (word)
 
  SUBR	get_mode_height
 
