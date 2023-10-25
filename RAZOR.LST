@@ -1,0 +1,3508 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    **************************************************************
+       2                    *
+       3                    * Software:             Jamie Rivett
+       4                    * Initiated:            1/20/94
+       5                    *
+       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "razor.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "macros.h"
+      18                            .include        "jjxm.h"
+      19                            .include        "mproc.equ"             ;Mproc equates
+      20                            .include        "display.equ"           ;Display proc equates
+      21                            .include        "gsp.equ"               ;Gsp asm equates
+      22                            .include        "sys.equ"
+      23                            .include        "game.equ"
+      24                            .include        "plyr.equ"
+      25                            .include        "anim.equ"
+      26                            .include        "audit.equ"
+      27                            .include        "sound.h"
+      28                            .include        "ring.equ"
+      29                            .include        "lifebar.h"
+      30                            .include        "damage.equ"
+      31                    
+      32                    
+      33                    ******************************************************************************
+      34                    * EXTERNAL REFERENCES
+      35                    
+      36                            .ref    change_anim1a,change_anim2a,do_taunt,bounce_off_ropes
+      37                            .ref    check_secret_moves,master_keep_attached,ck_ignore
+      38                            .ref    climb_turnbuckle,execute_walk,get_opp_plyrmode,mode_inair2
+      39                            .ref    process_ptrs,keep_attached,FIND_AND_KILL_ENDLESS
+      40                            .ref    change_anim1,JUMP_ROPES,PCNT
+      41                            .ref    DO_REVERSAL,DO_REVERSAL_MESS,CHECK_COMBO_GO
+      42                            .ref    ADD_IF_SILENT,CLIMB_ROPES,can_pin
+      43                            .ref    get_opp_process,round_award,set_raisearm_bit
+      44                            .ref    BONUS_MESS,ck_teammate_pin,raisearm_check
+      45                            .ref    BLOCK_WOOSH,drone_change_back
+      46                            .ref    blocking_off,std_taunt,std_walk_fast
+      47                            .ref    hyper_speed_on
+      48                            .ref    in_finish_move
+      49                            .ref    p1rounds,p2rounds
+      50                            .if NUM_RAZOR_FINISHES
+      51                            .ref    rzr_finish1_move
+      52                            .if NUM_RAZOR_FINISHES > 1
+      53                            .ref    rzr_finish2_move
+      54                            .endif
+      55                            .endif
+      56                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    2
+
+      57                    ;animation sequences
+      58                    
+      59                            .ref    rzr_run2_anim
+      60                    
+      61                            .ref    start_run_anim
+      62                    
+      63                            .ref    rzr_3_head_hold2_anim
+      64                            .ref    rzr_3_head_hold_anim
+      65                    
+      66                            .ref    rzr_stand2_anim,rzr_stand8_anim
+      67                            .ref    rzr_stand4_anim,rzr_stand6_anim
+      68                            .ref    rzr_torso2_anim,rzr_torso8_anim
+      69                            .ref    rzr_torso4_anim,rzr_torso6_anim
+      70                    
+      71                            .ref    rzr_2_to_4_turn_anim,rzr_8_to_6_turn_anim       ;stand
+      72                            .ref    rzr_4_to_2_turn_anim,rzr_6_to_8_turn_anim
+      73                            .ref    rzr_4_to_6_turn_anim,rzr_6_to_4_turn_anim
+      74                            .ref    rzr_2_to_8_turn_anim,rzr_8_to_2_turn_anim
+      75                            .ref    rzr_4_to_8_turn_anim,rzr_6_to_2_turn_anim
+      76                            .ref    rzr_2_to_6_turn_anim,rzr_8_to_4_turn_anim
+      77                    
+      78                            .ref    rzr_2_to_4_turn2_anim,rzr_8_to_6_turn2_anim     ;torso
+      79                            .ref    rzr_4_to_2_turn2_anim,rzr_6_to_8_turn2_anim
+      80                            .ref    rzr_4_to_6_turn2_anim,rzr_6_to_4_turn2_anim
+      81                            .ref    rzr_2_to_8_turn2_anim,rzr_8_to_2_turn2_anim
+      82                            .ref    rzr_4_to_8_turn2_anim,rzr_6_to_2_turn2_anim
+      83                            .ref    rzr_2_to_6_turn2_anim,rzr_8_to_4_turn2_anim
+      84                    
+      85                            .ref    rzr_walk1_f2_anim,rzr_walk2_f2_anim,rzr_walk4_f2_anim
+      86                            .ref    rzr_walk5_f2_anim,rzr_walk6_f2_anim,rzr_walk8_f2_anim
+      87                    
+      88                            .ref    rzr_walk1_f4_anim,rzr_walk2_f4_anim,rzr_walk4_f4_anim
+      89                            .ref    rzr_3_head_held_stand_anim
+      90                            .ref    rzr_walk5_f4_anim,rzr_walk6_f4_anim,rzr_walk8_f4_anim
+      91                    
+      92                            .ref    rzr_2_punch_anim,rzr_4_punch_anim
+      93                            .ref    rzr_2_pin_anim,rzr_4_pin_anim
+      94                            .ref    rzr_4_uprcut_anim
+      95                            .ref    rzr_2_butt_anim,rzr_4_butt_anim
+      96                            .ref    rzr_2_kick_anim,rzr_4_kick_anim
+      97                            .ref    rzr_2_super_kick_anim,rzr_4_super_kick_anim
+      98                            .ref    rzr_2_knee_anim,rzr_4_knee_anim
+      99                            .ref    rzr_flying_kick_anim
+     100                            .ref    rzr_2_ground_punch_anim,rzr_4_ground_punch_anim
+     101                            .ref    rzr_2_stomp_anim,rzr_4_stomp_anim
+     102                            .ref    rzr_2_grabfling_anim,rzr_4_grabfling_anim
+     103                            .ref    rzr_2_hair_pickup_anim,rzr_4_hair_pickup_anim
+     104                    
+     105                            .ref    rzr_4_push_anim
+     106                            .ref    rzr_4_bigboot_anim
+     107                            .ref    rzr_climb_down_anim,rzr_climb_up_anim
+     108                    
+     109                            .ref    rzr_2_block_anim,rzr_4_block_anim
+     110                            .ref    rzr_2_hiptoss_anim,rzr_4_hiptoss_anim
+     111                            .ref    rzr_2_hiptoss2_anim,rzr_4_hiptoss2_anim
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    3
+
+     112                            .ref    rzr_flying_elbow_anim
+     113                            .ref    rzr_3_uslash_anim,rzr_3_dslash_anim
+     114                            .ref    rzr_dslashes_to_head_anim,rzr_dslash_to_head_anim
+     115                            .ref    rzr_uslashes_to_head_anim,rzr_uslash_to_head_anim
+     116                            .ref    rzr_rugshake_anim
+     117                            .ref    rzr_tbukl_elbow_anim,rzr_3_pile_driver_anim
+     118                            .ref    rzr_repeat_slash_anim
+     119                            .ref    rzr_4_knee_fall_anim
+     120                    
+     121                            .ref    rzr_combo_punch_anim,rzr_combo_kick_anim
+     122                    
+     123                            .ref    rzr_2_raise_arm_anim,rzr_4_raise_arm_anim
+     124                    
+     125                    ;       .ref    rzr_pkup_chair_anim
+     126                            .ref    rzr_rugshake2_anim
+     127                            .ref    rzr_fall_back_anim,rzr_razors_edge_anim
+     128                    
+     129                    ******************************************************************************
+     130                    * SYMBOLS DEFINED IN THIS FILE
+     131                    
+     132                    ******************************************************************************
+     133                    * EQUATES FOR THIS FILE
+     134                    
+     135                    *****************************************************************************
+     136                    
+     137 00000000           razor_secret_moves
+     138                    
+     139 00000000 00000260'         .long   qwkzcharge_flying_kick  ;must have this one
+     140 00000020 00000920'         .long   qwkzneck_grab
+     141 00000040 00001240'         .long   qwkzgrab_fling
+     142 00000060 00001960'         .long   qwkzhip_toss
+     143 00000080 000010c0'         .long   qwkzgrab_fling2
+     144 000000a0 00001110'         .long   qwkzhip_toss2
+     145 000000c0 00000d20'         .long   qwkzdown_slash
+     146 000000e0 00000000          .long   0
+     147                    
+     148                    ******************************************************************************
+     149                    *
+     150                    * SPECIAL MOVE PROCESSES - Secret moves
+     151                    *
+     152                    ;a8=process of wrestler
+     153                    
+     154 00000100            SUBR   rzr_smove_table
+     155 00000100 00001e20'         .long   rzr_charge_slashes
+     156 00000120 00003730'         .long   rzr_hdhold_pile
+     157 00000140 00004c30'         .long   rzr_hdhold_combo1
+     158 00000160 00002bd0'         .long   rzr_hdhold_edge
+     159 00000180 00004280'         .long   rzr_hdhold_rug
+     160 000001a0 00005910'         .long   rzr_grab_toss_air
+     161 000001c0 000052a0'         .long   rzr_hdhold_combo2
+     162                    ;       REFLONG std_hdhold_anti_combo
+     163 000001e0 00000000!         .long   std_walk_fast
+     164 00000200 00000000!         .long   std_taunt
+     165 00000220 00002200'         .long   rzr_sliding_rug
+     166                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    4
+
+     167                            .if NUM_RAZOR_FINISHES
+     168                            .long   rzr_finish_move1
+     169                            .endif
+     170                            .if NUM_RAZOR_FINISHES > 1
+     171                            .long   rzr_finish_move2
+     172                            .endif
+     173 00000240 00000000          .long   0
+     174                    
+     175                    
+     176                    *******************************************************************************
+     177                    
+     178 00000260           qwkzcharge_flying_kick
+     179 00000260     b5a0          move    *a13(BUT_VAL_UP),a0
+         00000270     0bb0  
+     180 00000280     1f60          btst    PLAYER_SKICK_BIT,a0
+     181 00000290     ca0c          jrz     qwkzno_kick
+     182                    
+     183 000002a0     b5a0          move    *a13(PLYRNUM),a0
+         000002b0     0580  
+     184                            .ref    get_powerk_dtime
+     185 000002c0     0d5f          calla   get_powerk_dtime
+         000002d0 00000000! 
+     186 000002f0     0b40          cmpi    85,a0                   ;> min?
+         00000300     ffaa  
+     187 00000310     c404          jrlt    qwkzno_kick
+     188                    
+     189 00000320     0d3f          callr   qwkzscrt_kick
+         00000330     0004  
+     190 00000340     0de0          setc
+     191 00000350     0960          rets
+     192                    
+     193 00000360           qwkzno_kick
+     194 00000360     0320          clrc
+     195 00000370     0960          rets
+     196                    
+     197 00000380           qwkzscrt_kick
+     198                    
+     199 00000380     b5a0          move    *a13(PLYRMODE),a0
+         00000390     05c0  
+     200 000003a0     0b40          cmpi    MODE_HEADHELD,a0
+         000003b0     ffec  
+     201 000003c0     ca00          jrz     qwkzout
+         000003d0     0157  
+     202 000003e0     0b40          cmpi    MODE_HEADHOLD,a0
+         000003f0     ffef  
+     203 00000400     ca00          jrz     qwkzout
+         00000410     0153  
+     204 00000420     b5a0          move    *a13(GETUP_TIME),a0
+         00000430     0460  
+     205 00000440     cb00          jrnz    qwkzout
+         00000450     014f  
+     206 00000460     0b40          cmpi    MODE_ONGROUND,a0
+         00000470     fffb  
+     207 00000480     ca00          jrz     qwkzout
+         00000490     014b  
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    5
+
+     208 000004a0     0b40          cmpi    MODE_DEAD,a0
+         000004b0     fff6  
+     209 000004c0     ca00          jrz     qwkzout
+         000004d0     0147  
+     210                    
+     211 000004e0     b5a0          move    *a13(ANIMODE),a0
+         000004f0     0660  
+     212 00000500     1fa0          btst    MODE_UNINT_BIT,a0
+     213 00000510     cb00          jrnz    qwkzout
+         00000520     0142  
+     214                    
+     215                            .ref    ck_ignore
+     216 00000530     0d5f          calla   ck_ignore
+         00000540 00000000! 
+     217 00000560     c800          jrc     qwkzout
+         00000570     013d  
+     218                    
+     219                    ;Don't do it when he is on ground
+     220 00000580     0d5f          calla   get_opp_plyrmode
+         00000590 00000000! 
+     221 000005b0     0b40          cmpi    MODE_ONGROUND,a0
+         000005c0     fffb  
+     222 000005d0     ca00          jrz     qwkzout
+         000005e0     0136  
+     223 000005f0     0b40          cmpi    MODE_DEAD,a0
+         00000600     fff6  
+     224 00000610     ca00          jrz     qwkzout
+         00000620     0132  
+     225                    
+     226 00000630                   SETMODE INAIR
+     227                    
+     228 000006e0     1820          movk    1,a0                    ;Ensure leap at
+     229 000006f0     b208          move    a0,*a8(OBJ_XVEL),L
+         00000700     02d0  
+     230                    
+     231 00000710     09e0          movi    rzr_flying_kick_anim,a0
+         00000720 00000000! 
+     232 00000740     0d5f          calla   change_anim1a
+         00000750 00000000! 
+     233                    
+     234 00000770                   WRSND   W_RAZOR,FLYKICK_T1,FLYKICK_T2
+     235                    
+     236 00000910     0960          rets
+     237                    
+     238                    
+     239                    ******************************************************************************
+     240 00000920           qwkzneck_grab
+     241 00000920     0040          .word   B_SPUNCH,               J_REAL_LR | J_TOWARD | J_AWAY | J_UP
+     242 00000940     0008          .word   J_TOWARD,               J_REAL_LR
+     243 00000960     0008          .word   J_TOWARD,               J_REAL_LR
+     244 00000980     801e          .word   8000h | 30              ;max
+     245 00000990 000009b0'         .long   qwkzscrt_neck
+     246                    
+     247 000009b0           qwkzscrt_neck
+     248 000009b0     b5a0          move    *a13(ANIMODE),a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    6
+
+         000009c0     0660  
+     249 000009d0     1fa0          btst    MODE_UNINT_BIT,a0
+     250 000009e0     cb00          jrnz    qwkzout
+         000009f0     00f5  
+     251                    
+     252                    ;Don't do it when he is on ground
+     253 00000a00     0d5f          calla   get_opp_plyrmode
+         00000a10 00000000! 
+     254 00000a30     0b40          cmpi    MODE_ONGROUND,a0
+         00000a40     fffb  
+     255 00000a50     ca00          jrz     qwkzout
+         00000a60     00ee  
+     256 00000a70     0b40          cmpi    MODE_DEAD,a0
+         00000a80     fff6  
+     257 00000a90     ca00          jrz     qwkzout
+         00000aa0     00ea  
+     258 00000ab0     0b40          cmpi    MODE_HEADHELD,a0
+         00000ac0     ffec  
+     259 00000ad0     ca00          jrz     qwkzout
+         00000ae0     00e6  
+     260                    
+     261 00000af0     b7ae          move    *a13(LAST_HEADHOLD),a14,L
+         00000b00     0cd0  
+     262 00000b10     07a0          move    @PCNT,a0,L
+         00000b20 00000000! 
+     263 00000b40     45c0          sub     a14,a0
+     264 00000b50     0b40          cmpi    2*60,a0
+         00000b60     ff87  
+     265 00000b70     c507          jrge    qwkzok2
+     266                    
+     267                    ;This head grab is too close (in terms of time) to most recent grab
+     268                            .ref    rzr_3_fake_hold_anim
+     269 00000b80     09e0          movi    rzr_3_fake_hold_anim,a0
+         00000b90 00000000! 
+     270 00000bb0     0d5f          calla   change_anim1a
+         00000bc0 00000000! 
+     271 00000be0     0960          rets
+     272                    
+     273 00000bf0           qwkzok2
+     274 00000bf0     b5a1          move    *a13(CLOSEST_XDIST),a1
+         00000c00     0370  
+     275 00000c10     0b41          cmpi    85,a1
+         00000c20     ffaa  
+     276 00000c30     c707          jrgt    qwkzstd_grab
+     277                    
+     278 00000c40     09e0          movi    rzr_3_head_hold2_anim,a0
+         00000c50 00000000! 
+     279 00000c70     0d5f          calla   change_anim1a
+         00000c80 00000000! 
+     280 00000ca0     0960          rets
+     281                    
+     282 00000cb0           qwkzstd_grab
+     283 00000cb0     09e0          movi    rzr_3_head_hold_anim,a0
+         00000cc0 00000000! 
+     284 00000ce0     0d5f          calla   change_anim1a
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    7
+
+         00000cf0 00000000! 
+     285 00000d10     0960          rets
+     286                    
+     287                    ******************************************************************************
+     288 00000d20           qwkzdown_slash
+     289 00000d20     0010          .word   B_PUNCH,                J_ALL
+     290 00000d40     0008          .word   J_TOWARD,               J_REAL_LR
+     291 00000d60     000a          .word   J_DOWN|J_TOWARD,        J_REAL_LR
+     292 00000d80     0002          .word   J_DOWN,                 J_REAL_LR
+     293 00000da0     8032          .word   8000h | 50              ;max
+     294 00000db0 00000dd0'         .long   qwkzdslash
+     295                    
+     296 00000dd0           qwkzdslash
+     297 00000dd0     b5a0          move    *a13(ANIMODE),a0
+         00000de0     0660  
+     298 00000df0     1fa0          btst    MODE_UNINT_BIT,a0
+     299 00000e00     cb00          jrnz    qwkzout
+         00000e10     00b3  
+     300                    
+     301                            ;check opp mode
+     302 00000e20     0d5f          calla   get_opp_plyrmode
+         00000e30 00000000! 
+     303 00000e50     0b40          cmpi    MODE_DEAD,a0
+         00000e60     fff6  
+     304 00000e70     ca00          jreq    qwkzout
+         00000e80     00ac  
+     305                    
+     306                            ;don't do it unless you're in mode_normal, running, or headhold
+     307 00000e90     b5a0          move    *a13(PLYRMODE),a0
+         00000ea0     05c0  
+     308 00000eb0     0b40          cmpi    MODE_NORMAL,a0
+         00000ec0     ffff  
+     309 00000ed0     ca0a          jreq    qwkzslash
+     310 00000ee0     0b40          cmpi    MODE_RUNNING,a0
+         00000ef0     fffe  
+     311 00000f00     ca04          jreq    qwkzrunslash
+     312 00000f10     0b40          cmpi    MODE_HEADHOLD,a0
+         00000f20     ffef  
+     313 00000f30     ca04          jreq    qwkzslash
+     314 00000f40     c016          jruc    qwkzz
+     315                    
+     316 00000f50           qwkzrunslash
+     317                            ;don't interrupt an OCRUN
+     318 00000f50     b5ae          move    *a13(GETUP_TIME),a14
+         00000f60     0460  
+     319 00000f70     cb13          jrnz    qwkzz
+     320 00000f80           qwkzslash
+     321 00000f80                   WRSND   W_RAZOR,KICK_T2
+     322 00001050     09e0          movi    rzr_3_dslash_anim,a0
+         00001060 00000000! 
+     323 00001080     0d5f          calla   change_anim1a
+         00001090 00000000! 
+     324 000010b0     0960  qwkzz   rets
+     325                    
+     326                    *******************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    8
+
+     327                    
+     328 000010c0           qwkzgrab_fling2
+     329 000010c0     0044          .word   B_SPUNCH | J_AWAY,      J_REAL_LR | J_UP | J_DOWN
+     330 000010e0     800a          .word   8000h | 10              ;max
+     331 000010f0 00001160'         .long   qwkzscrt_grabfling2
+     332                    
+     333 00001110           qwkzhip_toss2
+     334 00001110     0014          .word   B_PUNCH | J_AWAY,       J_REAL_LR | J_UP | J_DOWN
+     335 00001130     800a          .word   8000h | 10              ;max
+     336 00001140 00001160'         .long   qwkzscrt_grabfling2
+     337                    
+     338 00001160           qwkzscrt_grabfling2
+     339 00001160     b5a0          move    *a13(ANIMODE),a0
+         00001170     0660  
+     340 00001180     1fa0          btst    MODE_UNINT_BIT,a0
+     341 00001190     cb7b          jrnz    qwkzout
+     342                    
+     343                    ;If opponent is running, do a hip toss
+     344 000011a0     0d5f          calla   get_opp_plyrmode
+         000011b0 00000000! 
+     345 000011d0     0b40          cmpi    MODE_BOUNCING,a0
+         000011e0     fffa  
+     346 000011f0     ca1a          jrz     qwkzyes
+     347 00001200     0b40          cmpi    MODE_RUNNING,a0
+         00001210     fffe  
+     348 00001220     ca17          jrz     qwkzyes
+     349 00001230     0960          rets
+     350                    
+     351                    ******************************************************************************
+     352 00001240           qwkzgrab_fling
+     353                    ;       .word   B_SPUNCH | J_AWAY,      J_REAL_LR | J_UP | J_DOWN
+     354                    ;       .word   8000h | 10              ;max
+     355                    ;       .long   qwkzscrt_grabfling
+     356                    
+     357 00001240     0040          .word   B_SPUNCH,               J_ALL
+     358 00001260     0004          .word   J_AWAY,         J_REAL_LR
+     359 00001280     0004          .word   J_AWAY,         J_REAL_LR
+     360 000012a0     8020          .word   8000h | 32              ;max
+     361 000012b0 000012d0'         .long   qwkzscrt_grabfling
+     362                    
+     363 000012d0           qwkzscrt_grabfling
+     364                    
+     365                    ;Make this miss, rotate to missed opponent,
+     366                    ;and stay rotated to flung opponent, also make
+     367                    ;this work from both angles!
+     368                    
+     369 000012d0     b5a0          move    *a13(ANIMODE),a0
+         000012e0     0660  
+     370 000012f0     1fa0          btst    MODE_UNINT_BIT,a0
+     371 00001300     cb64          jrnz    qwkzout
+     372                    
+     373                    ;If opponent is running, do a hip toss
+     374 00001310     0d5f          calla   get_opp_plyrmode
+         00001320 00000000! 
+     375 00001340     0b40          cmpi    MODE_BOUNCING,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    9
+
+         00001350     fffa  
+     376 00001360     ca03          jrz     qwkzyes
+     377 00001370     0b40          cmpi    MODE_RUNNING,a0
+         00001380     fffe  
+     378 00001390     cb28          jrnz    qwkznope
+     379 000013a0           qwkzyes
+     380 000013a0                   FACE24  rzr,hiptoss_anim
+     381 00001440     0d5f          calla   change_anim1a
+         00001450 00000000! 
+     382                    
+     383 00001470                   WRSND   W_RAZOR,GRABFLING_T1,PUNCH_T2
+     384 00001610     0960          rets
+     385                    
+     386 00001620           qwkznope
+     387                    ;Don't fling when he is on ground
+     388 00001620     0d5f          calla   get_opp_plyrmode
+         00001630 00000000! 
+     389 00001650     0b40          cmpi    MODE_HEADHELD,a0
+         00001660     ffec  
+     390 00001670     ca2d          jrz     qwkzout
+     391 00001680     0b40          cmpi    MODE_ONGROUND,a0
+         00001690     fffb  
+     392 000016a0     ca2a          jrz     qwkzout
+     393 000016b0     0b40          cmpi    MODE_DEAD,a0
+         000016c0     fff6  
+     394 000016d0     ca27          jrz     qwkzout
+     395                    
+     396                    ;       move    *a13(LAST_FLING_ATTEMPT),a14,L
+     397                    ;       move    @PCNT,a0,L
+     398                    ;       sub     a14,a0
+     399                    ;       cmpi    3*60,a0
+     400                    ;       jrge    qwkzok2a
+     401                    ;
+     402                    ;;This head grab is too close (in terms of time) to most recent grab
+     403                    ;       movi    rzr_3_uslash_anim,a0
+     404                    ;       calla   change_anim1a
+     405                    ;
+     406                    ;       WRSND   W_RAZOR,SPUNCH_T1,SPUNCH_T2
+     407                    ;       rets
+     408                    ;
+     409                    ;qwkzok2a
+     410                    ;       move    @PCNT,a14,L                     ;use 32-bit PCNT!
+     411                    ;       move    a14,*a13(LAST_FLING_ATTEMPT),L
+     412                    
+     413 000016e0                   FACE24  rzr,grabfling_anim
+     414 00001780     0d5f          calla   change_anim1a
+         00001790 00000000! 
+     415                    
+     416 000017b0                   WRSND   W_RAZOR,GRABFLING_T1,PUNCH_T2
+     417 00001950     0960  qwkzout rets
+     418                    
+     419                    ******************************************************************************
+     420                    
+     421 00001960           qwkzhip_toss
+     422                    ;       .word   B_PUNCH | J_AWAY,       J_REAL_LR | J_UP | J_DOWN
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   10
+
+     423                    ;       .word   8000h | 10              ;max
+     424                    ;       .long   qwkzscrt_hiptoss
+     425                    
+     426 00001960     0010          .word   B_PUNCH,                J_ALL
+     427 00001980     0004          .word   J_AWAY,         J_REAL_LR
+     428 000019a0     0004          .word   J_AWAY,         J_REAL_LR
+     429 000019c0     8020          .word   8000h | 32              ;max
+     430 000019d0 000019f0'         .long   qwkzscrt_hiptoss
+     431                    
+     432                    
+     433 000019f0           qwkzscrt_hiptoss
+     434 000019f0     b5a0          move    *a13(ANIMODE),a0
+         00001a00     0660  
+     435 00001a10     1fa0          btst    MODE_UNINT_BIT,a0
+     436 00001a20     cbf2          jrnz    qwkzout
+     437                    
+     438                    ;Don't do it when he is on ground
+     439 00001a30     0d5f          calla   get_opp_plyrmode
+         00001a40 00000000! 
+     440 00001a60     0b40          cmpi    MODE_ONGROUND,a0
+         00001a70     fffb  
+     441 00001a80     caec          jrz     qwkzout
+     442                    ;       cmpi    MODE_BLOCK,a0
+     443                    ;       jrz     qwkzout
+     444 00001a90     0b40          cmpi    MODE_DEAD,a0
+         00001aa0     fff6  
+     445 00001ab0     cae9          jrz     qwkzout
+     446 00001ac0     0b40          cmpi    MODE_HEADHELD,a0
+         00001ad0     ffec  
+     447 00001ae0     cae6          jrz     qwkzout
+     448 00001af0     0b40          cmpi    MODE_INAIR,a0
+         00001b00     fffd  
+     449 00001b10     ca08          jrz     qwkzdoit
+     450 00001b20     0b40          cmpi    MODE_INAIR2,a0
+         00001b30     ffea  
+     451 00001b40     ca05          jrz     qwkzdoit
+     452                    
+     453 00001b50     b5a0          move    *a13(CLOSEST_DIST),a0
+         00001b60     0360  
+     454 00001b70     0b40          cmpi    70h,a0
+         00001b80     ff8f  
+     455 00001b90     c7db          jrgt    qwkzout
+     456                    
+     457 00001ba0           qwkzdoit
+     458 00001ba0                   FACE24  rzr,hiptoss_anim
+     459 00001c40     0d5f          calla   change_anim1a
+         00001c50 00000000! 
+     460                    
+     461 00001c70                   WRSND   W_RAZOR,GRABFLING_T1,PUNCH_T2
+     462 00001e10     0960          rets
+     463                    
+     464                            .if NUM_RAZOR_FINISHES
+     465                    ******************************************************************************
+     466                     SUBRP  rzr_finish_move1
+     467                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   11
+
+     468                    wkmiTIMEOUT     .equ    TSEC
+     469                    
+     470                    wkmiend_wait
+     471                            SLEEP           TSEC/4
+     472                            move            @p1rounds,a0                    ; Get player 1 rounds
+     473                            move            @p2rounds,a1                    ; Get player 2 rounds
+     474                            or              a1,a0                           ; Put em together
+     475                            cmpi            2,a0                            ; Anybody got 2?
+     476                            jrlt            wkmiend_wait                    ; br = no
+     477                    
+     478                    wkmireset
+     479                            clr             a11
+     480                            move            a11,@in_finish_move
+     481                            SLEEPK          1
+     482                            WAITSWITCH_DWN  J_UP,0,wkmireset
+     483                            movi            wkmiTIMEOUT,a11
+     484                            move            a11,@in_finish_move
+     485                            WAITSWITCH_DWN  J_DOWN,0,wkmireset
+     486                            WAITSWITCH_DWN  J_TOWARD,J_DOWN|J_UP,wkmireset
+     487                            WAITSWITCH_DWN  J_TOWARD,J_DOWN|J_UP,wkmireset
+     488                            WAITSWITCH_DWN  B_PUNCH,J_ALL,wkmireset
+     489                    
+     490                            movi            rzr_finish1_move,a0
+     491                            move            a0,*a8(SPECIAL_MOVE_ADDR),L
+     492                            DIE
+     493                            .endif
+     494                            
+     495                    
+     496                            .if NUM_RAZOR_FINISHES > 1
+     497                    ******************************************************************************
+     498                     SUBRP  rzr_finish_move2
+     499                    
+     500                    xmqzTIMEOUT     .equ    TSEC
+     501                    
+     502                    xmqzend_wait
+     503                            SLEEP           TSEC/4
+     504                            move            @p1rounds,a0                    ; Get player 1 rounds
+     505                            move            @p2rounds,a1                    ; Get player 2 rounds
+     506                            or              a1,a0                           ; Put em together
+     507                            cmpi            2,a0                            ; Anybody got 2?
+     508                            jrlt            xmqzend_wait                    ; br = no
+     509                    
+     510                    xmqzreset
+     511                            clr             a11
+     512                            move            a11,@in_finish_move
+     513                            SLEEPK          1
+     514                            WAITSWITCH_DWN  J_UP,0,xmqzreset
+     515                            movi            xmqzTIMEOUT,a11
+     516                            move            a11,@in_finish_move
+     517                            WAITSWITCH_DWN  J_UP,0,xmqzreset
+     518                            WAITSWITCH_DWN  J_RIGHT,J_UP,xmqzreset
+     519                            WAITSWITCH_DWN  J_RIGHT,J_UP,xmqzreset
+     520                            WAITSWITCH_DWN  B_SPUNCH,J_ALL,xmqzreset
+     521                    
+     522                            movi            rzr_finish2_move,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   12
+
+     523                            move            a0,*a8(SPECIAL_MOVE_ADDR),L
+     524                            DIE
+     525                            .endif
+     526                    
+     527                    
+     528                    *****************************************************************************
+     529                    
+     530                    ;       STRUCTPD
+     531                    ;       WORD            wrjmCHARGE_TIME ;UDW
+     532              0160  wrjmCHARGE_TIME .equ    SM_USRW1
+     533                    
+     534 00001e20           rzr_charge_slashes
+     535                    
+     536 00001e20           wrjmstart_over
+     537 00001e20     57ce          clr     a14
+     538 00001e30     b1cd          move    a14,*a13(wrjmCHARGE_TIME),W
+         00001e40     0160  
+     539 00001e50           wrjmloop1
+     540 00001e50                   SLEEPK  1
+     541                    
+     542 00001e90     b5ae          move    *a13(wrjmCHARGE_TIME),a14,W
+         00001ea0     0160  
+     543 00001eb0     102e          inc     a14
+     544 00001ec0     b1cd          move    a14,*a13(wrjmCHARGE_TIME),W
+         00001ed0     0160  
+     545                    
+     546 00001ee0     b500          move    *a8(BUT_VAL_CUR),a0
+         00001ef0     0b90  
+     547 00001f00     1fe0          btst    PLAYER_PUNCH_BIT,a0
+     548 00001f10     ca01          jrz     wrjmp1
+     549                    
+     550 00001f20     c0f2          jruc    wrjmloop1
+     551                    
+     552 00001f30           wrjmp1
+     553                    
+     554                    ;no longer holding button
+     555 00001f30     b5ae          move    *a13(wrjmCHARGE_TIME),a14
+         00001f40     0160  
+     556 00001f50     0b4e          cmpi    100,a14
+         00001f60     ff9b  
+     557 00001f70     c4ea          jrlt    wrjmstart_over
+     558                    
+     559                    ;Success!  Check for the UNINT bit, then queue it up.
+     560 00001f80     b50e          move    *a8(ANIMODE),a14
+         00001f90     0660  
+     561 00001fa0     1fae          btst    MODE_UNINT_BIT,a14
+     562 00001fb0     cbe6          jrnz    wrjmstart_over
+     563                    
+     564 00001fc0     b500          move    *a8(GETUP_TIME),a0
+         00001fd0     0460  
+     565 00001fe0     cbe3          jrnz    wrjmstart_over
+     566                    
+     567 00001ff0     b500          move    *a8(PLYRMODE),a0
+         00002000     05c0  
+     568 00002010     0b40          cmpi    MODE_HEADHELD,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   13
+
+         00002020     ffec  
+     569 00002030     cade          jrz     wrjmstart_over
+     570 00002040     0b40          cmpi    MODE_HEADHOLD,a0
+         00002050     ffef  
+     571 00002060     cadb          jrz     wrjmstart_over
+     572 00002070     0b40          cmpi    MODE_ONGROUND,a0
+         00002080     fffb  
+     573 00002090     cad8          jrz     wrjmstart_over
+     574 000020a0     0b40          cmpi    MODE_DEAD,a0
+         000020b0     fff6  
+     575 000020c0     cad5          jrz     wrjmstart_over
+     576                    
+     577 000020d0     09ee          movi    rzr_repeat_slash_anim,a14
+         000020e0 00000000! 
+     578 00002100     b3c8          move    a14,*a8(SPECIAL_MOVE_ADDR),L
+         00002110     0930  
+     579 00002120                   WRSND   W_RAZOR,KICK_T2
+     580                    
+     581 000021f0     c0c2          jruc    wrjmstart_over
+     582                    
+     583                    *******************************************************************************
+     584                    
+     585 00002200           rzr_sliding_rug
+     586                    
+     587              003c  zasoTIMEOUT     .equ    60
+     588                    
+     589 00002200           zasolp0
+     590 00002200                   SLEEPK  1
+     591 00002240           zasolp
+     592 00002240     576b          clr     a11
+     593                    
+     594                    ;       WAITSWITCH_DWN  J_AWAY,0,zasolp
+     595 00002250                   WAITSWITCH_DWN  J_TOWARD,0,zasolp
+     596                    
+     597 000023b0     09cb          movi    zasoTIMEOUT,a11
+         000023c0     003c  
+     598                    
+     599 000023d0                   WAITSWITCH_DWN  J_TOWARD,0,zasolp
+     600 00002530                   WAITSWITCH_DWN  B_KICK,J_ALL,zasolp
+     601                    
+     602 00002690     b500          move    *a8(PLYRMODE),a0
+         000026a0     05c0  
+     603 000026b0     0b40          cmpi    MODE_HEADHELD,a0
+         000026c0     ffec  
+     604 000026d0     cab2          jrz     zasolp0
+     605 000026e0     0b40          cmpi    MODE_HEADHOLD,a0
+         000026f0     ffef  
+     606 00002700     caaf          jrz     zasolp0
+     607 00002710     0b40          cmpi    MODE_ONGROUND,a0
+         00002720     fffb  
+     608 00002730     caac          jrz     zasolp0
+     609 00002740     0b40          cmpi    MODE_DEAD,a0
+         00002750     fff6  
+     610 00002760     caa9          jrz     zasolp0
+     611                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   14
+
+     612 00002770     b500          move    *a8(ANIMODE),a0
+         00002780     0660  
+     613 00002790     1fa0          btst    MODE_UNINT_BIT,a0
+     614 000027a0     cba5          jrnz    zasolp0
+     615                    
+     616 000027b0     b500          move    *a8(GETUP_TIME),a0
+         000027c0     0460  
+     617 000027d0     cba2          jrnz    zasolp0
+     618                    
+     619                    
+     620                    ;Don't do it when he is on ground
+     621 000027e0                   SWAP    a8,a13
+     622 00002810     0d5f          calla   get_opp_plyrmode
+         00002820 00000000! 
+     623 00002840                   SWAP    a8,a13
+     624                    ;       cmpi    MODE_ONGROUND,a0
+     625                    ;       jrz     zasolp
+     626 00002870     0b40          cmpi    MODE_DEAD,a0
+         00002880     fff6  
+     627 00002890     ca9a          jrz     zasolp
+     628                    
+     629                    ;Don't do it if opponent is behind you
+     630 000028a0                   SWAP    a8,a13
+     631 000028d0     0d5f          calla   ck_ignore
+         000028e0 00000000! 
+     632 00002900     c904          jrnc    zasonorm
+     633 00002910                   SWAP    a8,a13
+     634 00002940     c08f          jruc    zasolp
+     635 00002950           zasonorm        
+     636 00002950                   SWAP    a8,a13
+     637                    
+     638 00002980                   WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+     639                            .ref    rzr_sliding_rug_anim
+     640 00002b20     09ee          movi    rzr_sliding_rug_anim,a14
+         00002b30 00000000! 
+     641 00002b50     b3c8          move    a14,*a8(SPECIAL_MOVE_ADDR),L
+         00002b60     0930  
+     642                    
+     643 00002b70                   SLEEPK  20
+     644                    
+     645 00002bb0     c000          jruc    zasolp
+         00002bc0     ff67  
+     646                    
+     647                    *****************************************************************************
+     648 00002bd0           rzr_hdhold_edge
+     649                    
+     650              003c  ufvlTIMEOUT     .equ    60
+     651                    
+     652 00002bd0           ufvllp0
+     653 00002bd0                   SLEEPK  1
+     654 00002c10           ufvllp
+     655 00002c10     b500          move    *a8(PLYRMODE),a0
+         00002c20     05c0  
+     656 00002c30     0b40          cmpi    MODE_HEADHOLD,a0
+         00002c40     ffef  
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   15
+
+     657 00002c50     ca03          jrz     ufvlcont
+     658 00002c60     0b40          cmpi    MODE_HEADHELD,a0
+         00002c70     ffec  
+     659 00002c80     cbf4          jrnz    ufvllp0
+     660                    
+     661 00002c90           ufvlcont
+     662 00002c90     576b          clr     a11
+     663                    
+     664                    ;       WAITSWITCH_DWN  J_AWAY,0,ufvllp
+     665 00002ca0                   WAITSWITCH_DWN  J_TOWARD,0,ufvllp
+     666                    
+     667 00002e00     09cb          movi    ufvlTIMEOUT,a11
+         00002e10     003c  
+     668                    
+     669 00002e20                   WAITSWITCH_DWN  J_TOWARD,0,ufvllp
+     670 00002f80                   WAITSWITCH_DWN  B_SPUNCH,J_ALL,ufvllp
+     671                            
+     672 000030e0     b500          move    *a8(PLYRMODE),a0
+         000030f0     05c0  
+     673 00003100     0b40          cmpi    MODE_HEADHOLD,a0
+         00003110     ffef  
+     674 00003120     ca1c          jrz     ufvlslam
+     675 00003130     0b40          cmpi    MODE_HEADHELD,a0
+         00003140     ffec  
+     676 00003150     cba7          jrnz    ufvllp0
+     677 00003160     b50e          move    *a8(I_WILL_DIE),A14
+         00003170     0b30  
+     678 00003180     cba4          jrnz    ufvllp0
+     679                    
+     680 00003190     b50e          move    *a8(IMMOBILIZE_TIME),a14
+         000031a0     0ae0  
+     681 000031b0     cba1          jrnz    ufvllp0                         ;ignore
+     682                    
+     683 000031c0     0d5f          calla   DO_REVERSAL
+         000031d0 00000000! 
+     684 000031f0     0d5f          calla   DO_REVERSAL_MESS
+         00003200 00000000! 
+     685                    
+     686                            ;target WHOHITME -- don't hit anyone else
+     687 00003220                   SMRTTGT a8,WHOHITME
+     688                    
+     689                            ;immobilize WHOHITME
+     690 000032c0     b700          move    *a8(WHOHITME),a0,L
+         000032d0     04e0  
+     691 000032e0     c019          jruc    ufvlis_reversal
+     692                    
+     693 000032f0           ufvlslam
+     694 000032f0     b50e          move    *a8(IMMOBILIZE_TIME),a14
+         00003300     0ae0  
+     695 00003310     cb8b          jrnz    ufvllp0                         ;ignore
+     696                    
+     697 00003320     09ca          movi    33,a10
+         00003330     0021  
+     698 00003340                   CREATE  MESSAGE_PID,BONUS_MESS
+     699                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   16
+
+     700                            ;target WHOIHIT -- don't hit anyone else
+     701 000033c0                   SMRTTGT a8,WHOIHIT
+     702                    
+     703                            ;immobilize WHOIHIT
+     704 00003460     b700          move    *a8(WHOIHIT),a0,L
+         00003470     0500  
+     705                    
+     706 00003480           ufvlis_reversal
+     707 00003480     19ee          movk    15,a14
+     708 00003490     b1c0          move    a14,*a0(IMMOBILIZE_TIME)
+         000034a0     0ae0  
+     709                    
+     710 000034b0     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         000034c0 00000000! 
+     711                    
+     712 000034e0     09ee          movi    rzr_razors_edge_anim,a14
+         000034f0 00000000! 
+     713 00003510     b3c8          move    a14,*a8(SPECIAL_MOVE_ADDR),L
+         00003520     0930  
+     714 00003530                   WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+     715                    
+     716 000036d0                   SLEEPK  20
+     717                    
+     718 00003710     c000          jruc    ufvllp
+         00003720     ff4e  
+     719                    
+     720                    *****************************************************************************
+     721 00003730           rzr_hdhold_pile
+     722                    
+     723              003c  aocgTIMEOUT     .equ    60
+     724                    
+     725 00003730           aocglp0
+     726 00003730                   SLEEPK  1
+     727 00003770           aocglp
+     728 00003770     b500          move    *a8(PLYRMODE),a0
+         00003780     05c0  
+     729 00003790     0b40          cmpi    MODE_HEADHOLD,a0
+         000037a0     ffef  
+     730 000037b0     ca03          jrz     aocgcont
+     731 000037c0     0b40          cmpi    MODE_HEADHELD,a0
+         000037d0     ffec  
+     732 000037e0     cbf4          jrnz    aocglp0
+     733                    
+     734 000037f0           aocgcont
+     735 000037f0     576b          clr     a11
+     736                    
+     737                    ;       WAITSWITCH_DWN  J_UP,0,aocglp
+     738 00003800                   WAITSWITCH_DWN  J_DOWN,0,aocglp
+     739                    
+     740 00003960     09cb          movi    aocgTIMEOUT,a11
+         00003970     003c  
+     741                    
+     742 00003980                   WAITSWITCH_DWN  J_DOWN,0,aocglp
+     743 00003ae0                   WAITSWITCH_DWN  B_SKICK,J_ALL,aocglp
+     744                            
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   17
+
+     745 00003c40     b500          move    *a8(PLYRMODE),a0
+         00003c50     05c0  
+     746 00003c60     0b40          cmpi    MODE_HEADHOLD,a0
+         00003c70     ffef  
+     747 00003c80     ca1c          jrz     aocgslam
+     748 00003c90     0b40          cmpi    MODE_HEADHELD,a0
+         00003ca0     ffec  
+     749 00003cb0     cba7          jrnz    aocglp0
+     750 00003cc0     b50e          move    *a8(I_WILL_DIE),A14
+         00003cd0     0b30  
+     751 00003ce0     cba4          jrnz    aocglp0
+     752                    
+     753 00003cf0     b50e          move    *a8(IMMOBILIZE_TIME),a14
+         00003d00     0ae0  
+     754 00003d10     cba1          jrnz    aocglp0                         ;ignore
+     755                    
+     756 00003d20     0d5f          calla   DO_REVERSAL
+         00003d30 00000000! 
+     757 00003d50     0d5f          calla   DO_REVERSAL_MESS
+         00003d60 00000000! 
+     758                    
+     759                            ;target WHOHITME -- don't hit anyone else
+     760 00003d80                   SMRTTGT a8,WHOHITME
+     761                    
+     762                            ;immobilize WHOHITME
+     763 00003e20     b700          move    *a8(WHOHITME),a0,L
+         00003e30     04e0  
+     764 00003e40     c018          jruc    aocgis_reversal
+     765                    
+     766 00003e50           aocgslam
+     767 00003e50     b50e          move    *a8(IMMOBILIZE_TIME),a14
+         00003e60     0ae0  
+     768 00003e70     cb8b          jrnz    aocglp0                         ;ignore
+     769                    
+     770 00003e80     18ea          movk    7,a10
+     771 00003e90                   CREATE  MESSAGE_PID,BONUS_MESS
+     772                    
+     773                            ;target WHOIHIT -- don't hit anyone else
+     774 00003f10                   SMRTTGT a8,WHOIHIT
+     775                    
+     776                            ;immobilize WHOIHIT
+     777 00003fb0     b700          move    *a8(WHOIHIT),a0,L
+         00003fc0     0500  
+     778                    
+     779 00003fd0           aocgis_reversal
+     780 00003fd0     19ee          movk    15,a14
+     781 00003fe0     b1c0          move    a14,*a0(IMMOBILIZE_TIME)
+         00003ff0     0ae0  
+     782                    
+     783 00004000     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         00004010 00000000! 
+     784 00004030     09ee          movi    rzr_3_pile_driver_anim,a14
+         00004040 00000000! 
+     785 00004060     b3c8          move    a14,*a8(SPECIAL_MOVE_ADDR),L
+         00004070     0930  
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   18
+
+     786 00004080                   WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+     787                    
+     788 00004220                   SLEEPK  20
+     789                    
+     790 00004260     c000          jruc    aocglp
+         00004270     ff4f  
+     791                    
+     792                    *****************************************************************************
+     793 00004280           rzr_hdhold_rug
+     794                    
+     795              003c  djzuTIMEOUT     .equ    60
+     796                    
+     797 00004280           djzulp0
+     798 00004280                   SLEEPK  1
+     799 000042c0           djzulp
+     800 000042c0     b500          move    *a8(PLYRMODE),a0
+         000042d0     05c0  
+     801 000042e0     0b40          cmpi    MODE_HEADHOLD,a0
+         000042f0     ffef  
+     802 00004300     ca03          jrz     djzucont
+     803 00004310     0b40          cmpi    MODE_HEADHELD,a0
+         00004320     ffec  
+     804 00004330     cbf4          jrnz    djzulp0
+     805                    
+     806 00004340           djzucont
+     807 00004340     576b          clr     a11
+     808                    
+     809                    ;       WAITSWITCH_DWN  J_UP,0,djzulp
+     810 00004350                   WAITSWITCH_DWN  J_DOWN,0,djzulp
+     811                    
+     812 000044b0     09cb          movi    djzuTIMEOUT,a11
+         000044c0     003c  
+     813                    
+     814 000044d0                   WAITSWITCH_DWN  J_DOWN,0,djzulp
+     815 00004630                   WAITSWITCH_DWN  B_KICK,J_ALL,djzulp
+     816                            
+     817 00004790     b500          move    *a8(PLYRMODE),a0
+         000047a0     05c0  
+     818 000047b0     0b40          cmpi    MODE_HEADHOLD,a0
+         000047c0     ffef  
+     819 000047d0     ca1c          jrz     djzuslam
+     820 000047e0     0b40          cmpi    MODE_HEADHELD,a0
+         000047f0     ffec  
+     821 00004800     cba7          jrnz    djzulp0
+     822 00004810     b50e          move    *a8(I_WILL_DIE),A14
+         00004820     0b30  
+     823 00004830     cba4          jrnz    djzulp0
+     824                    
+     825 00004840     b50e          move    *a8(IMMOBILIZE_TIME),a14
+         00004850     0ae0  
+     826 00004860     cba1          jrnz    djzulp0                         ;ignore
+     827                    
+     828 00004870     0d5f          calla   DO_REVERSAL
+         00004880 00000000! 
+     829 000048a0     0d5f          calla   DO_REVERSAL_MESS
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   19
+
+         000048b0 00000000! 
+     830                    
+     831                            ;target WHOHITME -- don't hit anyone else
+     832 000048d0                   SMRTTGT a8,WHOHITME
+     833                    
+     834                            ;immobilize WHOHITME
+     835 00004970     b700          move    *a8(WHOHITME),a0,L
+         00004980     04e0  
+     836 00004990     c018          jruc    djzuis_reversal
+     837                    
+     838 000049a0           djzuslam
+     839 000049a0     b50e          move    *a8(IMMOBILIZE_TIME),a14
+         000049b0     0ae0  
+     840 000049c0     cb8b          jrnz    djzulp0                         ;ignore
+     841                    
+     842 000049d0     18ca          movk    6,a10
+     843 000049e0                   CREATE  MESSAGE_PID,BONUS_MESS
+     844                    
+     845                            ;target WHOIHIT -- don't hit anyone else
+     846 00004a60                   SMRTTGT a8,WHOIHIT
+     847                    
+     848                            ;immobilize WHOIHIT
+     849 00004b00     b700          move    *a8(WHOIHIT),a0,L
+         00004b10     0500  
+     850                    
+     851 00004b20           djzuis_reversal
+     852 00004b20     19ee          movk    15,a14
+     853 00004b30     b1c0          move    a14,*a0(IMMOBILIZE_TIME)
+         00004b40     0ae0  
+     854                    
+     855 00004b50     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         00004b60 00000000! 
+     856                    
+     857 00004b80     09ee          movi    rzr_rugshake2_anim,a14
+         00004b90 00000000! 
+     858 00004bb0     b3c8          move    a14,*a8(SPECIAL_MOVE_ADDR),L
+         00004bc0     0930  
+     859                    
+     860 00004bd0                   SLEEPK  20
+     861                    
+     862 00004c10     c000          jruc    djzulp
+         00004c20     ff69  
+     863                    
+     864                    *****************************************************************************
+     865 00004c30           rzr_hdhold_combo1
+     866                    
+     867              003c  xnkpTIMEOUT     .equ    60
+     868                    
+     869 00004c30           xnkplp0
+     870 00004c30                   SLEEPK  1
+     871 00004c70           xnkplp
+     872 00004c70     b500          move    *a8(PLYRMODE),a0
+         00004c80     05c0  
+     873 00004c90     0b40          cmpi    MODE_HEADHOLD,a0
+         00004ca0     ffef  
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   20
+
+     874 00004cb0     cbf7          jrnz    xnkplp0
+     875                    ;       jrz     xnkpcont
+     876                    ;       cmpi    MODE_HEADHELD,a0
+     877                    ;       jrnz    xnkplp0
+     878                    ;xnkpcont
+     879                    ;In combo mode?
+     880 00004cc0     0d5f          calla   CHECK_COMBO_GO
+         00004cd0 00000000! 
+     881 00004cf0     c4f3          jrlt    xnkplp0
+     882                    
+     883                    
+     884 00004d00     576b          clr     a11
+     885                    
+     886 00004d10                   WAITSWITCH_DWN  J_TOWARD,0,xnkplp
+     887                    
+     888 00004e70     09cb          movi    xnkpTIMEOUT,a11
+         00004e80     003c  
+     889                    
+     890 00004e90                   WAITSWITCH_DWN  J_TOWARD,0,xnkplp
+     891 00004ff0                   WAITSWITCH_DWN  B_SPUNCH,J_ALL,xnkplp
+     892                    
+     893 00005150     b500          move    *a8(PLYRMODE),a0
+         00005160     05c0  
+     894 00005170     0b40          cmpi    MODE_HEADHOLD,a0
+         00005180     ffef  
+     895 00005190     ca03          jrz     xnkpslam
+     896 000051a0     0b40          cmpi    MODE_HEADHELD,a0
+         000051b0     ffec  
+     897 000051c0     cba6          jrnz    xnkplp0
+     898                    
+     899 000051d0           xnkpslam
+     900 000051d0     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         000051e0 00000000! 
+     901 00005200     09ee          movi    rzr_combo_punch_anim,a14
+         00005210 00000000! 
+     902 00005230     b3c8          move    a14,*a8(SPECIAL_MOVE_ADDR),L
+         00005240     0930  
+     903                    
+     904 00005250                   SLEEPK  20
+     905                    
+     906 00005290     c09d          jruc    xnkplp
+     907                    
+     908                    *******************************************************************************
+     909                    
+     910                    *
+     911 000052a0           rzr_hdhold_combo2
+     912                    
+     913              003c  bjclTIMEOUT     .equ    60
+     914                    
+     915 000052a0           bjcllp0
+     916 000052a0                   SLEEPK  1
+     917 000052e0           bjcllp
+     918 000052e0     b500          move    *a8(PLYRMODE),a0
+         000052f0     05c0  
+     919 00005300     0b40          cmpi    MODE_HEADHOLD,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   21
+
+         00005310     ffef  
+     920 00005320     cbf7          jrnz    bjcllp0
+     921                    ;       jrz     bjclcont
+     922                    ;       cmpi    MODE_HEADHELD,a0
+     923                    ;       jrnz    bjcllp0
+     924                    ;bjclcont
+     925                    ;In combo mode?
+     926 00005330     0d5f          calla   CHECK_COMBO_GO
+         00005340 00000000! 
+     927 00005360     c4f3          jrlt    bjcllp0
+     928                    
+     929 00005370     576b          clr     a11
+     930                    
+     931 00005380                   WAITSWITCH_DWN  J_TOWARD,0,bjcllp
+     932                    
+     933 000054e0     09cb          movi    bjclTIMEOUT,a11
+         000054f0     003c  
+     934                    
+     935 00005500                   WAITSWITCH_DWN  J_TOWARD,0,bjcllp
+     936 00005660                   WAITSWITCH_DWN  B_KICK,J_ALL,bjcllp
+     937                    
+     938 000057c0     b500          move    *a8(PLYRMODE),a0
+         000057d0     05c0  
+     939 000057e0     0b40          cmpi    MODE_HEADHOLD,a0
+         000057f0     ffef  
+     940 00005800     ca03          jrz     bjclslam
+     941 00005810     0b40          cmpi    MODE_HEADHELD,a0
+         00005820     ffec  
+     942 00005830     cba6          jrnz    bjcllp0
+     943                    
+     944 00005840           bjclslam
+     945 00005840     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         00005850 00000000! 
+     946 00005870     09ee          movi    rzr_combo_kick_anim,a14
+         00005880 00000000! 
+     947 000058a0     b3c8          move    a14,*a8(SPECIAL_MOVE_ADDR),L
+         000058b0     0930  
+     948                    
+     949 000058c0                   SLEEPK  20
+     950                    
+     951 00005900     c09d          jruc    bjcllp
+     952                    
+     953                    *******************************************************************************
+     954                    *
+     955 00005910           rzr_grab_toss_air
+     956                    
+     957              0028  tlzjTIMEOUT     .equ    40
+     958                    
+     959 00005910           tlzjlp0
+     960 00005910                   SLEEPK  1
+     961 00005950           tlzjlp
+     962 00005950     576b          clr     a11
+     963                    
+     964 00005960                   WAITSWITCH_DWN  J_AWAY,0,tlzjlp
+     965                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   22
+
+     966 00005ac0     09cb          movi    tlzjTIMEOUT,a11
+         00005ad0     0028  
+     967                    
+     968 00005ae0                   WAITSWITCH_DWN  J_AWAY,0,tlzjlp
+     969 00005c40                   WAITSWITCH_DWN  B_PUNCH,J_ALL,tlzjlp
+     970                    
+     971 00005da0     b500          move    *a8(ANIMODE),a0
+         00005db0     0660  
+     972 00005dc0     1fa0          btst    MODE_UNINT_BIT,a0
+     973 00005dd0     cbb7          jrnz    tlzjlp
+     974                    
+     975 00005de0     b500          move    *a8(PLYRMODE),a0
+         00005df0     05c0  
+     976 00005e00     0b40          cmpi    MODE_HEADHOLD,a0
+         00005e10     ffef  
+     977 00005e20     caae          jreq    tlzjlp0
+     978                    
+     979                    ;Don't do it when he is on ground
+     980 00005e30                   SWAP    a8,a13
+     981 00005e60     0d5f          calla   get_opp_plyrmode
+         00005e70 00000000! 
+     982 00005e90                   SWAP    a8,a13
+     983                    ;Don't do it when he is on ground
+     984 00005ec0     0b40          cmpi    MODE_ONGROUND,a0
+         00005ed0     fffb  
+     985 00005ee0     caa6          jrz     tlzjlp
+     986 00005ef0     0b40          cmpi    MODE_DEAD,a0
+         00005f00     fff6  
+     987 00005f10     caa3          jrz     tlzjlp
+     988 00005f20     0b40          cmpi    MODE_INAIR,a0
+         00005f30     fffd  
+     989 00005f40     ca43          jrz     tlzjdoit2
+     990 00005f50     0b40          cmpi    MODE_INAIR2,a0
+         00005f60     ffea  
+     991 00005f70     ca40          jrz     tlzjdoit2
+     992                    
+     993 00005f80     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         00005f90 00000000! 
+     994 00005fb0     b500          move    *a8(CLOSEST_NUM),a0
+         00005fc0     03a0  
+     995 00005fd0                   X32     a0
+     996 00005fe0     0b20          addi    process_ptrs,a0
+         00005ff0 00000000! 
+     997 00006010     8600          move    *a0,a0,L
+     998 00006020     b400          move    *a0(ATTACK_TYPE),a0
+         00006030     05e0  
+     999 00006040     0b40          cmpi    AT_LEAPING,a0
+         00006050     ffc6  
+    1000 00006060     ca31          jrz     tlzjdoit2
+    1001                    
+    1002 00006070     b500          move    *a8(CLOSEST_DIST),a0
+         00006080     0360  
+    1003 00006090     0b40          cmpi    68h,a0
+         000060a0     ff97  
+    1004 000060b0     c789          jrgt    tlzjlp
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   23
+
+    1005                    
+    1006 000060c0                   FACE24  rzr,hiptoss_anim
+    1007 00006160     b208          move    a0,*a8(SPECIAL_MOVE_ADDR),L
+         00006170     0930  
+    1008                    
+    1009 00006180                   WRSND   W_RAZOR,GRABFLING_T1,PUNCH_T2
+    1010                    
+    1011 00006320                   SLEEPK  20
+    1012 00006360     c000          jruc    tlzjlp
+         00006370     ff5d  
+    1013                    
+    1014 00006380           tlzjdoit2
+    1015 00006380                   FACE24  rzr,hiptoss2_anim
+    1016 00006420     b208          move    a0,*a8(SPECIAL_MOVE_ADDR),L
+         00006430     0930  
+    1017                    
+    1018 00006440                   WRSND   W_RAZOR,GRABFLING_T1,PUNCH_T2
+    1019                    
+    1020 000065e0                   SLEEPK  20
+    1021                    
+    1022 00006620     c000          jruc    tlzjlp
+         00006630     ff31  
+    1023                    
+    1024                    
+    1025                    ;******************************************************************************
+    1026                    ;rzr_hdhold_anti_combo
+    1027                    ;
+    1028                    ;tlzjTIMEOUT    .equ    80
+    1029                    ;
+    1030                    ;tlzjlp0
+    1031                    ;       SLEEPK  1
+    1032                    ;tlzjlp
+    1033                    ;;Is my opponent in combo mode?
+    1034                    ;;      move    *a8(IMMOBILIZE_TIME),a14
+    1035                    ;;      jrz     tlzjlp0
+    1036                    ;;      move    *a8(CLOSEST_NUM),a0
+    1037                    ;;      X32     a0
+    1038                    ;;      addi    process_ptrs,a0
+    1039                    ;;      move    *a0,a0,L
+    1040                    ;;      move    *a0(COMBO_COUNT),a0
+    1041                    ;;      jrz     tlzjlp0
+    1042                    ;
+    1043                    ;       clr     a11
+    1044                    ;
+    1045                    ;       WAITSWITCH_DWN  B_SPUNCH,J_ALL,tlzjlp
+    1046                    ;
+    1047                    ;       movi    tlzjTIMEOUT,a11
+    1048                    ;
+    1049                    ;       WAITSWITCH_DWN  B_SPUNCH,J_ALL,tlzjlp
+    1050                    ;       WAITSWITCH_DWN  B_SPUNCH,J_ALL,tlzjlp
+    1051                    ;
+    1052                    ;;Is my opponent in combo mode?
+    1053                    ;       move    *a8(CLOSEST_NUM),a0
+    1054                    ;       X32     a0
+    1055                    ;       addi    process_ptrs,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   24
+
+    1056                    ;       move    *a0,a0,L
+    1057                    ;       move    *a0(COMBO_COUNT),a0
+    1058                    ;       jrz     tlzjlp0
+    1059                    ;
+    1060                    ;       move    *a8(ANTI_COMBO_TIME),a0         ;Time stamp
+    1061                    ;       move    @PCNT,a14
+    1062                    ;       sub     a0,a14
+    1063                    ;       abs     a14
+    1064                    ;       cmpi    80,a14
+    1065                    ;       jrge    tlzjlp0
+    1066                    ;       move    *a8(I_WILL_DIE),A14
+    1067                    ;       jrnz    tlzjlp0
+    1068                    ;
+    1069                    ;;Combo breaker message!
+    1070                    ;       CALLA   DO_REVERSAL
+    1071                    ;       CALLA   DO_REVERSAL_MESS
+    1072                    ;
+    1073                    ;       clr     a0
+    1074                    ;       move    a0,*a8(IMMOBILIZE_TIME)
+    1075                    ;
+    1076                    ;       move    *a8(WHOHITME),a14,L
+    1077                    ;       movk    15,a0
+    1078                    ;       move    a0,*a14(IMMOBILIZE_TIME)
+    1079                    ;
+    1080                    ;       ;target WHOHITME
+    1081                    ;       SMRTTGT a8,WHOHITME
+    1082                    ;
+    1083                    ;       CALLA   FIND_AND_KILL_ENDLESS
+    1084                    ;       movi    rzr_3_pile_driver_anim,a14
+    1085                    ;       move    a14,*a8(SPECIAL_MOVE_ADDR),L
+    1086                    ;
+    1087                    ;       WRSND   W_RAZOR,GRABFLING_T1,PUNCH_T2
+    1088                    ;
+    1089                    ;       SLEEPK  20
+    1090                    ;
+    1091                    ;       jruc    tlzjlp
+    1092                    ;
+    1093                    *****************************************************************************
+    1094                    
+    1095 00006640            SUBR   razor_ani_init
+    1096                    
+    1097 00006640     b5a0          move    *a13(FACING_DIR),a0
+         00006650     04c0  
+    1098 00006660     1f80          btst    PLAYER_RIGHT_BIT,a0
+    1099 00006670     cb18          jrnz    pruep1
+    1100                    ;Plyr 2
+    1101 00006680     09e0          movi    rzr_stand4_anim,a0
+         00006690 00000000! 
+    1102 000066b0     0d5f          calla   change_anim1a
+         000066c0 00000000! 
+    1103                    
+    1104 000066e0     09e0          movi    rzr_torso4_anim,a0
+         000066f0 00000000! 
+    1105 00006710     0d5f          calla   change_anim2a
+         00006720 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   25
+
+    1106                    
+    1107 00006740                   PUSH    a10
+    1108 00006750     4daa          move    a13,a10
+    1109 00006760                   CREATE  TAUNT_PID,do_taunt
+    1110 000067e0                   PULL    a10
+    1111                    
+    1112 000067f0     0960          rets
+    1113                    
+    1114 00006800           pruep1
+    1115 00006800     09e0          movi    rzr_stand2_anim,a0
+         00006810 00000000! 
+    1116 00006830     0d5f          calla   change_anim1a
+         00006840 00000000! 
+    1117                    
+    1118 00006860     09e0          movi    rzr_torso2_anim,a0
+         00006870 00000000! 
+    1119 00006890     0d5f          calla   change_anim2a
+         000068a0 00000000! 
+    1120                    
+    1121 000068c0     0960          rets
+    1122                    
+    1123                    
+    1124                    *****************************************************************************
+    1125                    *
+    1126                    * RAZORS CONTROL CODE
+    1127                    *
+    1128                    * a13 = * razor process
+    1129                    
+    1130 000068d0            SUBR   move_razor
+    1131                    
+    1132                    
+    1133 000068d0     09eb          movi    razor_secret_moves,a11
+         000068e0 00000000' 
+    1134 00006900     0d5f          calla   check_secret_moves
+         00006910 00000000! 
+    1135                    
+    1136 00006930     b5a0          move    *a13(PLYRMODE),a0
+         00006940     05c0  
+    1137 00006950     24a0          sll     5,a0                    ;x 32
+    1138 00006960     0b20          addi    bgmamode_table,a0
+         00006970 000069c0' 
+    1139 00006990     8600          move    *a0,a0,L
+    1140 000069a0     0920          call    a0
+    1141 000069b0     0960          rets
+    1142                    
+    1143 000069c0           bgmamode_table
+    1144 000069c0 00006d00'         .long   mode_normal             ;0
+    1145 000069e0 0000ec00'         .long   mode_running            ;1
+    1146 00006a00 00010fb0'         .long   mode_inair              ;2
+    1147 00006a20 00010fc0'         .long   mode_attached           ;3
+    1148 00006a40 00011130'         .long   mode_onground           ;4
+    1149 00006a60 00011140'         .long   mode_bouncing           ;5
+    1150 00006a80 000113e0'         .long   mode_onturnbkl          ;6
+    1151 00006aa0 00011d80'         .long   mode_block              ;7
+    1152 00006ac0 00012800'         .long   mode_dizzy              ;8
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   26
+
+    1153 00006ae0                   REFLONG mode_dead               ;9
+    1154 00006b00 00012810'         .long   mode_oppoverhead        ;10
+    1155 00006b20 00012820'         .long   mode_climbturnbkl       ;11
+    1156 00006b40 00012830'         .long   mode_waitanim           ;12
+    1157 00006b60 000128b0'         .long   mode_grapple            ;13
+    1158 00006b80 000128c0'         .long   mode_master             ;14
+    1159 00006ba0 00012900'         .long   mode_slave              ;15
+    1160 00006bc0 00012910'         .long   mode_headhold           ;16
+    1161 00006be0 00013dd0'         .long   mode_puppet2            ;17
+    1162 00006c00 00006d00'         .long   mode_normal     ;18
+    1163 00006c20 00013de0'         .long   mode_headheld           ;19
+    1164 00006c40                   REFLONG mode_puppet             ;20
+    1165 00006c60 00000000!         .long   mode_inair2             ;21
+    1166 00006c80 00006d00'         .long   mode_normal     ;22
+    1167 00006ca0 00006d00'         .long   mode_normal     ;23
+    1168 00006cc0 000142a0'         .long   mode_chokehold          ;24
+    1169 00006ce0                   REFLONG mode_choking            ;25
+    1170                    
+    1171                    *****************************************************************************
+    1172                    
+    1173 00006d00           mode_normal     ;0
+    1174                    
+    1175 00006d00     b5a0          move    *a13(ANIMODE),a0
+         00006d10     0660  
+    1176 00006d20     1fa0          btst    MODE_UNINT_BIT,a0
+    1177 00006d30     cb00          jrnz    euyfno_interrupt
+         00006d40     00b0  
+    1178                    
+    1179 00006d50     b5a0          move    *a13(I_WILL_DIE),a0
+         00006d60     0b30  
+    1180 00006d70     ca1f          jrz     euyfnope
+    1181 00006d80     b5a0          move    *a13(IMMOBILIZE_TIME),a0
+         00006d90     0ae0  
+    1182 00006da0     cb1c          jrnz    euyfnope
+    1183                    ;Player has died amidst a combo...
+    1184                    ;Knock me down.
+    1185 00006db0     09e0          movi    rzr_fall_back_anim,a0
+         00006dc0 00000000! 
+    1186 00006de0     0d5f          calla   change_anim1a
+         00006df0 00000000! 
+    1187                    
+    1188                    ;Zero health bar
+    1189 00006e10     09c0          movi    -10,a0
+         00006e20     fff6  
+    1190 00006e30     b5a1          move    *a13(PLYRNUM),a1
+         00006e40     0580  
+    1191 00006e50     0d5f          calla   adjust_health
+         00006e60 00000000! 
+    1192                    
+    1193 00006e80                   SETMODE DEAD
+    1194                    
+    1195 00006f30     5600          clr     a0
+    1196 00006f40     b00d          move    a0,*a13(I_WILL_DIE)
+         00006f50     0b30  
+    1197                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   27
+
+    1198 00006f60     0960          rets
+    1199                    
+    1200 00006f70           euyfnope
+    1201                    ;Perhaps we need to interrupt any sequence when a wrestler has won?
+    1202                    
+    1203 00006f70     0d5f          calla   get_opp_plyrmode
+         00006f80 00000000! 
+    1204 00006fa0     0b40          cmpi    MODE_DEAD,a0
+         00006fb0     fff6  
+    1205 00006fc0     cb49          jrne    euyfopp_not_dead
+    1206                    
+    1207                            ;if closest is a zombie, skip pin section.
+    1208 00006fd0     0d5f          calla   get_opp_process
+         00006fe0 00000000! 
+    1209 00007000     b40e          move    *a0(STATUS_FLAGS),a14
+         00007010     0b50  
+    1210 00007020     1f8e          btst    B_ZOMBIE,a14
+    1211 00007030     cb42          jrnz    euyfopp_not_dead
+    1212                            
+    1213                            ;all opponents are dead.  Check for pins/raisearms
+    1214                    
+    1215                            ;if we're attached to someone, don't interrupt it.
+    1216 00007040     b7a1          move    *a13(ATTACH_PROC),a1,L
+         00007050     03e0  
+    1217 00007060     ca04          jrz     euyfno_attch
+    1218 00007070     b622          move    *a1(ATTACH_PROC),a2,L
+         00007080     03e0  
+    1219 00007090     484d          cmp     a2,a13
+    1220 000070a0     ca3b          jreq    euyfno_pin_yet
+    1221 000070b0           euyfno_attch
+    1222                    
+    1223                            ;if a teammate has pinned, raise yer arm.
+    1224 000070b0     0d5f          calla   ck_teammate_pin 
+         000070c0 00000000! 
+    1225 000070e0     c823          jrc     euyfraisearm
+    1226                    
+    1227                            ;nobody has pinned.  if we're outside or all our opponents are
+    1228                            ; outside, do a raisearm.
+    1229 000070f0     0d5f          calla   raisearm_check
+         00007100 00000000! 
+    1230 00007120     c81f          jrc     euyfraisearm
+    1231                    
+    1232                            ;we're inside with a pinnable opponent.  any button pins.
+    1233 00007130     b5a0          move    *a13(BUT_VAL_CUR),a0
+         00007140     0b90  
+    1234 00007150     ca30          jrz     euyfno_pin_yet
+    1235                    
+    1236                            ;we have a press -- make sure opponent is on the ground
+    1237 00007160     0d5f          calla   can_pin
+         00007170 00000000! 
+    1238 00007190     c92c          jrnc    euyfopp_notgnd
+    1239                    
+    1240                            ;opponent is on the ground.  pin him.
+    1241 000071a0                   FACE24  rzr,pin_anim
+    1242 00007240     0d5f          calla   change_anim1a
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   28
+
+         00007250 00000000! 
+    1243                    
+    1244                            ;set the 'I did a pin' flag.
+    1245 00007270     b5ae          move    *a13(STATUS_FLAGS),a14
+         00007280     0b50  
+    1246 00007290     0bae          ori     M_DID_PIN,a14
+         000072a0 00000002  
+    1247 000072c0     b1cd          move    a14,*a13(STATUS_FLAGS)
+         000072d0     0b50  
+    1248                    
+    1249                            ;if we're a temp drone for auto-pin purposes, turn back into
+    1250                            ; a normal player here.
+    1251 000072e0     0d5f          calla   drone_change_back
+         000072f0 00000000! 
+    1252                    
+    1253 00007310     0960          rets
+    1254                    
+    1255 00007320           euyfraisearm
+    1256 00007320                   FACE24  rzr,raise_arm_anim
+    1257 000073c0     0d5f          calla   change_anim1a
+         000073d0 00000000! 
+    1258 000073f0     0d5f          calla   set_raisearm_bit
+         00007400 00000000! 
+    1259                    
+    1260                            ;if we're a temp drone for auto-pin purposes, turn back into
+    1261                            ; a normal player here.
+    1262 00007420     0d5f          calla   drone_change_back
+         00007430 00000000! 
+    1263                    
+    1264 00007450     0960          rets
+    1265                    
+    1266 00007460           euyftoo_far_to_pin
+    1267 00007460           euyfopp_notgnd
+    1268 00007460           euyfopp_not_dead
+    1269 00007460           euyfno_pin_yet
+    1270                    
+    1271 00007460     b5a0          move    *a13(IMMOBILIZE_TIME),a0
+         00007470     0ae0  
+    1272 00007480     cb36          jrnz    euyfimmobilized
+    1273                    
+    1274 00007490     b5a0          move    *a13(BUT_VAL_CUR),a0
+         000074a0     0b90  
+    1275 000074b0     1fc0          btst    PLAYER_BLOCK_BIT,a0     ;maybe have to action tables?
+    1276 000074c0     ca07          jrz     euyfnblk                        ;1 for down transitions
+    1277 000074d0     0d3f          callr   euyfblock                       ;& 1 for current buttons
+         000074e0     01e5  
+    1278 000074f0     c804          jrc     euyfnblk
+    1279 00007500     5600          clr     a0
+    1280 00007510     b00d          move    a0,*a13(ATTACK_TYPE)
+         00007520     05e0  
+    1281 00007530     0960          rets
+    1282 00007540           euyfnblk
+    1283 00007540     b5a0          move    *a13(BUT_VAL_CUR),a0
+         00007550     0b90  
+    1284 00007560     0b80          andi    011111b,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   29
+
+         00007570 ffffffe0  
+    1285 00007590     0b40          cmpi    PLAYER_PUNCH_VAL|PLAYER_KICK_VAL,a0
+         000075a0     fff6  
+    1286 000075b0     ca00          jrz     euyfpunchkick
+         000075c0     075c  
+    1287                    
+    1288 000075d0     b5a0          move    *a13(BUT_VAL_DOWN),a0
+         000075e0     0ba0  
+    1289 000075f0     0b80          andi    011111b,a0
+         00007600 ffffffe0  
+    1290 00007620                   X32     a0
+    1291 00007630     0b20          addi    euyfaction_table,a0
+         00007640 00007860' 
+    1292 00007660     8600          move    *a0,a0,L
+    1293 00007670     0920          call    a0
+    1294                    
+    1295 00007680     b5a0          move    *a13(ANIMODE),a0
+         00007690     0660  
+    1296 000076a0     1fa0          btst    MODE_UNINT_BIT,a0
+    1297 000076b0     cb19          jrnz    euyfno_interrupt
+    1298                    
+    1299                    
+    1300 000076c0     b5a0          move    *a13(STICK_VAL_CUR),a0
+         000076d0     0bc0  
+    1301 000076e0     b00d          move    a0,*a13(MOVE_DIR)
+         000076f0     04b0  
+    1302 00007700     0d5f          calla   climb_turnbuckle
+         00007710 00000000! 
+    1303 00007730     c90e          jrnc    euyfno_climb
+    1304 00007740     b5a5          move    *a13(WRESTLERNUM),A5
+         00007750     0590  
+    1305 00007760     09e2          MOVI    CLIMB_ROPES,A2
+         00007770 00000000! 
+    1306 00007790     09c0          MOVI    1000,A0
+         000077a0     03e8  
+    1307 000077b0     0d5f          CALLA   ADD_IF_SILENT
+         000077c0 00000000! 
+    1308 000077e0     0960          rets
+    1309                    
+    1310 000077f0           euyfimmobilized
+    1311 000077f0     57ce          clr     a14
+    1312 00007800     b1cd          move    a14,*a13(MOVE_DIR)
+         00007810     04b0  
+    1313 00007820           euyfno_climb
+    1314 00007820     0d5f          calla   execute_walk
+         00007830 00000000! 
+    1315                    
+    1316 00007850           euyfno_interrupt
+    1317 00007850     0960          rets
+    1318                    
+    1319 00007860           euyfaction_table
+    1320 00007860 00007c60'         .long   euyfz,euyfpunch,euyfblock,euyfblock                     ;0-3
+    1321 000078e0 00009590'         .long   euyfsuper_punch,euyfsuper_punch,euyfblock,euyfblock     ;4-7
+    1322 00007960 0000b7a0'         .long   euyfkick,euyfpunchkick,euyfblock,euyfblock              ;8-11
+    1323 000079e0 00009590'         .long   euyfsuper_punch,euyfpunchkick,euyfblock,euyfblock       ;12-15
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   30
+
+    1324 00007a60 0000d0a0'         .long   euyfsuper_kick,euyfsuper_kick,euyfblock,euyfblock       ;16-19
+    1325 00007ae0 00009590'         .long   euyfgraboh,euyfgraboh,euyfblock,euyfblock               ;20-23
+    1326 00007b60 0000d0a0'         .long   euyfsuper_kick,euyfpunchkick,euyfblock,euyfblock        ;24-27
+    1327 00007be0 00009590'         .long   euyfgraboh,euyfgraboh,euyfblock,euyfblock               ;28-31
+    1328                    
+    1329                    
+    1330                    ************
+    1331 00007c60           euyfz
+    1332 00007c60     0960          rets
+    1333                    
+    1334                    
+    1335                    ************
+    1336 00007c70           euyfpunch               ;1
+    1337                    *
+    1338                    * MODE             DX  DZ       ACTION
+    1339                    * ----------------------------------------------------
+    1340                    * normal        <  44  45       headbutt
+    1341                    * normal        >               normal punch
+    1342                    *
+    1343                    * onground      < 120  120      elbow drop
+    1344                    * onground      >               normal punch
+    1345                    *
+    1346                    * running |
+    1347                    * bouncing                      hip toss
+    1348                    *
+    1349                    * onturnbkl |
+    1350                    * climbturnbkl                  normal punch
+    1351                    *
+    1352                    
+    1353 00007c70                   JJXM_INIT
+    1354 00007ce0                   JJXM    NORMAL,          44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1355 00007db0                   JJXM    DIZZY,           44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1356 00007e80                   JJXM    BLOCK,           44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1357 00007f50                   JJXM    ONGROUND,       160,140,euyfpunch_lbdrop,euyfpunch_punch
+    1358 00008020                   JJXM    RUNNING,         44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1359 000080f0                   JJXM    BOUNCING,        44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1360 000081c0                   JJXM    ONTURNBKL,              euyfpunch_punch
+    1361 00008210                   JJXM    CLIMBTURNBKL,           euyfpunch_punch
+    1362 00008260                   JJXM    INAIR,           44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1363 00008330                   JJXM    ATTACHED,        44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1364 000083f0                   JJXM    DEAD,           160,140,euyfpunch_lbdrop,euyfpunch_punch
+    1365 000084a0                   JJXM    OPPOVERHEAD,     44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1366 00008550                   JJXM    WAITANIM,        44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1367 00008600                   JJXM    GRAPPLE,         44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1368 000086a0                   JJXM    MASTER,          44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1369 00008740                   JJXM    SLAVE,           44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1370 000087e0                   JJXM    HEADHOLD,        44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1371 00008880                   JJXM    HEADHELD,        44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1372 00008920                   JJXM    CHOKEHOLD,       44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1373 000089c0                   JJXM    PUPPET,          44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1374 00008a60                   JJXM    PUPPET2,         44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1375 00008b00                   JJXM    INAIR2,          44, 45,euyfpunch_hdbutt,euyfpunch_punch
+    1376 00008ba0                   JJXM_END
+    1377                    
+    1378                    *****
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   31
+
+    1379 00008bc0           euyfpunch_punch
+    1380 00008bc0           std_punch
+    1381                    
+    1382 00008bc0                   FACE24  rzr,punch_anim
+    1383 00008c60     0d5f          calla   change_anim1a
+         00008c70 00000000! 
+    1384                    
+    1385 00008c90                   WRSND   W_RAZOR,PUNCH_T1,PUNCH_T2
+    1386                    
+    1387 00008e30     0960          rets
+    1388                    
+    1389                    *****
+    1390 00008e40           euyfpunch_hdbutt
+    1391                    
+    1392 00008e40                   FACE24  rzr,butt_anim
+    1393 00008ee0     0d5f          calla   change_anim1a
+         00008ef0 00000000! 
+    1394                    
+    1395 00008f10                   WRSND   W_RAZOR,HDBUTT_T1,HDBUTT_T2
+    1396 000090b0     0960          rets
+    1397                    
+    1398                    *****
+    1399 000090c0           euyfpunch_lbdrop
+    1400                    
+    1401 000090c0                   FACE24  rzr,ground_punch_anim
+    1402 00009160     0d5f          calla   change_anim1a
+         00009170 00000000! 
+    1403                    
+    1404 00009190                   WRSND   W_RAZOR,LBOWDROP_T1,LBOWDROP_T2
+    1405 00009330     0960          rets
+    1406                    
+    1407                    
+    1408                    ************
+    1409 00009340           euyfblock               ;2
+    1410                    
+    1411 00009340           std_block
+    1412 00009340     05a0          move    @blocking_off,a0
+         00009350 00000000! 
+    1413 00009370     cb1f          jrnz    euyfno_blocking
+    1414                    
+    1415 00009380                   RND_AWARD       a13,BLOCKS_AWD
+    1416                    
+    1417 00009420                   FACE24  rzr,block_anim
+    1418 000094c0     0d5f          calla   change_anim1a
+         000094d0 00000000! 
+    1419                    
+    1420 000094f0     0d5f          calla   BLOCK_WOOSH
+         00009500 00000000! 
+    1421                    
+    1422 00009520     5600          clr     a0
+    1423 00009530     b00d          move    a0,*a13(BLOCK_TIME)
+         00009540     0d30  
+    1424 00009550     0320          clrc
+    1425 00009560     0960          rets
+    1426                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   32
+
+    1427 00009570           euyfno_blocking
+    1428 00009570     0de0          setc
+    1429 00009580     0960          rets
+    1430                    
+    1431                    
+    1432                    ************
+    1433 00009590           euyfsuper_punch ;4
+    1434 00009590           euyfgraboh
+    1435                    *
+    1436                    * MODE             DX  DZ       ACTION
+    1437                    * ----------------------------------------------------
+    1438                    * normal        <  85   45      headbutt or uppercut
+    1439                    *               >               blade slash     
+    1440                    *
+    1441                    * onground      < 120  120      elbow drop (or rug shake or hair pickup)
+    1442                    * onground      >               normal punch
+    1443                    *
+    1444                    * running |
+    1445                    * bouncing                      hip toss
+    1446                    *
+    1447                    * onturnbkl |
+    1448                    * climbturnbkl                  normal punch
+    1449                    *
+    1450                    
+    1451 00009590                   JJXM_INIT
+    1452 00009600                   JJXM    NORMAL,          85, 45,euyfspunch_close,euyfspunch_far
+    1453 000096d0                   JJXM    DIZZY,           85, 45,euyfspunch_close,euyfspunch_far
+    1454 000097a0                   JJXM    BLOCK,           85, 45,euyfspunch_close,euyfspunch_far
+    1455 00009870                   JJXM    ONGROUND,       160,140,euyfspunch_lbowdrop,std_punch
+    1456 00009940                   JJXM    DEAD,           160,140,euyfspunch_lbowdrop,std_punch
+    1457 00009a10                   JJXM    RUNNING,                euyfspunch_downslash
+    1458 00009a60                   JJXM    BOUNCING,               euyfspunch_downslash
+    1459 00009ab0                   JJXM    ONTURNBKL,       85, 45,euyfspunch_close,euyfspunch_far
+    1460 00009b80                   JJXM    CLIMBTURNBKL,    85, 45,euyfspunch_close,euyfspunch_far
+    1461 00009c50                   JJXM    INAIR,                  euyfspunch_downslash
+    1462 00009ca0                   JJXM    ATTACHED,        85, 45,euyfspunch_close,euyfspunch_far
+    1463 00009d70                   JJXM    OPPOVERHEAD,     85, 45,euyfspunch_close,euyfspunch_far
+    1464 00009e40                   JJXM    WAITANIM,        85, 45,euyfspunch_close,euyfspunch_far
+    1465 00009f10                   JJXM    GRAPPLE,         85, 45,euyfspunch_close,euyfspunch_far
+    1466 00009fe0                   JJXM    MASTER,          85, 45,euyfspunch_close,euyfspunch_far
+    1467 0000a0b0                   JJXM    SLAVE,           85, 45,euyfspunch_close,euyfspunch_far
+    1468 0000a180                   JJXM    HEADHOLD,        85, 45,euyfspunch_close,euyfspunch_far
+    1469 0000a250                   JJXM    HEADHELD,        85, 45,euyfspunch_close,euyfspunch_far
+    1470 0000a320                   JJXM    CHOKEHOLD,       85, 45,euyfspunch_close,euyfspunch_far
+    1471 0000a3f0                   JJXM    PUPPET,          85, 45,euyfspunch_close,euyfspunch_far
+    1472 0000a4c0                   JJXM    PUPPET2,         85, 45,euyfspunch_close,euyfspunch_far
+    1473 0000a590                   JJXM    INAIR2,                 euyfspunch_downslash
+    1474 0000a5e0                   JJXM_END
+    1475                    
+    1476                    
+    1477 0000a600           euyfspunch_lbowdrop
+    1478                    
+    1479                    ;If near opponents head, and facing down, do the hair grab!
+    1480                    ;If near feet, go for the rugshake
+    1481                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   33
+
+    1482 0000a600     b5a3          move    *a13(CLOSEST_NUM),a3
+         0000a610     03a0  
+    1483 0000a620                   X32     a3
+    1484                    
+    1485 0000a630     0b23          addi    process_ptrs,a3
+         0000a640 00000000! 
+    1486 0000a660     8663          move    *a3,a3,L
+    1487 0000a670     b462          move    *a3(PLYRMODE),a2
+         0000a680     05c0  
+    1488 0000a690     0b42          cmpi    MODE_DEAD,a2
+         0000a6a0     fff6  
+    1489 0000a6b0     ca51          jrz     euyfno
+    1490 0000a6c0     b7a1          move    *a13(OBJ_XPOS),a1,L 
+         0000a6d0     0100  
+    1491 0000a6e0     b662          move    *a3(OBJ_XPOS),a2,L
+         0000a6f0     0100  
+    1492 0000a700     4441          sub     a2,a1
+    1493 0000a710     0381          abs     a1
+    1494 0000a720     2e01          srl     16,a1
+    1495 0000a730     0b41          cmpi    30h,a1  ;28
+         0000a740     ffcf  
+    1496 0000a750     c447          jrlt    euyfno
+    1497                    
+    1498                    ;At head or feet!
+    1499                    
+    1500 0000a760     b46e          move    *a3(OBJ_CONTROL),a14
+         0000a770     0780  
+    1501 0000a780     0b8e          andi    M_FLIPH,a14
+         0000a790 ffffffef  
+    1502 0000a7b0     b5a0          move    *a13(OBJ_CONTROL),a0
+         0000a7c0     0780  
+    1503 0000a7d0     0b80          andi    M_FLIPH,a0
+         0000a7e0 ffffffef  
+    1504 0000a800     480e          cmp     a0,a14
+    1505 0000a810     ca28          jrz     euyffeet
+    1506                    
+    1507                    ;At head!  Do hair pickup.
+    1508                    
+    1509 0000a820                   FACE24  rzr,hair_pickup_anim
+    1510 0000a8c0     0d5f          calla   change_anim1
+         0000a8d0 00000000! 
+    1511 0000a8f0                   WRSND   W_RAZOR,LBOWDROP_T1,LBOWDROP_T2
+    1512 0000aa90     0960          rets
+    1513                    
+    1514 0000aaa0           euyffeet
+    1515 0000aaa0     0b41          cmpi    40h,a1  ;28
+         0000aab0     ffbf  
+    1516 0000aac0     c410          jrlt    euyfno
+    1517                    
+    1518                            ;smart-target the intended victim
+    1519 0000aad0     b5ae          move    *a13(STATUS_FLAGS),a14
+         0000aae0     0b50  
+    1520 0000aaf0     0bae          ori     M_SMART_ATTACK,a14
+         0000ab00 00000010  
+    1521 0000ab20     b1cd          move    a14,*a13(STATUS_FLAGS)
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   34
+
+         0000ab30     0b50  
+    1522 0000ab40     b26d          move    a3,*a13(SMART_TARGET),L
+         0000ab50     0ca0  
+    1523                    
+    1524 0000ab60     09e0          movi    rzr_rugshake_anim,a0
+         0000ab70 00000000! 
+    1525 0000ab90     0d5f          calla   change_anim1a
+         0000aba0 00000000! 
+    1526 0000abc0     0960          rets
+    1527                    
+    1528 0000abd0           euyfno
+    1529 0000abd0                   FACE24  rzr,ground_punch_anim
+    1530 0000ac70     0d5f          calla   change_anim1a
+         0000ac80 00000000! 
+    1531                    
+    1532 0000aca0                   WRSND   W_RAZOR,LBOWDROP_T1,LBOWDROP_T2
+    1533 0000ae40     0960          rets
+    1534                    
+    1535                    *****
+    1536 0000ae50           euyfspunch_close
+    1537 0000ae50     b5a0          move    *a13(STICK_VAL_CUR),a0
+         0000ae60     0bc0  
+    1538 0000ae70     1fc0          btst    MOVE_DOWN_BIT,a0
+    1539 0000ae80     cb2e          jrnz    euyfck_up
+    1540                    ;       move    *a13(NEW_FACING_DIR),a1
+    1541                    ;       andi    0Ch,a1
+    1542                    ;       cmp     a0,a1
+    1543                    ;       jrz     euyfgrab
+    1544                    
+    1545 0000ae90     b5a1          move    *a13(CLOSEST_XDIST),a1
+         0000aea0     0370  
+    1546 0000aeb0     0b41          cmpi    65,a1
+         0000aec0     ffbe  
+    1547 0000aed0     c700          jrgt    std_punch
+         0000aee0     fdcd  
+    1548                    ;       jruc    euyfhdbutt
+    1549                    ;euyfgrab
+    1550                    ;       movi    rzr_3_head_hold2_anim,a0
+    1551                    ;       calla   change_anim1a
+    1552                    ;       WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+    1553                    ;       rets
+    1554                    ;
+    1555                    ;euyfhdbutt
+    1556                            .ref    rzr_2_pummel_anim
+    1557                            .ref    rzr_4_pummel_anim
+    1558                    
+    1559 0000aef0                   FACE24  rzr,pummel_anim
+    1560 0000af90     0d5f          calla   change_anim1
+         0000afa0 00000000! 
+    1561 0000afc0                   WRSND   W_RAZOR,HDBUTT_T1,HDBUTT_T2
+    1562 0000b160     0960          rets
+    1563                    
+    1564 0000b170           euyfck_up
+    1565                    ;Do uppercut
+    1566 0000b170     09e0          movi    rzr_4_uprcut_anim,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   35
+
+         0000b180 00000000! 
+    1567 0000b1a0     0d5f          calla   change_anim1a
+         0000b1b0 00000000! 
+    1568 0000b1d0                   WRSND   W_RAZOR,UPRCUT_T1,UPRCUT_T2
+    1569 0000b370     0960          rets
+    1570                    
+    1571                    *****
+    1572 0000b380           euyfspunch_far
+    1573 0000b380                   WRSND   W_RAZOR,UPRCUT_T1,UPRCUT_T2
+    1574 0000b520     09e0          movi    rzr_3_uslash_anim,a0
+         0000b530 00000000! 
+    1575 0000b550     0d5f          calla   change_anim1a
+         0000b560 00000000! 
+    1576 0000b580     0960          rets
+    1577                    
+    1578                    *****
+    1579 0000b590           euyfspunch_downslash
+    1580 0000b590                   WRSND   W_RAZOR,UPRCUT_T1,UPRCUT_T2
+    1581 0000b730     09e0          movi    rzr_3_dslash_anim,a0
+         0000b740 00000000! 
+    1582 0000b760     0d5f          calla   change_anim1a
+         0000b770 00000000! 
+    1583 0000b790     0960          rets
+    1584                    
+    1585                    ************
+    1586 0000b7a0           euyfkick                ;8
+    1587                    *
+    1588                    * MODE             DX  DZ       ACTION
+    1589                    * ----------------------------------------------------
+    1590                    * normal        <  70   50      knee
+    1591                    *               >               normal kick
+    1592                    *
+    1593                    * onground      < 120  120      stomp
+    1594                    * onground      >               normal kick
+    1595                    *
+    1596                    * running |
+    1597                    * bouncing                      big boot
+    1598                    *
+    1599                    * onturnbkl |                   normal kick
+    1600                    * climbturnbkl                  normal kick
+    1601                    *
+    1602                    
+    1603 0000b7a0                   JJXM_INIT
+    1604 0000b810                   JJXM    NORMAL,          70, 50,euyfkick_knee,euyfkick_kick
+    1605 0000b8e0                   JJXM    DIZZY,           70, 50,euyfkick_knee,euyfkick_kick
+    1606 0000b9b0                   JJXM    BLOCK,           70, 50,euyfkick_knee,euyfkick_kick
+    1607 0000ba80                   JJXM    ONGROUND,       160,140,euyfkick_stomp,euyfkick_kick
+    1608 0000bb50                   JJXM    RUNNING,         70, 50,euyfkick_knee,euyfkick_kick
+    1609 0000bc20                   JJXM    BOUNCING,        70, 50,euyfkick_knee,euyfkick_kick
+    1610 0000bcf0                   JJXM    ONTURNBKL,              euyfkick_kick
+    1611 0000bd40                   JJXM    CLIMBTURNBKL,           euyfkick_kick
+    1612 0000bd90                   JJXM    INAIR,           70, 50,euyfkick_knee,euyfkick_kick
+    1613 0000be60                   JJXM    ATTACHED,        70, 50,euyfkick_knee,euyfkick_kick
+    1614 0000bf30                   JJXM    DEAD,           160,140,euyfkick_stomp,euyfkick_kick
+    1615 0000c000                   JJXM    OPPOVERHEAD,     70, 50,euyfkick_knee,euyfkick_kick
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   36
+
+    1616 0000c0d0                   JJXM    WAITANIM,        70, 50,euyfkick_knee,euyfkick_kick
+    1617 0000c180                   JJXM    GRAPPLE,         70, 50,euyfkick_knee,euyfkick_kick
+    1618 0000c230                   JJXM    MASTER,          70, 50,euyfkick_knee,euyfkick_kick
+    1619 0000c2e0                   JJXM    SLAVE,           70, 50,euyfkick_knee,euyfkick_kick
+    1620 0000c390                   JJXM    HEADHOLD,        70, 50,euyfkick_knee,euyfkick_kick
+    1621 0000c430                   JJXM    HEADHELD,        70, 50,euyfkick_knee,euyfkick_kick
+    1622 0000c4d0                   JJXM    CHOKEHOLD,       70, 50,euyfkick_knee,euyfkick_kick
+    1623 0000c570                   JJXM    PUPPET,          70, 50,euyfkick_knee,euyfkick_kick
+    1624 0000c610                   JJXM    PUPPET2,         70, 50,euyfkick_knee,euyfkick_kick
+    1625 0000c6b0                   JJXM    INAIR2,                 euyfkick_TB
+    1626 0000c6f0                   JJXM_END
+    1627                    
+    1628                    *****
+    1629 0000c710           euyfkick_TB
+    1630                            .ref    rzr_kick_TB_anim
+    1631 0000c710     09e0          movi    rzr_kick_TB_anim,a0
+         0000c720 00000000! 
+    1632 0000c740     0d5f          calla   change_anim1a
+         0000c750 00000000! 
+    1633                    
+    1634 0000c770                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    1635 0000c910     0960          rets
+    1636                    
+    1637                    *****
+    1638 0000c920           euyfkick_kick
+    1639 0000c920           std_kick
+    1640                    
+    1641 0000c920                   FACE24  rzr,kick_anim
+    1642 0000c9c0     0d5f          calla   change_anim1a
+         0000c9d0 00000000! 
+    1643                    
+    1644 0000c9f0                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    1645 0000cb90     0960          rets
+    1646                    
+    1647                    *****
+    1648 0000cba0           euyfkick_knee
+    1649 0000cba0           std_knee
+    1650                    
+    1651 0000cba0                   FACE24  rzr,knee_anim
+    1652 0000cc40     0d5f          calla   change_anim1a
+         0000cc50 00000000! 
+    1653                    
+    1654 0000cc70                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    1655 0000ce10     0960          rets
+    1656                    
+    1657                    *****
+    1658 0000ce20           euyfkick_stomp
+    1659                    
+    1660 0000ce20                   FACE24  rzr,stomp_anim
+    1661 0000cec0     0d5f          calla   change_anim1a
+         0000ced0 00000000! 
+    1662                    
+    1663 0000cef0                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    1664 0000d090     0960          rets
+    1665                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   37
+
+    1666                    
+    1667                    ************
+    1668 0000d0a0           euyfsuper_kick  ;16
+    1669                    *
+    1670                    * MODE             DX  DZ       ACTION
+    1671                    * ----------------------------------------------------
+    1672                    * normal        <  70   60      close in super move
+    1673                    * dizzy                 "               "
+    1674                    * normal        >               jumping kick move
+    1675                    * dizzy                 "               "
+    1676                    *
+    1677                    * onground      < 114  160      super stomp
+    1678                    * onground      >               normal kick
+    1679                    *
+    1680                    * running                       big boot
+    1681                    * bouncing                      big boot
+    1682                    *
+    1683                    * onturnbkl     <  70   96      jumping kick move
+    1684                    * climbturnbkl          "               "
+    1685                    * onturnbkl     >               normal kick
+    1686                    * climbturnbkl          "               "
+    1687                    *
+    1688 0000d0a0                   JJXM_INIT
+    1689 0000d110                   JJXM    NORMAL,          70, 60,euyfskick_special,euyfskick_kick        ;0
+    1690 0000d1e0                   JJXM    RUNNING,                euyfskick_bigboot                       ;1
+    1691 0000d230                   JJXM    INAIR,           70, 60,euyfskick_special,euyfskick_kick        ;2
+    1692 0000d300                   JJXM    ATTACHED,        70, 60,euyfskick_special,euyfskick_kick        ;3
+    1693 0000d3d0                   JJXM    ONGROUND,       160,140,euyfskick_stomp,std_kick                ;4
+    1694 0000d4a0                   JJXM    BOUNCING,               euyfskick_bigboot                       ;5
+    1695 0000d4f0                   JJXM    ONTURNBKL,       70, 96,euyfskick_kick,std_kick         ;6
+    1696 0000d5c0                   JJXM    BLOCK,           70, 60,euyfskick_special,euyfskick_kick        ;7
+    1697 0000d690                   JJXM    DIZZY,           70, 60,euyfskick_special,euyfskick_kick        ;8
+    1698 0000d760                   JJXM    DEAD,           160,140,euyfskick_stomp,std_kick                ;9
+    1699 0000d830                   JJXM    OPPOVERHEAD,     70, 60,euyfskick_special,euyfskick_kick        ;10
+    1700 0000d8e0                   JJXM    CLIMBTURNBKL,    70, 96,euyfskick_kick,std_kick         ;11
+    1701 0000d9a0                   JJXM    WAITANIM,        70, 62,euyfskick_special,euyfskick_kick        ;12
+    1702 0000da40                   JJXM    GRAPPLE,         70, 62,euyfskick_special,euyfskick_kick        ;13
+    1703 0000dae0                   JJXM    MASTER,          70, 62,euyfskick_special,euyfskick_kick        ;14
+    1704 0000db80                   JJXM    SLAVE,           70, 62,euyfskick_special,euyfskick_kick        ;15
+    1705 0000dc20                   JJXM    HEADHOLD,        70, 62,euyfskick_special,euyfskick_kick        ;16
+    1706 0000dcc0                   JJXM    HEADHELD,               std_kick
+    1707 0000dd10                   JJXM    CHOKEHOLD,       70, 62,euyfskick_special,euyfskick_kick        ;16
+    1708 0000ddb0                   JJXM    PUPPET,          70, 62,euyfskick_special,euyfskick_kick        ;20
+    1709 0000de50                   JJXM    PUPPET2,         70, 62,euyfskick_special,euyfskick_kick        ;20
+    1710 0000def0                   JJXM    INAIR2,                 euyfkick_TB
+    1711 0000df40                   JJXM_END
+    1712                    
+    1713                    *****
+    1714 0000df60           euyfskick_kick
+    1715 0000df60                   FACE24  rzr,super_kick_anim
+    1716 0000e000     0d5f          calla   change_anim1a
+         0000e010 00000000! 
+    1717                    
+    1718 0000e030                   WRSND   W_RAZOR,FLYKICK_T1,FLYKICK_T2
+    1719 0000e1d0     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   38
+
+    1720                    
+    1721                    
+    1722                    *****
+    1723 0000e1e0           euyfskick_special
+    1724                    
+    1725 0000e1e0     b5a0          move    *a13(STICK_VAL_CUR),a0
+         0000e1f0     0bc0  
+    1726 0000e200     b5a1          move    *a13(NEW_FACING_DIR),a1
+         0000e210     04d0  
+    1727 0000e220     0b81          andi    0ch,a1
+         0000e230 fffffff3  
+    1728 0000e250     4801          cmp     a0,a1
+    1729 0000e260     ca28          jrz     euyfsuper_knee
+    1730                    
+    1731 0000e270                   FACE24  rzr,knee_anim
+    1732 0000e310     0d5f          calla   change_anim1a
+         0000e320 00000000! 
+    1733                    
+    1734 0000e340                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    1735                    
+    1736 0000e4e0     0960          rets
+    1737                    
+    1738 0000e4f0           euyfsuper_knee
+    1739 0000e4f0     09e0          movi    rzr_4_knee_fall_anim,a0
+         0000e500 00000000! 
+    1740 0000e520     0d5f          calla   change_anim1
+         0000e530 00000000! 
+    1741                    
+    1742 0000e550                   WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+    1743 0000e6f0     0960          rets
+    1744                    
+    1745                    *****
+    1746 0000e700           euyfskick_stomp
+    1747                    
+    1748 0000e700                   FACE24  rzr,stomp_anim
+    1749 0000e7a0     0d5f          calla   change_anim1a
+         0000e7b0 00000000! 
+    1750                    
+    1751 0000e7d0                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    1752                    
+    1753 0000e970     0960          rets
+    1754                    
+    1755                    *****
+    1756 0000e980           euyfskick_bigboot
+    1757                    
+    1758 0000e980     09e0          movi    rzr_4_bigboot_anim,a0           ;*****
+         0000e990 00000000! 
+    1759 0000e9b0     0d5f          calla   change_anim1a
+         0000e9c0 00000000! 
+    1760                    
+    1761 0000e9e0                   WRSND   W_RAZOR,FLYKICK_T1,FLYKICK_T2
+    1762                    
+    1763 0000eb80     0960          rets
+    1764                    
+    1765                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   39
+
+    1766                    ************
+    1767 0000eb90           euyfpunchkick   ;9
+    1768                    
+    1769 0000eb90     09e0          movi    start_run_anim,a0
+         0000eba0 00000000! 
+    1770 0000ebc0     0d5f          calla   change_anim1a
+         0000ebd0 00000000! 
+    1771                    
+    1772 0000ebf0     0960          rets
+    1773                    
+    1774                    
+    1775                    
+    1776                    *****************************************************************************
+    1777                    *
+    1778                    * RUNNING (if GETUP_TIME > 0 then player is out of control)
+    1779                    *
+    1780                    
+    1781          00060000  kmryXRUN_VAL    equ     RZR_XRUN
+    1782          00020000  kmryZDRIFT_VAL  equ     RZR_ZDRIFT
+    1783                    
+    1784 0000ec00           mode_running
+    1785                    
+    1786 0000ec00     b5a0          move    *a13(RUN_TIME),a0               ;Used for flying kick
+         0000ec10     07b0  
+    1787 0000ec20     1020          addk    1,a0
+    1788 0000ec30     b00d          move    a0,*a13(RUN_TIME)
+         0000ec40     07b0  
+    1789                    
+    1790 0000ec50     b5a0          move    *a13(USR_VAR1),a0
+         0000ec60     0850  
+    1791 0000ec70     cb11          jrnz    kmryno_vel
+    1792                    
+    1793 0000ec80     0d5f          calla   bounce_off_ropes
+         0000ec90 00000000! 
+    1794                    
+    1795 0000ecb0     09e0          movi    kmryXRUN_VAL,a0
+         0000ecc0 00060000  
+    1796 0000ece0     b5ae          move    *a13(MOVE_DIR),a14
+         0000ecf0     04b0  
+    1797 0000ed00     1f8e          btst    PLAYER_RIGHT_BIT,a14
+    1798 0000ed10     cb01          jrnz    kmrypos
+    1799 0000ed20     03a0          neg     a0
+    1800 0000ed30           kmrypos
+    1801 0000ed30     05ae          move    @hyper_speed_on,a14
+         0000ed40 00000000! 
+    1802 0000ed60     63c0          sll     a14,a0
+    1803 0000ed70     b20d          move    a0,*a13(OBJ_XVEL),L
+         0000ed80     02d0  
+    1804                    
+    1805 0000ed90           kmryno_vel
+    1806                    
+    1807 0000ed90     b5a0          move    *a13(GETUP_TIME),a0             ;delay b4 gaining control
+         0000eda0     0460  
+    1808 0000edb0     cb38          jrnz    kmryout_of_control
+    1809                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   40
+
+    1810 0000edc0     b5a0          move    *a13(ANIMODE),a0
+         0000edd0     0660  
+    1811 0000ede0     1fa0          btst    MODE_UNINT_BIT,a0
+    1812 0000edf0     cb16          jrnz    kmryno_interrupt
+    1813                    
+    1814 0000ee00     b5a0          move    *a13(STICK_VAL_CUR),a0
+         0000ee10     0bc0  
+    1815 0000ee20     b5a1          move    *a13(MOVE_DIR),a1
+         0000ee30     04b0  
+    1816 0000ee40     5401          or      a0,a1
+    1817 0000ee50     0b81          andi    MOVE_LEFT|MOVE_RIGHT,a1
+         0000ee60 fffffff3  
+    1818 0000ee80     0b41          cmpi    MOVE_LEFT|MOVE_RIGHT,a1
+         0000ee90     fff3  
+    1819 0000eea0     cb0b          jrne    kmrycontinue_run
+    1820                    
+    1821                            ;braking with stick.  abort run.
+    1822                    
+    1823 0000eeb0                   SETMODE NORMAL
+    1824                    
+    1825 0000ef60           kmrycontinue_run
+    1826 0000ef60           kmryno_interrupt
+    1827                    
+    1828 0000ef60     b5a0          move    *a13(STICK_VAL_CUR),a0
+         0000ef70     0bc0  
+    1829 0000ef80     5621          clr     a1
+    1830                    
+    1831 0000ef90     09e1          movi    -kmryZDRIFT_VAL,a1
+         0000efa0 fffe0000  
+    1832 0000efc0     1fe0          btst    PLAYER_UP_BIT,a0
+    1833 0000efd0     cb06          jrnz    kmrysetvel
+    1834                    
+    1835 0000efe0     09e1          movi    kmryZDRIFT_VAL,a1
+         0000eff0 00020000  
+    1836 0000f010     1fc0          btst    PLAYER_DOWN_BIT,a0
+    1837 0000f020     cb01          jrnz    kmrysetvel
+    1838                    
+    1839 0000f030     5621          clr     a1
+    1840 0000f040           kmrysetvel
+    1841 0000f040     b22d          move    a1,*a13(OBJ_ZVEL),L
+         0000f050     0310  
+    1842                    
+    1843                    
+    1844                    ;Delay reading buttons after just getting out of an out of control run
+    1845                    ;so a mistaken move isn't fired off
+    1846 0000f060     b5a0          move    *a13(DELAY_BUTNS),a0
+         0000f070     0ab0  
+    1847 0000f080     cb0b          jrnz    kmryout_of_control
+    1848                    
+    1849                    
+    1850 0000f090     b5a0          move    *a13(BUT_VAL_DOWN),a0
+         0000f0a0     0ba0  
+    1851 0000f0b0     0b80          andi    011111b,a0
+         0000f0c0 ffffffe0  
+    1852 0000f0e0                   X32     a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   41
+
+    1853 0000f0f0     0b20          addi    kmryaction_table,a0
+         0000f100 0000f150' 
+    1854 0000f120     8600          move    *a0,a0,L
+    1855 0000f130     0920          call    a0
+    1856 0000f140           kmryout_of_control
+    1857 0000f140     0960          rets
+    1858                    
+    1859 0000f150           kmryaction_table
+    1860 0000f150 0000f550'         .long   kmryz,kmrypunch,kmryblock,kmryblock                     ;0-3
+    1861 0000f1d0 0000f680'         .long   kmrysuper_punch,kmrysuper_punch,kmryblock,kmryblock     ;4-7
+    1862 0000f250 00010680'         .long   kmrykick,kmrypunchkick,kmryblock,kmryblock              ;8-11
+    1863 0000f2d0 0000f680'         .long   kmrysuper_punch,kmrypunchkick,kmryblock,kmryblock       ;12-15
+    1864 0000f350 00010680'         .long   kmrysuper_kick,kmrysuper_kick,kmryblock,kmryblock       ;16-19
+    1865 0000f3d0 0000f680'         .long   kmrygraboh,kmrygraboh,kmryblock,kmryblock               ;20-23
+    1866 0000f450 00010680'         .long   kmrysuper_kick,kmrypunchkick,kmryblock,kmryblock        ;24-27
+    1867 0000f4d0 0000f680'         .long   kmrygraboh,kmrygraboh,kmryblock,kmryblock               ;28-31
+    1868                    
+    1869                    ;       .long   kmryz                                   ;0
+    1870                    ;       .long   kmrypunch                                       ;1
+    1871                    ;       .long   kmryblock                                       ;2
+    1872                    ;       .long   kmryz                                   ;3
+    1873                    ;       .long   kmrysuper_punch                         ;4
+    1874                    ;       .long   kmrysuper_punch,kmryz,kmryz                     ;5-7
+    1875                    ;       .long   kmrykick                                        ;8
+    1876                    ;       .long   punchkick,kmryz,kmryz,kmrykick,kmryz,kmryz,kmryz                ;9-15
+    1877                    ;       .long   kmrysuper_kick                          ;16
+    1878                    ;       .long   kmryz,kmryz,kmryz,kmrygraboh,kmryz,kmryz,kmryz          ;17-23
+    1879                    ;       .long   kmrykick,kmryz,kmryz,kmryz,kmryz,kmryz,kmryz,kmryz              ;24-31
+    1880                    
+    1881                    
+    1882                    
+    1883                    ************
+    1884 0000f550           kmryz
+    1885 0000f550     0960          rets
+    1886                    
+    1887                    
+    1888                    ************
+    1889 0000f560           kmryblock               ;2
+    1890 0000f560     b7a0          move    *a13(OBJ_XVEL),a0,L
+         0000f570     02d0  
+    1891 0000f580     2be0          sra     1,a0
+    1892 0000f590     b20d          move    a0,*a13(OBJ_XVEL),L
+         0000f5a0     02d0  
+    1893 0000f5b0                   SETMODE NORMAL
+    1894 0000f660     c000          jruc    std_block
+         0000f670     f9cc  
+    1895                    
+    1896                    
+    1897                    ************
+    1898 0000f680           kmrypunch               ;1
+    1899 0000f680           kmrysuper_punch ;4
+    1900 0000f680           kmrypunchkick
+    1901 0000f680           kmrygraboh
+    1902                    *
+    1903                    * MODE             DX  DZ       ACTION
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   42
+
+    1904                    * ----------------------------------------------------
+    1905                    *
+    1906                    * onground|dead < 176 176       running stomp
+    1907                    * onground|dead >               nothing
+    1908                    *
+    1909                    * all else                      flying kick
+    1910                    *
+    1911                    
+    1912 0000f680                   JJXM_INIT
+    1913 0000f6f0                   JJXM    NORMAL,                 kmrypunch_clothesline
+    1914 0000f730                   JJXM    BLOCK,                  kmrypunch_clothesline
+    1915 0000f770                   JJXM    DIZZY,                  kmrypunch_clothesline
+    1916 0000f7b0                   JJXM    ONGROUND,       176,176,kmrypunch_flyelbow,kmrypunch_rets
+    1917 0000f880                   JJXM    RUNNING,                kmrypunch_clothesline
+    1918 0000f8c0                   JJXM    BOUNCING,               kmrypunch_clothesline
+    1919 0000f900                   JJXM    ONTURNBKL,              kmrypunch_clothesline
+    1920 0000f940                   JJXM    CLIMBTURNBKL,           kmrypunch_clothesline
+    1921 0000f980                   JJXM    INAIR,                  kmrypunch_clothesline
+    1922 0000f9c0                   JJXM    ATTACHED,               kmrypunch_clothesline
+    1923 0000fa00                   JJXM    DEAD,           176,176,kmrypunch_flyelbow,kmrypunch_rets
+    1924 0000fad0                   JJXM    OPPOVERHEAD,            kmrypunch_clothesline
+    1925 0000fb10                   JJXM    WAITANIM,               kmrypunch_clothesline
+    1926 0000fb50                   JJXM    GRAPPLE,                kmrypunch_clothesline
+    1927 0000fb90                   JJXM    MASTER,                 kmrypunch_clothesline
+    1928 0000fbd0                   JJXM    SLAVE,                  kmrypunch_clothesline
+    1929 0000fc10                   JJXM    HEADHOLD,               kmrypunch_clothesline
+    1930 0000fc50                   JJXM    HEADHELD,               kmrypunch_clothesline
+    1931 0000fc90                   JJXM    CHOKEHOLD,              kmrypunch_clothesline
+    1932 0000fcd0                   JJXM    PUPPET,                 kmrypunch_clothesline
+    1933 0000fd10                   JJXM    PUPPET2,                kmrypunch_clothesline
+    1934 0000fd50                   JJXM    INAIR2,                 kmrypunch_clothesline
+    1935 0000fd90                   JJXM_END
+    1936                    
+    1937                    *****
+    1938 0000fdb0           kmrypunch_clothesline
+    1939                    
+    1940                            ;don't do it if you're running away from your opponent.
+    1941 0000fdb0     b5a0          move    *a13(FACING_DIR),a0
+         0000fdc0     04c0  
+    1942 0000fdd0     b5a1          move    *a13(NEW_FACING_DIR),a1
+         0000fde0     04d0  
+    1943 0000fdf0     5001          and     a0,a1
+    1944 0000fe00     0b81          andi    MOVE_LEFT|MOVE_RIGHT,a1
+         0000fe10 fffffff3  
+    1945 0000fe30     ca00          jrz     kmryz
+         0000fe40     ff70  
+    1946                    
+    1947 0000fe50     5600          clr     a0
+    1948 0000fe60     b00d          move    a0,*a13(RUN_TIME)
+         0000fe70     07b0  
+    1949                    
+    1950 0000fe80                   SETMODE NORMAL
+    1951                    
+    1952 0000ff30     b5a1          move    *a13(CLOSEST_XDIST),a1
+         0000ff40     0370  
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   43
+
+    1953 0000ff50     0b41          cmpi    70,a1
+         0000ff60     ffb9  
+    1954 0000ff70     c421          jrlt    kmryhdbutt
+    1955                    
+    1956 0000ff80     09e0          movi    rzr_3_uslash_anim,a0
+         0000ff90 00000000! 
+    1957 0000ffb0     0d5f          calla   change_anim1a
+         0000ffc0 00000000! 
+    1958                    
+    1959 0000ffe0                   WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+    1960                    
+    1961 00010180     0960          rets
+    1962                    
+    1963 00010190           kmryhdbutt
+    1964                    
+    1965 00010190                   FACE24  rzr,butt_anim
+    1966 00010230     0d5f          calla   change_anim1
+         00010240 00000000! 
+    1967                    
+    1968 00010260                   WRSND   W_RAZOR,HDBUTT_T1,HDBUTT_T2
+    1969                    
+    1970 00010400     0960          rets
+    1971                    
+    1972 00010410           kmrypunch_flyelbow
+    1973 00010410           std_flyelbow
+    1974 00010410     09e0          movi    rzr_flying_elbow_anim,a0
+         00010420 00000000! 
+    1975 00010440     0d5f          calla   change_anim1a
+         00010450 00000000! 
+    1976                    
+    1977 00010470     b7a0          move    *a13(OBJ_XVEL),a0,L
+         00010480     02d0  
+    1978 00010490     2be0          sra     1,a0
+    1979 000104a0     b20d          move    a0,*a13(OBJ_XVEL),L
+         000104b0     02d0  
+    1980                    
+    1981 000104c0                   WRSND   W_RAZOR,FLYKICK_T1,FLYKICK_T2
+    1982                    
+    1983 00010660     0960          rets
+    1984                    
+    1985 00010670           kmrypunch_rets
+    1986 00010670     0960          rets
+    1987                    
+    1988                    ************
+    1989 00010680           kmrykick                ;8
+    1990 00010680           kmrysuper_kick  ;16
+    1991                    *
+    1992                    * MODE             DX  DZ       ACTION
+    1993                    * ----------------------------------------------------
+    1994                    * normal                        flying kick
+    1995                    * dizzy                                 "
+    1996                    *
+    1997                    * onground      < 176 176       running stomp
+    1998                    * onground      >               nothing
+    1999                    *
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   44
+
+    2000                    * running                       flying kick
+    2001                    * bouncing                      flying kick
+    2002                    *
+    2003                    * onturnbkl                     flying kick
+    2004                    * climbturnbkl                  flying kick
+    2005                    *
+    2006 00010680                   JJXM_INIT
+    2007 000106f0                   JJXM    NORMAL,                 kmrykick_flykick
+    2008 00010730                   JJXM    BLOCK,                  kmrykick_flykick
+    2009 00010770                   JJXM    DIZZY,                  kmrykick_flykick
+    2010 000107b0                   JJXM    ONGROUND,               std_flyelbow
+    2011 000107f0                   JJXM    RUNNING,                kmrykick_flykick
+    2012 00010830                   JJXM    BOUNCING,               kmrykick_flykick
+    2013 00010870                   JJXM    ONTURNBKL,              kmrykick_flykick
+    2014 000108b0                   JJXM    CLIMBTURNBKL,           kmrykick_flykick
+    2015 000108f0                   JJXM    INAIR,                  kmrykick_flykick
+    2016 00010930                   JJXM    ATTACHED,               kmrykick_flykick
+    2017 00010970                   JJXM    DEAD,                   std_flyelbow
+    2018 000109b0                   JJXM    OPPOVERHEAD,            kmrykick_flykick
+    2019 000109f0                   JJXM    WAITANIM,               kmrykick_flykick
+    2020 00010a30                   JJXM    GRAPPLE,                kmrykick_flykick
+    2021 00010a70                   JJXM    MASTER,                 kmrykick_flykick
+    2022 00010ab0                   JJXM    SLAVE,                  kmrykick_flykick
+    2023 00010af0                   JJXM    HEADHOLD,               kmrykick_flykick
+    2024 00010b30                   JJXM    HEADHELD,               kmrykick_flykick
+    2025 00010b70                   JJXM    CHOKEHOLD,              kmrykick_flykick
+    2026 00010bb0                   JJXM    PUPPET,                 kmrykick_flykick
+    2027 00010bf0                   JJXM    PUPPET2,                kmrykick_flykick
+    2028 00010c30                   JJXM    INAIR2,                 kmrykick_flykick
+    2029 00010c70                   JJXM_END
+    2030                    
+    2031 00010c90           kmrykick_flykick
+    2032 00010c90           std_flykick
+    2033                    
+    2034 00010c90     0d5f          calla   ck_ignore
+         00010ca0 00000000! 
+    2035 00010cc0     c800          jrc     kmryz
+         00010cd0     fe87  
+    2036                    
+    2037 00010ce0     09e0          movi    rzr_flying_kick_anim,a0
+         00010cf0 00000000! 
+    2038 00010d10     0d5f          calla   change_anim1a
+         00010d20 00000000! 
+    2039                    
+    2040 00010d40                   WRSND   W_RAZOR,FLYKICK_T1,FLYKICK_T2
+    2041                    
+    2042 00010ee0                   SETMODE INAIR
+    2043                    
+    2044 00010f90     0960          rets
+    2045                    
+    2046 00010fa0           kmrykick_rets
+    2047 00010fa0     0960          rets
+    2048                    
+    2049                    *****************************************************************************
+    2050 00010fb0           mode_inair      ;2
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   45
+
+    2051                    
+    2052 00010fb0     0960          rets
+    2053                    
+    2054                    *****************************************************************************
+    2055 00010fc0           mode_attached   ;3
+    2056                    
+    2057 00010fc0     0d5f          calla   keep_attached
+         00010fd0 00000000! 
+    2058 00010ff0     cb12          jrnz    bnhqstill_attached
+    2059                    
+    2060 00011000     5600          clr     a0
+    2061 00011010     b20d          move    a0,*a13(ATTACH_PROC),L
+         00011020     03e0  
+    2062                    
+    2063 00011030                   SETMODE NORMAL
+    2064                    
+    2065 000110e0     09c0          movi    MODE_NORMAL,a0
+         000110f0     0000  
+    2066 00011100     b00d          move    a0,*a13(ANIMODE)
+         00011110     0660  
+    2067                    
+    2068 00011120           bnhqstill_attached
+    2069 00011120     0960          rets
+    2070                    
+    2071                    *****************************************************************************
+    2072 00011130           mode_onground   ;4
+    2073                    
+    2074 00011130     0960          rets
+    2075                    
+    2076                    
+    2077                    *****************************************************************************
+    2078                    *
+    2079                    * bouncing off ropes while running
+    2080                    
+    2081 00011140           mode_bouncing   ;5
+    2082                    
+    2083 00011140     5600          clr     a0
+    2084 00011150     b20d          move    a0,*a13(OBJ_XVEL),L
+         00011160     02d0  
+    2085 00011170     b20d          move    a0,*a13(OBJ_ZVEL),L
+         00011180     0310  
+    2086                    
+    2087 00011190     b5a0          move    *a13(ANIMODE),a0
+         000111a0     0660  
+    2088 000111b0     1fe0          btst    MODE_END_BIT,a0
+    2089 000111c0     ca20          jrz     ntkznot_ended
+    2090                    
+    2091 000111d0     b5a0          move    *a13(MOVE_DIR),a0
+         000111e0     04b0  
+    2092 000111f0     0bc0          xori    MOVE_LEFT+MOVE_RIGHT,a0 ;flip LEFT/RIGHT
+         00011200 0000000c  
+    2093 00011220     b00d          move    a0,*a13(MOVE_DIR)
+         00011230     04b0  
+    2094                    
+    2095 00011240     b5a1          move    *a13(NEW_FACING_DIR),a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   46
+
+         00011250     04d0  
+    2096 00011260     0b81          andi    MOVE_UP+MOVE_DOWN,a1
+         00011270 fffffffc  
+    2097 00011290     5401          or      a0,a1                   ;LEFT or RIGHT
+    2098 000112a0     b02d          move    a1,*a13(FACING_DIR)     ;face same dir as run
+         000112b0     04c0  
+    2099                    
+    2100 000112c0     09e0          movi    rzr_run2_anim,a0
+         000112d0 00000000! 
+    2101 000112f0     0d5f          calla   change_anim1a
+         00011300 00000000! 
+    2102                    
+    2103 00011320                   SETMODE RUNNING
+    2104                    
+    2105                    ;       clr     a0
+    2106                    ;       move    a0,*a13(GETUP_TIME)     ;in control
+    2107                    
+    2108 000113d0           ntkznot_ended
+    2109 000113d0     0960          rets
+    2110                    
+    2111                    *****************************************************************************
+    2112                    *
+    2113                    * STANDING ON TOP OF TURNBUCKLE
+    2114                    
+    2115 000113e0           mode_onturnbkl  ;6
+    2116                    
+    2117                    ;       ;check unint
+    2118                    ;       move    *a13(ANIMODE),a14
+    2119                    ;       btst    MODE_UNINT_BIT,a14
+    2120                    ;       jrnz    gudino_interrupt
+    2121                    
+    2122 000113e0     b5a0          move    *a13(STICK_VAL_CUR),a0
+         000113f0     0bc0  
+    2123 00011400     1fc0          btst    PLAYER_DOWN_BIT,a0
+    2124 00011410     ca12          jrz     gudino_climbdown
+    2125                    
+    2126 00011420     09e0          movi    rzr_climb_down_anim,a0
+         00011430 00000000! 
+    2127 00011450     0d5f          calla   change_anim1a
+         00011460 00000000! 
+    2128                    
+    2129 00011480                   SETMODE CLIMBTURNBKL
+    2130                    
+    2131 00011530           gudino_interrupt
+    2132 00011530     0960          rets
+    2133                    
+    2134 00011540           gudino_climbdown
+    2135 00011540     b5a0          move    *a13(BUT_VAL_DOWN),a0
+         00011550     0ba0  
+    2136 00011560     0b80          andi    011111b,a0
+         00011570 ffffffe0  
+    2137 00011590     ca51          jrz     gudiz
+    2138                    
+    2139 000115a0                   X32     a0
+    2140 000115b0     0b20          addi    gudiaction_table,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   47
+
+         000115c0 000116b0' 
+    2141 000115e0     8600          move    *a0,a0,L
+    2142 000115f0     0920          call    a0
+    2143                    
+    2144 00011600     b5a5          move    *a13(PLYRNUM),a5
+         00011610     0580  
+    2145 00011620     09e2          movi    JUMP_ROPES,a2
+         00011630 00000000! 
+    2146 00011650     09c0          movi    1000,a0
+         00011660     03e8  
+    2147 00011670     0d5f          calla   ADD_IF_SILENT
+         00011680 00000000! 
+    2148                    
+    2149 000116a0     0960          rets
+    2150                    
+    2151                    
+    2152                    ;For standing on top of turnbuckles
+    2153                    
+    2154 000116b0           gudiaction_table
+    2155 000116b0 00011ab0'         .long   gudiz,gudipunch,gudiblock,gudiblock                     ;0-3
+    2156 00011730 00011ac0'         .long   gudisuper_punch,gudisuper_punch,gudiblock,gudiblock     ;4-7
+    2157 000117b0 00011ac0'         .long   gudikick,gudipunchkick,gudiblock,gudiblock              ;8-11
+    2158 00011830 00011ac0'         .long   gudisuper_punch,gudipunchkick,gudiblock,gudiblock       ;12-15
+    2159 000118b0 00011ac0'         .long   gudisuper_kick,gudisuper_kick,gudiblock,gudiblock       ;16-19
+    2160 00011930 00011ac0'         .long   gudigraboh,gudigraboh,gudiblock,gudiblock               ;20-23
+    2161 000119b0 00011ac0'         .long   gudisuper_kick,gudipunchkick,gudiblock,gudiblock        ;24-27
+    2162 00011a30 00011ac0'         .long   gudigraboh,gudigraboh,gudiblock,gudiblock               ;28-31
+    2163                    
+    2164                    ;       .long   gudiz                                   ;0
+    2165                    ;       .long   gudipunch                                       ;1
+    2166                    ;       .long   gudiblock                                       ;2
+    2167                    ;       .long   gudiz                                   ;3
+    2168                    ;       .long   gudisuper_punch                         ;4
+    2169                    ;       .long   gudisuper_punch,gudiz,gudiz                     ;5-7
+    2170                    ;       .long   gudikick                                        ;8
+    2171                    ;       .long   gudipunchkick,gudiz,gudiz,gudikick,gudiz,gudiz,gudiz            ;9-15
+    2172                    ;       .long   gudisuper_kick                          ;16
+    2173                    ;       .long   gudiz,gudiz,gudiz,gudigraboh,gudiz,gudiz,gudiz          ;17-23
+    2174                    ;       .long   gudikick,gudiz,gudiz,gudiz,gudiz,gudiz,gudiz,gudiz              ;24-31
+    2175                    
+    2176                    ************
+    2177 00011ab0           gudiz
+    2178 00011ab0     0960          rets
+    2179                    
+    2180                    ************
+    2181 00011ac0           gudipunch               ;1
+    2182 00011ac0           gudiblock               ;2
+    2183 00011ac0           gudisuper_punch ;4
+    2184 00011ac0           gudipunchkick   ;5
+    2185 00011ac0           gudikick                ;8
+    2186 00011ac0           gudisuper_kick  ;16
+    2187 00011ac0           gudigraboh              ;20
+    2188                    
+    2189 00011ac0                   SETMODE INAIR
+    2190                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   48
+
+    2191 00011b70     09e0          movi    rzr_tbukl_elbow_anim,a0
+         00011b80 00000000! 
+    2192 00011ba0     0d5f          calla   change_anim1a
+         00011bb0 00000000! 
+    2193                    
+    2194 00011bd0                   WRSND   W_RAZOR,TURNDIVE_T1,TURNDIVE_T2
+    2195 00011d70     0960          rets
+    2196                    
+    2197                    *****************************************************************************
+    2198                    * blocking
+    2199                    
+    2200 00011d80           mode_block      ;7
+    2201                    
+    2202 00011d80     b5a0          move    *a13(BLOCK_TIME),a0
+         00011d90     0d30  
+    2203 00011da0     1020          inc     a0
+    2204 00011db0     b00d          move    a0,*a13(BLOCK_TIME)
+         00011dc0     0d30  
+    2205 00011dd0     0b40          cmpi    160,a0
+         00011de0     ff5f  
+    2206 00011df0     c413          jrlt    dnwuno
+    2207                    
+    2208 00011e00     0d5f          calla   get_opp_plyrmode
+         00011e10 00000000! 
+    2209 00011e30     0b40          cmpi    MODE_BLOCK,a0
+         00011e40     fff8  
+    2210 00011e50     cb0d          jrnz    dnwuno
+    2211 00011e60     b5a0          move    *a13(CLOSEST_XDIST),a0
+         00011e70     0370  
+    2212 00011e80     0b40          cmpi    61h,a0
+         00011e90     ff9e  
+    2213 00011ea0     c508          jrge    dnwuno
+    2214 00011eb0     0b40          cmpi    45,a0
+         00011ec0     ffd2  
+    2215 00011ed0     c405          jrlt    dnwuno
+    2216 00011ee0     b5a0          move    *a13(CLOSEST_ZDIST),a0
+         00011ef0     0390  
+    2217 00011f00     0b40          cmpi    30,a0
+         00011f10     ffe1  
+    2218 00011f20     c461          jrlt    dnwupunchblock
+    2219                    
+    2220 00011f30           dnwuno
+    2221 00011f30     b5a0          move    *a13(BUT_VAL_DOWN),a0
+         00011f40     0ba0  
+    2222 00011f50     0b80          andi    011111b,a0
+         00011f60 ffffffe0  
+    2223 00011f80     ca0c          jrz     dnwuno_interrupt
+    2224                    
+    2225                            ;press.  if block isn't down, let mode_normal handle it
+    2226 00011f90     4c02          move    a0,a2                   ;save a0 from ...val_down
+    2227 00011fa0     b5a0          move    *a13(BUT_VAL_CUR),a0
+         00011fb0     0b90  
+    2228 00011fc0     1fc0          btst    PLAYER_BLOCK_BIT,a0
+    2229 00011fd0     ca08          jrz     dnwuset_mode_normal
+    2230 00011fe0     4c40          move    a2,a0                   ;restore a0 from ...val_down
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   49
+
+    2231                    
+    2232 00011ff0                   X32     a0
+    2233 00012000     0b20          addi    dnwuaction_table,a0
+         00012010 00012130' 
+    2234 00012030     8600          move    *a0,a0,L
+    2235 00012040     0920          call    a0
+    2236                    
+    2237 00012050           dnwuno_interrupt
+    2238 00012050     0960          rets
+    2239                    
+    2240 00012060           dnwuset_mode_normal
+    2241 00012060                   SETMODE NORMAL
+    2242 00012110     c000          jruc    mode_normal
+         00012120     f4bd  
+    2243                    
+    2244 00012130           dnwuaction_table
+    2245 00012130 00012530'         .long   dnwuz,dnwupunchblock,dnwuz      ;0-2
+    2246 00012190 00012540'         .long   dnwupunchblock          ;3
+    2247 000121b0 00012530'         .long   dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz       ;4-10
+    2248 00012290 00012530'         .long   dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz       ;11-17
+    2249 00012370 00012530'         .long   dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz       ;18-24
+    2250 00012450 00012530'         .long   dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz,dnwuz       ;25-31
+    2251                    
+    2252                    ************
+    2253 00012530           dnwuz
+    2254 00012530     0960          rets
+    2255                    
+    2256                    ************
+    2257 00012540           dnwupunchblock  ;3
+    2258                    *
+    2259                    * MODE             DX  DZ       ACTION
+    2260                    * ----------------------------------------------------
+    2261                    * all                           push
+    2262                    *
+    2263                    
+    2264 00012540                   SETMODE NORMAL
+    2265                    
+    2266 000125f0     09e0          movi    rzr_4_push_anim,a0
+         00012600 00000000! 
+    2267 00012620     0d5f          calla   change_anim1a
+         00012630 00000000! 
+    2268                    
+    2269 00012650                   WRSND   W_RAZOR,PUSH_T1,PUSH_T2
+    2270                    
+    2271 000127f0     0960          rets
+    2272                    
+    2273                    
+    2274                    *****************************************************************************
+    2275                    * razor with zero health
+    2276                    
+    2277 00012800           mode_dizzy      ;8
+    2278                    
+    2279                    ;       move    *a13(GETUP_TIME),a0
+    2280                    ;       jrnz    gvfistill_going
+    2281                    ;
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   50
+
+    2282                    ;       calla   clear_damage_log
+    2283                    ;
+    2284                    ;       clr     a0
+    2285                    ;       move    a0,*a13(STARS_FLAG)
+    2286                    ;
+    2287                    ;       SETMODE NORMAL
+    2288                    ;
+    2289                    ;gvfistill_going
+    2290 00012800     0960          rets
+    2291                    
+    2292                    *****************************************************************************
+    2293                    * opponent held overhead
+    2294                    
+    2295 00012810           mode_oppoverhead ;10
+    2296                    
+    2297 00012810     0960          rets
+    2298                    
+    2299                    *****************************************************************************
+    2300                    *
+    2301                    * CLIMBING UP OR DOWN THE TURNBUCKLE
+    2302                    
+    2303 00012820           mode_climbturnbkl       ;11
+    2304                    
+    2305 00012820     0960          rets
+    2306                    
+    2307                    
+    2308                    *****************************************************************************
+    2309                    
+    2310 00012830           mode_waitanim   ;12
+    2311                    
+    2312 00012830     b5a0          move    *a13(ANIMODE),a0
+         00012840     0660  
+    2313 00012850     1fe0          btst    MODE_END_BIT,a0
+    2314 00012860     ca03          jrz     moifnot_ended
+    2315                    
+    2316 00012870     b7a0          move    *a13(CODE_ADDR),a0,L
+         00012880     0430  
+    2317 00012890     0920          call    a0
+    2318                    
+    2319 000128a0           moifnot_ended
+    2320 000128a0     0960          rets
+    2321                    
+    2322                    
+    2323                    *****************************************************************************
+    2324                    
+    2325 000128b0           mode_grapple    ;13
+    2326                    
+    2327 000128b0     0960          rets
+    2328                    
+    2329                    *****************************************************************************
+    2330                    
+    2331 000128c0           mode_master     ;14
+    2332                    
+    2333 000128c0     0d5f          calla   master_keep_attached    ;keep slave attached to me
+         000128d0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   51
+
+    2334                    
+    2335 000128f0     0960          rets
+    2336                    
+    2337                    *****************************************************************************
+    2338                    
+    2339 00012900           mode_slave      ;15
+    2340 00012900     0960          rets
+    2341                    
+    2342                    *****************************************************************************
+    2343                    
+    2344 00012910           mode_headhold   ;16
+    2345                    
+    2346                    ;Bozo power move
+    2347                            .ref    bozo_check
+    2348 00012910     0d5f          calla   bozo_check
+         00012920 00000000! 
+    2349 00012940     c929          jrnc    evjkfail
+    2350                    
+    2351 00012950                   WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+    2352                    
+    2353 00012af0     09e0          movi    rzr_razors_edge_anim,a0
+         00012b00 00000000! 
+    2354 00012b20     05ae          move    @PCNT,a14
+         00012b30 00000000! 
+    2355 00012b50     1fee          btst    0,a14
+    2356 00012b60     ca03          jrz     evjktag
+    2357 00012b70     09e0          movi    rzr_3_pile_driver_anim,a0
+         00012b80 00000000! 
+    2358 00012ba0     0d5f  evjktag calla   change_anim1a
+         00012bb0 00000000! 
+    2359                    
+    2360 00012bd0     0960          rets
+    2361                    
+    2362 00012be0           evjkfail
+    2363 00012be0     b7a0          move    *a13(WHOIHIT),a0,L
+         00012bf0     0500  
+    2364 00012c00     b400          move    *a0(PLYRMODE),a0
+         00012c10     05c0  
+    2365 00012c20     0b40          cmpi    MODE_HEADHELD,a0
+         00012c30     ffec  
+    2366 00012c40     cb10          jrnz    evjkexit
+    2367                    
+    2368                    ;       move    *a13(ATTACH_PROC),a10,L
+    2369                    ;       jrz     evjkexit
+    2370                    
+    2371 00012c50     b5a0          move    *a13(ANIMODE),a0
+         00012c60     0660  
+    2372 00012c70     1fa0          btst    MODE_UNINT_BIT,a0
+    2373 00012c80     cb0b          jrnz    evjkno_interrupt
+    2374                    
+    2375 00012c90     b5a0          move    *a13(BUT_VAL_DOWN),a0
+         00012ca0     0ba0  
+    2376 00012cb0     0b80          andi    011111b,a0
+         00012cc0 ffffffe0  
+    2377 00012ce0                   X32     a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   52
+
+    2378 00012cf0     0b20          addi    evjkaction_table,a0
+         00012d00 00012f20' 
+    2379 00012d20     8600          move    *a0,a0,L
+    2380 00012d30     0920          call    a0
+    2381                    
+    2382 00012d40           evjkno_interrupt
+    2383 00012d40     0960          rets
+    2384                    
+    2385 00012d50           evjkexit
+    2386 00012d50     b7ae          move    *a13(OBJ_ZPOS),a14,L
+         00012d60     0140  
+    2387 00012d70     0d0e          subi    [6,0],a14
+         00012d80 fff9ffff  
+    2388 00012da0     b3cd          move    a14,*a13(OBJ_ZPOS),L
+         00012db0     0140  
+    2389                    
+    2390 00012dc0     1941          movk    MOVE_DOWN_RIGHT,a1
+    2391 00012dd0     b5a0          move    *a13(OBJ_CONTROL),a0
+         00012de0     0780  
+    2392 00012df0     1f60          btst    B_FLIPH,a0
+    2393 00012e00     ca01          jrz     evjkright
+    2394 00012e10     18c1          movk    MOVE_DOWN_LEFT,a1
+    2395 00012e20     b02d  evjkright       move    a1,*a13(FACING_DIR)
+         00012e30     04c0  
+    2396 00012e40     b02d          move    a1,*a13(NEW_FACING_DIR)
+         00012e50     04d0  
+    2397                    
+    2398 00012e60                   SETMODE NORMAL
+    2399                    
+    2400 00012f10     0960          rets
+    2401                    
+    2402 00012f20           evjkaction_table
+    2403 00012f20 00013320'         .long   evjkz,evjkpunch,evjkblock,evjkblock                     ;0-3
+    2404 00012fa0 00013850'         .long   evjksuper_punch,evjksuper_punch,evjkblock,evjkblock     ;4-7
+    2405 00013020 00013b80'         .long   evjkkick,evjkpunchkick,evjkblock,evjkblock              ;8-11
+    2406 000130a0 00013850'         .long   evjksuper_punch,evjkpunchkick,evjkblock,evjkblock       ;12-15
+    2407 00013120 00013dc0'         .long   evjksuper_kick,evjksuper_kick,evjkblock,evjkblock       ;16-19
+    2408 000131a0 00013320'         .long   evjkgraboh,evjkgraboh,evjkblock,evjkblock               ;20-23
+    2409 00013220 00013dc0'         .long   evjksuper_kick,evjkpunchkick,evjkblock,evjkblock        ;24-27
+    2410 000132a0 00013320'         .long   evjkgraboh,evjkgraboh,evjkblock,evjkblock               ;28-31
+    2411                    
+    2412                    ;       .long   evjkz                                   ;0
+    2413                    ;       .long   evjkpunch                                       ;1
+    2414                    ;       .long   evjkblock                                       ;2
+    2415                    ;       .long   evjkz                                   ;3
+    2416                    ;       .long   evjksuper_punch                         ;4
+    2417                    ;       .long   evjksuper_punch,evjkz,evjkz                     ;5-7
+    2418                    ;       .long   evjkkick                                        ;8
+    2419                    ;       .long   evjkpunchkick,evjkz,evjkz,evjkkick,evjkz,evjkz,evjkz            ;9-15
+    2420                    ;       .long   evjksuper_kick                          ;16
+    2421                    ;       .long   evjkz,evjkz,evjkz,evjkgraboh,evjkz,evjkz,evjkz          ;17-23
+    2422                    ;       .long   evjkkick,evjkz,evjkz,evjkz,evjkz,evjkz,evjkz,evjkz              ;24-31
+    2423                    
+    2424                    
+    2425                    ************
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   53
+
+    2426 00013320           evjkblock
+    2427 00013320           evjkgraboh
+    2428 00013320           evjkz           ;0
+    2429 00013320     0960          rets
+    2430                    
+    2431                    ************
+    2432 00013330           evjkpunch               ;1
+    2433 00013330           evjkpunchkick
+    2434                    
+    2435 00013330     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         00013340 00000000! 
+    2436                            ;if stick is up, do quick upslashes.  If it's down, do quick
+    2437                            ; downslashes.  Otherwise, do a normal upslash.
+    2438 00013360     b5a0          move    *a13(STICK_VAL_CUR),a0
+         00013370     0bc0  
+    2439 00013380     1fe0          btst    MOVE_UP_BIT,a0
+    2440 00013390     cb23          jrnz    evjkquick_upslashes
+    2441 000133a0     1fc0          btst    MOVE_DOWN_BIT,a0
+    2442 000133b0     cb35          jrnz    evjkquick_dnslashes
+    2443                    
+    2444                            .ref    rzr_4_kick2_anim
+    2445 000133c0     09e0          movi    rzr_4_kick2_anim,a0
+         000133d0 00000000! 
+    2446 000133f0     0d5f          calla   change_anim1a
+         00013400 00000000! 
+    2447 00013420                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    2448 000135c0     0960          rets
+    2449                    
+    2450 000135d0           evjkquick_upslashes
+    2451 000135d0     09e0          movi    rzr_uslashes_to_head_anim,a0
+         000135e0 00000000! 
+    2452 00013600     0d5f          calla   change_anim1a
+         00013610 00000000! 
+    2453 00013630                   WRSND   W_RAZOR,UPRCUT_T2
+    2454 00013700     0960          rets
+    2455                    
+    2456 00013710           evjkquick_dnslashes
+    2457 00013710     09e0          movi    rzr_dslashes_to_head_anim,a0
+         00013720 00000000! 
+    2458 00013740     0d5f          calla   change_anim1a
+         00013750 00000000! 
+    2459 00013770                   WRSND   W_RAZOR,UPRCUT_T2
+    2460 00013840     0960          rets
+    2461                    
+    2462                    ************
+    2463 00013850           evjksuper_punch ;4
+    2464                    
+    2465 00013850     b5a0          move    *a13(STICK_VAL_CUR),a0
+         00013860     0bc0  
+    2466 00013870     1fc0          btst    MOVE_DOWN_BIT,a0
+    2467 00013880     caa9          jrz     evjkz
+    2468                    
+    2469 00013890     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         000138a0 00000000! 
+    2470                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   54
+
+    2471 000138c0                   SPCDMG  D_UPRCUT/2,15
+    2472                    
+    2473 00013970     09e0          movi    rzr_4_uprcut_anim,a0
+         00013980 00000000! 
+    2474 000139a0     0d5f          calla   change_anim1a
+         000139b0 00000000! 
+    2475 000139d0                   WRSND   W_RAZOR,UPRCUT_T1,UPRCUT_T2
+    2476                    
+    2477 00013b70     0960          rets
+    2478                    
+    2479                    ************
+    2480 00013b80           evjkkick                ;8
+    2481                    
+    2482 00013b80     0d5f          CALLA   FIND_AND_KILL_ENDLESS
+         00013b90 00000000! 
+    2483                    ;       FACE24  rzr,kick_anim
+    2484 00013bb0     09e0          movi    rzr_4_kick2_anim,a0
+         00013bc0 00000000! 
+    2485 00013be0     0d5f          calla   change_anim1a
+         00013bf0 00000000! 
+    2486 00013c10                   WRSND   W_RAZOR,KICK_T1,KICK_T2
+    2487 00013db0     0960          rets
+    2488                    
+    2489                    ************
+    2490 00013dc0           evjksuper_kick  ;16
+    2491 00013dc0     0960          rets
+    2492                    
+    2493                    
+    2494                    *****************************************************************************
+    2495 00013dd0           mode_puppet2    ;17
+    2496                    
+    2497                    ;       ;check for the head-grab breaker
+    2498                    ;       move    *a13(BUT_VAL_DOWN),a0
+    2499                    ;       btst    PLAYER_KICK_BIT,a0
+    2500                    ;       jrz     ewybout
+    2501                    ;
+    2502                    ;       ;check the time - must do it within 20 ticks
+    2503                    ;       move    *a13(HEAD_GRAB_TIME),a14
+    2504                    ;       move    @PCNT,a0
+    2505                    ;       sub     a14,a0
+    2506                    ;       cmpi    KICK_OUT,a0
+    2507                    ;       jrgt    ewybout
+    2508                    ;
+    2509                    ;       move    *a13(PLYR_TYPE),a14
+    2510                    ;       cmpi    PTYPE_DRONE,a14
+    2511                    ;       jrz     ewybout
+    2512                    ;
+    2513                    ;       ;okay, waste 'im. - detach, setmode, immobilize, and launch the knee
+    2514                    ;       move    *a13(ATTACH_PROC),a0,L
+    2515                    ;       clr     a14
+    2516                    ;       move    a14,*a13(ATTACH_PROC),L
+    2517                    ;       move    a14,*a0(ATTACH_PROC),L
+    2518                    ;       movi    15,a14
+    2519                    ;       move    a14,*a0(IMMOBILIZE_TIME)
+    2520                    ;       SETMODE NORMAL
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   55
+
+    2521                    ;       jruc    std_knee
+    2522                    ;
+    2523                    ;ewybout
+    2524 00013dd0     0960          rets
+    2525                    
+    2526                    *****************************************************************************
+    2527 00013de0           mode_headheld   ;19
+    2528                    
+    2529 00013de0     b5a0          move    *a13(ANIMODE),a0
+         00013df0     0660  
+    2530 00013e00     1f40          btst    MODE_NOGRAVITY_BIT,a0
+    2531 00013e10     cb80          janz    mode_choking
+         00013e20 00000000! 
+    2532                    
+    2533                    ;Bozo reversal
+    2534 00013e40     0d5f          calla   bozo_check
+         00013e50 00000000! 
+    2535 00013e70     c932          jrnc    ghhpfail
+    2536                    
+    2537 00013e80                   PUSH    a8
+    2538 00013e90     4da8          move    a13,a8
+    2539 00013ea0     0d5f          CALLA   DO_REVERSAL
+         00013eb0 00000000! 
+    2540 00013ed0     0d5f          CALLA   DO_REVERSAL_MESS
+         00013ee0 00000000! 
+    2541 00013f00                   PULL    a8
+    2542                    
+    2543 00013f10                   WRSND   W_RAZOR,GRABHOLD_T1,GRABHOLD_T2
+    2544                    
+    2545 000140b0     09e0          movi    rzr_razors_edge_anim,a0
+         000140c0 00000000! 
+    2546 000140e0     05ae          move    @PCNT,a14
+         000140f0 00000000! 
+    2547 00014110     1fee          btst    0,a14
+    2548 00014120     ca03          jrz     ghhptag
+    2549 00014130     09e0          movi    rzr_3_pile_driver_anim,a0
+         00014140 00000000! 
+    2550 00014160     0d5f  ghhptag calla   change_anim1a
+         00014170 00000000! 
+    2551                    
+    2552 00014190     0960          rets
+    2553 000141a0           ghhpfail
+    2554                    ;He may have let me go by hitting his block butn!
+    2555 000141a0     b7a0          move    *a13(ATTACH_PROC),a0,L
+         000141b0     03e0  
+    2556 000141c0     cb0c          jrnz    ghhpno_luck
+    2557                    
+    2558                    ;Make sure this guy is on ground
+    2559 000141d0     b5a0          move    *a13(OBJ_YPOSINT),a0
+         000141e0     0130  
+    2560 000141f0     b5a1          move    *a13(GROUND_Y),a1
+         00014200     0570  
+    2561 00014210     4820          cmp     a1,a0                   ;a0-a1
+    2562 00014220     c706          jrgt    ghhpno_luck
+    2563                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   56
+
+    2564                    ;hit_gnd
+    2565                    
+    2566 00014230     09e0          movi    rzr_3_head_held_stand_anim,a0
+         00014240 00000000! 
+    2567 00014260     0d5f          calla   change_anim1a
+         00014270 00000000! 
+    2568                    
+    2569 00014290           ghhpno_luck
+    2570 00014290     0960          rets
+    2571                    
+    2572                    *****************************************************************************
+    2573 000142a0           mode_chokehold  ;24
+    2574 000142a0     0960          rets
+    2575                    
+    2576                    *****************************************************************************
+    2577                    
+    2578                    ;mpsbVEL        equ     30000h          ;38000h ;30000h
+    2579                    ;mpsbDVEL       equ     21f0eh          ;27978h ;21f0eh
+    2580                    ;mpsbVEL        equ     38000h          ;38000h ;30000h
+    2581                    ;mpsbDVEL       equ     30000h          ;27978h ;21f0eh
+    2582          0003a000  mpsbVEL equ     3a000h          ;38000h ;30000h
+    2583          00031000  mpsbDVEL        equ     31000h          ;27978h ;21f0eh
+    2584                    
+    2585                    
+    2586 000142b0            SUBR rzr_velocity_table
+    2587                    
+    2588                    ;               X,      Z
+    2589                    
+    2590 000142b0 00000000          .long   0,      -mpsbVEL        ;0 UP
+    2591                    
+    2592 000142f0 00031000          .long   mpsbDVEL,       -mpsbDVEL       ;1 UP-RIGHT
+    2593                    
+    2594 00014330 0003a000          .long   mpsbVEL,        0       ;2 RIGHT
+    2595                    
+    2596 00014370 00031000          .long   mpsbDVEL,       mpsbDVEL        ;3 DOWN-RIGHT
+    2597                    
+    2598 000143b0 00000000          .long   0,      mpsbVEL ;4 DOWN
+    2599                    
+    2600 000143f0 fffcf000          .long   -mpsbDVEL,      mpsbDVEL        ;5 DOWN-LEFT
+    2601                    
+    2602 00014430 fffc6000          .long   -mpsbVEL,       0       ;6 LEFT
+    2603                    
+    2604 00014470 fffcf000          .long   -mpsbDVEL,      -mpsbDVEL       ;7 UP-LEFT
+    2605                    
+    2606                    
+    2607                    *****************************************************************************
+    2608                    
+    2609 000144b0            SUBR rzr_rotate_anims_table
+    2610                    ; old = up right
+    2611 000144b0 00000000!         .long   rzr_stand2_anim         ;new = up right
+    2612 000144d0 00000000!         .long   rzr_2_to_4_turn_anim    ;    = down right
+    2613 000144f0 00000000!         .long   rzr_2_to_6_turn_anim    ;    = down left ***
+    2614 00014510 00000000!         .long   rzr_2_to_8_turn_anim    ;    = up left
+    2615                    
+    2616                    ; old = down right
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   57
+
+    2617 00014530 00000000!         .long   rzr_4_to_2_turn_anim    ;new = up right
+    2618 00014550 00000000!         .long   rzr_stand4_anim         ;    = down right
+    2619 00014570 00000000!         .long   rzr_4_to_6_turn_anim    ;    = down left
+    2620 00014590 00000000!         .long   rzr_4_to_8_turn_anim    ;    = up left ***
+    2621                    
+    2622                    ; old = down left
+    2623 000145b0 00000000!         .long   rzr_6_to_2_turn_anim    ;new = up right ***
+    2624 000145d0 00000000!         .long   rzr_6_to_4_turn_anim    ;    = down right
+    2625 000145f0 00000000!         .long   rzr_stand6_anim         ;    = down left
+    2626 00014610 00000000!         .long   rzr_6_to_8_turn_anim    ;    = up left
+    2627                    
+    2628                    ; old = up left
+    2629 00014630 00000000!         .long   rzr_8_to_2_turn_anim    ;new = up right
+    2630 00014650 00000000!         .long   rzr_8_to_4_turn_anim    ;    = down right ***
+    2631 00014670 00000000!         .long   rzr_8_to_6_turn_anim    ;    = down left
+    2632 00014690 00000000!         .long   rzr_stand8_anim         ;    = up left
+    2633                    
+    2634                    
+    2635 000146b0            SUBR rzr_leg_anims_table
+    2636                    ;  MOVE
+    2637                    ;(nrqa1 - UP)                           FACING
+    2638 000146b0 00000000!         .long   rzr_walk1_f2_anim       ;1 (UP)
+    2639 000146d0 00000000!         .long   rzr_walk1_f2_anim       ;2 (UP_RIGHT)
+    2640 000146f0 00000000!         .long   rzr_walk1_f4_anim       ;3 (RIGHT)
+    2641 00014710 00000000!         .long   rzr_walk1_f4_anim       ;4 (DOWN_RIGHT)
+    2642 00014730 00000000!         .long   rzr_walk1_f4_anim       ;5 (DOWN)
+    2643 00014750 00000000!         .long   rzr_walk1_f4_anim       ;6 (DOWN_LEFT)
+    2644 00014770 00000000!         .long   rzr_walk1_f2_anim       ;7 (LEFT)
+    2645 00014790 00000000!         .long   rzr_walk1_f2_anim       ;8 (UP-LEFT)
+    2646                    
+    2647                    ;(nrqa2 - UP-RIGHT)
+    2648 000147b0 00000000!         .long   rzr_walk2_f2_anim       ;1 (UP)
+    2649 000147d0 00000000!         .long   rzr_walk2_f2_anim       ;2 (UP_RIGHT)
+    2650 000147f0 00000000!         .long   rzr_walk2_f2_anim       ;3 (RIGHT)
+    2651 00014810 00000000!         .long   rzr_walk2_f4_anim       ;4 (DOWN_RIGHT)
+    2652 00014830 00000000!         .long   rzr_walk8_f4_anim       ;5 (DOWN)
+    2653 00014850 00000000!         .long   rzr_walk8_f4_anim       ;6 (DOWN_LEFT)
+    2654 00014870 00000000!         .long   rzr_walk4_f2_anim       ;7 (LEFT)
+    2655 00014890 00000000!         .long   rzr_walk4_f2_anim       ;8 (UP-LEFT)
+    2656                    
+    2657                    ;(nrqa3 - RIGHT)
+    2658 000148b0 00000000!         .long   rzr_walk2_f2_anim       ;1 (UP)
+    2659 000148d0 00000000!         .long   rzr_walk2_f2_anim       ;2 (UP_RIGHT)
+    2660 000148f0 00000000!         .long   rzr_walk2_f2_anim       ;3 (RIGHT)
+    2661 00014910 00000000!         .long   rzr_walk4_f4_anim       ;4 (DOWN_RIGHT)
+    2662 00014930 00000000!         .long   rzr_walk4_f4_anim       ;5 (DOWN)
+    2663 00014950 00000000!         .long   rzr_walk8_f4_anim       ;6 (DOWN_LEFT)
+    2664 00014970 00000000!         .long   rzr_walk6_f2_anim       ;7 (LEFT)
+    2665 00014990 00000000!         .long   rzr_walk6_f2_anim       ;8 (UP-LEFT)
+    2666                    
+    2667                    
+    2668                    ;(nrqa4 - DOWN-RIGHT)
+    2669 000149b0 00000000!         .long   rzr_walk2_f2_anim       ;1 (UP)
+    2670 000149d0 00000000!         .long   rzr_walk8_f2_anim       ;2 (UP_RIGHT)
+    2671 000149f0 00000000!         .long   rzr_walk4_f4_anim       ;3 (RIGHT)
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   58
+
+    2672 00014a10 00000000!         .long   rzr_walk4_f4_anim       ;4 (DOWN_RIGHT)
+    2673 00014a30 00000000!         .long   rzr_walk2_f4_anim       ;5 (DOWN)
+    2674 00014a50 00000000!         .long   rzr_walk6_f4_anim       ;6 (DOWN_LEFT)
+    2675 00014a70 00000000!         .long   rzr_walk2_f2_anim       ;7 (LEFT)
+    2676 00014a90 00000000!         .long   rzr_walk6_f2_anim       ;8 (UP-LEFT)
+    2677                    
+    2678                    ;(nrqa5 - DOWN)
+    2679 00014ab0 00000000!         .long   rzr_walk5_f2_anim       ;1 (UP)
+    2680 00014ad0 00000000!         .long   rzr_walk5_f2_anim       ;2 (UP_RIGHT)
+    2681 00014af0 00000000!         .long   rzr_walk5_f4_anim       ;3 (RIGHT)
+    2682 00014b10 00000000!         .long   rzr_walk5_f4_anim       ;4 (DOWN_RIGHT)
+    2683 00014b30 00000000!         .long   rzr_walk5_f4_anim       ;5 (DOWN)
+    2684 00014b50 00000000!         .long   rzr_walk5_f4_anim       ;6 (DOWN_LEFT)
+    2685 00014b70 00000000!         .long   rzr_walk5_f2_anim       ;7 (LEFT)
+    2686 00014b90 00000000!         .long   rzr_walk5_f2_anim       ;8 (UP-LEFT)
+    2687                    
+    2688                    ;(nrqa6 - DOWN-LEFT)
+    2689 00014bb0 00000000!         .long   rzr_walk2_f2_anim       ;1 (UP)
+    2690 00014bd0 00000000!         .long   rzr_walk6_f2_anim       ;2 (UP_RIGHT)
+    2691 00014bf0 00000000!         .long   rzr_walk2_f2_anim       ;3 (RIGHT)
+    2692 00014c10 00000000!         .long   rzr_walk6_f4_anim       ;4 (DOWN_RIGHT)
+    2693 00014c30 00000000!         .long   rzr_walk2_f4_anim       ;5 (DOWN)
+    2694 00014c50 00000000!         .long   rzr_walk4_f4_anim       ;6 (DOWN_LEFT)
+    2695 00014c70 00000000!         .long   rzr_walk2_f2_anim       ;7 (LEFT)
+    2696 00014c90 00000000!         .long   rzr_walk8_f2_anim       ;8 (UP-LEFT)
+    2697                    
+    2698                    ;(nrqa7 - LEFT)
+    2699 00014cb0 00000000!         .long   rzr_walk2_f2_anim       ;1 (UP)
+    2700 00014cd0 00000000!         .long   rzr_walk6_f2_anim       ;2 (UP_RIGHT)
+    2701 00014cf0 00000000!         .long   rzr_walk6_f2_anim       ;3 (RIGHT)
+    2702 00014d10 00000000!         .long   rzr_walk8_f4_anim       ;4 (DOWN_RIGHT)
+    2703 00014d30 00000000!         .long   rzr_walk4_f4_anim       ;5 (DOWN)
+    2704 00014d50 00000000!         .long   rzr_walk4_f4_anim       ;6 (DOWN_LEFT)
+    2705 00014d70 00000000!         .long   rzr_walk2_f2_anim       ;7 (LEFT)
+    2706 00014d90 00000000!         .long   rzr_walk2_f2_anim       ;8 (UP-LEFT)
+    2707                    
+    2708                    ;(nrqa8 - UP-LEFT)
+    2709 00014db0 00000000!         .long   rzr_walk2_f2_anim       ;1 (UP)
+    2710 00014dd0 00000000!         .long   rzr_walk4_f2_anim       ;2 (UP_RIGHT)
+    2711 00014df0 00000000!         .long   rzr_walk6_f2_anim       ;3 (RIGHT)
+    2712 00014e10 00000000!         .long   rzr_walk8_f4_anim       ;4 (DOWN_RIGHT)
+    2713 00014e30 00000000!         .long   rzr_walk6_f4_anim       ;5 (DOWN)
+    2714 00014e50 00000000!         .long   rzr_walk2_f4_anim       ;6 (DOWN_LEFT)
+    2715 00014e70 00000000!         .long   rzr_walk2_f2_anim       ;7 (LEFT)
+    2716 00014e90 00000000!         .long   rzr_walk2_f2_anim       ;8 (UP-LEFT)
+    2717                    
+    2718                    
+    2719 00014eb0            SUBR rzr_torso_anims_table
+    2720                    ; old = up right
+    2721 00014eb0 00000000!         .long   rzr_torso2_anim         ;new = up right
+    2722 00014ed0 00000000!         .long   rzr_2_to_4_turn2_anim   ;    = down right
+    2723 00014ef0 00000000!         .long   rzr_2_to_6_turn2_anim   ;    = down left ***
+    2724 00014f10 00000000!         .long   rzr_2_to_8_turn2_anim   ;    = up left
+    2725                    
+    2726                    ; old = down right
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 01:44:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   59
+
+    2727 00014f30 00000000!         .long   rzr_4_to_2_turn2_anim   ;new = up right
+    2728 00014f50 00000000!         .long   rzr_torso4_anim         ;    = down right
+    2729 00014f70 00000000!         .long   rzr_4_to_6_turn2_anim   ;    = down left
+    2730 00014f90 00000000!         .long   rzr_4_to_8_turn2_anim   ;    = up left ***
+    2731                    
+    2732                    ; old = down left
+    2733 00014fb0 00000000!         .long   rzr_6_to_2_turn2_anim   ;new = up right ***
+    2734 00014fd0 00000000!         .long   rzr_6_to_4_turn2_anim   ;    = down right
+    2735 00014ff0 00000000!         .long   rzr_torso6_anim         ;    = down left
+    2736 00015010 00000000!         .long   rzr_6_to_8_turn2_anim   ;    = up left
+    2737                    
+    2738                    ; old = up left
+    2739 00015030 00000000!         .long   rzr_8_to_2_turn2_anim   ;new = up right
+    2740 00015050 00000000!         .long   rzr_8_to_4_turn2_anim   ;    = down right ***
+    2741 00015070 00000000!         .long   rzr_8_to_6_turn2_anim   ;    = down left
+    2742 00015090 00000000!         .long   rzr_torso8_anim         ;    = up left
+    2743                    
+    2744                    
+    2745                    ******************************************************************************
+    2746                    
+    2747                            .end
+
+ No Errors,  No Warnings

@@ -1,0 +1,688 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    **************************************************************
+       2                    *
+       3                    * Software:             Jamie Rivett
+       4                    * Initiated:            5/17/94
+       5                    *
+       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "hrtseq1.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "macros.h"
+      18                            .include        "mproc.equ"             ;Mproc equates
+      19                            .include        "sys.equ"
+      20                            .include        "game.equ"
+      21                            .include        "plyr.equ"
+      22                            .include        "anim.equ"
+      23                            .include        "sound.h"
+      24                    
+      25                            .include        "bretimg.h"
+      26                    
+      27                    
+      28                    ******************************************************************************
+      29                    * EXTERNAL REFERENCES
+      30                    
+      31                            .ref    SMALL_RUN
+      32                            .REF    MAYBE_BOUNCE_ROPE
+      33                    
+      34                    ******************************************************************************
+      35                    * SYMBOLS DEFINED IN THIS FILE
+      36                    
+      37                    ******************************************************************************
+      38                    * EQUATES FOR THIS FILE
+      39                    
+      40                    *****************************************************************************
+      41                    *
+      42                    * STANDS
+      43                    
+      44 00000000            SUBR   hrt_zip_anim
+      45 00000000                   WL      60*60,H2ST2A+FR1
+      46 00000030     8049          .word   ANI_END
+      47                    
+      48                    
+      49 00000040            SUBR   hrt_stand2_anim
+      50 00000040            SUBR   hrt_stand8_anim
+      51 00000040     8002          .word   ANI_SETMODE,MODE_NORMAL
+      52 00000060     8026          .word   ANI_SETSPEED,100h
+      53                    
+      54 00000080                   WL      4,H2ST2A+FR5
+      55 000000b0                   WL      4,H2ST2A+FR6
+      56 000000e0                   WL      4,H2ST2A+FR7
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    2
+
+      57 00000110                   WL      4+2,H2ST2A+FR8
+      58                    
+      59 00000140                   WL      4,H2ST2A+FR7
+      60 00000170                   WL      4,H2ST2A+FR6
+      61 000001a0                   WL      4,H2ST2A+FR5
+      62 000001d0                   WL      4,H2ST2A+FR4
+      63 00000200                   WL      4,H2ST2A+FR3
+      64 00000230                   WL      4,H2ST2A+FR2
+      65                    
+      66 00000260                   WL      4+2,H2ST2A+FR1
+      67 00000290                   WL      4,H2ST2A+FR2
+      68 000002c0                   WL      4,H2ST2A+FR3
+      69 000002f0                   WL      4,H2ST2A+FR4
+      70                    
+      71 00000320     8001          .word   ANI_REPEAT
+      72                    
+      73                    
+      74 00000330            SUBR   hrt_stand4_anim
+      75 00000330            SUBR   hrt_stand6_anim
+      76 00000330     8002          .word   ANI_SETMODE,MODE_NORMAL
+      77 00000350     8026          .word   ANI_SETSPEED,100h
+      78                    
+      79 00000370                   WL      4,H4ST4A+FR2
+      80 000003a0                   WL      4,H4ST4A+FR3
+      81 000003d0                   WL      4,H4ST4A+FR4
+      82 00000400                   WL      4,H4ST4A+FR5
+      83 00000430                   WL      4,H4ST4A+FR6
+      84 00000460                   WL      4,H4ST4A+FR7
+      85 00000490                   WL      4+2,H4ST4A+FR8
+      86                    
+      87 000004c0                   WL      4,H4ST4A+FR7
+      88 000004f0                   WL      4,H4ST4A+FR6
+      89 00000520                   WL      4,H4ST4A+FR5
+      90 00000550                   WL      4,H4ST4A+FR4
+      91 00000580                   WL      4,H4ST4A+FR3
+      92 000005b0                   WL      4,H4ST4A+FR2
+      93                    
+      94 000005e0                   WL      4+2,H4ST4A+FR1
+      95                    
+      96 00000610     8001          .word   ANI_REPEAT
+      97                    
+      98                    
+      99                    *****************************************************************************
+     100                    *
+     101                    * WALKING TORSOS
+     102                    
+     103 00000620            SUBR   hrt_torso2_anim
+     104 00000620            SUBR   hrt_torso8_anim
+     105                    
+     106 00000620                   WL      4,H2TW2A+FR1
+     107 00000650                   WL      4,H2TW2A+FR2
+     108 00000680                   WL      4,H2TW2A+FR3
+     109 000006b0                   WL      4,H2TW2A+FR4
+     110 000006e0                   WL      4,H2TW2A+FR3
+     111 00000710                   WL      4,H2TW2A+FR2
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    3
+
+     112 00000740     8001          .word   ANI_REPEAT
+     113                    
+     114                    
+     115 00000750            SUBR   hrt_torso4_anim
+     116 00000750            SUBR   hrt_torso6_anim
+     117                    
+     118 00000750                   WL      4,H4TW4A+FR1
+     119 00000780                   WL      4,H4TW4A+FR2
+     120 000007b0                   WL      4,H4TW4A+FR3
+     121 000007e0                   WL      4,H4TW4A+FR4
+     122 00000810                   WL      4,H4TW4A+FR3
+     123 00000840                   WL      4,H4TW4A+FR2
+     124 00000870     8001          .word   ANI_REPEAT
+     125                    
+     126                    
+     127                    *****************************************************************************
+     128                    *
+     129                    * WALKS FACING fox2
+     130                    
+     131 00000880            SUBR   hrt_walk1_f2_anim
+     132                    
+     133 00000880                   WL      2,H2WL1A+FR1
+     134 000008b0                   WL      2,H2WL1A+FR2
+     135 000008e0                   WL      2,H2WL1A+FR3
+     136 00000910                   WL      2+1,H2WL1A+FR4
+     137 00000940                   WL      2,H2WL1A+FR5
+     138 00000970                   WL      2,H2WL1A+FR6
+     139 000009a0                   WL      2,H2WL1A+FR7
+     140 000009d0                   WL      2+1,H2WL1A+FR8
+     141 00000a00                   WL      2,H2WL1A+FR9
+     142 00000a30                   WL      2,H2WL1A+FR10
+     143 00000a60                   WL      2,H2WL1A+FR11
+     144 00000a90                   WL      2+1,H2WL1A+FR12
+     145 00000ac0                   WL      2,H2WL1A+FR13
+     146 00000af0                   WL      2,H2WL1A+FR14
+     147 00000b20                   WL      2,H2WL1A+FR15
+     148 00000b50                   WL      2+1,H2WL1A+FR16
+     149                    
+     150 00000b80     8001          .word   ANI_REPEAT
+     151                    
+     152 00000b90            SUBR   hrt_walk2_f2_anim
+     153                    
+     154 00000b90                   WL      2,H2WL2A+FR1
+     155 00000bc0                   WL      2,H2WL2A+FR2
+     156 00000bf0                   WL      2,H2WL2A+FR3
+     157 00000c20                   WL      2+1,H2WL2A+FR4
+     158 00000c50                   WL      2,H2WL2A+FR5
+     159 00000c80                   WL      2,H2WL2A+FR6
+     160 00000cb0                   WL      2,H2WL2A+FR7
+     161 00000ce0                   WL      2+1,H2WL2A+FR8
+     162 00000d10                   WL      2,H2WL2A+FR9
+     163 00000d40                   WL      2,H2WL2A+FR10
+     164 00000d70                   WL      2,H2WL2A+FR11
+     165 00000da0                   WL      2+1,H2WL2A+FR12
+     166 00000dd0                   WL      2,H2WL2A+FR13
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    4
+
+     167 00000e00                   WL      2,H2WL2A+FR14
+     168 00000e30                   WL      2,H2WL2A+FR15
+     169 00000e60                   WL      2+1,H2WL2A+FR16
+     170                    
+     171 00000e90     8001          .word   ANI_REPEAT
+     172                    
+     173 00000ea0            SUBR   hrt_walk4_f2_anim
+     174                    
+     175 00000ea0                   WL      2,H2WL8A+FR1
+     176 00000ed0                   WL      2,H2WL8A+FR2
+     177 00000f00                   WL      2,H2WL8A+FR3
+     178 00000f30                   WL      2+1,H2WL8A+FR4
+     179 00000f60                   WL      2,H2WL8A+FR5
+     180 00000f90                   WL      2,H2WL8A+FR6
+     181 00000fc0                   WL      2,H2WL8A+FR7
+     182 00000ff0                   WL      2+1,H2WL8A+FR8
+     183 00001020                   WL      2,H2WL8A+FR9
+     184 00001050                   WL      2,H2WL8A+FR10
+     185 00001080                   WL      2,H2WL8A+FR11
+     186 000010b0                   WL      2+1,H2WL8A+FR12
+     187 000010e0                   WL      2,H2WL8A+FR13
+     188 00001110                   WL      2,H2WL8A+FR14
+     189 00001140                   WL      2,H2WL8A+FR15
+     190 00001170                   WL      2+1,H2WL8A+FR16
+     191                    
+     192 000011a0     8001          .word   ANI_REPEAT
+     193                    
+     194 000011b0            SUBR   hrt_walk5_f2_anim
+     195                    
+     196 000011b0                   WL      2,H2WL1A+FR16
+     197 000011e0                   WL      2,H2WL1A+FR15
+     198 00001210                   WL      2,H2WL1A+FR14
+     199 00001240                   WL      2+1,H2WL1A+FR13
+     200 00001270                   WL      2,H2WL1A+FR12
+     201 000012a0                   WL      2,H2WL1A+FR11
+     202 000012d0                   WL      2,H2WL1A+FR10
+     203 00001300                   WL      2+1,H2WL1A+FR9
+     204 00001330                   WL      2,H2WL1A+FR8
+     205 00001360                   WL      2,H2WL1A+FR7
+     206 00001390                   WL      2,H2WL1A+FR6
+     207 000013c0                   WL      2+1,H2WL1A+FR5
+     208 000013f0                   WL      2,H2WL1A+FR4
+     209 00001420                   WL      2,H2WL1A+FR3
+     210 00001450                   WL      2,H2WL1A+FR2
+     211 00001480                   WL      2+1,H2WL1A+FR1
+     212                    
+     213 000014b0     8001          .word   ANI_REPEAT
+     214                    
+     215 000014c0            SUBR   hrt_walk6_f2_anim
+     216                    
+     217 000014c0                   WL      2,H2WL2A+FR16
+     218 000014f0                   WL      2,H2WL2A+FR15
+     219 00001520                   WL      2,H2WL2A+FR14
+     220 00001550                   WL      2+1,H2WL2A+FR13
+     221 00001580                   WL      2,H2WL2A+FR12
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    5
+
+     222 000015b0                   WL      2,H2WL2A+FR11
+     223 000015e0                   WL      2,H2WL2A+FR10
+     224 00001610                   WL      2+1,H2WL2A+FR9
+     225 00001640                   WL      2,H2WL2A+FR8
+     226 00001670                   WL      2,H2WL2A+FR7
+     227 000016a0                   WL      2,H2WL2A+FR6
+     228 000016d0                   WL      2+1,H2WL2A+FR5
+     229 00001700                   WL      2,H2WL2A+FR4
+     230 00001730                   WL      2,H2WL2A+FR3
+     231 00001760                   WL      2,H2WL2A+FR2
+     232 00001790                   WL      2+1,H2WL2A+FR1
+     233                    
+     234 000017c0     8001          .word   ANI_REPEAT
+     235                    
+     236                    
+     237 000017d0            SUBR   hrt_walk8_f2_anim
+     238                    
+     239 000017d0                   WL      2,H2WL8A+FR16
+     240 00001800                   WL      2,H2WL8A+FR15
+     241 00001830                   WL      2,H2WL8A+FR14
+     242 00001860                   WL      2+1,H2WL8A+FR13
+     243 00001890                   WL      2,H2WL8A+FR12
+     244 000018c0                   WL      2,H2WL8A+FR11
+     245 000018f0                   WL      2,H2WL8A+FR10
+     246 00001920                   WL      2+1,H2WL8A+FR9
+     247 00001950                   WL      2,H2WL8A+FR8
+     248 00001980                   WL      2,H2WL8A+FR7
+     249 000019b0                   WL      2,H2WL8A+FR6
+     250 000019e0                   WL      2+1,H2WL8A+FR5
+     251 00001a10                   WL      2,H2WL8A+FR4
+     252 00001a40                   WL      2,H2WL8A+FR3
+     253 00001a70                   WL      2,H2WL8A+FR2
+     254 00001aa0                   WL      2+1,H2WL8A+FR1
+     255                    
+     256 00001ad0     8001          .word   ANI_REPEAT
+     257                    
+     258                    
+     259                    
+     260                    *****************************************************************************
+     261                    *
+     262                    * WALKS FACING snu4
+     263                    
+     264 00001ae0            SUBR   hrt_walk1_f4_anim
+     265                    
+     266 00001ae0                   WL      2,H4WL5A+FR16
+     267 00001b10                   WL      2,H4WL5A+FR15
+     268 00001b40                   WL      2,H4WL5A+FR14
+     269 00001b70                   WL      2+1,H4WL5A+FR13
+     270 00001ba0                   WL      2,H4WL5A+FR12
+     271 00001bd0                   WL      2,H4WL5A+FR11
+     272 00001c00                   WL      2,H4WL5A+FR10
+     273 00001c30                   WL      2+1,H4WL5A+FR9
+     274 00001c60                   WL      2,H4WL5A+FR8
+     275 00001c90                   WL      2,H4WL5A+FR7
+     276 00001cc0                   WL      2,H4WL5A+FR6
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    6
+
+     277 00001cf0                   WL      2+1,H4WL5A+FR5
+     278 00001d20                   WL      2,H4WL5A+FR4
+     279 00001d50                   WL      2,H4WL5A+FR3
+     280 00001d80                   WL      2,H4WL5A+FR2
+     281 00001db0                   WL      2+1,H4WL5A+FR1
+     282                    
+     283 00001de0     8001          .word   ANI_REPEAT
+     284                    
+     285 00001df0            SUBR   hrt_walk2_f4_anim
+     286                    
+     287 00001df0                   WL      2,H4WL2A+FR1
+     288 00001e20                   WL      2,H4WL2A+FR2
+     289 00001e50                   WL      2,H4WL2A+FR3
+     290 00001e80                   WL      2+1,H4WL2A+FR4
+     291 00001eb0                   WL      2,H4WL2A+FR5
+     292 00001ee0                   WL      2,H4WL2A+FR6
+     293 00001f10                   WL      2,H4WL2A+FR7
+     294 00001f40                   WL      2+1,H4WL2A+FR8
+     295 00001f70                   WL      2,H4WL2A+FR9
+     296 00001fa0                   WL      2,H4WL2A+FR10
+     297 00001fd0                   WL      2,H4WL2A+FR11
+     298 00002000                   WL      2+1,H4WL2A+FR12
+     299 00002030                   WL      2,H4WL2A+FR13
+     300 00002060                   WL      2,H4WL2A+FR14
+     301 00002090                   WL      2,H4WL2A+FR15
+     302                    
+     303 000020c0     8001          .word   ANI_REPEAT
+     304                    
+     305 000020d0            SUBR   hrt_walk4_f4_anim
+     306                    
+     307 000020d0                   WL      2,H4WL4A+FR1
+     308 00002100                   WL      2,H4WL4A+FR2
+     309 00002130                   WL      2,H4WL4A+FR3
+     310 00002160                   WL      2+1,H4WL4A+FR4
+     311 00002190                   WL      2,H4WL4A+FR5
+     312 000021c0                   WL      2,H4WL4A+FR6
+     313 000021f0                   WL      2,H4WL4A+FR7
+     314 00002220                   WL      2+1,H4WL4A+FR8
+     315 00002250                   WL      2,H4WL4A+FR9
+     316 00002280                   WL      2,H4WL4A+FR10
+     317 000022b0                   WL      2,H4WL4A+FR11
+     318 000022e0                   WL      2+1,H4WL4A+FR12
+     319 00002310                   WL      2,H4WL4A+FR13
+     320 00002340                   WL      2,H4WL4A+FR14
+     321 00002370                   WL      2,H4WL4A+FR15
+     322 000023a0                   WL      2+1,H4WL4A+FR16
+     323                    
+     324 000023d0     8001          .word   ANI_REPEAT
+     325                    
+     326 000023e0            SUBR   hrt_walk5_f4_anim
+     327                    
+     328 000023e0                   WL      2,H4WL5A+FR1
+     329 00002410                   WL      2,H4WL5A+FR2
+     330 00002440                   WL      2,H4WL5A+FR3
+     331 00002470                   WL      2+1,H4WL5A+FR4
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    7
+
+     332 000024a0                   WL      2,H4WL5A+FR5
+     333 000024d0                   WL      2,H4WL5A+FR6
+     334 00002500                   WL      2,H4WL5A+FR7
+     335 00002530                   WL      2+1,H4WL5A+FR8
+     336 00002560                   WL      2,H4WL5A+FR9
+     337 00002590                   WL      2,H4WL5A+FR10
+     338 000025c0                   WL      2,H4WL5A+FR11
+     339 000025f0                   WL      2+1,H4WL5A+FR12
+     340 00002620                   WL      2,H4WL5A+FR13
+     341 00002650                   WL      2,H4WL5A+FR14
+     342 00002680                   WL      2,H4WL5A+FR15
+     343 000026b0                   WL      2+1,H4WL5A+FR16
+     344                    
+     345 000026e0     8001          .word   ANI_REPEAT
+     346                    
+     347 000026f0            SUBR   hrt_walk6_f4_anim
+     348                    
+     349 000026f0                   WL      2,H4WL2A+FR15
+     350 00002720                   WL      2,H4WL2A+FR14
+     351 00002750                   WL      2,H4WL2A+FR13
+     352 00002780                   WL      2+1,H4WL2A+FR12
+     353 000027b0                   WL      2,H4WL2A+FR11
+     354 000027e0                   WL      2,H4WL2A+FR10
+     355 00002810                   WL      2,H4WL2A+FR9
+     356 00002840                   WL      2+1,H4WL2A+FR8
+     357 00002870                   WL      2,H4WL2A+FR7
+     358 000028a0                   WL      2,H4WL2A+FR6
+     359 000028d0                   WL      2,H4WL2A+FR5
+     360 00002900                   WL      2+1,H4WL2A+FR4
+     361 00002930                   WL      2,H4WL2A+FR3
+     362 00002960                   WL      2,H4WL2A+FR2
+     363 00002990                   WL      2,H4WL2A+FR1
+     364                    
+     365 000029c0     8001          .word   ANI_REPEAT
+     366                    
+     367 000029d0            SUBR   hrt_walk8_f4_anim
+     368                    
+     369 000029d0                   WL      2+1,H4WL4A+FR9
+     370 00002a00                   WL      2,H4WL4A+FR8
+     371 00002a30                   WL      2,H4WL4A+FR7
+     372 00002a60                   WL      2,H4WL4A+FR6
+     373 00002a90                   WL      2+1,H4WL4A+FR5
+     374 00002ac0                   WL      2,H4WL4A+FR4
+     375 00002af0                   WL      2,H4WL4A+FR3
+     376 00002b20                   WL      2,H4WL4A+FR2
+     377 00002b50                   WL      2+1,H4WL4A+FR1
+     378                    
+     379 00002b80                   WL      2,H4WL4A+FR16
+     380 00002bb0                   WL      2,H4WL4A+FR15
+     381 00002be0                   WL      2,H4WL4A+FR14
+     382 00002c10                   WL      2+1,H4WL4A+FR13
+     383 00002c40                   WL      2,H4WL4A+FR12
+     384 00002c70                   WL      2,H4WL4A+FR11
+     385 00002ca0                   WL      2,H4WL4A+FR10
+     386                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    8
+
+     387 00002cd0     8001          .word   ANI_REPEAT
+     388                    
+     389                    
+     390                    *****************************************************************************
+     391                    *
+     392                    * TURNS (STANDS)
+     393                    
+     394 00002ce0            SUBR   hrt_2_to_4_turn_anim
+     395 00002ce0            SUBR   hrt_8_to_6_turn_anim
+     396 00002ce0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     397 00002d00     8026          .word   ANI_SETSPEED,100h
+     398 00002d20                   WL      3,H1TL5A+FR3    ;2.5
+     399 00002d50                   WL      3,H1TL5A+FR4    ;3.5
+     400 00002d80     8002          .word   ANI_SETMODE,MODE_NORMAL
+     401 00002da0     8049          .word   ANI_END
+     402                    
+     403 00002db0            SUBR   hrt_4_to_2_turn_anim
+     404 00002db0            SUBR   hrt_6_to_8_turn_anim
+     405 00002db0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     406 00002dd0     8026          .word   ANI_SETSPEED,100h
+     407 00002df0                   WL      3,H1TL5A+FR4    ;3.5
+     408 00002e20                   WL      3,H1TL5A+FR3    ;2.5
+     409 00002e50     8002          .word   ANI_SETMODE,MODE_NORMAL
+     410 00002e70     8049          .word   ANI_END
+     411                    
+     412 00002e80            SUBR   hrt_4_to_6_turn_anim
+     413 00002e80            SUBR   hrt_6_to_4_turn_anim
+     414 00002e80     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     415 00002ea0     8026          .word   ANI_SETSPEED,100h
+     416 00002ec0                   WL      3,H1TL5A+FR5    ;4.5
+     417 00002ef0     800c          .word   ANI_XFLIP
+     418 00002f00                   WL      3,H1TL5A+FR5    ;4.5
+     419 00002f30     8002          .word   ANI_SETMODE,MODE_NORMAL
+     420 00002f50     8049          .word   ANI_END
+     421                    
+     422 00002f60            SUBR   hrt_2_to_8_turn_anim
+     423 00002f60            SUBR   hrt_8_to_2_turn_anim
+     424 00002f60     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     425 00002f80     8026          .word   ANI_SETSPEED,100h
+     426 00002fa0                   WL      3,H1TL5A+FR2    ;1.5
+     427 00002fd0     800c          .word   ANI_XFLIP
+     428 00002fe0                   WL      3,H1TL5A+FR2    ;1.5
+     429 00003010     8002          .word   ANI_SETMODE,MODE_NORMAL
+     430 00003030     8049          .word   ANI_END
+     431                    
+     432 00003040            SUBR   hrt_4_to_8_turn_anim
+     433 00003040            SUBR   hrt_6_to_2_turn_anim
+     434 00003040     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     435 00003060     8026          .word   ANI_SETSPEED,100h
+     436 00003080                   WL      3,H1TL5A+FR4    ;3.5
+     437 000030b0                   WL      3,H1TL5A+FR3    ;2.5
+     438 000030e0                   WL      3,H1TL5A+FR2    ;1.5
+     439 00003110     800c          .word   ANI_XFLIP
+     440 00003120                   WL      3,H1TL5A+FR2    ;1.5
+     441 00003150     8002          .word   ANI_SETMODE,MODE_NORMAL
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE    9
+
+     442 00003170     8049          .word   ANI_END
+     443                    
+     444 00003180            SUBR   hrt_2_to_6_turn_anim
+     445 00003180            SUBR   hrt_8_to_4_turn_anim
+     446 00003180     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     447 000031a0     8026          .word   ANI_SETSPEED,100h
+     448 000031c0                   WL      3,H1TL5A+FR3    ;2.5
+     449 000031f0                   WL      3,H1TL5A+FR4    ;3.5
+     450 00003220                   WL      3,H1TL5A+FR5    ;4.5
+     451 00003250     800c          .word   ANI_XFLIP
+     452 00003260                   WL      3,H1TL5A+FR5    ;4.5
+     453 00003290     8002          .word   ANI_SETMODE,MODE_NORMAL
+     454 000032b0     8049          .word   ANI_END
+     455                    
+     456                    *****************************************************************************
+     457                    *
+     458                    * TURNS (TORSOS)
+     459                    
+     460 000032c0            SUBR   hrt_2_to_4_turn2_anim
+     461 000032c0            SUBR   hrt_8_to_6_turn2_anim
+     462 000032c0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     463 000032e0     8026          .word   ANI_SETSPEED,100h
+     464 00003300                   WL      3,H1TT5A+FR3    ;2.5
+     465 00003330     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     466 00003340                   WL      3,H1TT5A+FR4    ;3.5
+     467 00003370     8002          .word   ANI_SETMODE,MODE_NORMAL
+     468 00003390     8049          .word   ANI_END
+     469                    
+     470 000033a0            SUBR   hrt_4_to_2_turn2_anim
+     471 000033a0            SUBR   hrt_6_to_8_turn2_anim
+     472 000033a0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     473 000033c0     8026          .word   ANI_SETSPEED,100h
+     474 000033e0                   WL      3,H1TT5A+FR4    ;3.5
+     475 00003410     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     476 00003420                   WL      3,H1TT5A+FR3    ;2.5
+     477 00003450     8002          .word   ANI_SETMODE,MODE_NORMAL
+     478 00003470     8049          .word   ANI_END
+     479                    
+     480 00003480            SUBR   hrt_4_to_6_turn2_anim
+     481 00003480            SUBR   hrt_6_to_4_turn2_anim
+     482 00003480     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     483 000034a0     8026          .word   ANI_SETSPEED,100h
+     484 000034c0                   WL      3,H1TT5A+FR5    ;4.5
+     485 000034f0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     486 00003500                   WL      3,H1TT5A+FR5    ;4.5
+     487 00003530     8002          .word   ANI_SETMODE,MODE_NORMAL
+     488 00003550     8049          .word   ANI_END
+     489                    
+     490 00003560            SUBR   hrt_2_to_8_turn2_anim
+     491 00003560            SUBR   hrt_8_to_2_turn2_anim
+     492 00003560     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     493 00003580     8026          .word   ANI_SETSPEED,100h
+     494 000035a0                   WL      3,H1TT5A+FR2    ;1.5
+     495 000035d0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     496 000035e0                   WL      3,H1TT5A+FR2    ;1.5
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE   10
+
+     497 00003610     8002          .word   ANI_SETMODE,MODE_NORMAL
+     498 00003630     8049          .word   ANI_END
+     499                    
+     500 00003640            SUBR   hrt_4_to_8_turn2_anim
+     501 00003640            SUBR   hrt_6_to_2_turn2_anim
+     502 00003640     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     503 00003660     8026          .word   ANI_SETSPEED,100h
+     504 00003680                   WL      3,H1TT5A+FR5    ;4.5
+     505 000036b0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     506 000036c0                   WL      3,H1TT5A+FR5    ;4.5
+     507 000036f0                   WL      3,H1TT5A+FR4    ;3.5
+     508 00003720     801b          .word   ANI_SETFACING
+     509 00003730                   WL      3,H1TT5A+FR3    ;2.5
+     510 00003760     8002          .word   ANI_SETMODE,MODE_NORMAL
+     511 00003780     8049          .word   ANI_END
+     512                    
+     513 00003790            SUBR   hrt_2_to_6_turn2_anim
+     514 00003790            SUBR   hrt_8_to_4_turn2_anim
+     515 00003790     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     516 000037b0     8026          .word   ANI_SETSPEED,100h
+     517 000037d0                   WL      3,H1TT5A+FR3    ;2.5
+     518 00003800     801b          .word   ANI_SETFACING
+     519 00003810                   WL      3,H1TT5A+FR4    ;3.5
+     520 00003840                   WL      3,H1TT5A+FR5    ;4.5
+     521 00003870     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     522 00003880                   WL      3,H1TT5A+FR5    ;4.5
+     523 000038b0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     524 000038d0     8049          .word   ANI_END
+     525                    
+     526                    
+     527                    *****************************************************************************
+     528                    *
+     529                    * RUNNING IN ion3
+     530                    
+     531 000038e0            SUBR   hrt_run2_anim
+     532 000038e0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     533 00003900     8026          .word   ANI_SETSPEED,100h
+     534                    
+     535                    ;I'm turning on an attack box for the entire run sequence.
+     536                    ;I never turn it off.
+     537                    
+     538 00003920     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,16,71     ;mode,x,y,w,h
+     539 00003980                   WL      ANI_GOTO,ionrun2
+     540                    
+     541 000039b0            SUBR   hrt_run_anim
+     542                    
+     543 000039b0     8002          .word   ANI_SETMODE,MODE_UNINT                  ;uninterruptable
+     544 000039d0     8026          .word   ANI_SETSPEED,100h
+     545 000039f0     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,16,71     ;mode,x,y,w,h
+     546                    
+     547 00003a50           ionlp1
+     548 00003a50                   WL      2,H3RN3A+FR1
+     549 00003a80                   WL      3,H3RN3A+FR2
+     550 00003ab0                   WL      2,H3RN3A+FR3
+     551 00003ae0                   WL      3,H3RN3A+FR4
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE   11
+
+     552 00003b10                   WL      2,H3RN3A+FR5
+     553 00003b40                   WL      ANI_CODE,SMALL_RUN
+     554                    ;       .word   ANI_SOUND,run_snd
+     555 00003b70           ionrun2
+     556 00003b70     8002          .word   ANI_SETMODE,MODE_NORMAL         ;clear UNINT bit
+     557 00003b90     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,16,71     ;mode,x,y,w,h
+     558 00003bf0                   WL      3,H3RN3A+FR6
+     559 00003c20                   WL      2,H3RN3A+FR7
+     560 00003c50                   WL      3,H3RN3A+FR8
+     561 00003c80                   WL      2,H3RN3A+FR9
+     562 00003cb0                   WL      3,H3RN3A+FR10
+     563 00003ce0                   WL      2,H3RN3A+FR11
+     564 00003d10                   WL      ANI_CODE,SMALL_RUN
+     565                    ;       .word   ANI_SOUND,run_snd
+     566 00003d40                   WL      3,H3RN3A+FR12
+     567                    
+     568 00003d70                   WL      ANI_GOTO,ionlp1
+     569                    
+     570                    
+     571                    *****************************************************************************
+     572                    *
+     573                    * BOUNCE OFF ROPES
+     574                    
+     575 00003da0            SUBR   hrt_bounce_anim
+     576                    
+     577 00003da0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_OVERLAP|MODE_NOAUTOFLIP| MODE_NOCONFINE     ;uninterruptable
+     578                    
+     579                            .ref    fix_bnc_flip
+     580 00003dc0                   WL      ANI_CODE,fix_bnc_flip
+     581 00003df0                   WL      ANI_CODE,MAYBE_BOUNCE_ROPE
+     582                      
+     583 00003e20     8003          .word   ANI_ZEROVELS
+     584 00003e30     8026          .word   ANI_SETSPEED,100h
+     585 00003e50                   WL      2,H3BO3A+FR1
+     586 00003e80     8023          .word   ANI_BOUNCEROPE,0
+     587 00003ea0                   WL      1,H3BO3A+FR1
+     588                    
+     589 00003ed0                   WL      2,H3BO3A+FR2
+     590 00003f00     8023          .word   ANI_BOUNCEROPE,1
+     591 00003f20                   WL      ANI_CODE,SMALL_RUN
+     592                    ;       .word   ANI_SOUND,run_snd
+     593                    
+     594 00003f50                   WL      1,H3BO3A+FR2
+     595                    
+     596 00003f80                   WL      2,H3BO3A+FR3
+     597 00003fb0     8023          .word   ANI_BOUNCEROPE,2
+     598 00003fd0                   WL      1,H3BO3A+FR4
+     599                    
+     600 00004000                   WL      2,H3BO3A+FR4
+     601 00004030     8023          .word   ANI_BOUNCEROPE,3
+     602 00004050                   WL      1,H3BO3A+FR4
+     603                    
+     604 00004080     8003          .word   ANI_ZEROVELS
+     605                    
+     606 00004090                   WL      2,H3BO3A+FR5
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:53:56 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+walks, runs, stances, and turns                                      PAGE   12
+
+     607 000040c0     8023          .word   ANI_BOUNCEROPE,4
+     608 000040e0                   WL      1,H3BO3A+FR5
+     609 00004110                   WL      3,H3BO3A+FR6
+     610 00004140                   WL      2,H3BO3A+FR7
+     611 00004170     8023          .word   ANI_BOUNCEROPE,0
+     612 00004190                   WL      1,H3BO3A+FR7
+     613 000041c0                   WL      2,H3BO3A+FR8
+     614 000041f0     8023          .word   ANI_BOUNCEROPE,-1
+     615 00004210                   WL      ANI_CODE,SMALL_RUN
+     616                    ;       .word   ANI_SOUND,run_snd
+     617 00004240                   WL      1,H3BO3A+FR8
+     618 00004270                   WL      3,H3BO3A+FR9
+     619                    
+     620 000042a0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     621 000042c0     8049          .word   ANI_END
+     622                    
+     623                    
+     624                    
+     625                    ******************************************************************************
+     626                    
+     627                            .end
+
+ No Errors,  No Warnings

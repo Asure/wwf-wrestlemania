@@ -1,4 +1,4 @@
-**************************************************************
+#**************************************************************
 *
 * Software:	LARRY DEMAR and DR. J
 * Initiated:	?
@@ -125,7 +125,7 @@ COINCNT2	.EQU	COINCNTR+8
 	.GLOBAL	SYNCHALF,WDOGDIS,GAMSTATE
 
 	.ref	IRQSKYE
-	.ref	PSTATUS
+	.ref	PSTATUS,PSTATUS2
 	.ref	attract_mode
 
 

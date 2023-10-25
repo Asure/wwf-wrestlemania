@@ -1,0 +1,240 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:57:37 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    **************************************************************
+       2                    *
+       3                    * Software:             Jamie Rivett
+       4                    * Initiated:            11/28/94
+       5                    *
+       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "dnkseq4.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "macros.h"
+      18                            .include        "mproc.equ"
+      19                            .include        "sys.equ"
+      20                            .include        "game.equ"
+      21                            .include        "plyr.equ"
+      22                            .include        "anim.equ"
+      23                            .include        "sound.h"
+      24                            .include        "doinkimg.h"
+      25                            .include        "damage.equ"
+      26                            .INCLUDE        "SWEAT.EQU"
+      27                    
+      28                    
+      29                    ******************************************************************************
+      30                    * EXTERNAL REFERENCES
+      31                    
+      32                            .REF    DO_SCREAM
+      33                            .REF    HIT_THE_MAT,SMALL_BOUNCE
+      34                            .REF    CALL_MISSES
+      35                            .ref    am_I_dizzy
+      36                            .ref    am_I_dead
+      37                            .ref    ckzpos
+      38                            .ref    start_run_anim
+      39                            .ref    dnk_faceup_getup_anim
+      40                            .ref    dnk_2_faceup_getup_anim
+      41                    
+      42                    ******************************************************************************
+      43                    * SYMBOLS DEFINED IN THIS FILE
+      44                    
+      45                    ******************************************************************************
+      46                    * EQUATES FOR THIS FILE
+      47                    
+      48                    *****************************************************************************
+      49                    *
+      50                    * GENERIC BOUNCE
+      51                    
+      52 00000000            SUBR   dnk_slamnobounce_anim
+      53                    
+      54 00000000     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+      55 00000020     8003          .word   ANI_ZEROVELS
+      56 00000030     8026          .word   ANI_SETSPEED,100h
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:57:37 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+Dink animation sequences                                             PAGE    2
+
+      57                    
+      58 00000050     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+      59                    
+      60 00000070                   WL      1,D3SA3A+FR2
+      61 000000a0                   WL      3,D3SA3A+FR2
+      62 000000d0                   WL      4,D3SA3A+FR3
+      63 00000100                   WL      4,D3SA3A+FR4
+      64 00000130                   WL      4,D3SA3A+FR5
+      65                    
+      66 00000160     800b          .word   ANI_WAITHITGND
+      67 00000170     8028          .word   ANI_ZERO_XZVELS
+      68                    
+      69 00000180                   WL      2,D3SA3A+FR8
+      70                    
+      71 000001b0                   WL      10,D3SA3A+FR9
+      72                    
+      73 000001e0     8054          .word   ANI_WAITROLL
+      74 000001f0                   WL      ANI_CHANGEANIM,dnk_2_faceup_getup_anim
+      75                    
+      76 00000220            SUBR   dnk_slambounce_anim
+      77                    
+      78 00000220     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+      79 00000240     8003          .word   ANI_ZEROVELS
+      80 00000250     8026          .word   ANI_SETSPEED,100h
+      81                    
+      82 00000270     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+      83 00000290     805e          .word   ANI_DEBRIS,200,1,0,8,0          ;%chance, tbl index, x,y,z off
+      84                    
+      85                    ;       .word   ANI_GROUND
+      86                    
+      87 000002f0                   WL      1,D3SA3A+FR2
+      88                            .ref    ckzpos
+      89 00000320                   WL      ANI_CODE,ckzpos
+      90 00000350                   WL      ANI_SET_YVEL,040000h
+      91 00000380                   WL      3,D3SA3A+FR2
+      92 000003b0                   WL      4,D3SA3A+FR3
+      93 000003e0                   WL      4,D3SA3A+FR4
+      94 00000410                   WL      4,D3SA3A+FR5
+      95                    
+      96 00000440     800b          .word   ANI_WAITHITGND
+      97 00000450     8028          .word   ANI_ZERO_XZVELS
+      98                    
+      99 00000460                   WL      2,D3SA3A+FR8
+     100                    
+     101 00000490                   WL      10,D3SA3A+FR9
+     102                    
+     103 000004c0     8054          .word   ANI_WAITROLL
+     104 000004d0                   WL      ANI_CHANGEANIM,dnk_faceup_getup_anim
+     105                    
+     106 00000500            SUBR   dnk_slambounce2_anim
+     107                    
+     108 00000500     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+     109 00000520     8003          .word   ANI_ZEROVELS
+     110 00000530     8026          .word   ANI_SETSPEED,100h
+     111                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:57:37 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+Dink animation sequences                                             PAGE    3
+
+     112                    ;       WL      ANI_SET_YVEL,040000h
+     113                    
+     114 00000550     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+     115 00000570     805e          .word   ANI_DEBRIS,200,1,0,8,0          ;%chance, tbl index, x,y,z off
+     116                    
+     117 000005d0                   WL      1,D3SA3X+FR2
+     118 00000600                   WL      ANI_CODE,ckzpos
+     119                    
+     120 00000630                   WL      3,D3SA3X+FR2
+     121 00000660     800b          .word   ANI_WAITHITGND
+     122 00000670     8003          .word   ANI_ZEROVELS
+     123 00000680                   WL      ANI_CODE,HIT_THE_MAT
+     124 000006b0     800c          .word   ANI_XFLIP
+     125                    
+     126 000006c0                   WL      ANI_SET_YVEL,030000h
+     127 000006f0                   WL      3,D3SA3A+FR2
+     128 00000720                   WL      4,D3SA3A+FR3
+     129 00000750                   WL      4,D3SA3A+FR4
+     130 00000780                   WL      4,D3SA3A+FR5
+     131                    
+     132 000007b0     800b          .word   ANI_WAITHITGND
+     133 000007c0     8028          .word   ANI_ZERO_XZVELS
+     134                    
+     135 000007d0                   WL      2,D3SA3A+FR8
+     136                    
+     137 00000800                   WL      10,D3SA3A+FR9
+     138                    
+     139 00000830     8054          .word   ANI_WAITROLL
+     140 00000840                   WL      ANI_CHANGEANIM,dnk_faceup_getup_anim
+     141                    
+     142                    *****************************************************************************
+     143                    
+     144 00000870            SUBR   dnk_breakneck2_anim
+     145                    
+     146 00000870     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+     147 00000890     8003          .word   ANI_ZEROVELS
+     148 000008a0     8026          .word   ANI_SETSPEED,100h
+     149                    
+     150 000008c0     8015          .word   ANI_OFFSET,20,47,0                      ;x,y,z
+     151                    
+     152 00000900                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYD_SWEAT,SWEAT_PER,0
+     153 00000970                   WL      6,D3UC3A+FR4
+     154 000009a0                   WL      6,D3UC3A+FR5
+     155 000009d0                   WL      6,D3UC3A+FR6
+     156 00000a00                   WL      1,D3UC3A+FR7
+     157                    
+     158 00000a30     800b          .word   ANI_WAITHITGND
+     159                    
+     160 00000a40                   WL      ANI_CODE,HIT_THE_MAT
+     161 00000a70     8037          .word   ANI_SHAKEALL,2
+     162 00000a90     801f          .word   ANI_SHAKER,25
+     163                    
+     164 00000ab0                   WL      3,D3FD3E+FR2
+     165 00000ae0                   WL      3,D3FD3E+FR3
+     166 00000b10                   WL      3,D3FD3E+FR4
+TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:57:37 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+Dink animation sequences                                             PAGE    4
+
+     167 00000b40                   WL      3,D3FD3E+FR5
+     168 00000b70                   WL      3,D3FD3E+FR6
+     169 00000ba0                   WL      3,D3FD3E+FR7
+     170 00000bd0                   WL      3,D3FD3E+FR8
+     171 00000c00                   WL      3,D3FD3E+FR9
+     172                    
+     173 00000c30     8028          .word   ANI_ZERO_XZVELS
+     174                    
+     175 00000c40                   WL      ANI_CODE,HIT_THE_MAT
+     176 00000c70                   WL      8,D3RL1B+FR6
+     177                    
+     178 00000ca0     8054          .word   ANI_WAITROLL
+     179 00000cb0                   WL      ANI_CHANGEANIM,dnk_faceup_getup_anim
+     180                    
+     181                    *****************************************************************************
+     182                    
+     183 00000ce0            SUBR   dnk_arm_broken_anim
+     184                    
+     185 00000ce0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+     186 00000d00     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     187 00000d20     8026          .word   ANI_SETSPEED,100h
+     188                    
+     189 00000d40                   WL      ANI_SET_YVEL,40000h
+     190 00000d70                   WLW     ANI_SET_XVEL,-38000h,AM_HIT_REL
+     191 00000db0                   WLW     ANI_SET_ZVEL,10000h,AM_HIT_REL
+     192                    
+     193 00000df0                   WL      ANI_CODE,DO_SCREAM
+     194 00000e20     800b          .word   ANI_WAITHITGND
+     195 00000e30     8003          .word   ANI_ZEROVELS
+     196                    
+     197 00000e40                   WL      4,D3AH3B+FR2
+     198 00000e70                   WL      4,D3AH3B+FR3
+     199 00000ea0                   WL      4,D3AH3B+FR5
+     200 00000ed0                   WL      1,D4ST4E+FR3
+     201                    
+     202 00000f00                   WL      ANI_CODE,am_I_dead
+     203                    ;If I'm dead, goto fall back
+     204 00000f30                   WL      ANI_IFNOTSTATUS2,mpvnodead
+     205                    
+     206                            .ref    dnk_fall_back_anim
+     207                    
+     208 00000f60                   WL      ANI_CHANGEANIM,dnk_fall_back_anim
+     209                    ;       .word   ANI_END
+     210                    
+     211 00000f90           mpvnodead
+     212                    
+     213 00000f90     8022          .word   ANI_FACEDOWN
+     214 00000fa0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     215 00000fc0     8049          .word   ANI_END
+     216                    
+     217                    ******************************************************************************
+     218                    
+     219                            .end
+
+ No Errors,  No Warnings

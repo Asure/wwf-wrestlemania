@@ -1,0 +1,2578 @@
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    *************************************************************
+       2                    *
+       3                    * Software:             Jason Skiles
+       4                    * Initiated:            9 March 94
+       5                    *
+       6                    * COPYRIGHT (C) 1995 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "ropes.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "display.equ"
+      18                            .include        "game.equ"
+      19                            .include        "macros.h"
+      20                            .include        "mproc.equ"
+      21                            .include        "sys.equ"
+      22                            .include        "ring.equ"
+      23                    
+      24                            .include        "miscimg.glo"
+      25                            .include        "ropeimg.glo"
+      26                    
+      27                    ******************************************************************************
+      28                    * EXTERNAL REFERENCES
+      29                    
+      30                            .ref    XFERPROC,front_rproc,reduce_bog
+      31                    
+      32                    ******************************************************************************
+      33                    * SYMBOLS DEFINED IN THIS FILE
+      34                    
+      35                    ******************************************************************************
+      36                    * EQUATES FOR THIS FILE
+      37                    
+      38                    ;Don't add any more rope commands!  It won't work.  RANI_SETPRIORITY
+      39                    ; was only being used in one place, and it wasn't doing much, so to strip
+      40                    ; this time-comsuming rope thing down, I've removed most of the command
+      41                    ; structure, and any word with bit 15 set will be treated as RANI_GOTO.
+      42                    
+      43              8000  RANI_GOTO               .equ    0 + 8000h
+      44                    
+      45              000a  SSPRING_PRI     .equ    10
+      46              0009  DSPRING_PRI     .equ    9
+      47              0005  SHAKE_PRI       .equ    5
+      48                    
+      49                    *****************************************************************************
+      50                    *
+      51                    * IN: a11 = group # (0=front, 1=back, 2=left, 3=right )
+      52                    *
+      53                    
+      54 00000000                   STRUCTPD
+      55                    
+      56 00000000                   LONG    ROPE_ACTION             ;UHW
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    2
+
+      57                    
+      58 00000000                   LONG    hicRED_OBJ              ;UHL top rope
+      59 00000000                   LONG    hicRED_OBJ2             ;UHL top rope (right half)
+      60 00000000                   LONG    hicRED_SCPTR            ;UHL top rope script ptr
+      61 00000000                   WORD    hicRED_SCCNT            ;UHW top rope script counter
+      62 00000000                   LONG    hicRED_SQPTR            ;UHL top rope sequence ptr
+      63 00000000                   WORD    hicRED_SQCNT            ;UHW top rope sequence counter
+      64 00000000                   WORD    hicRED_PRIORITY         ;UHW top rope anim priority
+      65                    
+      66 00000000                   LONG    hicWHITE_OBJ            ;UHL middle rope
+      67 00000000                   LONG    hicWHITE_OBJ2           ;UHL middle rope (right half)
+      68 00000000                   LONG    hicWHITE_SCPTR          ;UHL middle rope script ptr
+      69 00000000                   WORD    hicWHITE_SCCNT          ;UHW middle rope script counter
+      70 00000000                   LONG    hicWHITE_SQPTR          ;UHL middle rope sequence ptr
+      71 00000000                   WORD    hicWHITE_SQCNT          ;UHW middle rope sequence counter
+      72 00000000                   WORD    hicWHITE_PRIORITY               ;UHW middle rope anim priority
+      73                    
+      74 00000000                   LONG    hicBLUE_OBJ             ;UHL bottom rope
+      75 00000000                   LONG    hicBLUE_OBJ2            ;UHL bottom rope (right half)
+      76 00000000                   LONG    hicBLUE_SCPTR           ;UHL bottom rope script ptr
+      77 00000000                   WORD    hicBLUE_SCCNT           ;UHW bottom rope script counter
+      78 00000000                   LONG    hicBLUE_SQPTR           ;UHL bottom rope sequence ptr
+      79 00000000                   WORD    hicBLUE_SQCNT           ;UHW bottom rope sequence counter
+      80 00000000                   WORD    hicBLUE_PRIORITY                ;UHW bottom rope anim priority
+      81                    
+      82 00000000                   LONG    hicSHAD_OBJ             ;UHL rope shadow
+      83 00000000                   LONG    hicSHAD_OBJ2            ;UHL rope shadow (right half)
+      84 00000000                   LONG    hicSHAD_SCPTR           ;UHL rope shadow script ptr
+      85 00000000                   WORD    hicSHAD_SCCNT           ;UHW rope shadow script counter
+      86 00000000                   LONG    hicSHAD_SQPTR           ;UHL rope shadow sequence ptr
+      87 00000000                   WORD    hicSHAD_SQCNT           ;UHW rope shadow sequence counter
+      88 00000000                   WORD    hicSHAD_PRIORITY                ;UHW rope shadow anim priority
+      89                    
+      90              0120  PDBLKSTART      .equ    hicRED_OBJ
+      91              00b0  PDBLKSIZ        .equ    hicWHITE_OBJ-hicRED_OBJ
+      92                    
+      93                    
+      94              0000  PD_OBJ          .equ    hicRED_OBJ - hicRED_OBJ
+      95              0020  PD_OBJ2         .equ    hicRED_OBJ2 - hicRED_OBJ
+      96              0040  PD_SCPTR        .equ    hicRED_SCPTR - hicRED_OBJ
+      97              0060  PD_SCCNT        .equ    hicRED_SCCNT - hicRED_OBJ
+      98              0070  PD_SQPTR        .equ    hicRED_SQPTR - hicRED_OBJ
+      99              0090  PD_SQCNT        .equ    hicRED_SQCNT - hicRED_OBJ
+     100              00a0  PD_PRIORITY     .equ    hicRED_PRIORITY - hicRED_OBJ
+     101                    
+     102                    
+     103                            ;reg use (overall)
+     104                            ; a11 = * to our entry in the hicmaster_table
+     105                    
+     106 00000000            SUBR   rope
+     107                    
+     108                            ;position a11 at the beginning of the hicmaster_table entry for
+     109                            ; the current bank of ropes.
+     110 00000000     4d6a          move    a11,a10
+     111 00000010     09ee          movi    hicmtable_size,a14
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    3
+
+         00000020 00000020  
+     112 00000040     5fcb          mpyu    a14,a11
+     113 00000050     0b2b          addi    hicmaster_table,a11
+         00000060 00000b70' 
+     114                    
+     115                            ;set priority and action
+     116 00000080     57ce          clr     a14
+     117 00000090     b3cd          move    a14,*a13(ROPE_ACTION),L
+         000000a0     0100  
+     118                    
+     119                            ;initialize the shadow stuff to zero in case this is a horz rope
+     120 000000b0     57ce          clr     a14
+     121 000000c0     b3cd          move    a14,*a13(hicSHAD_OBJ),L
+         000000d0     0330  
+     122 000000e0     b3cd          move    a14,*a13(hicSHAD_OBJ2),L
+         000000f0     0350  
+     123 00000100     b3cd          move    a14,*a13(hicSHAD_SCPTR),L
+         00000110     0370  
+     124 00000120     b1cd          move    a14,*a13(hicSHAD_SCCNT),W
+         00000130     0390  
+     125 00000140     b3cd          move    a14,*a13(hicSHAD_SQPTR),L
+         00000150     03a0  
+     126 00000160     b1cd          move    a14,*a13(hicSHAD_SQCNT),W
+         00000170     03c0  
+     127 00000180     b1cd          move    a14,*a13(hicSHAD_PRIORITY),W
+         00000190     03d0  
+     128                    
+     129                            ;reg use (creation)
+     130                            ; a0-a8 - create stuff
+     131                            ; a9    - #???_OBJ ptr
+     132                            ; a10   - pointer to initial position table entry
+     133                    
+     134                            ;create the ropes
+     135 000001a0     b76a          move    *a11(hicPOS_TABLE),a10,L
+         000001b0     0000  
+     136 000001c0     4da9          move    a13,a9
+     137 000001d0     0b09          addi    hicRED_OBJ,a9
+         000001e0     0120  
+     138                    
+     139 000001f0           hiccreate_loop
+     140 000001f0     9742          move    *a10+,a2,L
+     141 00000200     ca25          jrz     hicfirst3_done
+     142 00000210     9544          move    *a10+,a4,W
+     143 00000220     0ba4          ori     DMAWNZ|M_3D,a4
+         00000230 00008102  
+     144 00000250     9545          move    *a10+,a5,W
+     145 00000260     9540          move    *a10+,a0,W
+     146 00000270     9541          move    *a10+,a1,W
+     147 00000280     9543          move    *a10+,a3,W
+     148 00000290     56c6          clr     a6
+     149 000002a0     56e7          clr     a7
+     150                    
+     151                            ;This is ugly as sin, but it'll do for now.
+     152 000002b0     0b00          addi    104,a0
+         000002c0     0068  
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    4
+
+     153 000002d0     0b01          addi    -258,a1
+         000002e0     fefe  
+     154                    
+     155 000002f0           hicno_flip
+     156                            
+     157 000002f0     2200          sla     16,a0
+     158 00000300     2201          sla     16,a1
+     159                    
+     160 00000310     0d5f          calla   BEGINOBJ
+         00000320 00000000! 
+     161                    
+     162                            ;set the various rope PDATA
+     163 00000340     b309          move    a8,*a9(PD_OBJ),L
+         00000350     0000  
+     164 00000360     5708          clr     a8
+     165 00000370     b309          move    a8,*a9(PD_OBJ2),L
+         00000380     0020  
+     166 00000390     b309          move    a8,*a9(PD_SCPTR),L
+         000003a0     0040  
+     167 000003b0     b109          move    a8,*a9(PD_SCCNT),W
+         000003c0     0060  
+     168 000003d0     b309          move    a8,*a9(PD_SQPTR),L
+         000003e0     0070  
+     169 000003f0     b109          move    a8,*a9(PD_SQCNT),W
+         00000400     0090  
+     170 00000410     b109          move    a8,*a9(PD_PRIORITY),W
+         00000420     00a0  
+     171 00000430     0b09          addi    PDBLKSIZ,a9
+         00000440     00b0  
+     172 00000450     c0d9          jruc    hiccreate_loop
+     173                    
+     174 00000460           hicfirst3_done
+     175                            ;first three objects down and we hit one zero.  If there's another
+     176                            ; zero after that one, then we're done.  If there's another table
+     177                            ; entry, then we need to make three more ropes and stick them in
+     178                            ; the OBJ2 slots.  These are the right-half ropes in the front and
+     179                            ; back banks, and the bottom-half ropes on the sides
+     180                    
+     181 00000460     4da9          move    a13,a9
+     182 00000470     0b09          addi    hicRED_OBJ,a9
+         00000480     0120  
+     183                    
+     184 00000490           hiccreate2_loop
+     185 00000490     9742          move    *a10+,a2,L
+     186 000004a0     ca00          jrz     hiccreate_done
+         000004b0     014f  
+     187 000004c0     9544          move    *a10+,a4,W
+     188 000004d0     0ba4          ori     DMAWNZ|M_3D,a4
+         000004e0 00008102  
+     189 00000500     9545          move    *a10+,a5,W
+     190 00000510     9540          move    *a10+,a0,W
+     191 00000520     9541          move    *a10+,a1,W
+     192 00000530     9543          move    *a10+,a3,W
+     193 00000540     56c6          clr     a6
+     194 00000550     56e7          clr     a7
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    5
+
+     195                    
+     196                            ;This is ugly as sin, but it'll do for now.
+     197 00000560     0b00          addi    104,a0
+         00000570     0068  
+     198 00000580     0b01          addi    -258,a1
+         00000590     fefe  
+     199                    
+     200 000005a0           hicno_flip2
+     201                            
+     202 000005a0     2200          sla     16,a0
+     203 000005b0     2201          sla     16,a1
+     204                    
+     205 000005c0     0d5f          calla   BEGINOBJ
+         000005d0 00000000! 
+     206                    
+     207                            ;set the various rope PDATA
+     208 000005f0     b309          move    a8,*a9(PD_OBJ2),L
+         00000600     0020  
+     209 00000610     0b09          addi    PDBLKSIZ,a9
+         00000620     00b0  
+     210                    
+     211 00000630     c0e5          jruc    hiccreate2_loop
+     212                    
+     213 00000640           new_command_wake
+     214                            ;the only way to get here is an XFERPROC.
+     215                            ;read our new orders from pdata ROPE_ACTION and carry them out.
+     216 00000640     b7a0          move    *a13(ROPE_ACTION),a0,L
+         00000650     0100  
+     217                    
+     218                            ;prepare the red rope pointers
+     219 00000660     940e          move    *a0+,a14,W              ;priority check
+     220 00000670     9601          move    *a0+,a1,L
+     221 00000680     b5a2          move    *a13(hicRED_PRIORITY),a2,W
+         00000690     01c0  
+     222 000006a0     49c2          cmp     a14,a2
+     223 000006b0     c70d          jrgt    hicskip_red
+     224 000006c0     b1cd          move    a14,*a13(hicRED_PRIORITY),W
+         000006d0     01c0  
+     225 000006e0     b22d          move    a1,*a13(hicRED_SCPTR),L
+         000006f0     0160  
+     226 00000700     9422          move    *a1+,a2,W
+     227 00000710     b04d          move    a2,*a13(hicRED_SCCNT),W
+         00000720     0180  
+     228 00000730     9622          move    *a1+,a2,L
+     229 00000740     b24d          move    a2,*a13(hicRED_SQPTR),L
+         00000750     0190  
+     230 00000760     1822          movk    1,a2
+     231 00000770     b04d          move    a2,*a13(hicRED_SQCNT),W
+         00000780     01b0  
+     232 00000790           hicskip_red
+     233                    
+     234                            ;prepare the white rope pointers
+     235 00000790     940e          move    *a0+,a14,W              ;priority check
+     236 000007a0     9601          move    *a0+,a1,L
+     237 000007b0     b5a2          move    *a13(hicWHITE_PRIORITY),a2,W
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    6
+
+         000007c0     0270  
+     238 000007d0     49c2          cmp     a14,a2
+     239 000007e0     c70d          jrgt    hicskip_white
+     240 000007f0     b1cd          move    a14,*a13(hicWHITE_PRIORITY),W
+         00000800     0270  
+     241 00000810     b22d          move    a1,*a13(hicWHITE_SCPTR),L
+         00000820     0210  
+     242 00000830     9422          move    *a1+,a2,W
+     243 00000840     b04d          move    a2,*a13(hicWHITE_SCCNT),W
+         00000850     0230  
+     244 00000860     9622          move    *a1+,a2,L
+     245 00000870     b24d          move    a2,*a13(hicWHITE_SQPTR),L
+         00000880     0240  
+     246 00000890     1822          movk    1,a2
+     247 000008a0     b04d          move    a2,*a13(hicWHITE_SQCNT),W
+         000008b0     0260  
+     248 000008c0           hicskip_white
+     249                    
+     250                            ;prepare the blue rope pointers
+     251 000008c0     940e          move    *a0+,a14,W              ;priority check
+     252 000008d0     9601          move    *a0+,a1,L
+     253 000008e0     b5a2          move    *a13(hicBLUE_PRIORITY),a2,W
+         000008f0     0320  
+     254 00000900     49c2          cmp     a14,a2
+     255 00000910     c70d          jrgt    hicskip_blue
+     256 00000920     b1cd          move    a14,*a13(hicBLUE_PRIORITY),W
+         00000930     0320  
+     257 00000940     b22d          move    a1,*a13(hicBLUE_SCPTR),L
+         00000950     02c0  
+     258 00000960     9422          move    *a1+,a2,W
+     259 00000970     b04d          move    a2,*a13(hicBLUE_SCCNT),W
+         00000980     02e0  
+     260 00000990     9622          move    *a1+,a2,L
+     261 000009a0     b24d          move    a2,*a13(hicBLUE_SQPTR),L
+         000009b0     02f0  
+     262 000009c0     1822          movk    1,a2
+     263 000009d0     b04d          move    a2,*a13(hicBLUE_SQCNT),W
+         000009e0     0310  
+     264                    
+     265 000009f0           hicskip_blue
+     266                            ;prepare the rope shadow pointers
+     267 000009f0     b7ae          move    *a13(hicSHAD_OBJ),a14,L ;exist check
+         00000a00     0330  
+     268 00000a10     ca13          jrz     hicskip_shadow
+     269                    
+     270 00000a20     940e          move    *a0+,a14,W              ;priority check
+     271 00000a30     9601          move    *a0+,a1,L
+     272 00000a40     b5a2          move    *a13(hicSHAD_PRIORITY),a2,W
+         00000a50     03d0  
+     273 00000a60     49c2          cmp     a14,a2
+     274 00000a70     c70d          jrgt    hicskip_shadow
+     275 00000a80     b1cd          move    a14,*a13(hicSHAD_PRIORITY),W
+         00000a90     03d0  
+     276 00000aa0     b22d          move    a1,*a13(hicSHAD_SCPTR),L
+         00000ab0     0370  
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    7
+
+     277 00000ac0     9422          move    *a1+,a2,W
+     278 00000ad0     b04d          move    a2,*a13(hicSHAD_SCCNT),W
+         00000ae0     0390  
+     279 00000af0     9622          move    *a1+,a2,L
+     280 00000b00     b24d          move    a2,*a13(hicSHAD_SQPTR),L
+         00000b10     03a0  
+     281 00000b20     1822          movk    1,a2
+     282 00000b30     b04d          move    a2,*a13(hicSHAD_SQCNT),W
+         00000b40     03c0  
+     283                    
+     284 00000b50           hicskip_shadow
+     285 00000b50     c000          jruc    hicmain_loop
+         00000b60     0109  
+     286                    
+     287                    
+     288 00000b70           hicmaster_table
+     289 00000b70 00000bf0'         .long   hicfront_ptable
+     290 00000b90 00000ef0'         .long   hicback_ptable
+     291 00000bb0           hicsiderope_start
+     292 00000bb0 000011f0'         .long   hicleft_ptable
+     293 00000bd0 000015d0'         .long   hicright_ptable
+     294 00000bf0           hicmaster_tablex
+     295                    
+     296              0020  hicmtable_size  .equ    (hicmaster_tablex-hicmaster_table)/4
+     297                    
+     298              0000  hicPOS_TABLE    .equ    0
+     299                    
+     300                    
+     301                    ;Initial position tables
+     302                    
+     303                    
+     304 00000bf0           hicfront_ptable
+     305                            ;FRONT LEFT
+     306 00000bf0                   LWWWWW  ROPE_F_R,0,CLSNEUT|SUBROPE|SUBHORZ,673+1,402-2,015aah
+     307 00000c60                   LWWWWW  ROPE_F_W,0,CLSNEUT|SUBROPE|SUBHORZ,671+1,426-2,015aah
+     308 00000cd0                   LWWWWW  ROPE_F_B,0,CLSNEUT|SUBROPE|SUBHORZ,672+1,449-2,015aah
+     309 00000d40 00000000          .long   0
+     310                    
+     311                            ;FRONT RIGHT
+     312 00000d60                   LWWWWW  ROPE_F_R,M_FLIPH,CLSNEUT|SUBROPE|SUBHORZ,919+349,402-2,015aah
+     313 00000dd0                   LWWWWW  ROPE_F_W,M_FLIPH,CLSNEUT|SUBROPE|SUBHORZ,919+349,426-2,015aah
+     314 00000e40                   LWWWWW  ROPE_F_B,M_FLIPH,CLSNEUT|SUBROPE|SUBHORZ,922+349,449-2,015aah
+     315 00000eb0 00000000          .long   0,0
+     316                    
+     317                    
+     318 00000ef0           hicback_ptable
+     319                            ;BACK LEFT
+     320 00000ef0                   LWWWWW  ROPE_B_R,0,CLSNEUT|SUBROPE|SUBHORZ,749+1,318-2,013cah
+     321 00000f60                   LWWWWW  ROPE_B_W,0,CLSNEUT|SUBROPE|SUBHORZ,749+1,341-2,013cah
+     322 00000fd0                   LWWWWW  ROPE_B_B,0,CLSNEUT|SUBROPE|SUBHORZ,749+1,364-2,013cah
+     323 00001040 00000000          .long   0
+     324                    
+     325                            ;BACK RIGHT
+     326 00001060                   LWWWWW  ROPE_B_R,M_FLIPH,CLSNEUT|SUBROPE|SUBHORZ,1093+101-3,318-2,013cah
+     327 000010d0                   LWWWWW  ROPE_B_W,M_FLIPH,CLSNEUT|SUBROPE|SUBHORZ,1093+101-3,341-2,013cah
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    8
+
+     328 00001140                   LWWWWW  ROPE_B_B,M_FLIPH,CLSNEUT|SUBROPE|SUBHORZ,1093+101-3,364-2,013cah
+     329 000011b0 00000000          .long   0,0
+     330                    
+     331                    
+     332                    
+     333 000011f0           hicleft_ptable
+     334                            ;LEFT TOP
+     335 000011f0                   LWWWWW  ROPE_S_Ra,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,323-2,013cch
+     336 00001260                   LWWWWW  ROPE_S_Wa,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,346-2,013cbh
+     337 000012d0                   LWWWWW  ROPE_S_Ba,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,369-2,013cah
+     338 00001340                   LWWWWW  ROPSHADA,0,CLSNEUT|SUBROPE|SUBSIDE,2c7h,189h,013c8h
+     339 000013b0 00000000          .long   0
+     340                    
+     341                            ;LEFT BOTTOM
+     342 000013d0                   LWWWWW  ROPE_S_Rb,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,323-2,013cch
+     343 00001440                   LWWWWW  ROPE_S_Wb,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,346-2,013cbh
+     344 000014b0                   LWWWWW  ROPE_S_Bb,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,369-2,013cah
+     345 00001520                   LWWWWW  ROPSHADB,0,CLSNEUT|SUBROPE|SUBSIDE,2c7h,189h,013c8h
+     346 00001590 00000000          .long   0,0
+     347                    
+     348 000015d0           hicright_ptable
+     349                            ;RIGHT TOP
+     350 000015d0                   LWWWWW  ROPE_S_Ra,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,322-2,013cch
+     351 00001640                   LWWWWW  ROPE_S_Wa,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,345-2,013cbh
+     352 000016b0                   LWWWWW  ROPE_S_Ba,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,368-2,013cah
+     353 00001720                   LWWWWW  ROPSHADA,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,469h+100,189h,013c8h
+     354 00001790 00000000          .long   0
+     355                    
+     356                            ;RIGHT BOTTOM
+     357 000017b0                   LWWWWW  ROPE_S_Rb,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,322-2,013cch
+     358 00001820                   LWWWWW  ROPE_S_Wb,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,345-2,013cbh
+     359 00001890                   LWWWWW  ROPE_S_Bb,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,368-2,013cah
+     360 00001900                   LWWWWW  ROPSHADB,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,469h+100,189h,013c8h
+     361 00001970 00000000          .long   0,0
+     362                    
+     363 000019b0           hiccreate_done
+     364                    
+     365                            ;sleep a bit, then check the reduce_bog flag
+     366 000019b0                   SLEEPK  2
+     367 000019f0     05ae          move    @reduce_bog,a14
+         00001a00 00000000! 
+     368 00001a20     ca0d          jrz     hicbog_ok
+     369                    
+     370 00001a30     0b6b          cmpi    hicsiderope_start,a11
+         00001a40 fffff44f' 
+     371 00001a60     c509          jrge    hicbog_ok
+     372                    
+     373                            ;we're a front or back rope.  Die.
+     374                    
+     375                            ;while we're at it, clear the front and back rope processes
+     376 00001a70     09e0          movi    front_rproc,a0
+         00001a80 00000000! 
+     377 00001aa0     57ce          clr     a14
+     378 00001ab0     93c0          move    a14,*a0+,L
+     379 00001ac0     83c0          move    a14,*a0,L
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE    9
+
+     380 00001ad0                   DIE
+     381                    
+     382                            ;yikes!  We're in bog-reduction mode.  Die if we're a horz rope proc.
+     383                    
+     384 00001b00           hicbog_ok       ;reg use (main loop)
+     385                            ; a9  -  permanent storage of rope_update() address
+     386                            ;a10  -  temp storage of rope_update() address
+     387                            ;a11  -  pointer to our entry in the hicmaster_table
+     388                    
+     389 00001b00     09e9          movi    rope_update,a9
+         00001b10 00001d20' 
+     390                    
+     391                            .align
+     392                    
+     393 00001c00           hicmain_loop
+     394 00001c00                   SLEEPK  1
+     395                    
+     396 00001c40     4da5          move    a13,a5
+     397 00001c50     0b05          addi    hicRED_OBJ,a5           ;top rope
+         00001c60     0120  
+     398                    
+     399 00001c70     09e1          movi    fastanic,a1             ;required by rope_update
+         00001c80 000021b0' 
+     400 00001ca0     09c3          movi    PDBLKSIZ,a3
+         00001cb0     00b0  
+     401                    
+     402 00001cc0     1882          movk    4,a2
+     403                    
+     404 00001cd0           hictightloop
+     405 00001cd0     4d2a          move    a9,a10
+     406 00001ce0     012a          exgpc   a10
+     407 00001cf0     4065          add     a3,a5
+     408 00001d00     3c82          dsjs    a2,hictightloop
+     409 00001d10     c0ee          jruc    hicmain_loop
+     410                    
+     411                    *****************************************************************************
+     412                    *
+     413                    *  a5 = ptr to section of PDATA for the current rope (use those PD_???
+     414                    *       offsets defined earlier to access the data )
+     415                    *
+     416                    *  a1 = address of fastanic routine (helps speed things up a shade)
+     417                    *
+     418                    * a10 = return address (this routine is called with exgpc)
+     419                    *
+     420                    
+     421                    ;NOTES:
+     422                    ;       PD_OBJ contains the object pointer for a rope
+     423                    ;       ---> since PD_OBJ is zero, we simply use *aN instead of *aN(PD_OBJ)
+     424                    ;       PD_SCPTR points to the CURRENTLY ACTIVE sequence in the script
+     425                    ;               table.
+     426                    ;       PD_SCCNT is the number of repetitions of a the current sequence
+     427                    ;               to be performed.
+     428                    ;       PD_SQPTR points to the NEXT frame in the current sequence.
+     429                    ;       PD_SQCNT is the number of ticks to hold the current frame.
+     430                    ;
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   10
+
+     431                    
+     432                            ;WARNING!!!!!
+     433                            ;This routine is heavily compacted in the name of speed and size
+     434                            ; optimization.  It makes heavy use of questionable assumptions
+     435                            ; about the contents of various registers and how long said
+     436                            ; contents are to remain valid.  It works, but any changes are
+     437                            ; quite likely to topple the whole rickety mess.  Watch out.
+     438                    
+     439 00001d20            SUBRP  rope_update
+     440                    
+     441                            ;time to move on to the next frame in our sequence?
+     442 00001d20     b4a6          move    *a5(PD_SQCNT),a6,W
+         00001d30     0090  
+     443 00001d40     ca19          jrz     qntdone                 ;not even IN a sequence.  quit
+     444                    
+     445                            ;make sure this rope exists
+     446 00001d50     86a8          move    *a5,a8,L        ;*a5 == *a5(PD_OBJ)
+     447 00001d60     ca17          jrz     qntdone         ;rope doesn't exist.  ignore it.
+     448                    
+     449                            ;dec frame time
+     450 00001d70     1426          dec     a6
+     451 00001d80     cb1a          jrnz    qnthold_current_frame
+     452                    
+     453 00001d90           qntnew_sequence_frame
+     454                            ;timer has run out on current frame.  get a new one.
+     455 00001d90     b6a6          move    *a5(PD_SQPTR),a6,L
+         00001da0     0070  
+     456 00001db0     94c7          move    *a6+,a7,W               ;next time increment
+     457 00001dc0     c119          jrp     qntnext_frame
+     458 00001dd0     ce11          jrn     qntsequence_goto
+     459                    
+     460 00001de0           qntend_of_sequence
+     461                            ;that was the last frame in the sequence.  look at the script.
+     462 00001de0     b4a6          move    *a5(PD_SCCNT),a6,W
+         00001df0     0060  
+     463 00001e00     1426          dec     a6
+     464 00001e10     cb30          jrnz    qntrepeat_sequence
+     465                    
+     466                            ;move on to the next sequence
+     467 00001e20           qntnew_sequence
+     468 00001e20     b6a6          move    *a5(PD_SCPTR),a6,L
+         00001e30     0040  
+     469 00001e40     0b06          addi    30h,a6                  ;point at next entry
+         00001e50     0030  
+     470 00001e60     b2c5          move    a6,*a5(PD_SCPTR),L      ;and stuff it.
+         00001e70     0040  
+     471 00001e80     84c6          move    *a6,a6,W                ;get the repeat count
+     472 00001e90     c128          jrp     qntrepeat_sequence
+     473 00001ea0     ce21          jrn     qntscript_goto
+     474                    
+     475 00001eb0           qntend_of_script
+     476 00001eb0     57ce          clr     a14
+     477 00001ec0     b3c5          move    a14,*a5(PD_SQCNT),L     ;This hits both CNT and PRIORITY
+         00001ed0     0090  
+     478                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   11
+
+     479 00001ee0           qntdone
+     480 00001ee0     016a          jump    a10
+     481                    
+     482                            ;it's some kind of special command
+     483                            ;Just assume it's a goto, the only legal command these days.
+     484 00001ef0           qntsequence_goto
+     485 00001ef0     bac5          move    *a6(0),*a5(PD_SQPTR),L
+         00001f00     0000  
+         00001f10     0070  
+     486 00001f20     c0e6          jruc    qntnew_sequence_frame
+     487                    
+     488 00001f30           qnthold_current_frame
+     489                            ;timer hasn't run out on current frame.  stuff the new counter
+     490                            ; and return
+     491 00001f30     b0c5          move    a6,*a5(PD_SQCNT),W
+         00001f40     0090  
+     492 00001f50     016a          jump    a10             ;return address
+     493                    
+     494                            ;there's another valid frame in the sequence.  use it.
+     495 00001f60           qntnext_frame
+     496                            ;figure out if this is a front/back rope or a side rope.  They're
+     497                            ; handled differently.
+     498 00001f60     b50e          move    *a8(OID),a14,W
+         00001f70     0190  
+     499                    
+     500 00001f80     b0e5          move    a7,*a5(PD_SQCNT),W
+         00001f90     0090  
+     501                    
+     502 00001fa0     1f6e          btst    SUBHORZ_BIT,a14
+     503 00001fb0     cb0d          jrnz    qntfb_rope
+     504                    
+     505                    
+     506 00001fc0           qntside_rope    ;it's a side rope
+     507                            ;for these ropes, the 'image' in the sequence is a label where
+     508                            ; we'll find the top and bottom image header pointers, in that order.
+     509                            ; thus the extra indirection.
+     510 00001fc0     96c7          move    *a6+,a7,L
+     511 00001fd0     96e0          move    *a7+,a0,L
+     512 00001fe0     86e4          move    *a7,a4,L
+     513                    
+     514 00001ff0           qntrope_common
+     515 00001ff0     4c2e          move    a1,a14          ;a1 = fastanic
+     516 00002000     012e          exgpc   a14
+     517 00002010     b6a8          move    *a5(PD_OBJ2),a8,L
+         00002020     0020  
+     518                    
+     519 00002030     4c80          move    a4,a0
+     520 00002040     4c2e          move    a1,a14          ;a1 = fastanic
+     521 00002050     012e          exgpc   a14
+     522 00002060     b2c5          move    a6,*a5(PD_SQPTR),L
+         00002070     0070  
+     523 00002080     016a          jump    a10             ;return address
+     524                    
+     525 00002090           qntfb_rope      ;it's a front or back rope
+     526                            ;for these ropes, the image is in the sequence, and it's used
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   12
+
+     527                            ; for both halves.  The one on the right is flipped.
+     528 00002090     96c0          move    *a6+,a0,L
+     529 000020a0     4c04          move    a0,a4
+     530 000020b0     c0f3          jruc    qntrope_common
+     531                    
+     532                            ;it's some kind of special command
+     533                            ;assume it's a GOTO.  It'd sure as hell BETTER be...
+     534 000020c0           qntscript_goto
+     535 000020c0     b6a6          move    *a5(PD_SCPTR),a6,L
+         000020d0     0040  
+     536 000020e0     bac5          move    *a6(10h),*a5(PD_SCPTR),L
+         000020f0     0010  
+         00002100     0040  
+     537 00002110     c0d0          jruc    qntnew_sequence
+     538                    
+     539 00002120           qntrepeat_sequence
+     540 00002120     b0c5          move    a6,*a5(PD_SCCNT),W
+         00002130     0060  
+     541 00002140     b6a6          move    *a5(PD_SCPTR),a6,L
+         00002150     0040  
+     542 00002160     1206          addk    10h,a6                  ;skip the repeat count
+     543 00002170     86c6          move    *a6,a6,L                ;points now to a sequence
+     544 00002180     b2c5          move    a6,*a5(PD_SQPTR),L      ;stuff it as the new SQPTR
+         00002190     0070  
+     545 000021a0     c0be          jruc    qntnew_sequence_frame   ;and pretend we got there normally...
+     546                    
+     547                    *****************************************************************************
+     548                    * Change an objects image (Doesn't check VFLIP)
+     549                    * A0=*New image
+     550                    * A8=*Obj
+     551                    * Trashes scratch
+     552                    *
+     553                    * ---> This is more or less identical to the civanic found in ROBO.ASM,
+     554                    *      but it's called with EXGPC instead of CALL[R/A].
+     555                    *
+     556                    * ---> returns via JUMP a14
+     557                    
+     558 000021b0            SUBRP  fastanic
+     559                    
+     560 000021b0     0b60          cmpi    ROM,a0
+         000021c0 f87fffff  
+     561 000021e0     c811          jrlo    hiqanierr
+     562                    
+     563                            ;set new anim points
+     564 000021f0     ba08          move    *a0(IANIOFF),*a8(ODOFF),L
+         00002200     0020  
+         00002210     0220  
+     565                    
+     566 00002220     b208          move    a0,*a8(OIMG),L
+         00002230     0170  
+     567 00002240     ba08          move    *a0(0),*a8(OSIZE),L
+         00002250     0000  
+         00002260     0130  
+     568 00002270     ba08          move    *a0(ISAG),*a8(OSAG),L
+         00002280     0040  
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   13
+
+         00002290     0110  
+     569                    
+     570 000022a0     0545          setf    5,0,0
+     571 000022b0     b808          move    *a0(ICTRL+7),*a8(OCTRL+7) ;Write 5 z comp bits
+         000022c0     0067  
+         000022d0     00f7  
+     572 000022e0     0570          setf    16,1,0
+     573                    
+     574 000022f0     016e  hiqx    jump    a14
+     575                    
+     576 00002300           hiqanierr 
+     577                            .if     DEBUG
+     578                            LOCKUP
+     579                            eint
+     580                            .else
+     581 00002300                   CALLERR 2,2
+     582                            .endif
+     583 000023b0     c0f3          jruc    hiqx
+     584                    
+     585                    
+     586                    *****************************************************************************
+     587                    *
+     588                    * a0 = rope process
+     589                    * a1 = rope index (R_TOP,R_MIDDLE,R_BOTTOM)
+     590                    * a2 = rope action (RZ_NORM,RZ_HIGH)
+     591                    *
+     592                    
+     593 000023c0            SUBR   set_rope_z
+     594                    
+     595 000023c0                   PUSH    a4
+     596                    
+     597 000023d0     0b00          addi    PDBLKSTART,a0
+         000023e0     0120  
+     598 000023f0     09ce          movi    PDBLKSIZ,a14
+         00002400     00b0  
+     599 00002410     5fc1          mpyu    a14,a1
+     600 00002420     4020          add     a1,a0
+     601                    
+     602 00002430     b603          move    *a0(PD_OBJ),a3,L                ;top half
+         00002440     0000  
+     603 00002450     b604          move    *a0(PD_OBJ2),a4,L               ;bottom half
+         00002460     0020  
+     604                    
+     605 00002470     09c0          movi    015a9h,a0
+         00002480     15a9  
+     606                    
+     607 00002490     0b42          cmpi    RZ_HIGH,a2
+         000024a0     ffff  
+     608 000024b0     ca02          jreq    lhbset_high
+     609                    
+     610 000024c0     b460          move    *a3(OZPOS),a0,W
+         000024d0     00d0  
+     611                    
+     612 000024e0           lhbset_high
+     613 000024e0     b004          move    a0,*a4(OZPOS)
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   14
+
+         000024f0     00d0  
+     614                    
+     615 00002500                   PULL    a4
+     616                    
+     617 00002510     0960          rets
+     618                    
+     619                    *****************************************************************************
+     620                    *
+     621                    * a0 = rope number (use defined constants from game.equ)
+     622                    * a1 = type of action
+     623                    * a2 = rope position(0-5) (for side bounces)
+     624                    * a2 = magnitude(0-3) (for general shakes)
+     625                    * a3 = Z position of wrestler (only for side springs)
+     626                    *
+     627                    
+     628                            ;reg use
+     629                            ; a0-3  input
+     630                            ; a4    script pointer
+     631                            ; a5    rope process pointer
+     632                    
+     633 00002520            SUBR   rope_command
+     634                    
+     635 00002520                   push    a0,a1,a2,a3,a4,a7,a10
+     636                    
+     637                            ;get the action script pointer
+     638 00002540     4c05          move    a0,a5
+     639 00002550                   X32     a5
+     640 00002560     18ce          movk    ROPE_COMMANDS,a14
+     641 00002570     5fc5          mpyu    a14,a5
+     642 00002580     4ca4          move    a5,a4
+     643                            
+     644 00002590     0b24          addi    bekcommand_table,a4
+         000025a0 000029a0' 
+     645 000025c0     4c2e          move    a1,a14
+     646 000025d0                   X32     a14
+     647 000025e0     41c4          add     a14,a4
+     648 000025f0     8684          move    *a4,a4,L
+     649 00002600     ca36          jrz     bekinvalid_action
+     650                         
+     651                            ;get the rope proc pointer
+     652 00002610     4c05          move    a0,a5
+     653 00002620                   X32     a5
+     654 00002630     0b25          addi    front_rproc,a5
+         00002640 00000000! 
+     655 00002660     86a5          move    *a5,a5,L
+     656 00002670     ca2f          jrz     bekdone         ;ignore if there's no process for that rope.
+     657                    
+     658                            ;check for a side-spring
+     659 00002680     0b64          cmpi    beksspring,a4
+         00002690 ffffd1df' 
+     660 000026b0     ca05          jreq    beksloop
+     661 000026c0     0b64          cmpi    bekdspring,a4
+         000026d0 ffffcd7f' 
+     662 000026f0     ca01          jreq    beksloop
+     663 00002700     c00b          jruc    bekno_spring
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   15
+
+     664                    
+     665                            ;it's a side-spring.  figure out which one to use
+     666 00002710           beksloop
+     667 00002710     968e          move    *a4+,a14,L
+     668 00002720     49c3          cmp     a14,a3
+     669 00002730     c403          jrlt    beksfound
+     670 00002740     0b04          addi    20h*6,a4
+         00002750     00c0  
+     671 00002760     c0fa          jruc    beksloop
+     672                    
+     673 00002770           beksfound
+     674 00002770     4c4e          move    a2,a14
+     675 00002780                   X32     a14
+     676 00002790     41c4          add     a14,a4
+     677 000027a0     8684          move    *a4,a4,L
+     678 000027b0     c008          jruc    bekscript_set
+     679                    
+     680 000027c0           bekno_spring
+     681                            ;check for a side shake
+     682 000027c0     0b41          cmpi    ROPE_BOUNCEUD,a1
+         000027d0     ffff  
+     683 000027e0     cb05          jrne    bekno_updown
+     684                    
+     685                            ;it's an up-down shake.
+     686 000027f0     4c4e          move    a2,a14
+     687 00002800                   X32     a14
+     688 00002810     41c4          add     a14,a4
+     689 00002820     8684          move    *a4,a4,L
+     690 00002830     0300          jruc    bekscript_set
+     691                    
+     692 00002840           bekno_updown
+     693 00002840           bekscript_set
+     694                            ;start the bank of ropes doing it's thing
+     695 00002840     b285          move    a4,*a5(ROPE_ACTION),L
+         00002850     0100  
+     696                    
+     697 00002860     b4a1          move    *a5(PROCID),a1,W
+         00002870     0020  
+     698 00002880     09e7          movi    new_command_wake,a7
+         00002890 00000640' 
+     699 000028b0     b6a8          move    *a5(PA8),a8,L
+         000028c0     00c0  
+     700 000028d0     b6a9          move    *a5(PA9),a9,L
+         000028e0     00a0  
+     701 000028f0     b6aa          move    *a5(PA10),a10,L
+         00002900     0080  
+     702 00002910     b6ab          move    *a5(PA11),a11,L
+         00002920     0060  
+     703 00002930     4ca0          move    a5,a0
+     704 00002940     0d5f          calla   XFERPROC
+         00002950 00000000! 
+     705 00002970           bekinvalid_action
+     706 00002970           bekdone
+     707                    
+     708 00002970                   pull    a0,a1,a2,a3,a4,a7,a10
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   16
+
+     709                    
+     710 00002990     0960          rets
+     711                    
+     712 000029a0           bekcommand_table
+     713 000029a0 00002ca0'         .long   bekfrontud_table,0,0,0,0,0
+     714 00002a60 00002d20'         .long   bekbackud_table,0,0,0,0,0
+     715 00002b20 00002da0'         .long   beksideud,side_bounceio_t,beksspring,bekdspring,sspr_trans_t,dspr_trans_t
+     716 00002be0 00002da0'         .long   beksideud,side_bounceio_t,beksspring,bekdspring,sspr_trans_t,dspr_trans_t
+     717                    
+     718 00002ca0           bekfrontud_table
+     719 00002ca0 00003890'         .long   front_bounceud1_t
+     720 00002cc0 00003800'         .long   front_bounceud2_t
+     721 00002ce0 00003770'         .long   front_bounceud3_t
+     722 00002d00 000036e0'         .long   front_bounceud4_t
+     723                    
+     724 00002d20           bekbackud_table
+     725 00002d20 00004500'         .long   back_bounceud1_t
+     726 00002d40 00004470'         .long   back_bounceud2_t
+     727 00002d60 000043e0'         .long   back_bounceud3_t
+     728 00002d80 00004350'         .long   back_bounceud4_t
+     729                    
+     730 00002da0           beksideud
+     731 00002da0 00005200'         .long   side_bounceud1_t
+     732 00002dc0 00005140'         .long   side_bounceud2_t
+     733 00002de0 00005080'         .long   side_bounceud3_t
+     734 00002e00 00004fc0'         .long   side_bounceud4_t
+     735                    
+     736              0040  bekLANE_WIDTH   .equ    (RING_BOT - RING_TOP) / 5
+     737                    
+     738 00002e20           beksspring
+     739 00002e20 043f0000          .long   ( RING_TOP + ( 1 * bekLANE_WIDTH )) << 16
+     740 00002e40 000068e0'         .long   sspr11_t,sspr12_t,sspr13_t,sspr14_t,sspr15_t,0
+     741 00002f00 047f0000          .long   ( RING_TOP + ( 2 * bekLANE_WIDTH )) << 16
+     742 00002f20 000068e0'         .long   sspr11_t,sspr22_t,sspr23_t,sspr24_t,sspr25_t,0
+     743 00002fe0 04bf0000          .long   ( RING_TOP + ( 3 * bekLANE_WIDTH )) << 16
+     744 00003000 00006ca0'         .long   sspr21_t,sspr32_t,sspr33_t,sspr34_t,sspr35_t,0
+     745 000030c0 04ff0000          .long   ( RING_TOP + ( 4 * bekLANE_WIDTH )) << 16
+     746 000030e0 00007060'         .long   sspr31_t,sspr42_t,sspr43_t,sspr44_t,sspr45_t,0
+     747 000031a0 7fffffff          .long   7FFFFFFFh
+     748 000031c0 00007420'         .long   sspr41_t,sspr52_t,sspr53_t,sspr54_t,sspr55_t,0
+     749                    
+     750 00003280           bekdspring
+     751 00003280 043f0000          .long   ( RING_TOP + ( 1 * bekLANE_WIDTH )) << 16
+     752 000032a0 0000a7e0'         .long   dspr11_t,dspr12_t,dspr13_t,dspr14_t,dspr15_t,dspr16_t
+     753 00003360 047f0000          .long   ( RING_TOP + ( 2 * bekLANE_WIDTH )) << 16
+     754 00003380 0000a7e0'         .long   dspr11_t,dspr22_t,dspr23_t,dspr24_t,dspr25_t,dspr26_t
+     755 00003440 04bf0000          .long   ( RING_TOP + ( 3 * bekLANE_WIDTH )) << 16
+     756 00003460 0000ac60'         .long   dspr21_t,dspr32_t,dspr33_t,dspr34_t,dspr35_t,dspr36_t
+     757 00003520 04ff0000          .long   ( RING_TOP + ( 4 * bekLANE_WIDTH )) << 16
+     758 00003540 0000b0e0'         .long   dspr31_t,dspr42_t,dspr43_t,dspr44_t,dspr45_t,dspr46_t
+     759 00003600 7fffffff          .long   7FFFFFFFh
+     760 00003620 0000b560'         .long   dspr41_t,dspr52_t,dspr53_t,dspr54_t,dspr55_t,dspr56_t
+     761                    
+     762                    ***************************************
+     763                    *
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   17
+
+     764                    * Front ropes, up and down
+     765                    *
+     766                    
+     767 000036e0            SUBRP  front_bounceud4_t       ;(script table)
+     768 000036e0                   WL      SHAKE_PRI,front_bounceud4_R
+     769 00003710                   WL      SHAKE_PRI,front_bounceud4_W
+     770 00003740                   WL      SHAKE_PRI,front_bounceud4_B
+     771                    
+     772 00003770            SUBRP  front_bounceud3_t       ;(script table)
+     773 00003770                   WL      SHAKE_PRI,front_bounceud3_R
+     774 000037a0                   WL      SHAKE_PRI,front_bounceud3_W
+     775 000037d0                   WL      SHAKE_PRI,front_bounceud3_B
+     776                    
+     777 00003800            SUBRP  front_bounceud2_t       ;(script table)
+     778 00003800                   WL      SHAKE_PRI,front_bounceud2_R
+     779 00003830                   WL      SHAKE_PRI,front_bounceud2_W
+     780 00003860                   WL      SHAKE_PRI,front_bounceud2_B
+     781                    
+     782 00003890            SUBRP  front_bounceud1_t       ;(script table)
+     783 00003890                   WL      SHAKE_PRI,front_bounceud1_R
+     784 000038c0                   WL      SHAKE_PRI,front_bounceud1_W
+     785 000038f0                   WL      SHAKE_PRI,front_bounceud1_B
+     786                    
+     787 00003920            SUBRP  front_bounceud4_R       ;(script)
+     788 00003920                   WL      1,foyf_bncud1_R
+     789 00003950            SUBRP  front_bounceud3_R       ;(script)
+     790 00003950                   WL      1,foyf_bncud2_R
+     791 00003980            SUBRP  front_bounceud2_R       ;(script)
+     792 00003980                   WL      2,foyf_bncud3
+     793 000039b0            SUBRP  front_bounceud1_R       ;(script)
+     794 000039b0                   WL      3,foyf_bncud4
+     795 000039e0     0000          .word   0
+     796                    
+     797 000039f0            SUBRP  front_bounceud4_W       ;(script)
+     798 000039f0                   WL      1,foyf_bncud1_W
+     799 00003a20            SUBRP  front_bounceud3_W       ;(script)
+     800 00003a20                   WL      1,foyf_bncud2_W
+     801 00003a50            SUBRP  front_bounceud2_W       ;(script)
+     802 00003a50                   WL      2,foyf_bncud3
+     803 00003a80            SUBRP  front_bounceud1_W       ;(script)
+     804 00003a80                   WL      3,foyf_bncud4
+     805 00003ab0     0000          .word   0
+     806                    
+     807 00003ac0            SUBRP  front_bounceud4_B       ;(script)
+     808 00003ac0                   WL      1,foyf_bncud1_B
+     809 00003af0            SUBRP  front_bounceud3_B       ;(script)
+     810 00003af0                   WL      1,foyf_bncud2_B
+     811 00003b20            SUBRP  front_bounceud2_B       ;(script)
+     812 00003b20                   WL      2,foyf_bncud3
+     813 00003b50            SUBRP  front_bounceud1_B       ;(script)
+     814 00003b50                   WL      3,foyf_bncud4
+     815 00003b80     0000          .word   0
+     816                    
+     817 00003b90           foyf_bncud1_R   ;(sequence)
+     818 00003b90                   WL      1,RPFBUP02
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   18
+
+     819 00003bc0           foyf_bncud1_B   ;(sequence)
+     820 00003bc0                   WL      1,RPFBUP03
+     821 00003bf0           foyf_bncud1_W   ;(sequence)
+     822 00003bf0                   WL      1,RPFBUP05
+     823 00003c20                   WL      1,RPFBUP04
+     824 00003c50                   WL      1,RPFBUP03
+     825 00003c80                   WL      1,RPFBUP01
+     826 00003cb0                   WL      1,RPFBDN01
+     827 00003ce0                   WL      1,RPFBDN03
+     828 00003d10                   WL      1,RPFBDN05
+     829 00003d40                   WL      1,RPFBDN04
+     830 00003d70                   WL      1,RPFBDN03
+     831 00003da0                   WL      1,RPFBDN02
+     832 00003dd0                   WL      1,ROPE_F_R
+     833 00003e00     0000          .word   0
+     834                    
+     835 00003e10           foyf_bncud2_R   ;sequence
+     836 00003e10                   WL      1,RPFBUP02
+     837 00003e40           foyf_bncud2_B   ;sequence
+     838 00003e40                   WL      1,RPFBUP03
+     839 00003e70           foyf_bncud2_W   ;sequence
+     840 00003e70                   WL      1,RPFBUP04
+     841 00003ea0                   WL      1,RPFBUP03
+     842 00003ed0                   WL      1,RPFBUP01
+     843 00003f00                   WL      1,RPFBDN02
+     844 00003f30                   WL      1,RPFBDN03
+     845 00003f60                   WL      1,RPFBDN04
+     846 00003f90                   WL      1,RPFBDN03
+     847 00003fc0                   WL      1,RPFBDN02
+     848 00003ff0                   WL      1,ROPE_F_R
+     849 00004020     0000          .word   0
+     850                    
+     851 00004030           foyf_bncud3     ;sequence
+     852 00004030                   WL      1,RPFBUP02
+     853 00004060                   WL      1,RPFBUP03
+     854 00004090                   WL      1,RPFBUP02
+     855 000040c0                   WL      1,ROPE_F_R
+     856 000040f0                   WL      1,RPFBDN02
+     857 00004120                   WL      1,RPFBDN03
+     858 00004150                   WL      1,RPFBDN02
+     859 00004180                   WL      1,ROPE_F_R
+     860 000041b0     0000          .word   0
+     861                    
+     862 000041c0           foyf_bncud4     ;sequence
+     863 000041c0                   WL      1,RPFBUP01
+     864 000041f0                   WL      1,RPFBUP02
+     865 00004220                   WL      1,RPFBUP01
+     866 00004250                   WL      1,ROPE_F_R
+     867 00004280                   WL      1,RPFBDN01
+     868 000042b0                   WL      1,RPFBDN02
+     869 000042e0                   WL      1,RPFBDN01
+     870 00004310                   WL      1,ROPE_F_R
+     871 00004340     0000          .word   0
+     872                    
+     873                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   19
+
+     874                    ****************************************
+     875                    *
+     876                    * Back ropes, up and down
+     877                    *
+     878                    
+     879 00004350            SUBRP  back_bounceud4_t        ;(script table)
+     880 00004350                   WL      SHAKE_PRI,back_bounceud4_R
+     881 00004380                   WL      SHAKE_PRI,back_bounceud4_W
+     882 000043b0                   WL      SHAKE_PRI,back_bounceud4_B
+     883                    
+     884 000043e0            SUBRP  back_bounceud3_t        ;(script table)
+     885 000043e0                   WL      SHAKE_PRI,back_bounceud3_R
+     886 00004410                   WL      SHAKE_PRI,back_bounceud3_W
+     887 00004440                   WL      SHAKE_PRI,back_bounceud3_B
+     888                    
+     889 00004470            SUBRP  back_bounceud2_t        ;(script table)
+     890 00004470                   WL      SHAKE_PRI,back_bounceud2_R
+     891 000044a0                   WL      SHAKE_PRI,back_bounceud2_W
+     892 000044d0                   WL      SHAKE_PRI,back_bounceud2_B
+     893                    
+     894 00004500            SUBRP  back_bounceud1_t        ;(script table)
+     895 00004500                   WL      SHAKE_PRI,back_bounceud1_R
+     896 00004530                   WL      SHAKE_PRI,back_bounceud1_W
+     897 00004560                   WL      SHAKE_PRI,back_bounceud1_B
+     898                    
+     899 00004590            SUBRP  back_bounceud4_R        ;(script)
+     900 00004590                   WL      1,foyb_bncud1_R
+     901 000045c0            SUBRP  back_bounceud3_R        ;(script)
+     902 000045c0                   WL      1,foyb_bncud2_R
+     903 000045f0            SUBRP  back_bounceud2_R        ;(script)
+     904 000045f0                   WL      2,foyb_bncud3_R
+     905 00004620            SUBRP  back_bounceud1_R        ;(script)
+     906 00004620                   WL      3,foyb_bncud4_R
+     907 00004650     0000          .word   0
+     908                    
+     909 00004660            SUBRP  back_bounceud4_W        ;(script)
+     910 00004660                   WL      1,foyb_bncud1_W
+     911 00004690            SUBRP  back_bounceud3_W        ;(script)
+     912 00004690                   WL      1,foyb_bncud2_W
+     913 000046c0            SUBRP  back_bounceud2_W        ;(script)
+     914 000046c0                   WL      2,foyb_bncud3_W
+     915 000046f0            SUBRP  back_bounceud1_W        ;(script)
+     916 000046f0                   WL      3,foyb_bncud4_W
+     917 00004720     0000          .word   0
+     918                    
+     919 00004730            SUBRP  back_bounceud4_B        ;(script)
+     920 00004730                   WL      1,foyb_bncud1_B
+     921 00004760            SUBRP  back_bounceud3_B        ;(script)
+     922 00004760                   WL      1,foyb_bncud2_B
+     923 00004790            SUBRP  back_bounceud2_B        ;(script)
+     924 00004790                   WL      2,foyb_bncud3_B
+     925 000047c0            SUBRP  back_bounceud1_B        ;(script)
+     926 000047c0                   WL      3,foyb_bncud4_B
+     927 000047f0     0000          .word   0
+     928                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   20
+
+     929                    
+     930 00004800           foyb_bncud1_B   ;(sequence)
+     931 00004800                   WL      1,RPBBUP02
+     932 00004830           foyb_bncud1_R   ;(sequence)
+     933 00004830                   WL      1,RPBBUP03
+     934 00004860           foyb_bncud1_W   ;(sequence)
+     935 00004860                   WL      1,RPBBUP05
+     936 00004890                   WL      1,RPBBUP04
+     937 000048c0                   WL      1,RPBBUP03
+     938 000048f0                   WL      1,RPBBUP01
+     939 00004920                   WL      1,RPBBDN01
+     940 00004950                   WL      1,RPBBDN03
+     941 00004980                   WL      1,RPBBDN05
+     942 000049b0                   WL      1,RPBBDN04
+     943 000049e0                   WL      1,RPBBDN03
+     944 00004a10                   WL      1,RPBBDN02
+     945 00004a40                   WL      1,ROPE_B_R
+     946 00004a70     0000          .word   0
+     947                    
+     948 00004a80           foyb_bncud2_B   ;(sequence)
+     949 00004a80                   WL      1,RPBBUP02
+     950 00004ab0           foyb_bncud2_R   ;(sequence)
+     951 00004ab0                   WL      1,RPBBUP03
+     952 00004ae0           foyb_bncud2_W   ;(sequence)
+     953 00004ae0                   WL      1,RPBBUP04
+     954 00004b10                   WL      1,RPBBUP03
+     955 00004b40                   WL      1,RPBBUP01
+     956 00004b70                   WL      1,RPBBDN02
+     957 00004ba0                   WL      1,RPBBDN03
+     958 00004bd0                   WL      1,RPBBDN04
+     959 00004c00                   WL      1,RPBBDN03
+     960 00004c30                   WL      1,RPBBDN02
+     961 00004c60                   WL      1,ROPE_B_R
+     962 00004c90     0000          .word   0
+     963                    
+     964 00004ca0           foyb_bncud3_R   ;(sequence)
+     965 00004ca0           foyb_bncud3_W   ;(sequence)
+     966 00004ca0                   WL      1,RPBBUP02
+     967 00004cd0           foyb_bncud3_B   ;(sequence)
+     968 00004cd0                   WL      1,RPBBUP03
+     969 00004d00                   WL      1,RPBBUP02
+     970 00004d30                   WL      1,ROPE_B_R
+     971 00004d60                   WL      1,RPBBDN02
+     972 00004d90                   WL      1,RPBBDN03
+     973 00004dc0                   WL      1,RPBBDN02
+     974 00004df0                   WL      1,ROPE_B_R
+     975 00004e20     0000          .word   0
+     976                    
+     977 00004e30           foyb_bncud4_W   ;(sequence)
+     978 00004e30           foyb_bncud4_B   ;(sequence)
+     979 00004e30                   WL      1,RPBBUP01
+     980 00004e60           foyb_bncud4_R   ;(sequence)
+     981 00004e60                   WL      1,RPBBUP02
+     982 00004e90                   WL      1,RPBBUP01
+     983 00004ec0                   WL      1,ROPE_B_R
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   21
+
+     984 00004ef0                   WL      1,RPBBDN01
+     985 00004f20                   WL      1,RPBBDN02
+     986 00004f50                   WL      1,RPBBDN01
+     987 00004f80                   WL      1,ROPE_B_R
+     988 00004fb0     0000          .word   0
+     989                    
+     990                    
+     991                    ****************************************
+     992                    *
+     993                    * Side ropes, up and down
+     994                    *
+     995                    
+     996 00004fc0            SUBRP  side_bounceud4_t        ;(script table)
+     997 00004fc0                   WL      SHAKE_PRI,side_bounceud4_R
+     998 00004ff0                   WL      SHAKE_PRI,side_bounceud4_W
+     999 00005020                   WL      SHAKE_PRI,side_bounceud4_B
+    1000 00005050                   WL      SHAKE_PRI,side_bounceud_S
+    1001                    
+    1002 00005080            SUBRP  side_bounceud3_t        ;(script table)
+    1003 00005080                   WL      SHAKE_PRI,side_bounceud3_R
+    1004 000050b0                   WL      SHAKE_PRI,side_bounceud3_W
+    1005 000050e0                   WL      SHAKE_PRI,side_bounceud3_B
+    1006 00005110                   WL      SHAKE_PRI,side_bounceud_S
+    1007                    
+    1008 00005140            SUBRP  side_bounceud2_t        ;(script table)
+    1009 00005140                   WL      SHAKE_PRI,side_bounceud2_R
+    1010 00005170                   WL      SHAKE_PRI,side_bounceud2_W
+    1011 000051a0                   WL      SHAKE_PRI,side_bounceud2_B
+    1012 000051d0                   WL      SHAKE_PRI,side_bounceud_S
+    1013                    
+    1014 00005200            SUBRP  side_bounceud1_t        ;(script table)
+    1015 00005200                   WL      SHAKE_PRI,side_bounceud1_R
+    1016 00005230                   WL      SHAKE_PRI,side_bounceud1_W
+    1017 00005260                   WL      SHAKE_PRI,side_bounceud1_B
+    1018 00005290                   WL      SHAKE_PRI,side_bounceud_S
+    1019                    
+    1020 000052c0            SUBRP  side_bounceud_S         ;(script)
+    1021 000052c0                   WL      1,foys_bncud_S
+    1022 000052f0     0000          .word   0
+    1023                    
+    1024 00005300            SUBRP  side_bounceud4_R        ;(script)
+    1025 00005300                   WL      1,foys_bncud1_R
+    1026 00005330            SUBRP  side_bounceud3_R        ;(script)
+    1027 00005330                   WL      1,foys_bncud2_R
+    1028 00005360            SUBRP  side_bounceud2_R        ;(script)
+    1029 00005360                   WL      2,foys_bncud3_R
+    1030 00005390            SUBRP  side_bounceud1_R        ;(script)
+    1031 00005390                   WL      3,foys_bncud4_R
+    1032 000053c0     0000          .word   0
+    1033                    
+    1034 000053d0            SUBRP  side_bounceud4_W        ;(script)
+    1035 000053d0                   WL      1,foys_bncud1_W
+    1036 00005400            SUBRP  side_bounceud3_W        ;(script)
+    1037 00005400                   WL      1,foys_bncud2_W
+    1038 00005430            SUBRP  side_bounceud2_W        ;(script)
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   22
+
+    1039 00005430                   WL      2,foys_bncud3_W
+    1040 00005460            SUBRP  side_bounceud1_W        ;(script)
+    1041 00005460                   WL      3,foys_bncud4_W
+    1042 00005490     0000          .word   0
+    1043                    
+    1044 000054a0            SUBRP  side_bounceud4_B        ;(script)
+    1045 000054a0                   WL      1,foys_bncud1_B
+    1046 000054d0            SUBRP  side_bounceud3_B        ;(script)
+    1047 000054d0                   WL      1,foys_bncud2_B
+    1048 00005500            SUBRP  side_bounceud2_B        ;(script)
+    1049 00005500                   WL      2,foys_bncud3_B
+    1050 00005530            SUBRP  side_bounceud1_B        ;(script)
+    1051 00005530                   WL      3,foys_bncud4_B
+    1052 00005560     0000          .word   0
+    1053                    
+    1054 00005570           foys_bncud1_B   ;(sequence)
+    1055 00005570                   WL      1,RPSBUP02
+    1056 000055a0           foys_bncud1_W   ;(sequence)
+    1057 000055a0                   WL      1,RPSBUP03
+    1058 000055d0           foys_bncud1_R   ;(sequence)
+    1059 000055d0                   WL      1,RPSBUP05
+    1060 00005600                   WL      1,RPSBUP04
+    1061 00005630                   WL      1,RPSBUP03
+    1062 00005660                   WL      1,RPSBUP01
+    1063 00005690                   WL      1,RPSBDN01
+    1064 000056c0                   WL      1,RPSBDN03
+    1065 000056f0                   WL      1,RPSBDN05
+    1066 00005720                   WL      1,RPSBDN04
+    1067 00005750                   WL      1,RPSBDN03
+    1068 00005780                   WL      1,RPSBDN02
+    1069 000057b0                   WL      1,ROPE_S_R
+    1070 000057e0     0000          .word   0
+    1071                    
+    1072 000057f0           foys_bncud2_B   ;(sequence)
+    1073 000057f0                   WL      1,RPSBUP02
+    1074 00005820           foys_bncud2_W   ;(sequence)
+    1075 00005820                   WL      1,RPSBUP03
+    1076 00005850           foys_bncud2_R   ;(sequence)
+    1077 00005850                   WL      1,RPSBUP04
+    1078 00005880                   WL      1,RPSBUP03
+    1079 000058b0                   WL      1,RPSBUP01
+    1080 000058e0                   WL      1,RPSBDN02
+    1081 00005910                   WL      1,RPSBDN03
+    1082 00005940                   WL      1,RPSBDN04
+    1083 00005970                   WL      1,RPSBDN03
+    1084 000059a0                   WL      1,RPSBDN02
+    1085 000059d0                   WL      1,ROPE_S_R
+    1086 00005a00     0000          .word   0
+    1087                    
+    1088 00005a10           foys_bncud3_R   ;(sequence)
+    1089 00005a10           foys_bncud3_W   ;(sequence)
+    1090 00005a10                   WL      1,RPSBUP02
+    1091 00005a40           foys_bncud3_B   ;(sequence)
+    1092 00005a40                   WL      1,RPSBUP03
+    1093 00005a70                   WL      1,RPSBUP02
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   23
+
+    1094 00005aa0                   WL      1,ROPE_S_R
+    1095 00005ad0                   WL      1,RPSBDN02
+    1096 00005b00                   WL      1,RPSBDN03
+    1097 00005b30                   WL      1,RPSBDN02
+    1098 00005b60                   WL      1,ROPE_S_R
+    1099 00005b90     0000          .word   0
+    1100                    
+    1101 00005ba0           foys_bncud4_R   ;(sequence)
+    1102 00005ba0           foys_bncud4_B   ;(sequence)
+    1103 00005ba0                   WL      1,RPSBUP01
+    1104 00005bd0           foys_bncud4_W   ;(sequence)
+    1105 00005bd0                   WL      1,RPSBUP02
+    1106 00005c00                   WL      1,RPSBUP01
+    1107 00005c30                   WL      1,ROPE_S_R
+    1108 00005c60                   WL      1,RPSBDN01
+    1109 00005c90                   WL      1,RPSBDN02
+    1110 00005cc0                   WL      1,RPSBDN01
+    1111 00005cf0                   WL      1,ROPE_S_R
+    1112 00005d20     0000          .word   0
+    1113                    
+    1114 00005d30           foys_bncud_S    ;(sequence)
+    1115 00005d30                   WL      1,ROPSHAD
+    1116 00005d60     0000          .word   0
+    1117                    
+    1118                    
+    1119                    ****************************************
+    1120                    *
+    1121                    * Side ropes, in and out
+    1122                    *
+    1123                    
+    1124 00005d70            SUBRP  side_bounceio_t         ;(script table)
+    1125 00005d70                   WL      SHAKE_PRI,side_bounceio_R
+    1126 00005da0                   WL      SHAKE_PRI,side_bounceio_W
+    1127 00005dd0                   WL      SHAKE_PRI,side_bounceio_B
+    1128 00005e00                   WL      SHAKE_PRI,side_bounceio_S
+    1129                    
+    1130 00005e30            SUBRP  side_bounceio_S         ;(script)
+    1131 00005e30                   WL      1,foys_bncio_S
+    1132 00005e60     0000          .word   0
+    1133                    
+    1134 00005e70            SUBRP  side_bounceio_R         ;(script)
+    1135 00005e70                   WL      1,foys_bncio1_R
+    1136 00005ea0            SUBRP  side_bounceio2_R        ;(script)
+    1137                    ;       WL      RANI_SETPRIORITY,SHAKE_PRI-1
+    1138 00005ea0                   WL      1,foys_bncio2_R
+    1139 00005ed0                   WL      1,foys_bncio3
+    1140 00005f00                   WL      2,foys_bncio4
+    1141 00005f30     0000          .word   0
+    1142                    
+    1143 00005f40            SUBRP  side_bounceio_W         ;(script)
+    1144 00005f40                   WL      1,foys_bncio1_W
+    1145 00005f70            SUBRP  side_bounceio2_W        ;(script)
+    1146 00005f70                   WL      1,foys_bncio2_W
+    1147 00005fa0                   WL      1,foys_bncio3
+    1148 00005fd0                   WL      2,foys_bncio4
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   24
+
+    1149 00006000     0000          .word   0
+    1150                    
+    1151 00006010            SUBRP  side_bounceio_B         ;(script)
+    1152 00006010                   WL      1,foys_bncio1_B
+    1153 00006040                   WL      1,foys_bncio2_B
+    1154 00006070                   WL      1,foys_bncio3
+    1155 000060a0                   WL      2,foys_bncio4
+    1156 000060d0     0000          .word   0
+    1157                    
+    1158                    
+    1159 000060e0           foys_bncio1_R   ;(sequence)
+    1160 000060e0                   WL      1,RPSBIN02
+    1161 00006110           foys_bncio1_B   ;(sequence)
+    1162 00006110                   WL      1,RPSBIN03
+    1163 00006140           foys_bncio1_W   ;(sequence)
+    1164 00006140                   WL      1,RPSBIN05
+    1165 00006170                   WL      1,RPSBIN04
+    1166 000061a0                   WL      1,RPSBIN03
+    1167 000061d0                   WL      1,RPSBIN01
+    1168 00006200                   WL      1,RPSBOU01
+    1169 00006230                   WL      1,RPSBOU03
+    1170 00006260                   WL      1,RPSBOU05
+    1171 00006290                   WL      1,RPSBOU04
+    1172 000062c0                   WL      1,RPSBOU03
+    1173 000062f0                   WL      1,RPSBOU02
+    1174 00006320                   WL      1,ROPE_S_R
+    1175 00006350     0000          .word   0
+    1176                    
+    1177 00006360           foys_bncio2_R   ;(sequence)
+    1178 00006360                   WL      1,RPSBIN02
+    1179 00006390           foys_bncio2_B   ;(sequence)
+    1180 00006390                   WL      1,RPSBIN03
+    1181 000063c0           foys_bncio2_W   ;(sequence)
+    1182 000063c0                   WL      1,RPSBIN04
+    1183 000063f0                   WL      1,RPSBIN03
+    1184 00006420                   WL      1,RPSBIN01
+    1185 00006450                   WL      1,RPSBOU02
+    1186 00006480                   WL      1,RPSBOU03
+    1187 000064b0                   WL      1,RPSBOU04
+    1188 000064e0                   WL      1,RPSBOU03
+    1189 00006510                   WL      1,RPSBOU02
+    1190 00006540                   WL      1,ROPE_S_R
+    1191 00006570     0000          .word   0
+    1192                    
+    1193 00006580           foys_bncio3     ;(sequence)
+    1194 00006580                   WL      1,RPSBIN02
+    1195 000065b0                   WL      1,RPSBIN03
+    1196 000065e0                   WL      1,RPSBIN02
+    1197 00006610                   WL      1,ROPE_S_R
+    1198 00006640                   WL      1,RPSBOU02
+    1199 00006670                   WL      1,RPSBOU03
+    1200 000066a0                   WL      1,RPSBOU02
+    1201 000066d0                   WL      1,ROPE_S_R
+    1202 00006700     0000          .word   0
+    1203                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   25
+
+    1204 00006710           foys_bncio4     ;(sequence)
+    1205 00006710                   WL      1,RPSBIN01
+    1206 00006740                   WL      1,RPSBIN02
+    1207 00006770                   WL      1,RPSBIN01
+    1208 000067a0                   WL      1,ROPE_S_R
+    1209 000067d0                   WL      1,RPSBOU01
+    1210 00006800                   WL      1,RPSBOU02
+    1211 00006830                   WL      1,RPSBOU01
+    1212 00006860                   WL      1,ROPE_S_R
+    1213 00006890     0000          .word   0
+    1214                    
+    1215 000068a0           foys_bncio_S    ;(sequence)
+    1216 000068a0                   WL      1,ROPSHAD
+    1217 000068d0     0000          .word   0
+    1218                    
+    1219                    ****************************************
+    1220                    *
+    1221                    * Side ropes, spring sideways
+    1222                    *
+    1223                    
+    1224 000068e0           sspr11_t        ;(script table)
+    1225 000068e0                   WLWL    SSPRING_PRI,foysspr11,SSPRING_PRI,foyssprXX
+    1226 00006940                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad11
+    1227 000069a0           sspr12_t        ;(script table)
+    1228 000069a0                   WLWL    SSPRING_PRI,foysspr12,SSPRING_PRI,foysspr11
+    1229 00006a00                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad12
+    1230 00006a60           sspr13_t        ;(script table)
+    1231 00006a60                   WLWL    SSPRING_PRI,foysspr13,SSPRING_PRI,foysspr12
+    1232 00006ac0                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad13
+    1233 00006b20           sspr14_t        ;(script table)
+    1234 00006b20                   WLWL    SSPRING_PRI,foysspr14,SSPRING_PRI,foysspr12
+    1235 00006b80                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad13
+    1236 00006be0           sspr15_t        ;(script table)
+    1237 00006be0                   WLWL    SSPRING_PRI,foysspr15,SSPRING_PRI,foysspr11
+    1238 00006c40                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad12
+    1239                    
+    1240 00006ca0           sspr21_t        ;(script table)
+    1241 00006ca0                   WLWL    SSPRING_PRI,foysspr21,SSPRING_PRI,foyssprXX
+    1242 00006d00                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad21
+    1243 00006d60           sspr22_t        ;(script table)
+    1244 00006d60                   WLWL    SSPRING_PRI,foysspr22,SSPRING_PRI,foysspr21
+    1245 00006dc0                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad22
+    1246 00006e20           sspr23_t        ;(script table)
+    1247 00006e20                   WLWL    SSPRING_PRI,foysspr23,SSPRING_PRI,foysspr22
+    1248 00006e80                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad23
+    1249 00006ee0           sspr24_t        ;(script table)
+    1250 00006ee0                   WLWL    SSPRING_PRI,foysspr24,SSPRING_PRI,foysspr22
+    1251 00006f40                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad23
+    1252 00006fa0           sspr25_t        ;(script table)
+    1253 00006fa0                   WLWL    SSPRING_PRI,foysspr25,SSPRING_PRI,foysspr21
+    1254 00007000                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad22
+    1255                    
+    1256 00007060           sspr31_t        ;(script table)
+    1257 00007060                   WLWL    SSPRING_PRI,foysspr31,SSPRING_PRI,foyssprXX
+    1258 000070c0                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad31
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   26
+
+    1259 00007120           sspr32_t        ;(script table)
+    1260 00007120                   WLWL    SSPRING_PRI,foysspr32,SSPRING_PRI,foysspr31
+    1261 00007180                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad32
+    1262 000071e0           sspr33_t        ;(script table)
+    1263 000071e0                   WLWL    SSPRING_PRI,foysspr33,SSPRING_PRI,foysspr32
+    1264 00007240                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad33
+    1265 000072a0           sspr34_t        ;(script table)
+    1266 000072a0                   WLWL    SSPRING_PRI,foysspr34,SSPRING_PRI,foysspr32
+    1267 00007300                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad33
+    1268 00007360           sspr35_t        ;(script table)
+    1269 00007360                   WLWL    SSPRING_PRI,foysspr35,SSPRING_PRI,foysspr31
+    1270 000073c0                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad32
+    1271                    
+    1272 00007420           sspr41_t        ;(script table)
+    1273 00007420                   WLWL    SSPRING_PRI,foysspr41,SSPRING_PRI,foyssprXX
+    1274 00007480                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad41
+    1275 000074e0           sspr42_t        ;(script table)
+    1276 000074e0                   WLWL    SSPRING_PRI,foysspr42,SSPRING_PRI,foysspr41
+    1277 00007540                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad42
+    1278 000075a0           sspr43_t        ;(script table)
+    1279 000075a0                   WLWL    SSPRING_PRI,foysspr43,SSPRING_PRI,foysspr42
+    1280 00007600                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad43
+    1281 00007660           sspr44_t        ;(script table)
+    1282 00007660                   WLWL    SSPRING_PRI,foysspr44,SSPRING_PRI,foysspr42
+    1283 000076c0                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad43
+    1284 00007720           sspr45_t        ;(script table)
+    1285 00007720                   WLWL    SSPRING_PRI,foysspr45,SSPRING_PRI,foysspr41
+    1286 00007780                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad42
+    1287                    
+    1288 000077e0           sspr51_t        ;(script table)
+    1289 000077e0                   WLWL    SSPRING_PRI,foysspr51,SSPRING_PRI,foyssprXX
+    1290 00007840                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad51
+    1291 000078a0           sspr52_t        ;(script table)
+    1292 000078a0                   WLWL    SSPRING_PRI,foysspr52,SSPRING_PRI,foysspr51
+    1293 00007900                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad52
+    1294 00007960           sspr53_t        ;(script table)
+    1295 00007960                   WLWL    SSPRING_PRI,foysspr53,SSPRING_PRI,foysspr52
+    1296 000079c0                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad53
+    1297 00007a20           sspr54_t        ;(script table)
+    1298 00007a20                   WLWL    SSPRING_PRI,foysspr54,SSPRING_PRI,foysspr52
+    1299 00007a80                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad53
+    1300 00007ae0           sspr55_t        ;(script table)
+    1301 00007ae0                   WLWL    SSPRING_PRI,foysspr55,SSPRING_PRI,foysspr51
+    1302 00007b40                   WLWL    SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad52
+    1303                    
+    1304 00007ba0           sspr_trans_t    ;(script table)
+    1305 00007ba0                   WL      SSPRING_PRI,foysspr_trans_R
+    1306 00007bd0                   WL      SSPRING_PRI,foysspr_trans_W
+    1307 00007c00                   WL      SSPRING_PRI,foysspr_trans_B
+    1308 00007c30                   WL      SSPRING_PRI,foysprshad_trans
+    1309                    
+    1310 00007c60           foyssprXX               ;(script)
+    1311 00007c60                   WL      1,foys_stop
+    1312 00007c90     0000          .word   0
+    1313 00007ca0           foysspr11               ;(script)
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   27
+
+    1314 00007ca0                   WL      1,foys_sspr11
+    1315 00007cd0     0000          .word   0
+    1316 00007ce0           foysspr12               ;(script)
+    1317 00007ce0                   WL      1,foys_sspr12
+    1318 00007d10     0000          .word   0
+    1319 00007d20           foysspr13               ;(script)
+    1320 00007d20                   WL      1,foys_sspr13
+    1321 00007d50     0000          .word   0
+    1322 00007d60           foysspr14               ;(script)
+    1323 00007d60                   WL      1,foys_sspr14
+    1324 00007d90     0000          .word   0
+    1325 00007da0           foysspr15               ;(script)
+    1326 00007da0                   WL      1,foys_sspr15
+    1327 00007dd0     0000          .word   0
+    1328 00007de0           foysspr16               ;(script)
+    1329 00007de0                   WL      1,foys_sspr16
+    1330 00007e10     0000          .word   0
+    1331 00007e20           foysspr21               ;(script)
+    1332 00007e20                   WL      1,foys_sspr21
+    1333 00007e50     0000          .word   0
+    1334 00007e60           foysspr22               ;(script)
+    1335 00007e60                   WL      1,foys_sspr22
+    1336 00007e90     0000          .word   0
+    1337 00007ea0           foysspr23               ;(script)
+    1338 00007ea0                   WL      1,foys_sspr23
+    1339 00007ed0     0000          .word   0
+    1340 00007ee0           foysspr24               ;(script)
+    1341 00007ee0                   WL      1,foys_sspr24
+    1342 00007f10     0000          .word   0
+    1343 00007f20           foysspr25               ;(script)
+    1344 00007f20                   WL      1,foys_sspr25
+    1345 00007f50     0000          .word   0
+    1346 00007f60           foysspr26               ;(script)
+    1347 00007f60                   WL      1,foys_sspr26
+    1348 00007f90     0000          .word   0
+    1349 00007fa0           foysspr31               ;(script)
+    1350 00007fa0                   WL      1,foys_sspr31
+    1351 00007fd0     0000          .word   0
+    1352 00007fe0           foysspr32               ;(script)
+    1353 00007fe0                   WL      1,foys_sspr32
+    1354 00008010     0000          .word   0
+    1355 00008020           foysspr33               ;(script)
+    1356 00008020                   WL      1,foys_sspr33
+    1357 00008050     0000          .word   0
+    1358 00008060           foysspr34               ;(script)
+    1359 00008060                   WL      1,foys_sspr34
+    1360 00008090     0000          .word   0
+    1361 000080a0           foysspr35               ;(script)
+    1362 000080a0                   WL      1,foys_sspr35
+    1363 000080d0     0000          .word   0
+    1364 000080e0           foysspr36               ;(script)
+    1365 000080e0                   WL      1,foys_sspr36
+    1366 00008110     0000          .word   0
+    1367 00008120           foysspr41               ;(script)
+    1368 00008120                   WL      1,foys_sspr41
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   28
+
+    1369 00008150     0000          .word   0
+    1370 00008160           foysspr42               ;(script)
+    1371 00008160                   WL      1,foys_sspr42
+    1372 00008190     0000          .word   0
+    1373 000081a0           foysspr43               ;(script)
+    1374 000081a0                   WL      1,foys_sspr43
+    1375 000081d0     0000          .word   0
+    1376 000081e0           foysspr44               ;(script)
+    1377 000081e0                   WL      1,foys_sspr44
+    1378 00008210     0000          .word   0
+    1379 00008220           foysspr45               ;(script)
+    1380 00008220                   WL      1,foys_sspr45
+    1381 00008250     0000          .word   0
+    1382 00008260           foysspr46               ;(script)
+    1383 00008260                   WL      1,foys_sspr46
+    1384 00008290     0000          .word   0
+    1385 000082a0           foysspr51               ;(script)
+    1386 000082a0                   WL      1,foys_sspr51
+    1387 000082d0     0000          .word   0
+    1388 000082e0           foysspr52               ;(script)
+    1389 000082e0                   WL      1,foys_sspr52
+    1390 00008310     0000          .word   0
+    1391 00008320           foysspr53               ;(script)
+    1392 00008320                   WL      1,foys_sspr53
+    1393 00008350     0000          .word   0
+    1394 00008360           foysspr54               ;(script)
+    1395 00008360                   WL      1,foys_sspr54
+    1396 00008390     0000          .word   0
+    1397 000083a0           foysspr55               ;(script)
+    1398 000083a0                   WL      1,foys_sspr55
+    1399 000083d0     0000          .word   0
+    1400 000083e0           foysspr56               ;(script)
+    1401 000083e0                   WL      1,foys_sspr56
+    1402 00008410     0000          .word   0
+    1403                    
+    1404 00008420           foysprshad11    ;(script)
+    1405 00008420                   WL      1,foys_sprshad11
+    1406 00008450     0000          .word   0
+    1407 00008460           foysprshad12    ;(script)
+    1408 00008460                   WL      1,foys_sprshad12
+    1409 00008490     0000          .word   0
+    1410 000084a0           foysprshad13    ;(script)
+    1411 000084a0                   WL      1,foys_sprshad13
+    1412 000084d0     0000          .word   0
+    1413 000084e0           foysprshad14    ;(script)
+    1414 000084e0                   WL      1,foys_sprshad14
+    1415 00008510     0000          .word   0
+    1416 00008520           foysprshad15    ;(script)
+    1417 00008520                   WL      1,foys_sprshad15
+    1418 00008550     0000          .word   0
+    1419 00008560           foysprshad21    ;(script)
+    1420 00008560                   WL      1,foys_sprshad21
+    1421 00008590     0000          .word   0
+    1422 000085a0           foysprshad22    ;(script)
+    1423 000085a0                   WL      1,foys_sprshad22
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   29
+
+    1424 000085d0     0000          .word   0
+    1425 000085e0           foysprshad23    ;(script)
+    1426 000085e0                   WL      1,foys_sprshad23
+    1427 00008610     0000          .word   0
+    1428 00008620           foysprshad24    ;(script)
+    1429 00008620                   WL      1,foys_sprshad24
+    1430 00008650     0000          .word   0
+    1431 00008660           foysprshad25    ;(script)
+    1432 00008660                   WL      1,foys_sprshad25
+    1433 00008690     0000          .word   0
+    1434 000086a0           foysprshad31    ;(script)
+    1435 000086a0                   WL      1,foys_sprshad31
+    1436 000086d0     0000          .word   0
+    1437 000086e0           foysprshad32    ;(script)
+    1438 000086e0                   WL      1,foys_sprshad32
+    1439 00008710     0000          .word   0
+    1440 00008720           foysprshad33    ;(script)
+    1441 00008720                   WL      1,foys_sprshad33
+    1442 00008750     0000          .word   0
+    1443 00008760           foysprshad34    ;(script)
+    1444 00008760                   WL      1,foys_sprshad34
+    1445 00008790     0000          .word   0
+    1446 000087a0           foysprshad35    ;(script)
+    1447 000087a0                   WL      1,foys_sprshad35
+    1448 000087d0     0000          .word   0
+    1449 000087e0           foysprshad41    ;(script)
+    1450 000087e0                   WL      1,foys_sprshad41
+    1451 00008810     0000          .word   0
+    1452 00008820           foysprshad42    ;(script)
+    1453 00008820                   WL      1,foys_sprshad42
+    1454 00008850     0000          .word   0
+    1455 00008860           foysprshad43    ;(script)
+    1456 00008860                   WL      1,foys_sprshad43
+    1457 00008890     0000          .word   0
+    1458 000088a0           foysprshad44    ;(script)
+    1459 000088a0                   WL      1,foys_sprshad44
+    1460 000088d0     0000          .word   0
+    1461 000088e0           foysprshad45    ;(script)
+    1462 000088e0                   WL      1,foys_sprshad45
+    1463 00008910     0000          .word   0
+    1464 00008920           foysprshad51    ;(script)
+    1465 00008920                   WL      1,foys_sprshad51
+    1466 00008950     0000          .word   0
+    1467 00008960           foysprshad52    ;(script)
+    1468 00008960                   WL      1,foys_sprshad52
+    1469 00008990     0000          .word   0
+    1470 000089a0           foysprshad53    ;(script)
+    1471 000089a0                   WL      1,foys_sprshad53
+    1472 000089d0     0000          .word   0
+    1473 000089e0           foysprshad54    ;(script)
+    1474 000089e0                   WL      1,foys_sprshad54
+    1475 00008a10     0000          .word   0
+    1476 00008a20           foysprshad55    ;(script)
+    1477 00008a20                   WL      1,foys_sprshad55
+    1478 00008a50     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   30
+
+    1479                    
+    1480 00008a60           foysspr_trans_R ;(script)
+    1481 00008a60                   WL      1,foys_sspr_trans_R
+    1482 00008a90                   WL      RANI_GOTO,side_bounceio2_R
+    1483                    
+    1484 00008ac0           foysspr_trans_W ;(script)
+    1485 00008ac0                   WL      1,foys_sspr_trans_W
+    1486 00008af0                   WL      RANI_GOTO,side_bounceio2_W
+    1487                    
+    1488 00008b20           foysspr_trans_B ;(script)
+    1489 00008b20                   WL      2,foys_bncio4
+    1490 00008b50     0000          .word   0
+    1491                    
+    1492 00008b60           foysprshad_trans        ;(script)
+    1493 00008b60                   WL      1,foys_sprshad_trans
+    1494 00008b90                   WL      1,foys_stop_shadow
+    1495 00008bc0     0000          .word   0
+    1496                    
+    1497 00008bd0           foys_sspr11     ;(sequence)
+    1498 00008bd0                   WL      10,RPSS1_01
+    1499 00008c00                   WL      RANI_GOTO,foys_stop
+    1500 00008c30     0000          .word   0
+    1501 00008c40           foys_sspr12     ;(sequence)
+    1502 00008c40                   WL      10,RPSS1_02
+    1503 00008c70                   WL      RANI_GOTO,foys_stop
+    1504 00008ca0     0000          .word   0
+    1505 00008cb0           foys_sspr13     ;(sequence)
+    1506 00008cb0                   WL      10,RPSS1_03
+    1507 00008ce0                   WL      RANI_GOTO,foys_stop
+    1508 00008d10     0000          .word   0
+    1509 00008d20           foys_sspr14     ;(sequence)
+    1510 00008d20                   WL      10,RPSS1_04
+    1511 00008d50                   WL      RANI_GOTO,foys_stop
+    1512 00008d80     0000          .word   0
+    1513 00008d90           foys_sspr15     ;(sequence)
+    1514 00008d90                   WL      10,RPSS1_05
+    1515 00008dc0                   WL      RANI_GOTO,foys_stop
+    1516 00008df0     0000          .word   0
+    1517 00008e00           foys_sspr16     ;(sequence)
+    1518 00008e00                   WL      10,RPSS1_06
+    1519 00008e30                   WL      RANI_GOTO,foys_stop
+    1520 00008e60     0000          .word   0
+    1521 00008e70           foys_sspr21     ;(sequence)
+    1522 00008e70                   WL      10,RPSS2_01
+    1523 00008ea0                   WL      RANI_GOTO,foys_stop
+    1524 00008ed0     0000          .word   0
+    1525 00008ee0           foys_sspr22     ;(sequence)
+    1526 00008ee0                   WL      10,RPSS2_02
+    1527 00008f10                   WL      RANI_GOTO,foys_stop
+    1528 00008f40     0000          .word   0
+    1529 00008f50           foys_sspr23     ;(sequence)
+    1530 00008f50                   WL      10,RPSS2_03
+    1531 00008f80                   WL      RANI_GOTO,foys_stop
+    1532 00008fb0     0000          .word   0
+    1533 00008fc0           foys_sspr24     ;(sequence)
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   31
+
+    1534 00008fc0                   WL      10,RPSS2_04
+    1535 00008ff0                   WL      RANI_GOTO,foys_stop
+    1536 00009020     0000          .word   0
+    1537 00009030           foys_sspr25     ;(sequence)
+    1538 00009030                   WL      10,RPSS2_05
+    1539 00009060                   WL      RANI_GOTO,foys_stop
+    1540 00009090     0000          .word   0
+    1541 000090a0           foys_sspr26     ;(sequence)
+    1542 000090a0                   WL      10,RPSS2_06
+    1543 000090d0                   WL      RANI_GOTO,foys_stop
+    1544 00009100     0000          .word   0
+    1545 00009110           foys_sspr31     ;(sequence)
+    1546 00009110                   WL      10,RPSS3_01
+    1547 00009140                   WL      RANI_GOTO,foys_stop
+    1548 00009170     0000          .word   0
+    1549 00009180           foys_sspr32     ;(sequence)
+    1550 00009180                   WL      10,RPSS3_02
+    1551 000091b0                   WL      RANI_GOTO,foys_stop
+    1552 000091e0     0000          .word   0
+    1553 000091f0           foys_sspr33     ;(sequence)
+    1554 000091f0                   WL      10,RPSS3_03
+    1555 00009220                   WL      RANI_GOTO,foys_stop
+    1556 00009250     0000          .word   0
+    1557 00009260           foys_sspr34     ;(sequence)
+    1558 00009260                   WL      10,RPSS3_04
+    1559 00009290                   WL      RANI_GOTO,foys_stop
+    1560 000092c0     0000          .word   0
+    1561 000092d0           foys_sspr35     ;(sequence)
+    1562 000092d0                   WL      10,RPSS3_05
+    1563 00009300                   WL      RANI_GOTO,foys_stop
+    1564 00009330     0000          .word   0
+    1565 00009340           foys_sspr36     ;(sequence)
+    1566 00009340                   WL      10,RPSS3_06
+    1567 00009370                   WL      RANI_GOTO,foys_stop
+    1568 000093a0     0000          .word   0
+    1569 000093b0           foys_sspr41     ;(sequence)
+    1570 000093b0                   WL      10,RPSS4_01
+    1571 000093e0                   WL      RANI_GOTO,foys_stop
+    1572 00009410     0000          .word   0
+    1573 00009420           foys_sspr42     ;(sequence)
+    1574 00009420                   WL      10,RPSS4_02
+    1575 00009450                   WL      RANI_GOTO,foys_stop
+    1576 00009480     0000          .word   0
+    1577 00009490           foys_sspr43     ;(sequence)
+    1578 00009490                   WL      10,RPSS4_03
+    1579 000094c0                   WL      RANI_GOTO,foys_stop
+    1580 000094f0     0000          .word   0
+    1581 00009500           foys_sspr44     ;(sequence)
+    1582 00009500                   WL      10,RPSS4_04
+    1583 00009530                   WL      RANI_GOTO,foys_stop
+    1584 00009560     0000          .word   0
+    1585 00009570           foys_sspr45     ;(sequence)
+    1586 00009570                   WL      10,RPSS4_05
+    1587 000095a0                   WL      RANI_GOTO,foys_stop
+    1588 000095d0     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   32
+
+    1589 000095e0           foys_sspr46     ;(sequence)
+    1590 000095e0                   WL      10,RPSS4_06
+    1591 00009610                   WL      RANI_GOTO,foys_stop
+    1592 00009640     0000          .word   0
+    1593 00009650           foys_sspr51     ;(sequence)
+    1594 00009650                   WL      10,RPSS5_01
+    1595 00009680                   WL      RANI_GOTO,foys_stop
+    1596 000096b0     0000          .word   0
+    1597 000096c0           foys_sspr52     ;(sequence)
+    1598 000096c0                   WL      10,RPSS5_02
+    1599 000096f0                   WL      RANI_GOTO,foys_stop
+    1600 00009720     0000          .word   0
+    1601 00009730           foys_sspr53     ;(sequence)
+    1602 00009730                   WL      10,RPSS5_03
+    1603 00009760                   WL      RANI_GOTO,foys_stop
+    1604 00009790     0000          .word   0
+    1605 000097a0           foys_sspr54     ;(sequence)
+    1606 000097a0                   WL      10,RPSS5_04
+    1607 000097d0                   WL      RANI_GOTO,foys_stop
+    1608 00009800     0000          .word   0
+    1609 00009810           foys_sspr55     ;(sequence)
+    1610 00009810                   WL      10,RPSS5_05
+    1611 00009840                   WL      RANI_GOTO,foys_stop
+    1612 00009870     0000          .word   0
+    1613 00009880           foys_sspr56     ;(sequence)
+    1614 00009880                   WL      10,RPSS5_06
+    1615 000098b0                   WL      RANI_GOTO,foys_stop
+    1616 000098e0     0000          .word   0
+    1617                    
+    1618 000098f0           foys_sprshad11  ;(sequence)
+    1619 000098f0                   WL      10,RCSH1_01
+    1620 00009920                   WL      RANI_GOTO,foys_stop_shadow
+    1621 00009950     0000          .word   0
+    1622 00009960           foys_sprshad12  ;(sequence)
+    1623 00009960                   WL      10,RCSH1_02
+    1624 00009990                   WL      RANI_GOTO,foys_stop_shadow
+    1625 000099c0     0000          .word   0
+    1626 000099d0           foys_sprshad13  ;(sequence)
+    1627 000099d0                   WL      10,RCSH1_03
+    1628 00009a00                   WL      RANI_GOTO,foys_stop_shadow
+    1629 00009a30     0000          .word   0
+    1630 00009a40           foys_sprshad14  ;(sequence)
+    1631 00009a40                   WL      10,RCSH1_04
+    1632 00009a70                   WL      RANI_GOTO,foys_stop_shadow
+    1633 00009aa0     0000          .word   0
+    1634 00009ab0           foys_sprshad15  ;(sequence)
+    1635 00009ab0                   WL      10,RCSH1_05
+    1636 00009ae0                   WL      RANI_GOTO,foys_stop_shadow
+    1637 00009b10     0000          .word   0
+    1638 00009b20           foys_sprshad21  ;(sequence)
+    1639 00009b20                   WL      10,RCSH2_01
+    1640 00009b50                   WL      RANI_GOTO,foys_stop_shadow
+    1641 00009b80     0000          .word   0
+    1642 00009b90           foys_sprshad22  ;(sequence)
+    1643 00009b90                   WL      10,RCSH2_02
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   33
+
+    1644 00009bc0                   WL      RANI_GOTO,foys_stop_shadow
+    1645 00009bf0     0000          .word   0
+    1646 00009c00           foys_sprshad23  ;(sequence)
+    1647 00009c00                   WL      10,RCSH2_03
+    1648 00009c30                   WL      RANI_GOTO,foys_stop_shadow
+    1649 00009c60     0000          .word   0
+    1650 00009c70           foys_sprshad24  ;(sequence)
+    1651 00009c70                   WL      10,RCSH2_04
+    1652 00009ca0                   WL      RANI_GOTO,foys_stop_shadow
+    1653 00009cd0     0000          .word   0
+    1654 00009ce0           foys_sprshad25  ;(sequence)
+    1655 00009ce0                   WL      10,RCSH2_05
+    1656 00009d10                   WL      RANI_GOTO,foys_stop_shadow
+    1657 00009d40     0000          .word   0
+    1658 00009d50           foys_sprshad31  ;(sequence)
+    1659 00009d50                   WL      10,RCSH3_01
+    1660 00009d80                   WL      RANI_GOTO,foys_stop_shadow
+    1661 00009db0     0000          .word   0
+    1662 00009dc0           foys_sprshad32  ;(sequence)
+    1663 00009dc0                   WL      10,RCSH3_02
+    1664 00009df0                   WL      RANI_GOTO,foys_stop_shadow
+    1665 00009e20     0000          .word   0
+    1666 00009e30           foys_sprshad33  ;(sequence)
+    1667 00009e30                   WL      10,RCSH3_03
+    1668 00009e60                   WL      RANI_GOTO,foys_stop_shadow
+    1669 00009e90     0000          .word   0
+    1670 00009ea0           foys_sprshad34  ;(sequence)
+    1671 00009ea0                   WL      10,RCSH3_04
+    1672 00009ed0                   WL      RANI_GOTO,foys_stop_shadow
+    1673 00009f00     0000          .word   0
+    1674 00009f10           foys_sprshad35  ;(sequence)
+    1675 00009f10                   WL      10,RCSH3_05
+    1676 00009f40                   WL      RANI_GOTO,foys_stop_shadow
+    1677 00009f70     0000          .word   0
+    1678 00009f80           foys_sprshad41  ;(sequence)
+    1679 00009f80                   WL      10,RCSH4_01
+    1680 00009fb0                   WL      RANI_GOTO,foys_stop_shadow
+    1681 00009fe0     0000          .word   0
+    1682 00009ff0           foys_sprshad42  ;(sequence)
+    1683 00009ff0                   WL      10,RCSH4_02
+    1684 0000a020                   WL      RANI_GOTO,foys_stop_shadow
+    1685 0000a050     0000          .word   0
+    1686 0000a060           foys_sprshad43  ;(sequence)
+    1687 0000a060                   WL      10,RCSH4_03
+    1688 0000a090                   WL      RANI_GOTO,foys_stop_shadow
+    1689 0000a0c0     0000          .word   0
+    1690 0000a0d0           foys_sprshad44  ;(sequence)
+    1691 0000a0d0                   WL      10,RCSH4_04
+    1692 0000a100                   WL      RANI_GOTO,foys_stop_shadow
+    1693 0000a130     0000          .word   0
+    1694 0000a140           foys_sprshad45  ;(sequence)
+    1695 0000a140                   WL      10,RCSH4_05
+    1696 0000a170                   WL      RANI_GOTO,foys_stop_shadow
+    1697 0000a1a0     0000          .word   0
+    1698 0000a1b0           foys_sprshad51  ;(sequence)
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   34
+
+    1699 0000a1b0                   WL      10,RCSH5_01
+    1700 0000a1e0                   WL      RANI_GOTO,foys_stop_shadow
+    1701 0000a210     0000          .word   0
+    1702 0000a220           foys_sprshad52  ;(sequence)
+    1703 0000a220                   WL      10,RCSH5_02
+    1704 0000a250                   WL      RANI_GOTO,foys_stop_shadow
+    1705 0000a280     0000          .word   0
+    1706 0000a290           foys_sprshad53  ;(sequence)
+    1707 0000a290                   WL      10,RCSH5_03
+    1708 0000a2c0                   WL      RANI_GOTO,foys_stop_shadow
+    1709 0000a2f0     0000          .word   0
+    1710 0000a300           foys_sprshad54  ;(sequence)
+    1711 0000a300                   WL      10,RCSH5_04
+    1712 0000a330                   WL      RANI_GOTO,foys_stop_shadow
+    1713 0000a360     0000          .word   0
+    1714 0000a370           foys_sprshad55  ;(sequence)
+    1715 0000a370                   WL      10,RCSH5_05
+    1716 0000a3a0                   WL      RANI_GOTO,foys_stop_shadow
+    1717 0000a3d0     0000          .word   0
+    1718                    
+    1719 0000a3e0           foys_sspr_trans_R       ;(sequence)
+    1720 0000a3e0                   WL      1,RPSBIN06
+    1721 0000a410                   WL      2,RPSBIN08
+    1722 0000a440                   WL      1,RPSBIN07
+    1723 0000a470                   WL      1,RPSBIN06
+    1724 0000a4a0                   WL      1,ROPE_S_R
+    1725 0000a4d0                   WL      1,RPSBOU01
+    1726 0000a500                   WL      1,RPSBOU03
+    1727 0000a530                   WL      1,RPSBOU06
+    1728 0000a560           foys_sspr_trans_W       ;(sequence)
+    1729 0000a560                   WL      1,RPSBOU04
+    1730 0000a590                   WL      1,RPSBOU03
+    1731 0000a5c0                   WL      1,RPSBOU02
+    1732 0000a5f0     0000          .word   0
+    1733                    
+    1734 0000a600           foys_sprshad_trans ;(sequence)
+    1735 0000a600                   WL      2,RBSH_02
+    1736 0000a630                   WL      2,RBSH_03
+    1737 0000a660                   WL      2,RBSH_04
+    1738 0000a690                   WL      2,RBSH_05
+    1739 0000a6c0                   WL      2,RBSH_06
+    1740 0000a6f0                   WL      2,RBSH_07
+    1741 0000a720                   WL      2,RBSH_01
+    1742 0000a750     0000          .word   0
+    1743                    
+    1744 0000a760           foys_stop               ;(sequence) - halt a side rope entirely
+    1745 0000a760                   WL      1,ROPE_S_R
+    1746 0000a790     0000          .word   0
+    1747                    
+    1748 0000a7a0           foys_stop_shadow        ;(sequence) - halt a side shadow entirely
+    1749 0000a7a0                   WL      1,ROPSHAD
+    1750 0000a7d0     0000          .word   0
+    1751                    
+    1752                    ****************************************
+    1753                    *
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   35
+
+    1754                    * Side ropes, spring up and down
+    1755                    *
+    1756                    
+    1757 0000a7e0           dspr11_t        ;(script table)
+    1758 0000a7e0                   WLWL    DSPRING_PRI,foydspr15,DSPRING_PRI,foydspr11
+    1759 0000a840                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1760 0000a8a0           dspr12_t        ;(script table)
+    1761 0000a8a0                   WLWL    DSPRING_PRI,foydspr16,DSPRING_PRI,foydspr12
+    1762 0000a900                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1763 0000a960           dspr13_t        ;(script table)
+    1764 0000a960                   WLWL    DSPRING_PRI,foydspr17,DSPRING_PRI,foydspr13
+    1765 0000a9c0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1766 0000aa20           dspr14_t        ;(script table)
+    1767 0000aa20                   WLWL    DSPRING_PRI,foydspr17,DSPRING_PRI,foydspr14
+    1768 0000aa80                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1769 0000aae0           dspr15_t        ;(script table)
+    1770 0000aae0                   WLWL    DSPRING_PRI,foydspr16,DSPRING_PRI,foydspr15
+    1771 0000ab40                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1772 0000aba0           dspr16_t        ;(script table)
+    1773 0000aba0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr15
+    1774 0000ac00                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1775                    
+    1776 0000ac60           dspr21_t        ;(script table)
+    1777 0000ac60                   WLWL    DSPRING_PRI,foydspr25,DSPRING_PRI,foydspr21
+    1778 0000acc0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1779 0000ad20           dspr22_t        ;(script table)
+    1780 0000ad20                   WLWL    DSPRING_PRI,foydspr26,DSPRING_PRI,foydspr22
+    1781 0000ad80                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1782 0000ade0           dspr23_t        ;(script table)
+    1783 0000ade0                   WLWL    DSPRING_PRI,foydspr27,DSPRING_PRI,foydspr23
+    1784 0000ae40                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1785 0000aea0           dspr24_t        ;(script table)
+    1786 0000aea0                   WLWL    DSPRING_PRI,foydspr27,DSPRING_PRI,foydspr24
+    1787 0000af00                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1788 0000af60           dspr25_t        ;(script table)
+    1789 0000af60                   WLWL    DSPRING_PRI,foydspr26,DSPRING_PRI,foydspr25
+    1790 0000afc0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1791 0000b020           dspr26_t        ;(script table)
+    1792 0000b020                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr25
+    1793 0000b080                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1794                    
+    1795 0000b0e0           dspr31_t        ;(script table)
+    1796 0000b0e0                   WLWL    DSPRING_PRI,foydspr35,DSPRING_PRI,foydspr31
+    1797 0000b140                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1798 0000b1a0           dspr32_t        ;(script table)
+    1799 0000b1a0                   WLWL    DSPRING_PRI,foydspr36,DSPRING_PRI,foydspr32
+    1800 0000b200                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1801 0000b260           dspr33_t        ;(script table)
+    1802 0000b260                   WLWL    DSPRING_PRI,foydspr37,DSPRING_PRI,foydspr33
+    1803 0000b2c0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1804 0000b320           dspr34_t        ;(script table)
+    1805 0000b320                   WLWL    DSPRING_PRI,foydspr37,DSPRING_PRI,foydspr34
+    1806 0000b380                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1807 0000b3e0           dspr35_t        ;(script table)
+    1808 0000b3e0                   WLWL    DSPRING_PRI,foydspr36,DSPRING_PRI,foydspr35
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   36
+
+    1809 0000b440                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1810 0000b4a0           dspr36_t        ;(script table)
+    1811 0000b4a0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr35
+    1812 0000b500                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1813                    
+    1814 0000b560           dspr41_t        ;(script table)
+    1815 0000b560                   WLWL    DSPRING_PRI,foydspr45,DSPRING_PRI,foydspr41
+    1816 0000b5c0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1817 0000b620           dspr42_t        ;(script table)
+    1818 0000b620                   WLWL    DSPRING_PRI,foydspr46,DSPRING_PRI,foydspr42
+    1819 0000b680                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1820 0000b6e0           dspr43_t        ;(script table)
+    1821 0000b6e0                   WLWL    DSPRING_PRI,foydspr47,DSPRING_PRI,foydspr43
+    1822 0000b740                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1823 0000b7a0           dspr44_t        ;(script table)
+    1824 0000b7a0                   WLWL    DSPRING_PRI,foydspr47,DSPRING_PRI,foydspr44
+    1825 0000b800                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1826 0000b860           dspr45_t        ;(script table)
+    1827 0000b860                   WLWL    DSPRING_PRI,foydspr46,DSPRING_PRI,foydspr45
+    1828 0000b8c0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1829 0000b920           dspr46_t        ;(script table)
+    1830 0000b920                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr45
+    1831 0000b980                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1832                    
+    1833 0000b9e0           dspr51_t        ;(script table)
+    1834 0000b9e0                   WLWL    DSPRING_PRI,foydspr55,DSPRING_PRI,foydspr51
+    1835 0000ba40                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1836 0000baa0           dspr52_t        ;(script table)
+    1837 0000baa0                   WLWL    DSPRING_PRI,foydspr56,DSPRING_PRI,foydspr52
+    1838 0000bb00                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1839 0000bb60           dspr53_t        ;(script table)
+    1840 0000bb60                   WLWL    DSPRING_PRI,foydspr57,DSPRING_PRI,foydspr53
+    1841 0000bbc0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1842 0000bc20           dspr54_t        ;(script table)
+    1843 0000bc20                   WLWL    DSPRING_PRI,foydspr57,DSPRING_PRI,foydspr54
+    1844 0000bc80                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1845 0000bce0           dspr55_t        ;(script table)
+    1846 0000bce0                   WLWL    DSPRING_PRI,foydspr56,DSPRING_PRI,foydspr55
+    1847 0000bd40                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1848 0000bda0           dspr56_t        ;(script table)
+    1849 0000bda0                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr55
+    1850 0000be00                   WLWL    DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+    1851                    
+    1852 0000be60           dspr_trans_t    ;(script table)
+    1853 0000be60                   WL      DSPRING_PRI,foydspr_trans_R
+    1854 0000be90                   WL      DSPRING_PRI,foydspr_trans_W
+    1855 0000bec0                   WL      DSPRING_PRI,foydspr_trans_B
+    1856 0000bef0                   WL      DSPRING_PRI,foydsprshad
+    1857                    
+    1858 0000bf20           foydsprshad     ;(script)
+    1859 0000bf20                   WL      1,foys_dsprshad
+    1860 0000bf50     0000          .word   0
+    1861                    
+    1862 0000bf60           foydsprXX               ;(script)
+    1863 0000bf60                   WL      1,foys_stop
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   37
+
+    1864 0000bf90     0000          .word   0
+    1865 0000bfa0           foydspr11               ;(script)
+    1866 0000bfa0                   WL      1,foys_dspr11
+    1867 0000bfd0     0000          .word   0
+    1868 0000bfe0           foydspr12               ;(script)
+    1869 0000bfe0                   WL      1,foys_dspr12
+    1870 0000c010     0000          .word   0
+    1871 0000c020           foydspr13               ;(script)
+    1872 0000c020                   WL      1,foys_dspr13
+    1873 0000c050     0000          .word   0
+    1874 0000c060           foydspr14               ;(script)
+    1875 0000c060                   WL      1,foys_dspr14
+    1876 0000c090     0000          .word   0
+    1877 0000c0a0           foydspr15               ;(script)
+    1878 0000c0a0                   WL      1,foys_dspr15
+    1879 0000c0d0     0000          .word   0
+    1880 0000c0e0           foydspr16               ;(script)
+    1881 0000c0e0                   WL      1,foys_dspr16
+    1882 0000c110     0000          .word   0
+    1883 0000c120           foydspr17               ;(script)
+    1884 0000c120                   WL      1,foys_dspr17
+    1885 0000c150     0000          .word   0
+    1886 0000c160           foydspr21               ;(script)
+    1887 0000c160                   WL      1,foys_dspr21
+    1888 0000c190     0000          .word   0
+    1889 0000c1a0           foydspr22               ;(script)
+    1890 0000c1a0                   WL      1,foys_dspr22
+    1891 0000c1d0     0000          .word   0
+    1892 0000c1e0           foydspr23               ;(script)
+    1893 0000c1e0                   WL      1,foys_dspr23
+    1894 0000c210     0000          .word   0
+    1895 0000c220           foydspr24               ;(script)
+    1896 0000c220                   WL      1,foys_dspr24
+    1897 0000c250     0000          .word   0
+    1898 0000c260           foydspr25               ;(script)
+    1899 0000c260                   WL      1,foys_dspr25
+    1900 0000c290     0000          .word   0
+    1901 0000c2a0           foydspr26               ;(script)
+    1902 0000c2a0                   WL      1,foys_dspr26
+    1903 0000c2d0     0000          .word   0
+    1904 0000c2e0           foydspr27               ;(script)
+    1905 0000c2e0                   WL      1,foys_dspr27
+    1906 0000c310     0000          .word   0
+    1907 0000c320           foydspr31               ;(script)
+    1908 0000c320                   WL      1,foys_dspr31
+    1909 0000c350     0000          .word   0
+    1910 0000c360           foydspr32               ;(script)
+    1911 0000c360                   WL      1,foys_dspr32
+    1912 0000c390     0000          .word   0
+    1913 0000c3a0           foydspr33               ;(script)
+    1914 0000c3a0                   WL      1,foys_dspr33
+    1915 0000c3d0     0000          .word   0
+    1916 0000c3e0           foydspr34               ;(script)
+    1917 0000c3e0                   WL      1,foys_dspr34
+    1918 0000c410     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   38
+
+    1919 0000c420           foydspr35               ;(script)
+    1920 0000c420                   WL      1,foys_dspr35
+    1921 0000c450     0000          .word   0
+    1922 0000c460           foydspr36               ;(script)
+    1923 0000c460                   WL      1,foys_dspr36
+    1924 0000c490     0000          .word   0
+    1925 0000c4a0           foydspr37               ;(script)
+    1926 0000c4a0                   WL      1,foys_dspr37
+    1927 0000c4d0     0000          .word   0
+    1928 0000c4e0           foydspr41               ;(script)
+    1929 0000c4e0                   WL      1,foys_dspr41
+    1930 0000c510     0000          .word   0
+    1931 0000c520           foydspr42               ;(script)
+    1932 0000c520                   WL      1,foys_dspr42
+    1933 0000c550     0000          .word   0
+    1934 0000c560           foydspr43               ;(script)
+    1935 0000c560                   WL      1,foys_dspr43
+    1936 0000c590     0000          .word   0
+    1937 0000c5a0           foydspr44               ;(script)
+    1938 0000c5a0                   WL      1,foys_dspr44
+    1939 0000c5d0     0000          .word   0
+    1940 0000c5e0           foydspr45               ;(script)
+    1941 0000c5e0                   WL      1,foys_dspr45
+    1942 0000c610     0000          .word   0
+    1943 0000c620           foydspr46               ;(script)
+    1944 0000c620                   WL      1,foys_dspr46
+    1945 0000c650     0000          .word   0
+    1946 0000c660           foydspr47               ;(script)
+    1947 0000c660                   WL      1,foys_dspr47
+    1948 0000c690     0000          .word   0
+    1949 0000c6a0           foydspr51               ;(script)
+    1950 0000c6a0                   WL      1,foys_dspr51
+    1951 0000c6d0     0000          .word   0
+    1952 0000c6e0           foydspr52               ;(script)
+    1953 0000c6e0                   WL      1,foys_dspr52
+    1954 0000c710     0000          .word   0
+    1955 0000c720           foydspr53               ;(script)
+    1956 0000c720                   WL      1,foys_dspr53
+    1957 0000c750     0000          .word   0
+    1958 0000c760           foydspr54               ;(script)
+    1959 0000c760                   WL      1,foys_dspr54
+    1960 0000c790     0000          .word   0
+    1961 0000c7a0           foydspr55               ;(script)
+    1962 0000c7a0                   WL      1,foys_dspr55
+    1963 0000c7d0     0000          .word   0
+    1964 0000c7e0           foydspr56               ;(script)
+    1965 0000c7e0                   WL      1,foys_dspr56
+    1966 0000c810     0000          .word   0
+    1967 0000c820           foydspr57               ;(script)
+    1968 0000c820                   WL      1,foys_dspr57
+    1969 0000c850     0000          .word   0
+    1970                    
+    1971 0000c860           foydspr_trans_R ;(script)
+    1972 0000c860                   WL      1,foys_dspr_trans_R
+    1973 0000c890                   WL      RANI_GOTO,side_bounceud2_R
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   39
+
+    1974                    
+    1975 0000c8c0           foydspr_trans_W ;(script)
+    1976 0000c8c0                   WL      1,foys_dspr_trans_W
+    1977 0000c8f0                   WL      RANI_GOTO,side_bounceud2_W
+    1978                    
+    1979 0000c920           foydspr_trans_B ;(script)
+    1980 0000c920                   WL      2,foys_bncio4
+    1981 0000c950     0000          .word   0
+    1982                    
+    1983 0000c960           foys_dsprshad   ;(seqence)
+    1984 0000c960                   WL      1,ROPSHAD
+    1985 0000c990     0000          .word   0
+    1986                    
+    1987 0000c9a0           foys_dspr11     ;(sequence)
+    1988 0000c9a0                   WL      1,RPDS1_01
+    1989 0000c9d0     0000          .word   0
+    1990 0000c9e0           foys_dspr12     ;(sequence)
+    1991 0000c9e0                   WL      1,RPDS1_02
+    1992 0000ca10     0000          .word   0
+    1993 0000ca20           foys_dspr13     ;(sequence)
+    1994 0000ca20                   WL      1,RPDS1_03
+    1995 0000ca50     0000          .word   0
+    1996 0000ca60           foys_dspr14     ;(sequence)
+    1997 0000ca60                   WL      1,RPDS1_04
+    1998 0000ca90     0000          .word   0
+    1999 0000caa0           foys_dspr15     ;(sequence)
+    2000 0000caa0                   WL      1,RPDS1_05
+    2001 0000cad0     0000          .word   0
+    2002 0000cae0           foys_dspr16     ;(sequence)
+    2003 0000cae0                   WL      1,RPDS1_06
+    2004 0000cb10     0000          .word   0
+    2005 0000cb20           foys_dspr17     ;(sequence)
+    2006 0000cb20                   WL      1,RPDS1_07
+    2007 0000cb50     0000          .word   0
+    2008 0000cb60           foys_dspr21     ;(sequence)
+    2009 0000cb60                   WL      1,RPDS2_01
+    2010 0000cb90     0000          .word   0
+    2011 0000cba0           foys_dspr22     ;(sequence)
+    2012 0000cba0                   WL      1,RPDS2_02
+    2013 0000cbd0     0000          .word   0
+    2014 0000cbe0           foys_dspr23     ;(sequence)
+    2015 0000cbe0                   WL      1,RPDS2_03
+    2016 0000cc10     0000          .word   0
+    2017 0000cc20           foys_dspr24     ;(sequence)
+    2018 0000cc20                   WL      1,RPDS2_04
+    2019 0000cc50     0000          .word   0
+    2020 0000cc60           foys_dspr25     ;(sequence)
+    2021 0000cc60                   WL      1,RPDS2_05
+    2022 0000cc90     0000          .word   0
+    2023 0000cca0           foys_dspr26     ;(sequence)
+    2024 0000cca0                   WL      1,RPDS2_06
+    2025 0000ccd0     0000          .word   0
+    2026 0000cce0           foys_dspr27     ;(sequence)
+    2027 0000cce0                   WL      1,RPDS2_07
+    2028 0000cd10     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   40
+
+    2029 0000cd20           foys_dspr31     ;(sequence)
+    2030 0000cd20                   WL      1,RPDS3_01
+    2031 0000cd50     0000          .word   0
+    2032 0000cd60           foys_dspr32     ;(sequence)
+    2033 0000cd60                   WL      1,RPDS3_02
+    2034 0000cd90     0000          .word   0
+    2035 0000cda0           foys_dspr33     ;(sequence)
+    2036 0000cda0                   WL      1,RPDS3_03
+    2037 0000cdd0     0000          .word   0
+    2038 0000cde0           foys_dspr34     ;(sequence)
+    2039 0000cde0                   WL      1,RPDS3_04
+    2040 0000ce10     0000          .word   0
+    2041 0000ce20           foys_dspr35     ;(sequence)
+    2042 0000ce20                   WL      1,RPDS3_05
+    2043 0000ce50     0000          .word   0
+    2044 0000ce60           foys_dspr36     ;(sequence)
+    2045 0000ce60                   WL      1,RPDS3_06
+    2046 0000ce90     0000          .word   0
+    2047 0000cea0           foys_dspr37     ;(sequence)
+    2048 0000cea0                   WL      1,RPDS3_07
+    2049 0000ced0     0000          .word   0
+    2050 0000cee0           foys_dspr41     ;(sequence)
+    2051 0000cee0                   WL      1,RPDS4_01
+    2052 0000cf10     0000          .word   0
+    2053 0000cf20           foys_dspr42     ;(sequence)
+    2054 0000cf20                   WL      1,RPDS4_02
+    2055 0000cf50     0000          .word   0
+    2056 0000cf60           foys_dspr43     ;(sequence)
+    2057 0000cf60                   WL      1,RPDS4_03
+    2058 0000cf90     0000          .word   0
+    2059 0000cfa0           foys_dspr44     ;(sequence)
+    2060 0000cfa0                   WL      1,RPDS4_04
+    2061 0000cfd0     0000          .word   0
+    2062 0000cfe0           foys_dspr45     ;(sequence)
+    2063 0000cfe0                   WL      1,RPDS4_05
+    2064 0000d010     0000          .word   0
+    2065 0000d020           foys_dspr46     ;(sequence)
+    2066 0000d020                   WL      1,RPDS4_06
+    2067 0000d050     0000          .word   0
+    2068 0000d060           foys_dspr47     ;(sequence)
+    2069 0000d060                   WL      1,RPDS4_07
+    2070 0000d090     0000          .word   0
+    2071 0000d0a0           foys_dspr51     ;(sequence)
+    2072 0000d0a0                   WL      1,RPDS5_01
+    2073 0000d0d0     0000          .word   0
+    2074 0000d0e0           foys_dspr52     ;(sequence)
+    2075 0000d0e0                   WL      1,RPDS5_02
+    2076 0000d110     0000          .word   0
+    2077 0000d120           foys_dspr53     ;(sequence)
+    2078 0000d120                   WL      1,RPDS5_03
+    2079 0000d150     0000          .word   0
+    2080 0000d160           foys_dspr54     ;(sequence)
+    2081 0000d160                   WL      1,RPDS5_04
+    2082 0000d190     0000          .word   0
+    2083 0000d1a0           foys_dspr55     ;(sequence)
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   41
+
+    2084 0000d1a0                   WL      1,RPDS5_05
+    2085 0000d1d0     0000          .word   0
+    2086 0000d1e0           foys_dspr56     ;(sequence)
+    2087 0000d1e0                   WL      1,RPDS5_06
+    2088 0000d210     0000          .word   0
+    2089 0000d220           foys_dspr57     ;(sequence)
+    2090 0000d220                   WL      1,RPDS5_07
+    2091 0000d250     0000          .word   0
+    2092                    
+    2093 0000d260           foys_dspr_trans_R       ;(sequence)
+    2094 0000d260                   WL      1,RPSBUP05
+    2095 0000d290           foys_dspr_trans_W       ;(sequence)
+    2096 0000d290                   WL      1,RPSBUP02
+    2097 0000d2c0                   WL      1,RPSBDN01
+    2098 0000d2f0                   WL      1,RPSBDN03
+    2099 0000d320                   WL      1,RPSBDN05
+    2100 0000d350                   WL      1,RPSBDN04
+    2101 0000d380                   WL      1,RPSBDN03
+    2102 0000d3b0                   WL      1,RPSBDN02
+    2103 0000d3e0     0000          .word   0
+    2104                    
+    2105 0000d3f0           SIDEROPE_START
+    2106 0000d3f0 00000000! ROPE_S_R        .long   ROPE_S_Ra,ROPE_S_Rb
+    2107 0000d430 00000000! ROPE_S_W        .long   ROPE_S_Wa,ROPE_S_Wb
+    2108 0000d470 00000000! ROPE_S_B        .long   ROPE_S_Ba,ROPE_S_Bb
+    2109 0000d4b0 00000000! RPSBUP01        .long   RPSBUP01a,RPSBUP01b
+    2110 0000d4f0 00000000! RPSBUP02        .long   RPSBUP02a,RPSBUP02b
+    2111 0000d530 00000000! RPSBUP03        .long   RPSBUP03a,RPSBUP03b
+    2112 0000d570 00000000! RPSBUP04        .long   RPSBUP04a,RPSBUP04b
+    2113 0000d5b0 00000000! RPSBUP05        .long   RPSBUP05a,RPSBUP05b
+    2114 0000d5f0 00000000! RPSBUP06        .long   RPSBUP06a,RPSBUP06b
+    2115 0000d630 00000000! RPSBDN01        .long   RPSBDN01a,RPSBDN01b
+    2116 0000d670 00000000! RPSBDN02        .long   RPSBDN02a,RPSBDN02b
+    2117 0000d6b0 00000000! RPSBDN03        .long   RPSBDN03a,RPSBDN03b
+    2118 0000d6f0 00000000! RPSBDN04        .long   RPSBDN04a,RPSBDN04b
+    2119 0000d730 00000000! RPSBDN05        .long   RPSBDN05a,RPSBDN05b
+    2120 0000d770 00000000! RPSBDN06        .long   RPSBDN06a,RPSBDN06b
+    2121 0000d7b0 00000000! RPSBIN01        .long   RPSBIN01a,RPSBIN01b
+    2122 0000d7f0 00000000! RPSBIN02        .long   RPSBIN02a,RPSBIN02b
+    2123 0000d830 00000000! RPSBIN03        .long   RPSBIN03a,RPSBIN03b
+    2124 0000d870 00000000! RPSBIN04        .long   RPSBIN04a,RPSBIN04b
+    2125 0000d8b0 00000000! RPSBIN05        .long   RPSBIN05a,RPSBIN05b
+    2126 0000d8f0 00000000! RPSBIN06        .long   RPSBIN06a,RPSBIN06b
+    2127 0000d930 00000000! RPSBIN07        .long   RPSBIN07a,RPSBIN07b
+    2128 0000d970 00000000! RPSBIN08        .long   RPSBIN08a,RPSBIN08b
+    2129 0000d9b0 00000000! RPSBOU01        .long   RPSBOU01a,RPSBOU01b
+    2130 0000d9f0 00000000! RPSBOU02        .long   RPSBOU02a,RPSBOU02b
+    2131 0000da30 00000000! RPSBOU03        .long   RPSBOU03a,RPSBOU03b
+    2132 0000da70 00000000! RPSBOU04        .long   RPSBOU04a,RPSBOU04b
+    2133 0000dab0 00000000! RPSBOU05        .long   RPSBOU05a,RPSBOU05b
+    2134 0000daf0 00000000! RPSBOU06        .long   RPSBOU06a,RPSBOU06b
+    2135 0000db30 00000000! RPSBOU07        .long   RPSBOU07a,RPSBOU07b
+    2136 0000db70 00000000! RPSBOU08        .long   RPSBOU08a,RPSBOU08b
+    2137 0000dbb0 00000000! RPSS1_01        .long   RPSS1_01a,RPSS1_01b
+    2138 0000dbf0 00000000! RPSS1_02        .long   RPSS1_02a,RPSS1_02b
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   42
+
+    2139 0000dc30 00000000! RPSS1_03        .long   RPSS1_03a,RPSS1_03b
+    2140 0000dc70 00000000! RPSS1_04        .long   RPSS1_04a,RPSS1_04b
+    2141 0000dcb0 00000000! RPSS1_05        .long   RPSS1_05a,RPSS1_05b
+    2142 0000dcf0 00000000! RPSS1_06        .long   RPSS1_06a,RPSS1_06b
+    2143 0000dd30 00000000! RPSS2_01        .long   RPSS2_01a,RPSS2_01b
+    2144 0000dd70 00000000! RPSS2_02        .long   RPSS2_02a,RPSS2_02b
+    2145 0000ddb0 00000000! RPSS2_03        .long   RPSS2_03a,RPSS2_03b
+    2146 0000ddf0 00000000! RPSS2_04        .long   RPSS2_04a,RPSS2_04b
+    2147 0000de30 00000000! RPSS2_05        .long   RPSS2_05a,RPSS2_05b
+    2148 0000de70 00000000! RPSS2_06        .long   RPSS2_06a,RPSS2_06b
+    2149 0000deb0 00000000! RPSS3_01        .long   RPSS3_01a,RPSS3_01b
+    2150 0000def0 00000000! RPSS3_02        .long   RPSS3_02a,RPSS3_02b
+    2151 0000df30 00000000! RPSS3_03        .long   RPSS3_03a,RPSS3_03b
+    2152 0000df70 00000000! RPSS3_04        .long   RPSS3_04a,RPSS3_04b
+    2153 0000dfb0 00000000! RPSS3_05        .long   RPSS3_05a,RPSS3_05b
+    2154 0000dff0 00000000! RPSS3_06        .long   RPSS3_06a,RPSS3_06b
+    2155 0000e030 00000000! RPSS4_01        .long   RPSS4_01a,RPSS4_01b
+    2156 0000e070 00000000! RPSS4_02        .long   RPSS4_02a,RPSS4_02b
+    2157 0000e0b0 00000000! RPSS4_03        .long   RPSS4_03a,RPSS4_03b
+    2158 0000e0f0 00000000! RPSS4_04        .long   RPSS4_04a,RPSS4_04b
+    2159 0000e130 00000000! RPSS4_05        .long   RPSS4_05a,RPSS4_05b
+    2160 0000e170 00000000! RPSS4_06        .long   RPSS4_06a,RPSS4_06b
+    2161 0000e1b0 00000000! RPSS5_01        .long   RPSS5_01a,RPSS5_01b
+    2162 0000e1f0 00000000! RPSS5_02        .long   RPSS5_02a,RPSS5_02b
+    2163 0000e230 00000000! RPSS5_03        .long   RPSS5_03a,RPSS5_03b
+    2164 0000e270 00000000! RPSS5_04        .long   RPSS5_04a,RPSS5_04b
+    2165 0000e2b0 00000000! RPSS5_05        .long   RPSS5_05a,RPSS5_05b
+    2166 0000e2f0 00000000! RPSS5_06        .long   RPSS5_06a,RPSS5_06b
+    2167 0000e330 00000000! RPDS1_01        .long   RPDS1_01a,RPDS1_01b
+    2168 0000e370 00000000! RPDS1_02        .long   RPDS1_02a,RPDS1_02b
+    2169 0000e3b0 00000000! RPDS1_03        .long   RPDS1_03a,RPDS1_03b
+    2170 0000e3f0 00000000! RPDS1_04        .long   RPDS1_04a,RPDS1_04b
+    2171 0000e430 00000000! RPDS1_05        .long   RPDS1_05a,RPDS1_05b
+    2172 0000e470 00000000! RPDS1_06        .long   RPDS1_06a,RPDS1_06b
+    2173 0000e4b0 00000000! RPDS1_07        .long   RPDS1_07a,RPDS1_07b
+    2174 0000e4f0 00000000! RPDS1_08        .long   RPDS1_08a,RPDS1_08b
+    2175 0000e530 00000000! RPDS2_01        .long   RPDS2_01a,RPDS2_01b
+    2176 0000e570 00000000! RPDS2_02        .long   RPDS2_02a,RPDS2_02b
+    2177 0000e5b0 00000000! RPDS2_03        .long   RPDS2_03a,RPDS2_03b
+    2178 0000e5f0 00000000! RPDS2_04        .long   RPDS2_04a,RPDS2_04b
+    2179 0000e630 00000000! RPDS2_05        .long   RPDS2_05a,RPDS2_05b
+    2180 0000e670 00000000! RPDS2_06        .long   RPDS2_06a,RPDS2_06b
+    2181 0000e6b0 00000000! RPDS2_07        .long   RPDS2_07a,RPDS2_07b
+    2182 0000e6f0 00000000! RPDS2_08        .long   RPDS2_08a,RPDS2_08b
+    2183 0000e730 00000000! RPDS3_01        .long   RPDS3_01a,RPDS3_01b
+    2184 0000e770 00000000! RPDS3_02        .long   RPDS3_02a,RPDS3_02b
+    2185 0000e7b0 00000000! RPDS3_03        .long   RPDS3_03a,RPDS3_03b
+    2186 0000e7f0 00000000! RPDS3_04        .long   RPDS3_04a,RPDS3_04b
+    2187 0000e830 00000000! RPDS3_05        .long   RPDS3_05a,RPDS3_05b
+    2188 0000e870 00000000! RPDS3_06        .long   RPDS3_06a,RPDS3_06b
+    2189 0000e8b0 00000000! RPDS3_07        .long   RPDS3_07a,RPDS3_07b
+    2190 0000e8f0 00000000! RPDS3_08        .long   RPDS3_08a,RPDS3_08b
+    2191 0000e930 00000000! RPDS4_01        .long   RPDS4_01a,RPDS4_01b
+    2192 0000e970 00000000! RPDS4_02        .long   RPDS4_02a,RPDS4_02b
+    2193 0000e9b0 00000000! RPDS4_03        .long   RPDS4_03a,RPDS4_03b
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:37:01 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+rope code                                                            PAGE   43
+
+    2194 0000e9f0 00000000! RPDS4_04        .long   RPDS4_04a,RPDS4_04b
+    2195 0000ea30 00000000! RPDS4_05        .long   RPDS4_05a,RPDS4_05b
+    2196 0000ea70 00000000! RPDS4_06        .long   RPDS4_06a,RPDS4_06b
+    2197 0000eab0 00000000! RPDS4_07        .long   RPDS4_07a,RPDS4_07b
+    2198 0000eaf0 00000000! RPDS4_08        .long   RPDS4_08a,RPDS4_08b
+    2199 0000eb30 00000000! RPDS5_01        .long   RPDS5_01a,RPDS5_01b
+    2200 0000eb70 00000000! RPDS5_02        .long   RPDS5_02a,RPDS5_02b
+    2201 0000ebb0 00000000! RPDS5_03        .long   RPDS5_03a,RPDS5_03b
+    2202 0000ebf0 00000000! RPDS5_04        .long   RPDS5_04a,RPDS5_04b
+    2203 0000ec30 00000000! RPDS5_05        .long   RPDS5_05a,RPDS5_05b
+    2204 0000ec70 00000000! RPDS5_06        .long   RPDS5_06a,RPDS5_06b
+    2205 0000ecb0 00000000! RPDS5_07        .long   RPDS5_07a,RPDS5_07b
+    2206 0000ecf0 00000000! RPDS5_08        .long   RPDS5_08a,RPDS5_08b
+    2207                    
+    2208 0000ed30 00000000! ROPSHAD         .long   ROPSHADA,ROPSHADB
+    2209 0000ed70 00000000! RCSH1_01        .long   RCSH1_01A,RCSH1_01B
+    2210 0000edb0 00000000! RCSH1_02        .long   RCSH1_02A,RCSH1_02B
+    2211 0000edf0 00000000! RCSH1_03        .long   RCSH1_03A,RCSH1_03B
+    2212 0000ee30 00000000! RCSH1_04        .long   RCSH1_04A,RCSH1_04B
+    2213 0000ee70 00000000! RCSH1_05        .long   RCSH1_05A,RCSH1_05B
+    2214 0000eeb0 00000000! RCSH2_01        .long   RCSH2_01A,RCSH2_01B
+    2215 0000eef0 00000000! RCSH2_02        .long   RCSH2_02A,RCSH2_02B
+    2216 0000ef30 00000000! RCSH2_03        .long   RCSH2_03A,RCSH2_03B
+    2217 0000ef70 00000000! RCSH2_04        .long   RCSH2_04A,RCSH2_04B
+    2218 0000efb0 00000000! RCSH2_05        .long   RCSH2_05A,RCSH2_05B
+    2219 0000eff0 00000000! RCSH3_01        .long   RCSH3_01A,RCSH3_01B
+    2220 0000f030 00000000! RCSH3_02        .long   RCSH3_02A,RCSH3_02B
+    2221 0000f070 00000000! RCSH3_03        .long   RCSH3_03A,RCSH3_03B
+    2222 0000f0b0 00000000! RCSH3_04        .long   RCSH3_04A,RCSH3_04B
+    2223 0000f0f0 00000000! RCSH3_05        .long   RCSH3_05A,RCSH3_05B
+    2224 0000f130 00000000! RCSH4_01        .long   RCSH4_01A,RCSH4_01B
+    2225 0000f170 00000000! RCSH4_02        .long   RCSH4_02A,RCSH4_02B
+    2226 0000f1b0 00000000! RCSH4_03        .long   RCSH4_03A,RCSH4_03B
+    2227 0000f1f0 00000000! RCSH4_04        .long   RCSH4_04A,RCSH4_04B
+    2228 0000f230 00000000! RCSH4_05        .long   RCSH4_05A,RCSH4_05B
+    2229 0000f270 00000000! RCSH5_01        .long   RCSH5_01A,RCSH5_01B
+    2230 0000f2b0 00000000! RCSH5_02        .long   RCSH5_02A,RCSH5_02B
+    2231 0000f2f0 00000000! RCSH5_03        .long   RCSH5_03A,RCSH5_03B
+    2232 0000f330 00000000! RCSH5_04        .long   RCSH5_04A,RCSH5_04B
+    2233 0000f370 00000000! RCSH5_05        .long   RCSH5_05A,RCSH5_05B
+    2234 0000f3b0 00000000! RBSH_01         .long   RBSH_01A,RBSH_01B
+    2235 0000f3f0 00000000! RBSH_02         .long   RBSH_02A,RBSH_02B
+    2236 0000f430 00000000! RBSH_03         .long   RBSH_03A,RBSH_03B
+    2237 0000f470 00000000! RBSH_04         .long   RBSH_04A,RBSH_04B
+    2238 0000f4b0 00000000! RBSH_05         .long   RBSH_05A,RBSH_05B
+    2239 0000f4f0 00000000! RBSH_06         .long   RBSH_06A,RBSH_06B
+    2240 0000f530 00000000! RBSH_07         .long   RBSH_07A,RBSH_07B
+    2241                    
+    2242                    ******************************************************************************
+    2243                    
+    2244                            .end
+
+ No Errors,  No Warnings

@@ -111,7 +111,7 @@
 	.DEF	HIT_THE_MAT
 	.def	SMALL_BOUNCE
 	.DEF	VINCE_START_ROUND2_3
-	.ref	index1,index2,process_ptrs,PSTATUS
+	.ref	index1,index2,process_ptrs,PSTATUS,PSTATUS2
 
 	;for various files
 	.def	DEFAULT_SOUND_TABLE,MASTER_SOUND_TABLE

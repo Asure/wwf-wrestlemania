@@ -1961,8 +1961,8 @@ f_done
 	DIE
 
 
-***********************************************************
-#*
+#***********************************************************
+*
 ;A8 = player side (0,1)
  SUBRP	no_block_powerup_check
 #lp
@@ -1987,8 +1987,8 @@ f_done
 #die	DIE
 
 ***********************************************************
-#*
-;A8 = player side (0,1)
+#**
+;asA8 = player side (0,1)
  SUBRP	move_names_powerup_check
 #lp
 	clr	a11
@@ -2011,8 +2011,8 @@ f_done
 
 
 ***********************************************************
-#*
-;A8 = player side (0,1)
+#***
+;aA8 = player side (0,1)
  SUBRP	drone_meters_powerup_check
 
 	;only in one-player games
@@ -2047,8 +2047,8 @@ f_done
 
 
 ***********************************************************
-#*
-;A8 = player side (0,1)
+#*****
+;bA8 = player side (0,1)
  SUBRP	hyper_match_powerup_check
 #lp
 	clr	a11
@@ -2070,8 +2070,8 @@ f_done
 
 
 ***********************************************************
-#*
-;A8 = player side (0,1)
+#*****&
+;cA8 = player side (0,1)
  SUBRP	combos_powerup_check
 #lp
 	clr	a11
@@ -2092,8 +2092,8 @@ f_done
 
 
 ***********************************************************
-#*
-;A8 = player side (0,1)
+#****1
+;dzA8 = player side (0,1)
  SUBRP	ring_out_powerup_check
 #lp
 	clr	a11
@@ -2115,7 +2115,7 @@ f_done
 
 
 ***********************************************************
-#*
+#****1
 ;A8 = player side (0,1)
  SUBRP	no_ring_powerup_check
 #lp
@@ -2138,8 +2138,8 @@ f_done
 
 
 ***********************************************************
-#*
-;A8 = player side (0,1)
+#**a
+;eA8 = player side (0,1)
 
 	BSSX	buddy_mode_checked,16
 
@@ -2177,8 +2177,8 @@ f_done
 
 
 ***********************************************************
-#*
-;A8 = player side (0,1)
+#**z
+;fA8 = player side (0,1)
  SUBRP	player_powerup_checker
 
 	CREATE	PU_CHECK_PID,no_block_powerup_check
@@ -3246,6 +3246,6 @@ hello_prompt3
 
 
 ******************************************************************************
-
+*
 	.end
 

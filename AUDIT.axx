@@ -125,7 +125,7 @@ COINCNT2	.EQU	COINCNTR+8
 	.GLOBAL	SYNCHALF,WDOGDIS,GAMSTATE
 
 	.ref	IRQSKYE
-	.ref	PSTATUS
+	.ref	PSTATUS,PSTATUS2
 	.ref	attract_mode
 
 
@@ -216,7 +216,7 @@ COINCNT2	.EQU	COINCNTR+8
 L_TIMER
 	move	@GAMSTATE,a0
 	cmpi	INAMODE,a0
-	jrne	#NO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
+	jrne	tjdiNO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
 
 ;	move	@SWITCH,a0
 	move	@_switch_addr,a0,L
@@ -224,17 +224,17 @@ L_TIMER
 	not	a0
 	andi	07f7fH,a0		;Get sticks 'n starts
 	move	@OCT_FLG,a1
-	jrgt	#p2			;Got part one?
+	jrgt	tjdip2			;Got part one?
 
 	cmpi	07171H,a0		;P1&P2 all buts down & both sticks up
-	jrne	#NO_CK_OCTO			;Wrong?
+	jrne	tjdiNO_CK_OCTO			;Wrong?
 	movi	TSEC,a1			;One sec to get part two
-#p2
+tjdip2
 	subk	1,a1
 	move	a1,@OCT_FLG
-	jrgt	#NO_CK_OCTO			;Still counting?
+	jrgt	tjdiNO_CK_OCTO			;Still counting?
 	cmpi	0202H,a0
-	jrne	#NO_CK_OCTO			;Wrong?
+	jrne	tjdiNO_CK_OCTO			;Wrong?
 
 	movi	ACTIVE,a13
 ;	movi	HID_P,a7		;Start the process!
@@ -243,18 +243,18 @@ L_TIMER
 	.ref	octopus_page
 	movi	octopus_page,a7
 	calla	GETPRC
-#NO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
+tjdiNO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
 
 	move	@dirqtimer,a1		;get elapsed time
 	move	@playtimer,a0		;get play timer
 	sub	a1,a0			;add elapsed time
 	move	a0,@playtimer
-	jrgt	#not5			;Under 5 seconds?
+	jrgt	tjdinot5			;Under 5 seconds?
 
 	CREATE	AUDIT_UD_PID,audit_ud
 
 	movi	TSEC*5,a0		;reset the countdown
-#not5
+tjdinot5
 	move	a0,@playtimer
 	rets
 
@@ -267,17 +267,17 @@ L_TIMER
 	move	a14,@audit_ud_flag
 
 	move	@GAMSTATE,a14
-	jrn	#skip			;in diagnostics
+	jrn	tjdiskip			;in diagnostics
 
 	move	@PSTATUS2,a14
-	jrz	#skip			;no players
+	jrz	tjdiskip			;no players
 ;oops ! wrong order
 
 	movi	AUD_1PLAYTIME,a0	;update the 1/2P time
 	cmpi	3,a14
-	jrne	#1pmode
+	jrne	tjdi1pmode
 	movi	AUD_2PLAYTIME,a0
-#1pmode
+tjdi1pmode
 	callr	AUD1
 	MOVE	@PSTATUS2,A14
 	JRZ	NO_NEED_TO_DO_ANYTHING
@@ -300,7 +300,7 @@ NO_NEED_TO_DO_ANYTHING
 	callr	AUD1
 
 	SLEEPK	1
-#skip
+tjdiskip
 	movi	AUD_UPTIME,a0		;update the total uptime
 	callr	AUD1
 
@@ -314,28 +314,28 @@ NO_NEED_TO_DO_ANYTHING
 
 
 	move	@PSTATUS2,a2
-	jrz	#audup
+	jrz	tjdiaudup
 
 	move	@GAMSTATE,a2
-	jrn	#audup
+	jrn	tjdiaudup
 
 	movi	AUD_1PLAYTIME,a0	;update the 1/2P time
 	cmpi	3,a2
-	jrne	#1pmode
+	jrne	tjdi1pmode
 	movi	AUD_2PLAYTIME,a0
-#1pmode
+tjdi1pmode
 	callr	AUD1
 
 	movi	AUD_PLTIME,a0
 	callr	AUD1
 
-#audup
+tjdiaudup
 	movi	AUD_UPTIME,a0		;update the total uptime
 	callr	AUD1
 
 	movi	TSEC*5,a0		;reset the countdown
 
-#not5
+tjdinot5
 	rets
 
  .endif
@@ -346,12 +346,12 @@ NO_NEED_TO_DO_ANYTHING
 
 SERVICE
 	move	@GAMSTATE,a0
-	jrn	eitx 			;In diagnostics?
+	jrn	mwogx 			;In diagnostics?
 
 	move	@_coin_addr,a0,L	;Get COIN inputs
 	move	*a0,a0
 	btst	CDI_BIT,a0		;Coin Door Closed ?
-	jrz	eitx			;Yes - Then NO Service Credits Allowed
+	jrz	mwogx			;Yes - Then NO Service Credits Allowed
 
 	callr	CCCC			;MAKE SURE THINGS ARE IN TACT
 
@@ -372,7 +372,7 @@ SERVICE
 
 	jruc	CREDSP
 
-eitx	DIE
+mwogx	DIE
 
 
 ********************************
@@ -433,9 +433,9 @@ VALID_COIN
 	MOVE	A0,*A13(PROCID)		;SET OUR ID (IN CASE TABLE IS WRONG)
 
 ;	movb	*a10,a0 		;get flag byte
-;	jrz	eitfok
+;	jrz	mwogfok
 ;	LOCKUP
-;eitfok
+;mwogfok
 	MOVB	*A10,A0 		;GET FLAG BYTE
 	JRNZ	CRX			;SOMEONE ELSE THERE...WE'RE A BOUNCE!
 
@@ -554,11 +554,11 @@ CREDSP
 ;NOZERO
 ;	move	@GAMSTATE,a0
 ;	cmpi	INGAME,a0
-;	jrne	eitnot_ingame
+;	jrne	mwognot_ingame
 
 	calla	update_credit_msg
 
-;eitnot_ingame
+;mwognot_ingame
 	MOVE	@PSTATUS2,A0
 	JRNZ	CRX
 	move	@GAMSTATE,a0
@@ -1005,7 +1005,7 @@ CRD_SCRN
 	MOVE	A0,*A13(PROCID)
 	MOVI	0FFFFH,A1		;CHECK TO SEE IF CREDIT PAGE IS UP
 	CALLA	EXISTP
-	jrnz	eitexists			;credit page up, so reprint text only
+	jrnz	mwogexists			;credit page up, so reprint text only
 
 	calla	display_blank
 	calla	WIPEOUT			;CLEAN SYSTEM OUT
@@ -1039,21 +1039,21 @@ CRD_SCRN
 	SLEEPK	2
 	calla	display_unblank
 
-	jruc	eitcont
+	jruc	mwogcont
 
 
-eitexists
+mwogexists
 	move	@HEBLNK,a0
 	cmpi	HEBLNKINIT,a0
-	jrne	eitinscl
+	jrne	mwoginscl
 	move	@dtype,a0
-	jrge	eitnotinscl
-eitinscl	move	a10,a10
+	jrge	mwognotinscl
+mwoginscl	move	a10,a10
 	jrnz	KILL_CRD2
-	jruc	eitdie
-eitnotinscl
+	jruc	mwogdie
+mwognotinscl
 	SLEEPK	3
-eitcont
+mwogcont
 	callr	crd_updatetxt		;Display players per credit messages
 
 	movi	HEBLNKINIT,a0			;Display on (just in case)
@@ -1064,31 +1064,31 @@ eitcont
 
 
 	movi	4*TSEC,a11
-eitlp	SLEEPK	1
+mwoglp	SLEEPK	1
 	.ref	get_all_buttons_cur2
 	calla	get_all_buttons_cur2
-	jrz	eitnob
+	jrz	mwognob
 	movi	bounce_snd,a0
 	calla	triple_sound
 	move	a10,a10
 	jrnz	KILL_CRD2
 	jruc	KILL_CRD
-eitnob
-	dsj	a11,eitlp
+mwognob
+	dsj	a11,mwoglp
 
-eitck2
+mwogck2
 	move	a10,a10
 	jrnz	KILL_CRD2
 
 	movi	10*TSEC,a11
-eitlp1	SLEEPK	1
+mwoglp1	SLEEPK	1
 	calla	get_all_buttons_cur2
-	jrz	eitnob1
+	jrz	mwognob1
 	movi	bounce_snd,a0
 	calla	triple_sound
 	jruc	KILL_CRD
-eitnob1
-	dsj	a11,eitlp1
+mwognob1
+	dsj	a11,mwoglp1
 
 KILL_CRD
 	calla	display_blank
@@ -1097,7 +1097,7 @@ KILL_CRD
 
 	CREATE	AMODE_PID,attract_mode
 
-eitdie	DIE
+mwogdie	DIE
 
 
 KILL_CRD2
@@ -1128,13 +1128,13 @@ coinin_mod
 	move	@_dipswitch_addr,a0,L
 	move	*a0,a0
 	btst	6,a0			;UJ2 switch 1
-	jrnz	eitnotfair		;OFF?
+	jrnz	mwognotfair		;OFF?
 
 ;Yes, a dollar bill acceptor is hooked up!
 
 	MOVI	dollar_mes,a2		;Dollar bill message
 	calla	print_message
-eitnotfair
+mwognotfair
 
 	PUSH	A10
 	callr	credits_string
@@ -1165,30 +1165,30 @@ credits_string
 
 	MOVK	ADJFREPL,A0		;ARE WE IN FREE PLAY?
 	CALLA	GET_ADJ
-	JRZ	hnhnot_freeply
+	JRZ	udmenot_freeply
 
 	movi	LN3x_setup,a2
 	calla	setup_message
 	movi	40,a0
 	move	a0,@mess_line_spacing
-	movi	hnhstr_freeply,a4
+	movi	udmestr_freeply,a4
 	calla	print_string_C2
 	
 	rets
 
-hnhnot_freeply
+udmenot_freeply
 
 ;print	"BEST VALUE"
 ;	movi	LN0a_setup,a2
 ;	calla	setup_message
-;	movi	hnhstr_value,a4
+;	movi	udmestr_value,a4
 ;	calla	print_string_C2
 
 
 ;print "PURCHASE FULL GAMES FOR ONLY X CREDITS!"
 ;	movi	LN0_setup,a2
 ;	calla	setup_message
-;	movi	hnhstr_fullg1,a4
+;	movi	udmestr_fullg1,a4
 ;	calla	print_string_C2
 
 ;	move	@mess_cursy,a0
@@ -1199,7 +1199,7 @@ hnhnot_freeply
 ;	movi	20,a1			;max string value
 ;	calla	dec_to_asc
 ;	calla	copy_string
-;	movi	hnhstr_fullg2,a4
+;	movi	udmestr_fullg2,a4
 ;	calla	concat_rom_string
 ;	calla	print_string_C
 
@@ -1208,25 +1208,25 @@ hnhnot_freeply
 	calla	GET_CSPT		;a6 = * current pricing table
 	movk	2,a10			;min number strings to print
 	move	*a6(CS_LIST),a11,L	;a11 = * string list
-	jrz	hnhno_strings
+	jrz	udmeno_strings
 
 	move	a11,a2
-hnhnext_string
+udmenext_string
 	move	*a2+,a0,L		;count up number of strings
-	jrz	hnhlast
+	jrz	udmelast
 	inc	a10
-	jruc	hnhnext_string
-hnhlast
-hnhno_strings
+	jruc	udmenext_string
+udmelast
+udmeno_strings
 	callr	CRED_P			;get number credits
 	move	a0,a3
 	MOVK	ADJCSTRT,A0
 	callr	GET_ADJ 		;# credits to start
 	divu	a0,a3			;credits / credits to start
 	move	a3,a3
-	jrz	hnhnot_enough1
+	jrz	udmenot_enough1
 	inc	a10			;+1 string	(READY FOR...)
-hnhnot_enough1
+udmenot_enough1
 
 
 ;print	"CREDITS : N"
@@ -1237,7 +1237,7 @@ hnhnot_enough1
 	callr	CRED_P			;# credits in a0
 	PUSH	a0
 
-	movi	hnhcrd_str,a4
+	movi	udmecrd_str,a4
 	calla	copy_rom_string
 
 	PULL	a0
@@ -1250,10 +1250,10 @@ hnhnot_enough1
 	calla	GET_ADJ_FOR_COIN 	;a0 = max credits
 	PULL	a1
 	cmp	a0,a1
-	jrlo	hnhnot_max_crds
-	movi	hnhstr_max,a4		;max credits
+	jrlo	udmenot_max_crds
+	movi	udmestr_max,a4		;max credits
 	calla	concat_rom_string
-hnhnot_max_crds
+udmenot_max_crds
 	calla	print_string_C		;"CREDITS : NN"
 
 
@@ -1270,11 +1270,11 @@ hnhnot_max_crds
 	move	a0,@mess_cursy		;centered Y
 
 	calla	TAMPEREDP
-	JRZ	hnhdone
+	JRZ	udmedone
 
-hnhnext_string2
+udmenext_string2
 	move	*a11+,a4,L            	;* next string
-	jrz	hnhdone
+	jrz	udmedone
 
 	move	@mess_cursy,a0
 	addi	YSPACE0,a0
@@ -1282,8 +1282,8 @@ hnhnext_string2
 
 	calla	print_string_C2
 
-	jruc	hnhnext_string2
-hnhdone
+	jruc	udmenext_string2
+udmedone
 
 
 ;print	"N CREDITS TO START"
@@ -1299,12 +1299,12 @@ hnhdone
 	calla	dec_to_asc
 	calla	copy_string
 
-	movi	hnhcrd_2start,a4
+	movi	udmecrd_2start,a4
 	PULL	a0
 	dec	a0
-	jrz	hnh1credit
-	movi	hnhcrd_2starts,a4
-hnh1credit
+	jrz	udme1credit
+	movi	udmecrd_2starts,a4
+udme1credit
 	calla	concat_rom_string
 	calla	print_string_C
 
@@ -1321,12 +1321,12 @@ hnh1credit
 	movi	99,a1			;max string value
 	calla	dec_to_asc
 	calla	copy_string
-	movi	hnhcrd_2cont,a4
+	movi	udmecrd_2cont,a4
 	PULL	a0
 	dec	a0
-	jrz	hnh1_creditb
-	movi	hnhcrd_2conts,a4
-hnh1_creditb
+	jrz	udme1_creditb
+	movi	udmecrd_2conts,a4
+udme1_creditb
 	calla	concat_rom_string
 	calla	print_string_C
 
@@ -1343,38 +1343,38 @@ hnh1_creditb
 
 	divu	a0,a3			;credits / credits to start
 	move	a3,a3
-	jrz	hnhnot_ready
+	jrz	udmenot_ready
 	dec	a3
 
 ;;;	move	@TWOPLAYERS,a0		;0 = NO, 1 = YES 2 players
-;;;	jrz	hnh4_plyrs
+;;;	jrz	udme4_plyrs
 
 	cmpi	2,a3
-	jrlo	hnhnot_max
+	jrlo	udmenot_max
 	movi	1,a3
 
-hnh4_plyrs
+udme4_plyrs
 ;;;	cmpi	4,a3
-;;;	jrlo	hnhnot_max
+;;;	jrlo	udmenot_max
 ;;;	movi	3,a3
-hnhnot_max
+udmenot_max
 	sll	5,a3		;x 32 bits
-	addi	hnhready_for_lookup,a3
+	addi	udmeready_for_lookup,a3
 	move	*a3,a4,L
 ;	move	@mess_cursy,a0
 ;	addi	YSPACE,a0
 ;	move	a0,@mess_cursy
 	calla	print_string_C2
 
-	movi	hnhstr_start,a4
-	jruc	hnhready
+	movi	udmestr_start,a4
+	jruc	udmeready
 
-hnhnot_ready
+udmenot_ready
 ;Turmell
 ;	movi	RUBYPAL,a0		;redpal
 ;	move	a0,@message_palette
-	movi	hnhstr_insert,a4
-hnhready
+	movi	udmestr_insert,a4
+udmeready
 	move	@mess_cursy,a0
 	addi	YSPACE,a0
 	move	a0,@mess_cursy
@@ -1410,38 +1410,38 @@ LN6_setup
 	JAM_STR	osgemd_ascii,10,0,200,LN6,GOLD,0
 	.even
 
-hnhstr_value
+udmestr_value
 	.string	"BEST VALUE:",0
-hnhstr_fullg1
+udmestr_fullg1
 	.string	"PURCHASE FULL GAMES FOR ONLY ",0
-hnhstr_fullg2
+udmestr_fullg2
 	.string	" CREDITS PER PLAYER!",0
-hnhstr_max
+udmestr_max
 	.string	" (MAXIMUM)",0
-hnhcrd_str
+udmecrd_str
 	.string	"CREDITS : ",0
-hnhcrd_2start
+udmecrd_2start
 	.string	" CREDIT TO START",0
-hnhcrd_2starts
+udmecrd_2starts
 	.string	" CREDITS TO START",0
-hnhcrd_2cont
+udmecrd_2cont
 	.string	" CREDIT TO CONTINUE",0
-hnhcrd_2conts
+udmecrd_2conts
 	.string	" CREDITS TO CONTINUE",0
-hnhstr_freeply
+udmestr_freeply
 	.string	"FREE  PLAY",1
-hnhstr_start
+udmestr_start
 	.string	"PRESS  START",0
-hnhstr_insert
+udmestr_insert
 	.string	"INSERT COINS",0
 	.even
-hnhready_for_lookup
-	.long	hnhstr_1p,hnhstr_2p
-	.long	hnhstr_3p,hnhstr_4p
-hnhstr_1p	.string	"READY FOR 1 PLAYER",0
-hnhstr_2p	.string	"READY FOR 1 OR 2 PLAYERS",0
-hnhstr_3p	.string	"READY FOR 1 - 3 PLAYERS",0
-hnhstr_4p	.string	"READY FOR 1 - 4 PLAYERS",0
+udmeready_for_lookup
+	.long	udmestr_1p,udmestr_2p
+	.long	udmestr_3p,udmestr_4p
+udmestr_1p	.string	"READY FOR 1 PLAYER",0
+udmestr_2p	.string	"READY FOR 1 OR 2 PLAYERS",0
+udmestr_3p	.string	"READY FOR 1 - 3 PLAYERS",0
+udmestr_4p	.string	"READY FOR 1 - 4 PLAYERS",0
 	.even
 
 
@@ -1458,7 +1458,7 @@ CM_LINE3  EQU	  CUSTOM_MESSAGE+(2*CMESS_LINE_SIZE)
         MOVI    VALID_CUSTOM,A7
         CALLA   RC_WORD
         CMPI    VALID_VALUE,A0		; CHECK TO SEE IF MESSAGE IS VALID
-	JRNZ	hnhzippo
+	JRNZ	udmezippo
 
 
 	movi	CM_LINE3,A10		;CHECK LINE 3
@@ -1479,12 +1479,12 @@ GO_FOR_2
 GO_FOR_1
 	movi	CM_LINE1,A10		;CHECK LINE 1
 	callr	CK_LINE 		;1 VALID LINES?
-	jrz	hnhzippo
+	jrz	udmezippo
 	movi	LN4_setup,a2
 	calla	setup_message
 	movi	STRNGRAM,a4
 	calla	print_string_C2
-hnhzippo
+udmezippo
  .endif
 
 *****************************************************************************
@@ -3179,9 +3179,9 @@ getcoin
 	move	@PCNT,a14
 	sll	32-9,a14
 	srl	32-9,a14
-	jrnz	ylncsnd
+	jrnz	asfqcsnd
 	movi	39h,a0
-ylncsnd	calla	triple_sound
+asfqcsnd	calla	triple_sound
 	rets
 
 

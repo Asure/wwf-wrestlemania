@@ -58,6 +58,8 @@
 	.ref	osgmd8_ascii
 
 	BSSX	wrestler_number,32
+****
+* START
 
 blank_line
 	.byte	0
@@ -70,7 +72,7 @@ story_bgnd
 	.long	0
 
 ; These need to be in the same order as the wrestler numbers
-#wrestler_stories_table
+yqaxwrestler_stories_table
 	.long	bret_stories		; Bret Hart
 	.long	razor_stories		; Razor Ramon
 	.long	taker_stories		; The Undertaker
@@ -83,7 +85,7 @@ story_bgnd
 
 
 
-#story_line1_setup
+yqaxstory_line1_setup
 	JAM_STR	osgmd8_ascii,5,0,15,90,SGMD8GLD,print_string
 	.even
 
@@ -94,13 +96,13 @@ story_bgnd
 ;
  SUBR	print_story
 	PUSHP	a0,a1,a2,a3,a4
-#do_more_lines
+yqaxdo_more_lines
 	movi	90,a3
-#print_story_loop
+yqaxprint_story_loop
 	move	*a1+,a0,L			; Get pointer to text line
-	jrz	#print_story_done		; Last line ? br = yes
+	jrz	yqaxprint_story_done		; Last line ? br = yes
 	calla	decompress_string		; Decompress string
-	movi	#story_line1_setup,a2
+	movi	yqaxstory_line1_setup,a2
 	calla	setup_message			; Set it up
 	move	a3,@mess_cursy
 	movi	TYPWCCOUNT,a14
@@ -110,7 +112,7 @@ story_bgnd
 	PULLP	a1,a3
 	addi	12,a3
 	cmpi	230,a3
-	jrlt	#print_story_loop
+	jrlt	yqaxprint_story_loop
 
 	PUSHP	a0,a1
 	SLEEP	TSEC*5				; Minimum time to display
@@ -119,32 +121,32 @@ story_bgnd
 ;of real time.
 ;	movi	TSEC*60,a9			; Allow up to 1 minute per pg
 	movi	TSEC*15,a9			; Allow up to 1 minute per pg
-#w_loop
+yqaxw_loop
 	SLEEPK	1
 	clr	a0
 	calla	get_but_val_cur
 	move	a0,a0
-	jrnz	#we_done
+	jrnz	yqaxwe_done
 	movk	1,a0
 	calla	get_but_val_cur
 	move	a0,a0
-	jrnz	#we_done
-	dsjs	a9,#w_loop
-#we_done
+	jrnz	yqaxwe_done
+	dsjs	a9,yqaxw_loop
+yqaxwe_done
 	PULLP	a9
 	PULLP	a0,a1
 
 	move	*a1,a0,L			; Are there more lines ?
-	jrz	#print_story_done		; br = no - don't erase them
+	jrz	yqaxprint_story_done		; br = no - don't erase them
 
 	movi	TYPWCCOUNT,a0
 	PUSHP	a1
 	calla	obj_del1c
 	PULLP	a1
-	jruc	#do_more_lines
+	jruc	yqaxdo_more_lines
 
-	jruc	#print_story_loop		; Keep going
-#print_story_done
+	jruc	yqaxprint_story_loop		; Keep going
+yqaxprint_story_done
 	PULLP	a0,a1,a2,a3,a4
 
 	SLEEPK	TSEC/2			; A little delay before we leave
@@ -203,9 +205,9 @@ w_logos
 	sll	5,a9		; Index into table
 	addi	wrestler_mugs,a9
 	move	*a9,a9,L	; Get pointer to mugshot image pieces
-#mk_mug
+yqaxmk_mug
 	move	*a9+,a2,L	; Get pointer to image piece
-	jrz	#mug_done	; Is that all of them ? - br = yes
+	jrz	yqaxmug_done	; Is that all of them ? - br = yes
 	movi	[017ah,0],a0	; X position
 	movi	[0Afh,0],a1	; Y position
 	clr	a3		; Z position
@@ -214,8 +216,8 @@ w_logos
 	clr	a6		; No velocity
 	clr	a7
 	calla	BEGINOBJ	; Create the buger
-	jruc	#mk_mug		; Get get next piece
-#mug_done
+	jruc	yqaxmk_mug		; Get get next piece
+yqaxmug_done
 
 	; And now his logo
 	move	a10,a2		; Lookup the logo image fer this guy
@@ -252,7 +254,7 @@ w_logos
 
 	move	a10,a1
 	sll	5,a1				; Get wrestler stories table ptr
-	addi	#wrestler_stories_table,a1
+	addi	yqaxwrestler_stories_table,a1
 	move	*a1,a1,L			; Get pointer to wrestler stories
 	move	*a1,a1,L			; Get pointer to string table
 	JSRP	print_story
@@ -260,18 +262,18 @@ w_logos
 ;of real time.
 ;	movi	TSEC*60,a9			; Allow up to 1 minute per pg
 	movi	TSEC*15,a9			; Allow up to 1 minute per pg
-#but_wait
+yqaxbut_wait
 	SLEEPK	1
 	clr	a0		; Check the p1 buttons
 	calla	get_but_val_cur
 	move	a0,a0		; Any get pressed ?
-	jrnz	#but_hit	; br = yes
+	jrnz	yqaxbut_hit	; br = yes
 	movk	1,a0		; Check the p2 buttons
 	calla	get_but_val_cur
 	move	a0,a0		; Any get pressed ?
-	jrnz	#but_hit	; br = yes
-	dsjs	a9,#but_wait	; 3 seconds elapsed ? - br = no
-#but_hit
+	jrnz	yqaxbut_hit	; br = yes
+	dsjs	a9,yqaxbut_wait	; 3 seconds elapsed ? - br = no
+yqaxbut_hit
 
 	movi	CLSMK3,a0	; Ok now delete all the object I created
 	calla	obj_del1c

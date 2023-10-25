@@ -1,0 +1,380 @@
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:29:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    **************************************************************
+       2                    *
+       3                    * Software:     Mike Lynch
+       4                    * Initiated:    04/16/95
+       5                    *
+       6                    * Modified:
+       7                    *
+       8                    * COPYRIGHT (C) 1995 WILLIAMS ELECTRONICS GAMES, INC.
+       9                    *
+      10                    **************************************************************
+      11                    
+      12                            .file   "stories.asm"
+      14                            .width  132
+      15                            .option b,d,l,t
+      16                            .mnolist
+      17                    
+      18                    
+      19                            .include        "macros.h"
+      20                            .include        "mproc.equ"             ;Mproc equates
+      21                            .include        "display.equ"           ;Display proc equates
+      22                            .include        "gsp.equ"               ;Gsp asm equates
+      23                            .include        "sys.equ"
+      24                            .include        "wwfsec.equ"
+      25                            .include        "game.equ"
+      26                            .include        "audit.equ"
+      27                            .include        "plyr.equ"
+      28                            .include        "anim.equ"
+      29                            .include        "sound.h"
+      30                            .include        "ring.equ"
+      31                            .include        "sound.equ"
+      32                            .include        "damage.equ"
+      33                    
+      34                            .include        "imgtbl.glo"
+      35                            .include        "fontsimg.glo"
+      36                            .include        "bgndtbl.glo"
+      37                            .include        "miscimg.glo"
+      38                            .include        "logo.glo"
+      39                    
+      40                            .include        "bamst.h"
+      41                            .include        "bretst.h"
+      42                            .include        "doinkst.h"
+      43                    ;       .include        "yokost1.h"
+      44                    ;       .include        "yokost2.h"
+      45                    ;       .include        "yokost3.h"
+      46                    ;       .include        "yokost4.h"
+      47                            .include        "yokost.h"
+      48                            .include        "lexst.h"
+      49                            .include        "razorst.h"
+      50                            .include        "takerst.h"
+      51                            .include        "shawnst.h"
+      52                    
+      53                            .ref    p1oldwinstreak,p2oldwinstreak,print_string,ogmd10_ascii
+      54                            .ref    SGMD8GLD,setup_message,message_buffer
+      55                            .ref    BAKMODS,decompress_string,BGND_UD1,WIPEOUT,dpageflip
+      56                            .ref    wrestler_mugs,obj_del1c,mess_objid,scrn_rel_off,pal_clean
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:29:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+wrestling game program                                               PAGE    2
+
+      57                            .ref    fade_down,get_but_val_cur,which_player,PSTATUS2,mess_cursy
+      58                            .ref    osgmd8_ascii
+      59                    
+      60 0000ba10                   BSSX    wrestler_number,32
+      61                    ****
+      62                    * START
+      63                    
+      64 0000ba10           blank_line
+      65 0000ba10       00          .byte   0
+      66 0000ba20                   .even
+      67                    
+      68                            .globl  story_bgnd
+      69 0000ba20           story_bgnd
+      70 0000ba20 00000000!         .long   endstoryBMOD
+      71 0000ba40     0000          .word   0,0
+      72 0000ba60 00000000          .long   0
+      73                    
+      74                    ; These need to be in the same order as the wrestler numbers
+      75 0000ba80           yqaxwrestler_stories_table
+      76 0000ba80 00002630'         .long   bret_stories            ; Bret Hart
+      77 0000baa0 00008110'         .long   razor_stories           ; Razor Ramon
+      78 0000bac0 00009d30'         .long   taker_stories           ; The Undertaker
+      79 0000bae0 00005020'         .long   yoko_stories            ; Yokozuna
+      80 0000bb00 0000b9f0'         .long   shawn_stories           ; Shawn Michaels
+      81 0000bb20 000013e0'         .long   bam_stories             ; Bam Bam Bigelow
+      82 0000bb40 00003ce0'         .long   doink_stories           ; Doink The Clown
+      83 0000bb60 00003ce0'         .long   doink_stories           ; Doink The Clown
+      84 0000bb80 000065c0'         .long   lex_stories             ; Lex Luger
+      85                    
+      86                    
+      87                    
+      88 0000bba0           yqaxstory_line1_setup
+      89 0000bba0                   JAM_STR osgmd8_ascii,5,0,15,90,SGMD8GLD,print_string
+      90 0000bc40                   .even
+      91                    
+      92                    
+      93                    
+      94                    ;
+      95                    ; A1 = *wrestler story line table
+      96                    ;
+      97 0000bc40            SUBR   print_story
+      98 0000bc40                   PUSHP   a0,a1,a2,a3,a4
+      99 0000bc60           yqaxdo_more_lines
+     100 0000bc60     09c3          movi    90,a3
+         0000bc70     005a  
+     101 0000bc80           yqaxprint_story_loop
+     102 0000bc80     9620          move    *a1+,a0,L                       ; Get pointer to text line
+     103 0000bc90     ca46          jrz     yqaxprint_story_done            ; Last line ? br = yes
+     104 0000bca0     0d5f          calla   decompress_string               ; Decompress string
+         0000bcb0 00000000! 
+     105 0000bcd0     09e2          movi    yqaxstory_line1_setup,a2
+         0000bce0 0000bba0' 
+     106 0000bd00     0d5f          calla   setup_message                   ; Set it up
+         0000bd10 00000000! 
+     107 0000bd30     0583          move    a3,@mess_cursy
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:29:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+wrestling game program                                               PAGE    3
+
+         0000bd40 00000000! 
+     108 0000bd60     09ce          movi    TYPWCCOUNT,a14
+         0000bd70     0150  
+     109 0000bd80     058e          move    a14,@mess_objid
+         0000bd90 00000000! 
+     110 0000bdb0                   PUSHP   a1,a3
+     111 0000bdd0     0d5f          calla   print_string                    ; Print it
+         0000bde0 00000000! 
+     112 0000be00                   PULLP   a1,a3
+     113 0000be20     0b03          addi    12,a3
+         0000be30     000c  
+     114 0000be40     0b43          cmpi    230,a3
+         0000be50     ff19  
+     115 0000be60     c4e1          jrlt    yqaxprint_story_loop
+     116                    
+     117 0000be70                   PUSHP   a0,a1
+     118 0000be90                   SLEEP   TSEC*5                          ; Minimum time to display
+     119                    
+     120 0000bee0                   PUSHP   a9
+     121                    ;of real time.
+     122                    ;       movi    TSEC*60,a9                      ; Allow up to 1 minute per pg
+     123 0000bef0     09c9          movi    TSEC*15,a9                      ; Allow up to 1 minute per pg
+         0000bf00     031b  
+     124 0000bf10           yqaxw_loop
+     125 0000bf10                   SLEEPK  1
+     126 0000bf50     5600          clr     a0
+     127 0000bf60     0d5f          calla   get_but_val_cur
+         0000bf70 00000000! 
+     128 0000bf90     4c00          move    a0,a0
+     129 0000bfa0     cb07          jrnz    yqaxwe_done
+     130 0000bfb0     1820          movk    1,a0
+     131 0000bfc0     0d5f          calla   get_but_val_cur
+         0000bfd0 00000000! 
+     132 0000bff0     4c00          move    a0,a0
+     133 0000c000     cb01          jrnz    yqaxwe_done
+     134 0000c010     3e29          dsjs    a9,yqaxw_loop
+     135 0000c020           yqaxwe_done
+     136 0000c020                   PULLP   a9
+     137 0000c030                   PULLP   a0,a1
+     138                    
+     139 0000c050     8620          move    *a1,a0,L                        ; Are there more lines ?
+     140 0000c060     ca09          jrz     yqaxprint_story_done            ; br = no - don't erase them
+     141                    
+     142 0000c070     09c0          movi    TYPWCCOUNT,a0
+         0000c080     0150  
+     143 0000c090                   PUSHP   a1
+     144 0000c0a0     0d5f          calla   obj_del1c
+         0000c0b0 00000000! 
+     145 0000c0d0                   PULLP   a1
+     146 0000c0e0     c0b7          jruc    yqaxdo_more_lines
+     147                    
+     148 0000c0f0     c0b8          jruc    yqaxprint_story_loop            ; Keep going
+     149 0000c100           yqaxprint_story_done
+     150 0000c100                   PULLP   a0,a1,a2,a3,a4
+     151                    
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:29:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+wrestling game program                                               PAGE    4
+
+     152 0000c120                   SLEEPK  TSEC/2                  ; A little delay before we leave
+     153                    
+     154 0000c160                   RETP
+     155                    
+     156                    
+     157                    
+     158                    
+     159 0000c190           w_logos
+     160 0000c190 00000000!         .long   HRT3
+     161 0000c1b0 00000000!         .long   RZR3
+     162 0000c1d0 00000000!         .long   UND3
+     163 0000c1f0 00000000!         .long   YOK3
+     164 0000c210 00000000!         .long   SHN3
+     165 0000c230 00000000!         .long   BAM3
+     166 0000c250 00000000!         .long   DNK3
+     167 0000c270 00000000          .long   0
+     168 0000c290 00000000!         .long   LEX3
+     169                    
+     170 0000c2b0            SUBR   show_wrestler_end_story
+     171                    ;       RETP
+     172                    
+     173 0000c2b0                   PUSHP   a0,a1,a2        ; Save reggies
+     174                    
+     175 0000c2d0     05ae          move    @PSTATUS2,a14   ; Get which player won
+         0000c2e0 00000000! 
+     176 0000c300     2fee          srl     1,a14           ; Index into table
+     177 0000c310     248e          sll     4,a14
+     178 0000c320     0b2e          addi    which_player,a14
+         0000c330 00000000! 
+     179 0000c350     85c8          move    *a14,a8         ; Get winning wrestler number
+     180                    
+     181 0000c360     0b48          cmpi    7,a8            ; Is this wrestler number 7 ?
+         0000c370     fff8  
+     182 0000c380     ca00          jrz     inval_wnum      ; br = yes (not a valid wrestler number)
+         0000c390     00a0  
+     183                    
+     184 0000c3a0     0d5f          calla   pal_clean       ; Get rid of extra palettes
+         0000c3b0 00000000! 
+     185                    
+     186 0000c3d0     574a          clr     a10             ; Fade down the lights
+     187 0000c3e0     180b          movk    32,a11
+     188 0000c3f0                   CREATE0 fade_down
+     189 0000c460                   SLEEPK  30
+     190                    
+     191 0000c4a0     0d5f          calla   WIPEOUT
+         0000c4b0 00000000! 
+     192 0000c4d0     1820          movk    1,a0            ; Page flipping on
+     193 0000c4e0     0580          move    a0,@dpageflip
+         0000c4f0 00000000! 
+     194                    
+     195 0000c510     0d5f          calla   pal_clean       ; Get rid of extra palettes
+         0000c520 00000000! 
+     196                    
+     197 0000c540     09e0          movi    story_bgnd,a0   ; Setup background
+         0000c550 0000ba20' 
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:29:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+wrestling game program                                               PAGE    5
+
+     198 0000c570     0780          move    a0,@BAKMODS,L
+         0000c580 00000000! 
+     199 0000c5a0     0d5f          calla   BGND_UD1
+         0000c5b0 00000000! 
+     200                    
+     201 0000c5d0     4d0a          move    a8,a10          ; Restore the wrestler number
+     202                    
+     203                            ; Create the wrestlers mugshot
+     204 0000c5e0     4d49          move    a10,a9          ; Get wrestler number
+     205 0000c5f0     24a9          sll     5,a9            ; Index into table
+     206 0000c600     0b29          addi    wrestler_mugs,a9
+         0000c610 00000000! 
+     207 0000c630     8729          move    *a9,a9,L        ; Get pointer to mugshot image pieces
+     208 0000c640           yqaxmk_mug
+     209 0000c640     9722          move    *a9+,a2,L       ; Get pointer to image piece
+     210 0000c650     ca12          jrz     yqaxmug_done    ; Is that all of them ? - br = yes
+     211 0000c660     09e0          movi    [017ah,0],a0    ; X position
+         0000c670 017a0000  
+     212 0000c690     09e1          movi    [0Afh,0],a1     ; Y position
+         0000c6a0 00af0000  
+     213 0000c6c0     5663          clr     a3              ; Z position
+     214 0000c6d0     09e4          movi    DMAWNZ|M_FLIPH,a4
+         0000c6e0 00008012  
+     215 0000c700     09c5          movi    CLSMK3,a5       ; Make it this class so's I kin delete it
+         0000c710     6000  
+     216 0000c720     56c6          clr     a6              ; No velocity
+     217 0000c730     56e7          clr     a7
+     218 0000c740     0d5f          calla   BEGINOBJ        ; Create the buger
+         0000c750 00000000! 
+     219 0000c770     c0ec          jruc    yqaxmk_mug              ; Get get next piece
+     220 0000c780           yqaxmug_done
+     221                    
+     222                            ; And now his logo
+     223 0000c780     4d42          move    a10,a2          ; Lookup the logo image fer this guy
+     224 0000c790     24a2          sll     5,a2
+     225 0000c7a0     0b22          addi    w_logos,a2
+         0000c7b0 0000c190' 
+     226 0000c7d0     8642          move    *a2,a2,L        ; Get the image pointer
+     227 0000c7e0     b440          move    *a2(ISIZEX),a0  ; Get image width
+         0000c7f0     0000  
+     228 0000c800     2fe0          srl     1,a0            ; Divide it by 2
+     229 0000c810     b441          move    *a2(ISIZEY),a1  ; Get the image height
+         0000c820     0010  
+     230 0000c830     2fe1          srl     1,a1            ; Divide it by 2
+     231 0000c840     2600          sll     16,a0           ; Shift width up into integer portion
+     232 0000c850     2601          sll     16,a1           ; Shift height up into integer portion
+     233 0000c860     03a0          neg     a0              ; Negate the width
+     234 0000c870     03a1          neg     a1              ; Negate the height
+     235 0000c880     0b20          addi    [120,0],a0      ; Translate in X dir
+         0000c890 00780000  
+     236 0000c8b0     0b21          addi    [50,0],a1       ; Translate in Y dir
+         0000c8c0 00320000  
+     237 0000c8e0     5663          clr     a3              ; Z position
+     238 0000c8f0     09e4          movi    DMAWNZ,a4       ; Blit method
+         0000c900 00008002  
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:29:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+wrestling game program                                               PAGE    6
+
+     239 0000c920     09c5          movi    CLSMK3,a5       ; Make it this class so's I kin delete it
+         0000c930     6000  
+     240 0000c940     56c6          clr     a6              ; No velocity
+     241 0000c950     56e7          clr     a7
+     242 0000c960     0d5f          calla   BEGINOBJ        ; Create it
+         0000c970 00000000! 
+     243                    
+     244                            ; Put a WWF belt below the mugshot
+     245 0000c990     09e0          movi    [316,0],a0      ; Center X point on plate below mugshot
+         0000c9a0 013c0000  
+     246 0000c9c0     09e1          movi    [198,0],a1      ; Center Y point on plate below mugshot
+         0000c9d0 00c60000  
+     247 0000c9f0     09e2          movi    SWWFBLT,a2      ; WWF Belt Image
+         0000ca00 00000000! 
+     248 0000ca20     5663          clr     a3              ; Z Position
+     249 0000ca30     09e4          movi    DMAWNZ,a4       ; How to blit it
+         0000ca40 00008002  
+     250 0000ca60     09c5          movi    CLSMK3,a5       ; Make it this class so's I kin delete it
+         0000ca70     6000  
+     251 0000ca80     56c6          clr     a6              ; No velocity
+     252 0000ca90     56e7          clr     a7
+     253 0000caa0     0d5f          calla   BEGINOBJ        ; Create it
+         0000cab0 00000000! 
+     254                    
+     255 0000cad0     4d41          move    a10,a1
+     256 0000cae0     24a1          sll     5,a1                            ; Get wrestler stories table ptr
+     257 0000caf0     0b21          addi    yqaxwrestler_stories_table,a1
+         0000cb00 0000ba80' 
+     258 0000cb20     8621          move    *a1,a1,L                        ; Get pointer to wrestler stories
+     259 0000cb30     8621          move    *a1,a1,L                        ; Get pointer to string table
+     260 0000cb40                   JSRP    print_story
+     261                    
+     262                    ;of real time.
+     263                    ;       movi    TSEC*60,a9                      ; Allow up to 1 minute per pg
+     264 0000cbb0     09c9          movi    TSEC*15,a9                      ; Allow up to 1 minute per pg
+         0000cbc0     031b  
+     265 0000cbd0           yqaxbut_wait
+     266 0000cbd0                   SLEEPK  1
+     267 0000cc10     5600          clr     a0              ; Check the p1 buttons
+     268 0000cc20     0d5f          calla   get_but_val_cur
+         0000cc30 00000000! 
+     269 0000cc50     4c00          move    a0,a0           ; Any get pressed ?
+     270 0000cc60     cb07          jrnz    yqaxbut_hit     ; br = yes
+     271 0000cc70     1820          movk    1,a0            ; Check the p2 buttons
+     272 0000cc80     0d5f          calla   get_but_val_cur
+         0000cc90 00000000! 
+     273 0000ccb0     4c00          move    a0,a0           ; Any get pressed ?
+     274 0000ccc0     cb01          jrnz    yqaxbut_hit     ; br = yes
+     275 0000ccd0     3e29          dsjs    a9,yqaxbut_wait ; 3 seconds elapsed ? - br = no
+     276 0000cce0           yqaxbut_hit
+     277                    
+     278 0000cce0     09c0          movi    CLSMK3,a0       ; Ok now delete all the object I created
+         0000ccf0     6000  
+     279 0000cd00     0d5f          calla   obj_del1c
+         0000cd10 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Tue Oct 24 22:29:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+wrestling game program                                               PAGE    7
+
+     280                    
+     281 0000cd30     09c0          movi    TYPWCCOUNT,a0
+         0000cd40     0150  
+     282 0000cd50     0d5f          calla   obj_del1c
+         0000cd60 00000000! 
+     283                    
+     284 0000cd80                   PULLP   a0,a1,a2        ; Restore the reggies
+     285 0000cda0           inval_wnum
+     286 0000cda0                   RETP                    ; I be done!!!
+     287                    
+     288                    ******************************************************************************
+     289                            
+     290                            .end
+
+ No Errors,  No Warnings

@@ -1,5 +1,5 @@
-**************************************************************
-*
+#**************************************************************
+* START
 * Software:		George Petro, Todd Allen
 * Initiated:		1989?
 *
@@ -120,7 +120,7 @@
 
 	jruc	collisions
 
-********************************
+#********************************
 * Build lists and collide based on X
 * A6=XMin
 * A7=XMax (+1)
@@ -230,7 +230,7 @@ gotlists
 	movi	PList,b4
 ;	callr	ColLists		;Collide hulk to player
 
-********************************
+#********************************
 * Collide objects on list A5 with those on LIST B4
 * A5,B4=ptrs to null terminated tables of object ptrs
 
@@ -320,7 +320,7 @@ PCkFree	move	@coll_stop,a0
 scndone	rets
 
 
-****************************************************************************
+#****************************************************************************
 * Return in B0 routine for obj A1 struck by obj A2
 * Trashes A3-A4
 
@@ -625,7 +625,7 @@ SHBL	;shell hits bullet
 	movi	shell_die,b0
 	rets
 
-****************************************************************************
+#****************************************************************************
 *COLLISION ROUTINE
 *A1=OBJECT ONE
 *A2=OBJECT TWO
@@ -844,6 +844,7 @@ CLOBJ1	move	*a7(ISAG),a6,L	;Get image source address
 	SLL	3,A11		;CORRECT FOR PIXEL ADDRESSING
 	JRUC	CSH
 
+#************************
 *HORIZONTAL FLIP
 *A3=HINC1=-8
 *A11=VINC1=W1+XSCAN
@@ -862,6 +863,7 @@ CL1HF	BTST	B_FLIPV,B1	;VERT FLIP TOO?
 	SLL	3,A11		;CORRECT FOR PIXEL ADDRESSING
 	JRUC	CSH
 
+#********************
 *VERTICAL FLIP
 *A3=HINC1=8
 *A11=VINC1=-W1-XSCAN

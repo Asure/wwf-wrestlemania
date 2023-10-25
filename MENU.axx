@@ -1,5 +1,5 @@
 **************************************************************
-*
+* START
 * Software:		LARRY DEMAR and DR. J
 * Initiated:		?
 *
@@ -597,7 +597,7 @@ GO_AUD
 	JRNZ	NO_AP2		;NOPE...RETURN TO OUR CALLER
 
 
-#page2
+cjrppage2
 	CALLA	CLR_SCRN
 
 	MOVI	MES_AUD,A2
@@ -613,7 +613,7 @@ GO_AUD
 	cmpi	2,A8		;DID WE GET 2nd ENTRY (RETURN TO PAGE 1)
 	jreq	GO_AUD		;YEP...PUT IT UP!
 
-#page2a
+cjrppage2a
 	CALLA	CLR_SCRN
 
 	MOVI	MES_AUD,A2
@@ -627,9 +627,9 @@ GO_AUD
 	MOVK	1,A9		;CURSOR ON 1ST ENTRY
 	JSRP	B_MENU		;SEE IF THEY WANT PAGE 2.
 	cmpi	2,A8		;DID WE GET 2nd ENTRY (RETURN TO PAGE 1)
-	jreq	#page2		;YEP...PUT IT UP!
+	jreq	cjrppage2		;YEP...PUT IT UP!
 
-#page3
+cjrppage3
 	CALLA	CLR_SCRN
 
 	MOVI	MES_AUD,A2
@@ -670,8 +670,8 @@ GO_AUD
 	MOVK	1,A9		;CURSOR ON 1ST ENTRY
 	JSRP	B_MENU		;SEE IF THEY WANT PAGE 2.
 	cmpi	2,A8		;DID WE GET 2nd ENTRY (RETURN TO PAGE 2)
-;	jreq	#page2		;YEP...PUT IT UP!
-	jreq	#page2a		;YEP...PUT IT UP!
+;	jreq	cjrppage2		;YEP...PUT IT UP!
+	jreq	cjrppage2a		;YEP...PUT IT UP!
 
 NO_AP2
 	RETP
@@ -841,23 +841,23 @@ vol_loop_done
 
 	move	a0,a1
 	move	@bar_height,a0
-fvpadjust_loop
+ihtdadjust_loop
 	cmp	a1,a0
-	jreq	fvpdone
-	jrlt	fvpgrow_bar
+	jreq	ihtddone
+	jrlt	ihtdgrow_bar
 
 	movi	ROBO_BLACK,a2
 	callr	vol_bar_line
 	dec	a0
-	jruc	fvpadjust_loop
+	jruc	ihtdadjust_loop
 
-fvpgrow_bar	
+ihtdgrow_bar	
 	inc	a0
 	movi	ROBO_RED,a2
 	callr	vol_bar_line
-	jruc	fvpadjust_loop
+	jruc	ihtdadjust_loop
 
-fvpdone
+ihtddone
 	move	a0,@bar_height
 	rets
 
@@ -2768,20 +2768,20 @@ snd_tout_mes
 	move	@_sound_addr,a0,L		; Bypass the diags
 	movb	a0,*a0
 	movi	500000,a1			; Wait fer a while
-eykswait_lp
-	dsjs	a1,eykswait_lp
+xbvfswait_lp
+	dsjs	a1,xbvfswait_lp
 	clr	a3			; Turn on the sounds
 	move	a3,@SOUNDSUP,W
 	movi	999,a3			; Send revision request sound call
 	calla	SNDSND
 	movi	1000000,a2
-eyksndrev_loop
+xbvfsndrev_loop
 	move	@_soundirq_addr,a0,L	; Wait fer a response
 	move	*a0,a1,W
 	btst	B_SDAV,a1		; Got a response ?
-	jrz	eyksnd_response		; BR = yes
-	dsjs	a2,eyksndrev_loop
-eyksnd_timeout
+	jrz	xbvfsnd_response		; BR = yes
+	dsjs	a2,xbvfsndrev_loop
+xbvfsnd_timeout
 	movi	SNDTIMEOUT,a4		; If we get here we never got a response
 	calla	copy_rom_string
 	movi	snd_tout_mes,a0
@@ -2789,8 +2789,8 @@ eyksnd_timeout
 	movi	_setup_mess,a8
 	JSRP	L_MESS
 
-	jruc	eyksndrev_done		; Then we be done
-eyksnd_response
+	jruc	xbvfsndrev_done		; Then we be done
+xbvfsnd_response
 	movi	snd_vprompt,a4
 	calla	copy_rom_string
 
@@ -2800,15 +2800,15 @@ eyksnd_response
 	move	a0,a1
 	andi	0ffh,a1
 	cmpi	0ffh,a1
-	jrz	eyksnd_timeout
+	jrz	xbvfsnd_timeout
 	andi	0f0h,a1
 	cmpi	0d0h,a1
-	jrz	eykproto_version
+	jrz	xbvfproto_version
 	movi	SNDRELEASEPROMPT,a4
-	jruc	eykdo_snd_version
-eykproto_version
+	jruc	xbvfdo_snd_version
+xbvfproto_version
 	movi	SNDPROTOPROMPT,a4
-eykdo_snd_version
+xbvfdo_snd_version
 	calla	concat_rom_string
 	move	@_snd_chip_count,a0,W
 	andi	0fh,a0
@@ -2819,7 +2819,7 @@ eykdo_snd_version
 	callr	_setup_message
 	movi	_setup_mess,a8
 	JSRP	L_MESS
-eyksndrev_done
+xbvfsndrev_done
 	RETP
 
 *******************************************************************************
@@ -2832,7 +2832,7 @@ DO_GENTEST
 
         CALLA   SURE_BOX		;PUT A NICE BOX UP!
 
-	movi	eyksnd_testing_mess,a8
+	movi	xbvfsnd_testing_mess,a8
 	JSRP	L_MESS
 
 	JSRP	GetSoundRev
@@ -2883,17 +2883,17 @@ sdav_not79
         jauc    ANY_BUT
 
 diag_message_table
-	.long	eykcheck_hardware
-	.long	eykboard_ok
-	.long	eykbad_u2_checksum
-	.long	eykbad_u3_checksum
-	.long	eykbad_u4_checksum
-	.long	eykbad_u5_checksum
-	.long	eykbad_u6_checksum
-	.long	eykbad_u7_checksum
-	.long	eykbad_u8_checksum
-	.long	eykbad_u9_checksum
-	.long	eykbad_ram
+	.long	xbvfcheck_hardware
+	.long	xbvfboard_ok
+	.long	xbvfbad_u2_checksum
+	.long	xbvfbad_u3_checksum
+	.long	xbvfbad_u4_checksum
+	.long	xbvfbad_u5_checksum
+	.long	xbvfbad_u6_checksum
+	.long	xbvfbad_u7_checksum
+	.long	xbvfbad_u8_checksum
+	.long	xbvfbad_u9_checksum
+	.long	xbvfbad_ram
 
 
 ****************************************
@@ -2994,12 +2994,12 @@ DAC_ERR
 	.STRING	"10 TONES - RAM TEST FAILED",0,0
 	.EVEN
 
-eyksnd_testing_mess
+xbvfsnd_testing_mess
 	MESS_MAC RD7FONT,SPACING07,200,81,COLOR_YELLOW,STRCNRM,0
 	.STRING	"TESTING",0,0
 	.EVEN
 
-eykcheck_hardware
+xbvfcheck_hardware
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"NO RESPONSE FROM SOUND SYSTEM",0,1
 	.EVEN
@@ -3007,52 +3007,52 @@ eykcheck_hardware
 	.STRING	"CHECK HARDWARE",0,0
 	.EVEN
 
-eykboard_ok
+xbvfboard_ok
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"1 TONE - SOUND BOARD OK",0,0
 	.EVEN
 
-eykbad_u2_checksum
+xbvfbad_u2_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U2 CHECKSUM",0,0
 	.EVEN
 
-eykbad_u3_checksum
+xbvfbad_u3_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U3 CHECKSUM",0,0
 	.EVEN
 
-eykbad_u4_checksum
+xbvfbad_u4_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U4 CHECKSUM",0,0
 	.EVEN
 
-eykbad_u5_checksum
+xbvfbad_u5_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U5 CHECKSUM",0,0
 	.EVEN
 
-eykbad_u6_checksum
+xbvfbad_u6_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U6 CHECKSUM",0,0
 	.EVEN
 
-eykbad_u7_checksum
+xbvfbad_u7_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U7 CHECKSUM",0,0
 	.EVEN
 
-eykbad_u8_checksum
+xbvfbad_u8_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U8 CHECKSUM",0,0
 	.EVEN
 
-eykbad_u9_checksum
+xbvfbad_u9_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U9 CHECKSUM",0,1
 	.EVEN
 
-eykbad_ram
+xbvfbad_ram
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"RAM TEST FAILED",0,1
 	.EVEN
@@ -3076,35 +3076,35 @@ DO_PLAYSOUNDS
 	callr	plot_sound
 	move	a10,a3
 	CALLR	MAKE_SOUND
-eykloop
+xbvfloop
 	SLEEPK	1
 
 	calla	fudge_switches2
 	move	@fswitches_down,a0,L
 	andi	START_BITS,a0
-	jrnz	eykexit
+	jrnz	xbvfexit
 
 	move	@fswitches_down,a0,L
 	andi	ACTION_BITS,a0
-	jrz	eykno_play_sound
+	jrz	xbvfno_play_sound
 	move	a10,a3
 	CALLR	MAKE_SOUND
-	jruc	eykloop
-eykno_play_sound
+	jruc	xbvfloop
+xbvfno_play_sound
 
 	move	a10,a2
 	move	@fswitches_cur,a0,L
 	andi	UP_BITS,a0
-	jrz	eykno_down
+	jrz	xbvfno_down
 	inc	a2
-eykno_down
+xbvfno_down
 	move	@fswitches_cur,a0,L
 	andi	DOWN_BITS,a0
-	jrz	eykno_up
+	jrz	xbvfno_up
 	dec	a2
-eykno_up
+xbvfno_up
 	cmp	a2,a10
-	jreq	eykloop		;no change
+	jreq	xbvfloop		;no change
 
 	push	a2
 	movi	ROBO_BLACK,a0
@@ -3120,17 +3120,17 @@ eykno_up
 	CALLR	MAKE_SOUND
 
 	movi	30,a11
-eykwait_release
+xbvfwait_release
 
 	calla	fudge_switches2
 	move	@fswitches_cur,a0,L
 	andi	UP_BITS|DOWN_BITS,a0
-	jrz	eykloop
+	jrz	xbvfloop
 	SLEEPK	1
-	dsj	a11,eykwait_release
-	jruc	eykloop
+	dsj	a11,xbvfwait_release
+	jruc	xbvfloop
 
-eykexit
+xbvfexit
 	JSRP	QSNDRST
 	RETP
 
@@ -3475,10 +3475,10 @@ str_fasthumwin	TXTLINE "FASTEST CPU LOSS"
 str_combo_per	TXTLINE "HUMAN COMBO GAMES"
 str_lockups	TXTLINE	"DOGS"
 str_lockups2	TXTLINE	"PROCESS KO"
-str_snderr1	TXTLINE	"SND ERR eyk1 (IRQ)"
-str_snderr2	TXTLINE	"SND ERR eyk2 (ROM CHECKSUM)"
-str_snderr3	TXTLINE	"SND ERR eyk3 (RAM TEST)"
-str_snderr4	TXTLINE	"SND ERR eyk4 (SDAV)"
+str_snderr1	TXTLINE	"SND ERR xbvf1 (IRQ)"
+str_snderr2	TXTLINE	"SND ERR xbvf2 (ROM CHECKSUM)"
+str_snderr3	TXTLINE	"SND ERR xbvf3 (RAM TEST)"
+str_snderr4	TXTLINE	"SND ERR xbvf4 (SDAV)"
 
 ;page 3
 str_bhart	TXTLINE	"BRET HART"
@@ -3751,7 +3751,7 @@ prn_fasthwin
 prn_combogames
 	movi	AUD_COMBO,a2
 	movi	AUD_TOTALGAMES,a0
-	jruc	whbset
+	jruc	qnusset
 
 ******************************************************************************
 * wrestler win percentages
@@ -3760,68 +3760,68 @@ prn_combogames
 bhart_hwinpct
 	movi	AUD_BHART,a0
 	movi	AUD_BHARTHW,a2
-	jruc	whbset
+	jruc	qnusset
 bhart_cwinpct
 	movi	AUD_BHARTC,a0
 	movi	AUD_BHARTCW,a2
-	jruc	whbset
+	jruc	qnusset
 rramo_hwinpct
 	movi	AUD_RRAMO,a0
 	movi	AUD_RRAMOHW,a2
-	jruc	whbset
+	jruc	qnusset
 rramo_cwinpct
 	movi	AUD_RRAMOC,a0
 	movi	AUD_RRAMOCW,a2
-	jruc	whbset
+	jruc	qnusset
 under_hwinpct
 	movi	AUD_UNDER,a0
 	movi	AUD_UNDERHW,a2
-	jruc	whbset
+	jruc	qnusset
 under_cwinpct
 	movi	AUD_UNDERC,a0
 	movi	AUD_UNDERCW,a2
-	jruc	whbset
+	jruc	qnusset
 yoko_hwinpct
 	movi	AUD_YOKO,a0
 	movi	AUD_YOKOHW,a2
-	jruc	whbset
+	jruc	qnusset
 yoko_cwinpct
 	movi	AUD_YOKOC,a0
 	movi	AUD_YOKOCW,a2
-	jruc	whbset
+	jruc	qnusset
 smich_hwinpct
 	movi	AUD_SMICH,a0
 	movi	AUD_SMICHHW,a2
-	jruc	whbset
+	jruc	qnusset
 smich_cwinpct
 	movi	AUD_SMICHC,a0
 	movi	AUD_SMICHCW,a2
-	jruc	whbset
+	jruc	qnusset
 bbbig_hwinpct
 	movi	AUD_BBBIG,a0
 	movi	AUD_BBBIGHW,a2
-	jruc	whbset
+	jruc	qnusset
 bbbig_cwinpct
 	movi	AUD_BBBIGC,a0
 	movi	AUD_BBBIGCW,a2
-	jruc	whbset
+	jruc	qnusset
 dclow_hwinpct
 	movi	AUD_DCLOW,a0
 	movi	AUD_DCLOWHW,a2
-	jruc	whbset
+	jruc	qnusset
 dclow_cwinpct
 	movi	AUD_DCLOWC,a0
 	movi	AUD_DCLOWCW,a2
-	jruc	whbset
+	jruc	qnusset
 lluge_hwinpct
 	movi	AUD_LLUGE,a0
 	movi	AUD_LLUGEHW,a2
-	jruc	whbset
+	jruc	qnusset
 lluge_cwinpct
 	movi	AUD_LLUGEC,a0
 	movi	AUD_LLUGECW,a2
-	jruc	whbset
-whbset
+	jruc	qnusset
+qnusset
 	calla	GET_AUD
 	move	a1,a4
 	move	a2,a0

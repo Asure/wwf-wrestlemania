@@ -67,7 +67,7 @@
 
 ;symbols externally defined
 
-	.ref	process_ptrs,PSTATUS
+	.ref	process_ptrs,PSTATUS,PSTATUS2
 	.ref	PCNT,round_tickcount
 
 	.ref	CHECK_COMBO_GO

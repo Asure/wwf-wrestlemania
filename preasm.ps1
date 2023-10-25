@@ -5,7 +5,9 @@ $folderPath = ".\"
 $asmFiles = Get-ChildItem -Path $folderPath -Filter "*.asm"
 
 # Regular expressions to match sections and labels
-$sectionPattern = "^#\\*\*\*"
+#$sectionPattern = "^#\\*\*\*"
+#tuned to match single #* lazyness in wwf..
+$sectionPattern = "^#\\*\*"
 $labelPattern = '#([A-Za-z0-9_]+)'
 
 # Function to generate a random 2-letter section descriptor that is unique
@@ -13,7 +15,7 @@ function Get-UniqueRandomSectionDescriptor {
     $alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     $usedDescriptors = @()
     do {
-        $descriptor = -join ((97..122) + (97..122) | Get-Random -Count 3 | ForEach-Object {[char]$_})
+        $descriptor = -join ((97..122) + (97..122) | Get-Random -Count 4 | ForEach-Object {[char]$_})
     } while ($usedDescriptors -contains $descriptor)
     $usedDescriptors += $descriptor
     return $descriptor
