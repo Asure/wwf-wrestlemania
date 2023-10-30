@@ -1,20 +1,3 @@
-**************************************************************
-* START
-* Software:		George Petro, Todd Allen
-* Initiated:		1989?
-*
-* Modified:		Mark Turmell, 7/17/90	-Total Carnage
-* 			Shawn Liptak, 7/?/91	-Speed improvements
-* 			Shawn Liptak, 7/?/91	-SL type stuff
-* 			Shawn Liptak, 8/30/91	-New collision loop
-* 			Shawn Liptak, 9/18/91	-Pixscan improvements
-* 			Shawn Liptak, 2/11/92	-Started basketball
-*			Jason Skiles, 10/13/93	-Started WWF Robotron
-*
-* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-*
-*.Last mod - 10/13/93 15:19
-**************************************************************
 	.file	"coll2.asm"
 	.title	"collision routines"
 	.width	132
@@ -30,12 +13,9 @@
 	.include	"imgtbl.glo"
 	.include	"macros.h"
 
-;sounds
 
 
 
-;refs
-;	.ref	ball_hit
 
 	;from ROBO.ASM
 	.ref	player_die
@@ -47,9 +27,7 @@
 	.ref	sphereoid_die,enforcer_die,spark_die
 	.ref	quark_die,tank_die,shell_die
 
-;defs
 
-;ram
 
 	BSSX	coll_stop	,16		;!0=Stop scan on current obj
 	.bss	PList		,32*(30+1)	;List of objs of class player
@@ -59,33 +37,12 @@
 	.bss	KList		,32*(20+1)	;List of hulks
 	BSSX	CCCCount	,16		;Col Check Cycle Counter.
 
-;NOBJ=# objects to display
 
 
 
-****************************************************************************
-* When writing collision routines which are to be called from the collision
-* scanner in this file, the following things should be taken into
-* consideration:
-*   The collision routines are called, not created.
-*   The collision routine receives a ptr to the victims OBJ in A8
-*   The collision routine receives a ptr to the killers OBJ in A0
-*   The collision routine can destroy A0,A8,A14,B0,B1.
-*   Other registers must be preserved!
-*
-*   When OBJ1,OBJ2 collide, two routines are called, one with
-*    OBJ1 in A8 and the other with OBJ2 in A8.  A collision routine
-*    should only affect the victim, and not the killer.
-*   If a victim object is deleted, it will not be scanned futher.
-*   If any other object is deleted, the collision scan will be aborted.
-*   To prevent multiple simultaneous collisions of the same victim
-*   object, the object ID of the victim object should be modified
-*   by the collision routine, if the victims nature is changed.
 
 
 
-****************************************************************************
-* Collision loop (New version)
 
  SUBR	collisions
 
@@ -120,10 +77,6 @@
 
 	jruc	collisions
 
-********************************
-* Build lists and collide based on X
-* A6=XMin
-* A7=XMax (+1)
 
 collx
 	movi	OBJLST,a0		;Object list to check
@@ -192,19 +145,19 @@ gotlists
 
 	move	@CCCCount,a0
 	btst	0,a0
-	jrnz	awsiskip_NE
+	jrnz	dknxskip_NE
 	movi	NList,a5
 	movi	EList,b4
 	callr	ColLists		;Collide neutral to enemy
-awsiskip_NE				; every third (2nd, really) cycle
+dknxskip_NE				; every third (2nd, really) cycle
 
 	move	@CCCCount,a0
 	andi	07h,a0
-	jrnz	awsiskip_HK
+	jrnz	dknxskip_HK
 	movi	HList,a5
 	movi	KList,b4
 	callr	ColLists		;Collide human to hulk
-awsiskip_HK				; every eighth cycle
+dknxskip_HK				; every eighth cycle
 
 	movi	HList,a5
 	movi	PList,b4
@@ -212,27 +165,23 @@ awsiskip_HK				; every eighth cycle
 
 	move	@CCCCount,a0
 	andi	03h,a0
-	jrnz	awsiskip_HN
+	jrnz	dknxskip_HN
 	movi	HList,a5
 	movi	NList,b4
 	callr	ColLists		;Collide human to neutral
-awsiskip_HN				; every fourth frame
+dknxskip_HN				; every fourth frame
 
 	move	@CCCCount,a0
 	andi	07h,a0
-	jrnz	awsiskip_KN
+	jrnz	dknxskip_KN
 	movi	KList,a5
 	movi	NList,b4
 	callr	ColLists		;Collide hulk to neutral
-awsiskip_KN				; every eighth frame only
+dknxskip_KN				; every eighth frame only
 
 	movi	KList,a5
 	movi	PList,b4
-;	callr	ColLists		;Collide hulk to player
 
-********************************
-* Collide objects on list A5 with those on LIST B4
-* A5,B4=ptrs to null terminated tables of object ptrs
 
 ColLists
 CLstsLp0
@@ -255,12 +204,9 @@ CLstsLp0
 PScnLp1	move	*a6+,a2,L
 	jrz	CLstsLp0
 
-;	movb	*a2(OFLAGS+B_3D-7),a0
-;	jrn	gvrz3d			;3D mode? (Maybe all????)
 
 	move	*a2(OYPOS),a0		;Check objs A1,A2 for intersection
 	cmp	a11,a0
-;	jrge	PScnLp1			;Y2Min >= Y1Max?
 	jrge	CLstsLp0		;Y2Min >= Y1Max?
 	move	*a2(OSIZEY),a14
 	add	a14,a0
@@ -269,7 +215,7 @@ PScnLp1	move	*a6+,a2,L
 	cmp	a7,a0
 	jrle	PScnLp1			;Y2Max <= Y1Min?
 
-gvrz3d	move	*a2(OXPOS),a0		;Signed compares because objs may lie on 0
+jxer3d	move	*a2(OXPOS),a0		;Signed compares because objs may lie on 0
 	jrz	PScnLp1			;Deleted?
 	cmp	a10,a0
 	jrge	PScnLp1			;X2Min >= X1Max?
@@ -320,9 +266,6 @@ PCkFree	move	@coll_stop,a0
 scndone	rets
 
 
-****************************************************************************
-* Return in B0 routine for obj A1 struck by obj A2
-* Trashes A3-A4
 
 ColFunc
 	movb	*a1(OID+8),a3
@@ -338,205 +281,132 @@ ColFunc
 	jump	a3		;Routine can trash A0/A3/A4/A8/A14
 
 
-****************************************************************************
-* These are the COLLISION FUNCTIONS
-* A collision function is selected by the routine ColFunc
-* which uses the TYPE field of the victims OID to select a subtable
-* and indexes the subtable with the TYPE field of the killer.
-* This gives a ptr to a COLLISION FUNCTION which returns
-* the COLLISION ROUTINE to be called for the victim in B0.
-* The COLLISION FUNCS can destroy registers A0,A3,A4,A8
-****************************************************************************
 
 TypeTbl
-;0000
-;NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;100
-;Player (PL)
 	.LONG	NULL, NULL, NULL, PLGR, NULL, PLPO, PLHL, NULL
 	.LONG	PLSP, PLEN, PLSK, PLQU, PLTA, PLSH, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;200
-;Bullet (from player) (BL)
 	.LONG	NULL, NULL, NULL, BLGR, NULL, BLPO, BLHL, NULL
 	.LONG	BLSP, BLEN, BLSK, BLQU, BLTA, BLSH, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;300
-;GRUNT (GR)
 	.LONG	NULL, NULL, GRBL, NULL, NULL, GRPO, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;400
-;Human (HU)
 	.LONG	NULL, HUPL, NULL, NULL, NULL, HUPO, HUHL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;500
-;Post (PO)
 	.LONG	NULL, NULL, POBL, POGR, NULL, NULL, POHL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;600
-;Hulk (HL)
 	.LONG	NULL, NULL, HLBL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;700
-;Text
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;800
-;Sphereoid (SP)
 	.LONG	NULL, NULL, SPBL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;900
-;Enforcer (EN)
 	.LONG	NULL, NULL, ENBL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;a00
-;Spark (SK)
 	.LONG	NULL, NULL, SKBL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;b00
-;Quark (QU)
 	.LONG	NULL, NULL, QUBL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;c00
-;Tank (TA)
 	.LONG	NULL, NULL, TABL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;d00
-;SHELL (SH)
 	.LONG	NULL, NULL, SHBL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;e00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;f00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1000
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1100
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1200
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1300
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1400
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1500
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1600
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1700
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1800
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1900
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1a00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1b00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1c00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1d00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1e00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-;1f00
-;Free
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 	.LONG	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
@@ -545,7 +415,6 @@ TypeTbl
 NULL	clr	b0
 	rets
 
-;Jason's Robotron Collision
 
 PLGR	;player hits grunt
 PLPO	;player hits post
@@ -625,14 +494,6 @@ SHBL	;shell hits bullet
 	movi	shell_die,b0
 	rets
 
-****************************************************************************
-*COLLISION ROUTINE
-*A1=OBJECT ONE
-*A2=OBJECT TWO
-*RETURNS: CS= COLLISION, CC= NO COLLISION
-*
-* CLOBBERS A14
-*CREATE TIME SLICE WHILE LOCKING OUT INTERRUPTS
 
 PIXSCAN
 	mmtm	sp,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13
@@ -670,8 +531,6 @@ PIXSCAN
 	JRYLE	CSFAIL
 
 
-*A11=XOFF0
-*A12=XOFF1
 	move	a3,a2		;0CaHlc XOFF0,XOFF1,XSCAN
 	subxy	a4,a2
 	sext	a2
@@ -717,20 +576,7 @@ cly2	cmp	a5,a6		;find leftmost lower right
 cly3	sub	a6,a14
 cly4	neg	a14		;A14=YSCAN
 
-*A2=YOFF0
-*A3=YOFF1
-*A4=IMAGE SOURCE ADDRESS TEMP
-*A5=WIDTH TEMP
-*A7=IMAGE 1 DATA HEADER POINTER
-*A8=IMAGE 1 OBJECT POINTER
-*A9=IMAGE 0 DATA HEADER POINTER
-*A10=IMAGE 0 OBJECT POINTER
-*A11=XOFF0
-*A12=XOFF1
-*A13=XSCAN
-*A14=YSCAN
 
-*CALCULATE OBJECT 0 STARTAD, HINC0, VINC0
 
 	move	*a9(ISAG),a4,L	;Get image source address
 	move	*a9,a5		;Get ISIZEX
@@ -738,7 +584,6 @@ cly4	neg	a14		;A14=YSCAN
 	srl	2,A5
 	sll	2,A5
 	
-*CHECK OBJECT 0 FLIPS
 
 	btst	B_FLIPH,b0
 	jrnz	CL0HF		;HORIZONTAL FLIP
@@ -802,21 +647,7 @@ CL0HVF	MOVE	*A9(ISIZEY),A1	;GET HEIGHT
 	MOVI	-8,A2		;A2=HINC0
 
 
-*CALCULATE OBJECT 1 STARTAD, HJUMP, VJUMP		
 
-*A2=HINC0
-*A3=YOFF1, HINC1
-*A4=STARTAD0
-*A5=VINC0
-*A6=STARTAD1
-*A7=IMAGE 1 DATA HEADER POINTER
-*A8=IMAGE 1 OBJECT POINTER
-*A9=IMAGE 0 DATA HEADER POINTER
-*A10=IMAGE 0 OBJECT POINTER
-*A11=W1, VINC1
-*A12=XOFF1
-*A13=XSCAN
-*A14=YSCAN
 
 CLOBJ1	move	*a7(ISAG),a6,L	;Get image source address
 	move	*a7,a11		;Get ISIZEX
@@ -829,10 +660,6 @@ CLOBJ1	move	*a7(ISAG),a6,L	;Get image source address
 	BTST	B_FLIPV,B1
 	JRNE	CL1VF		;VERTICAL FLIP
 	
-*NO FLIP CASE
-*A3=HINC1=8 (BYTE AT A TIME)
-*A11=VINC1=W1-XSCAN
-*A6=STARTAD1=IMAGEAD1+(YOFF1 X W1) + XOFF1
 
 	MOVE	A11,A1		;GET WIDTH
 	MPYU	A3,A1		;MULT WIDTH X YOFF
@@ -844,11 +671,6 @@ CLOBJ1	move	*a7(ISAG),a6,L	;Get image source address
 	SLL	3,A11		;CORRECT FOR PIXEL ADDRESSING
 	JRUC	CSH
 
-************************
-*HORIZONTAL FLIP
-*A3=HINC1=-8
-*A11=VINC1=W1+XSCAN
-*A6=STARTAD1=IMAGEAD1+(YOFF1 X W1) + W1-XOFF1-1
 CL1HF	BTST	B_FLIPV,B1	;VERT FLIP TOO?
 	JRNE	CL1HVF		;HORIZ AND VERT FLIP
 	MOVE	A11,A1		;GET WIDTH
@@ -863,11 +685,6 @@ CL1HF	BTST	B_FLIPV,B1	;VERT FLIP TOO?
 	SLL	3,A11		;CORRECT FOR PIXEL ADDRESSING
 	JRUC	CSH
 
-********************
-*VERTICAL FLIP
-*A3=HINC1=8
-*A11=VINC1=-W1-XSCAN
-*A6=STARTAD1=IMAGEAD1+(H1-YOFF1-1)W1+XOFF1
 CL1VF	MOVE	*A7(ISIZEY),A1	;GET HEIGHT
 	SUB	A3,A1		;SUBTRACT YOFF1
 	DEC	A1
@@ -881,10 +698,6 @@ CL1VF	MOVE	*A7(ISIZEY),A1	;GET HEIGHT
 	MOVK	8,A3		;HINC1
 	JRUC	CSH
 
-*VERTICAL AND HORIZONTAL FLIP
-*A3=HINC1=-8
-*A11=VINC1=-W1-XSCAN
-*A6=STARTAD1=(H1-YOFF1-1)W1+W1-XOFF1-1
 CL1HVF	MOVE	*A7(ISIZEY),A1	;GET HEIGHT
 	SUB	A3,A1		;SUBTRACT YOFF1
 	DEC	A1
@@ -899,19 +712,6 @@ CL1HVF	MOVE	*A7(ISIZEY),A1	;GET HEIGHT
 	SLL	3,A11		;CORRECT FOR PIXEL ADDRESSING
 	MOVI	-8,A3		;HINC1
 
-*A1= WIDTH COUNTER XSCAN
-*A2=H INCREMENT IMAGE 0
-*A3=H INCREMENT IMAGE 1
-*A4=INDEX TO IMAGE 0
-*A5=V INCREMENT IMAGE 0
-*A6=INDEX TO IMAGE 1
-*A7=IMAGE 1 DATA HEADER POINTER
-*A8=IMAGE 1 OBJECT POINTER
-*A9=IMAGE 0 DATA HEADER POINTER
-*A10=IMAGE 0 OBJECT POINTER
-*A11=V INCREMENT IMAGE 1
-*A13=WIDTH COUNT XSCAN
-*A14=HEIGHT COUNT YSCAN
 
 CSH	cmpi	080H,a14		;no scan if xscan, yscan values out of range
 	jrhs	CSFAIL
@@ -978,69 +778,9 @@ psx	mmfm	sp,b0,b1
 
 
 
-********************************
-*PLAYER HAS BEEN COLLIDED WITH
-*TELL THIS COLLISION CHECK THAT PLAYER IS REALLY SHORTER THAN HE IS
-*THEN RETURN CARRY SET IF STILL A HIT, CARRY CLEAR IF THIS SHOULD NOT BE
-*A COLLISION.
-*A0=OBJECT THAT HIT PLAYER
-*A8=PLAYER LEGS IMAGE PTR
-
-;SHORT_PLYR
-;	MOVE	*A8(OYPOS),A7		;A7 - OBJ1 Ymin
-;	ADDK	3,A7			;ADDI 0
-;	MOVE	*A0(OID),A11
-;	zext	a11
-;;	CMPI	CLSENMY|TYPORB,A11
-;;	JRNE	SP0
-;;	SUBK	5,A7
-;;	MOVE	*A8(OSIZEY),A11,W	;A11 - OBJ1 Ymax
-;;	SUBK	8,A11			;MAKE LEGS SHORTER IN LENGTH!
-;;	JRUC	SP2
-;;SP0
-;	CMPI	CLSNEUT|TYPMINE,A11
-;	JRNE	SP1
-;	ADDK	12,A7			;15
-;	MOVE	*A8(OSIZEY),A11		;A11 - OBJ1 Ymax
-;	SUBK	19,A11			;MAKE LEGS SHORTER IN LENGTH! ;21
-;	JRUC	SP2
-;SP1
-;	move	*A8(OSIZEY),A11		;A11 - OBJ1 Ymax
-;	SUBK	20,A11	 ;19		;SUBI 13 16 ;MAKE LEGS SHORTER IN LENGTH!
-;SP2	add	A7,A11
-;	move	*A0(OYPOS),A6		;CHECK OBJS A0,A8 for intersection
-;	cmp	A11,A6
-;	jrgt	CLRCR			;Y2Min > Y1Max
-;	move	*A0(OSIZEY),A11
-;	add	A11,A6
-;	cmp	A7,A6
-;	jrlt	CLRCR			;Y2Max < Y1Min
-;
-;;NOW X CHECK
-;
-;	move	*A8(OXPOS),A7		;A9 - OBJ1 Xmin
-;	addk	6,a7
-;	move	*A8(OSIZEX),A11		;A10 - OBJ1 Xmax
-;	subk	6,a11
-;	add	A7,A11
-;	move	*A0(OXPOS),A6		;USE SIGNED COMPARES BECAUSE OBJS MAY LIE ON ZERO
-;	cmp	A11,A6
-;	jrgt	CLRCR			;X2Min > X1Max
-;	move	*A0(OSIZEX),A11
-;	add	A11,A6
-;	cmp	A7,A6
-;	jrlt	CLRCR			;X2Max < X1Min
-;
-;	move	@PCNT,a6
-;	btst	0,a6
-;	JRZ	CLRCR
-;	SETC				;GOT A BOX INTERSECTION
-;	RETS
-;CLRCR	CLRC
-;	RETS
 
 
-******************************************************************************
+
 
 	.end
 

@@ -1,16 +1,3 @@
-**************************************************************
-* START
-* Software:	?
-* Initiated:	?
-*
-* Modified:	Shawn Liptak, 11/14/91	-Total carnage cleanup
-* 		Shawn Liptak, 2/20/92	-Basketball
-* 		GEORGE PETRO, 1/17/93	-NBA JAM
-*
-* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-*
-*.Last mod - 3/19/93 13:58
-**************************************************************
 	.file	"test.asm"
 	.title	"test program"
 	.width	132
@@ -32,15 +19,12 @@
 	.include	"sound.h"
 
 
-;in this module
 
 	.def		fudge_switches, fudge_switches2, fudge_switches_diag
 	.DEF		DIAG,CHK_CMOS
 	.DEF		GEN_MENU,B_MENU
 	.DEF		TOP_BOX			;,WT_ADV
-;	.DEF		WW_ADV
 	.DEF		MAIN_RET,GMENULEV
-;	.DEF		CK_DOOR
 	.DEF		AREUSURE
 	.DEF		F_TITLE
 	.DEF		ST_STICK
@@ -58,16 +42,13 @@
 	.DEF		DIAG_EX
 	.DEF		WAIT_BUT
 	.DEF		DIGSRT
-;	.DEF		GET_ADV
 	.DEF		SND_MADE
 	.DEF		NO_CLEAR
 	.DEF		LAST_BUT
 	.DEF		G_BORDER
 	.DEF		FORM_SWS
-;	.DEF		LINKY
 	.DEF		CKTEST, CKDIAG, DIAG_COLORS
 
-;in audit.asm
 
 	.ref		CMOS_VAL,L_MESS
 	.ref		LM_SETUP,LM_FINIS
@@ -82,9 +63,6 @@
 	.ref		COIN_PAG
 	.ref		ROM_NAME
 	.ref		STORE_AUDIT
-*
-*	IN HSTD.ASM
-*
 	.ref		INIT_TAB
 	.ref		VAL_TAB
 	.ref		P_FORK
@@ -99,9 +77,6 @@
 	.ref		WC_WORDI
 	.ref		WC_LONG
 	.ref		WC_LONGI
-*
-*	 IN MENU.ASM
-*
 	.ref		MEN_MAIN,ANY_BUT,MEN_YN
 	.ref		MESS_FAC
 	.ref		GO_DIAG 	  ;ROUTINE FOR DIAGNOSTIC MENU
@@ -110,19 +85,15 @@
 	.ref		SCODE		  ;SYNTH CODE CURRENTLY BEING MADE
 	.ref		DCODE		  ;DIG CODE CURRENTLY BEING MADE
 
-;	IN ADJUST.ASM
 
 	.ref	DO_ADJH, CKDIP, MEN_ADJ
 
 
-;	IN ATTRACT.ASM
 
 	.ref	WIPEOUT
 
 
-;	OTHERS
 
-;	.ref	TWOPLAYERS			;0 = NO, 1 = YES 2 players
 
 	.ref	WARMSET
 	.ref	QSNDRST
@@ -143,10 +114,6 @@
 	.ref	_switch_addr
 	.ref	_switch2_addr
 
-*	 MAIN_RET
-*
-*	 POSITIVE NUMBER HERE SAYS RETURN (UPWARD) TO MAIN MENU (GEN_MENU ONLY)
-*	 NEGATIVE NUMBER HERE SAYS SETUP RESTORE AFTER RAM TEST. (GEN_MENU)
 
 	.BSS		MAIN_RET,16	      ;FLAG SAYS RETURN TO MAIN MENU
 	.BSS		GMENULEV,16	      ;HOW DEEP INTO GEN_MENU WE ARE
@@ -169,19 +136,8 @@
 
 	.text
 
-;sounds
 
-**************************************************************************
-*									 *
-*	   CPU_RET							 *
-*									 *
-*	   THIS IS RETURN FROM CPU TEST.   SINCE WE NEED TO TEST	 *
-*	   RAM BEFORE ROM, OUR STATE IS ALSO SMASHED FROM ROM TEST.	 *
-*									 *
-**************************************************************************
 CPU_RET:
-;	CALLR	DIAG_STATE	;GET THE STATE RIGHT.....BUT DON'T MESS UP TILL BUTTON
-;	JSRP	WAIT_BUT	;NOW WAIT FOR ANY BUTTON.
 	CALLR	DIGSRT		;MAKE SURE WE'RE IN TEST MODE
 
 	CLR	A0
@@ -194,19 +150,9 @@ CPU_RET:
 
 
 
-**************************************************************************
-*									 *
-*	   WAIT_BUT							 *
-*									 *
-*	   THIS IS CALLED ON RETURN FROM MANY OF THE "HARD"		 *
-*	   DIAGNOSTIC TESTS TO HOLD CONTROL TILL ANY BUTTON IS		 *
-*	   HIT. 							 *
-*									 *
-**************************************************************************
 WAIT_BUT:
 	CALLR	FORM_SWS	;1ST STATE DOESN'T COUNT
 
-*	RETURN CURRENT STATE IN A0..PREVIOUS STATE IN A1.
 
 WB1:	
 	SLEEPK	1
@@ -223,27 +169,11 @@ WB1:
 	RETP
 
 
-**************************************************************************
-*								         *
-* 	CKTEST								 *
-* 									 *
-* 	CHECK TO SEE IF EITHER OF THE TEST BUTTONS IS CLOSED,		 *
-* 	IF NOT, HEAD OUT TO WARMSET					 *
-* 									 *
-* 	ENTRY								 *
-* 		NOTHING							 *
-* 									 *
-* 	EXIT								 *
-* 		NOTHING							 *
-*								         *
-**************************************************************************
 CKTEST
-;	rets
 	PUSH	A0
 	CALLA	READ_DIP
 	ANDI	DPTEST,A0
 	JRNZ	CKRET
-;	MOVE	@SWITCH,A0,L
 	move	@_coin_addr,a0,L
 	move	*a0,a0,W
 	sll	16,a0
@@ -255,25 +185,11 @@ CKRET
 	RETS
 
 
-**************************************************************************
-*								         *
-* 	CKDIAG								 *
-* 									 *
-* 	CHECK TO SEE IF WE NEED TO GO OFF TO THE DIAGNOSTICS ROUTINES	 *
-* 									 *
-* 	ENTRY								 *
-* 		NOTHING							 *
-* 									 *
-* 	EXIT								 *
-* 		A0	0 = COOL, 1 = GO TO DIAGS			 *
-*								         *
-**************************************************************************
 CKDIAG
 	CLR	A0
 	CALLA	READ_DIP
 	ANDI	DPTEST,A0
 	JRNZ	CKDGO
-;	MOVE	@SWITCH,A0,L
 	move	@_coin_addr,a0,L
 	move	*a0,a0,W
 	sll	16,a0
@@ -286,8 +202,6 @@ CKDRET
 	MOVE	A0,A0
 	RETS
 
-**************************************************************************
-* DIAG - THIS IS THE ENTRY TO THE MAIN DIAGNOSTIC MENU.
 
 DIAG
 	movi	AUDSTAT,a0
@@ -295,7 +209,6 @@ DIAG
 	calla	STORE_AUDIT
 	move	@GAMSTATE,a0
 	jan	SUCIDE		;In diagnostics
-;	move	@COINS,a0	;Check coin switches
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	btst	CDI_BIT,a0		;Coin door closed ?
@@ -305,7 +218,6 @@ DIAG
 
 DIAG_JUMP
 	CALLR	DIGSRT		;MAKE SURE WE'RE IN TEST MODE
-;	JSRP	WW_ADV		;HOLD UNTIL HE LETS GO!
 
 	CLR	A0
 	MOVE	A0,@MAIN_RET	;CLEAR THE FLOAT TO TOP FLAG.
@@ -317,18 +229,14 @@ DIAG_RESTART
 	clr	a0
 	move	a0,@_switch_map_mode,L
 
-;	HE (FINALLY) PICKED EXIT....RETURN!
 
 DIAG_EX
 	SLEEPK	2		;LET DMA EMPTY OUT IF NECESSARY
 
-;	CALLA	CMOS_VAL	;IF SETTINGS SMASHED....FIX EM.
-;	JAUC	WARMSET
 
 
 
 
-;	SLEEP	2
 	CALLA	CLR_SCRN
 	CALLA	CMOS_VAL		; VALIDATE THE CMOS
 	CALLA	CKTEST
@@ -338,9 +246,8 @@ DIAG_EX
 	JRZ	DE2
 	MOVI	NOTCLOSEDDIP,A8
 	JSRP	L_MESS
-	jruc	lerqout
+	jruc	zaitout
 DE2
-;	MOVE	@SWITCH,A0,L
 	move	@_coin_addr,a0,L
 	move	*a0,a0,W
 	sll	16,a0
@@ -353,10 +260,10 @@ DE2
 	JRZ	DE3
 	MOVI	NOTCLOSEDJAMMA,A8
 	JSRP	L_MESS
-	jruc	lerqout
+	jruc	zaitout
 DE3
 	JAUC	WARMSET		
-lerqout
+zaitout
 	MOVI	NOTCLOSEDWAIT,A8
 	JSRP	L_MESS
 
@@ -382,7 +289,6 @@ DE4
 	CMP	A0,A1
 	JRNE	DIAG_EX
 
-;	MOVE	@SWITCH,A0,L		;GOTTA SEE IF TIME TO LEAVE
 	move	@_coin_addr,a0,L
 	move	*a0,a0,W
 	sll	16,a0
@@ -420,24 +326,6 @@ NOTCLOSEDWAIT
 	.STRING	"OPEN THE SWITCH(S) TO RETURN TO GAME.",0,0
 	.EVEN
 
-**************************************************************************
-*									 *
-*	   GEN_MENU							 *
-*									 *
-*	   THIS IS A GENERAL MENU HANDLER.  IT POSTS THE MENU		 *
-*	   WITH SELECTION 1 AVAILABLE.	AFTER A SELECTION IS		 *
-*	   MADE, IF IT HAS A ROUTINE CODE OF ZERO, (EXIT)		 *
-*	   IT RETURNS TO THE LEVEL ABOVE IT.  ELSE, IT			 *
-*	   JSRP'S THE NEW ROUTINE.  WHEN THE NEW ROUTINE                 *
-*	   RETURNS, WE RE-POST THE SAME MENU WITH THE			 *
-*	   BAR ON THE FOLLOWING ENTRY.					 *
-*									 *
-*	   A8 = MENU DESCRIPTOR 					 *
-*									 *
-**************************************************************************
-*
-*	 MENU ROM OFFSETS
-*
 MR_FONT   EQU	  0
 MR_TCAL   EQU	  MR_FONT+LONG_SIZE
 MR_TITLE  EQU	  MR_TCAL+LONG_SIZE	;POINTER TO TITLE FOR TILE BOX (IF NEC)
@@ -461,9 +349,6 @@ GEN_MENU
 	movk	1,A8			;START WITH "FIRST" ENTRY
 	MOVE	A8,-*A12,W		;PUT MENU NUMBER AS A WORD
 
-*	IF WE GET HERE AND MAIN_RET IS NOT ZERO, THE WE MUST
-*	RETURN TO LEVEL ABOVE US IF WE'RE NOT THE MAIN
-*	MENU.
 
 
 GEN_LOOP
@@ -476,8 +361,6 @@ GEN_LOOP
 	subk	1,a0			;are we at level 1
 	jrne	GEN_EXIT		;NOPE.....POP UP A LEVEL.
 
-*	WE'RE AT LEVEL 1....CLEAR OUT THE FLAG THAT
-*	GOT US HERE.
 
 DIVE_COMPLETE
 	CLR	A0
@@ -512,7 +395,6 @@ NO_KICK
 	MOVE	A9,A9			;NOW JSRP THE ROUTINE
 	JRZ	GEN_EXIT		;NONE THERE....ITS "EXIT"
 
-*	JSRP TO A9
 
 	MOVI	GEN_LOOP,A7
 	MOVE	A7,-*A12,L		;PUSH RET ADDR
@@ -525,73 +407,33 @@ GEN_EXIT
 	MOVE	A0,@GMENULEV
 	RETP
 
-**************************************************************************
-*									 *
-*	   DIVE_TO_MONITOR						 *
-*									 *
-*	   WE GET CONTROL HERE WHEN WE ARE KLUDGING THE RETURN		 *
-*	   FROM "CPU" TEST (WHICH BLOWS AWAY RAM!)			 *
-*									 *
-**************************************************************************
 DIVE_TO_MONITOR:
 	MOVE	@GMENULEV,A0		;CHECK LEVEL
 	CMPI	1,A0			;ARE WE AT LEVEL 1
 	JRNZ	DTM1			;NOPE....SET "MONITOR" LEVEL
-*
-*	WE'RE AT LEVEL 1......."SELECT" THE DIAGNOSTIC MENU
-*	A8 = 1.....A9 = ROUTINE FOR DIAGNOSTIC MENU
-*
 	MOVK	1,A8
 	MOVI	GO_DIAG,A9		;ROUTINE FOR DIAGNOSTIC MENU
 	MOVK	1,A10			;RETURN AS IF ADVANCE WAS PRESSED
 	JRUC	PHONEY_MENU_RET		;WE'RE READY TO CALL DIAG MENU
-*
-*	WE'RE IN DIAGNOSTIC MENU....NOW WE JUST NEED TO MAKE
-*	THE "CURRENT" SELECTION THE ONE AFTER CPU TEST
-*	(MONITOR PATTERNS)
-*
 DTM1:	
 	MOVE	@MAIN_RET,A8		;FLAG IS OPPOSITE OF ENTRY NUMBER
 	NEG	A8			;THIS IS RETURN LEVEL!
-*	 MOVI	 RTR_LEV,A8		;START WITH "RETURN" ENTRY NUMBER
 	MOVE	A8,*A12			;PUT MENU NUMBER AS A WORD
 	JRUC	DIVE_COMPLETE		;THIS COMPLETES THE DIVE!
 
-**************************************************************************
-*
-*	   FOR DOBORDER
-*
-*	   A4 = UPPER LEFT Y,X						
-*	   A5 = LOWER RIGHT Y,X 				
-*	   A0 = Y,X WIDTH OF BORDER					
-*	   A9 = COLOR OF BORDER.					
 
-**************************************************************************
-*									 *
-*	   TOP_BOX							 *
-*									 *
-*	   THIS DISPLAYS THE TEST BOX AT THE TOP.			 *
-*									 *
-*	   A2 POINTS AT THE STRING TO CENTER IN THE BOX.		 *
-*	   A3 IS COLOR TO DO IT IN.					 *
-*									 *
-**************************************************************************
 MENU_TOP:
 	MOVE	*A8(MR_TITLE),A2,L	;GET TITLE INTO A2
 	MOVE	*A8(MR_TCLR),A3		;AND COLOR INTO A3
 
 TOP_BOX:
 	MOVE	A8,-*A12,L		;PUSH MENU PTR
-*
-*	FIRST MAKE THE BOX...IT BLACKS OUT THE REGION
-*
 	CALLR	SCR_BOX 		;PUT UP THE TITLE BOX
 
 	MOVI	MESS_TITLE,A8	 ;SET PARAMETERS
 	CALLA	LM_SETUP	 ;PUT IT OUT.
 
 	MOVE	A2,A8		 ;GET STRING IN THE CORRECT REGGIE
-;	MOVE	A3,A6		 ;MOVE COLOR TO COLOR REGGIE
 
 	JSRP	LM_FINIS	 ;AND PRINT IT!
 
@@ -601,13 +443,6 @@ TOP_BOX:
 
 	RETP
 
-**************************************************************************
-*									 *
-*	   SCR_REV							 *
-*									 *
-*	   DISPLAY REV IN TITLE BOX.					 *
-*									 *
-**************************************************************************
 SCR_REV:
 	MOVI	MESS_REV,A8	;GET READY FOR REV MESSAGE
 	CALLA	LM_SETUP	;SETUP FOR REV MESSAGE
@@ -616,13 +451,6 @@ SCR_REV:
 	JSRP	LM_FINIS	;FINISH PRINTING MESSAGE
 	RETP
 
-**************************************************************************
-*									 *
-*	   SCR_BOX							 *
-*									 *
-*	   THIS DISPLAYS THE TITLE BOX. 				 *
-*									 *
-**************************************************************************
 SCR_BOX:
 	MOVI	TIT_ULX+(10000H*TIT_ULY),A4    ;UPPER LEFT
 	MOVI	TIT_LRX+(10000H*TIT_LRY),A5    ;UPPER LEFT
@@ -630,19 +458,12 @@ SCR_BOX:
 	CALLR	STD_BORD
 	RETS
 
-*	 THIS PRINTS THE "MOVE JOYSTICK" BOX.
-*
-*	 A8 = MENU DESCRIPTOR THAT WILL ACCOMPANY IT
-*	 ON SCREEN.  WE ADJUST THE BOX EDGES AND
-*	 MESSAGE CENTER IN "X" ONLY TO CORRESPOND
-*	 TO THE MENU BOX.
 
 RED_BOX:
 	MOVE	A8,-*A12,L			 ;PUSH THE MENU PTR
 
 	MOVI	ROBO_RED,A9
 	CALLR	COL_INST		;THIS PRINTS BOX AND STASHES
-*					;CENTER X AT *A13(PDATA),W
 
 	MOVI	MM_INST1,A8	;POINT AT INSTRUCTIONS MESSAGE
 	JSRP	C_PD_M
@@ -653,18 +474,7 @@ RED_BOX:
 	MOVE	*A12+,A8,L	;GET BACK MENU PTR.
 	RETP
 
-**************************************************************************
-*									 *
-*	   COL_INST							 *
-*									 *
-*	   THIS PRINTS OUT THE "CYAN" INSTRUCTION BOX			 *
-*	   IN THE COLOR SPECIFIED BY A9.				 *
-*									 *
-**************************************************************************
 COL_INST:
-*
-*	WE NEED TO DETERMINE LEFT AND RIGHT X
-*
 	CALLR	STUFF_MENU_PROCESS		 ;MOVE DATA INTO PDATA AREA
 	CALLR	MEN_NUMS			 ;GET THE NUMBERS FOR THIS MENU
 	MOVE	A6,*A13(PDATA),W		 ;STASH THE X CENTER
@@ -673,20 +483,6 @@ COL_INST:
 	CALLR	STD_BORD
 	RETS
 
-**************************************************************************
-*									 *
-*	   MEN_NUMS							 *
-*									 *
-*	   THIS IS CALLED TO GET SOME NUMBERS ASSOCIATED		 *
-*	   WITH A MENU BOX.						 *
-*									 *
-*	   THIS RETURNS:						 *
-*									 *
-*	   A4 = LEFT X							 *
-*	   A5 = RIGHT X 						 *
-*	   A6 = CENTER X						 *
-*									 *
-**************************************************************************
 MEN_NUMS:
 	CALLR	MENU_UL_A4_A5			 ;LEFT X IN A4
 	CALLR	MENU_LR_A6_A5			 ;RIGHT X IN A6
@@ -695,27 +491,12 @@ MEN_NUMS:
 	SRL	1,A6				 ;A6 NOW HAS CENTER X (FOR LATER)
 	RETS
 
-**************************************************************************
-*									 *
-*	   C_PD_M							 *
-*									 *
-*	   THIS PRINTS A L_MESS MESSAGE PASSED IN A8, CENTERED		 *
-*	   ON THE X STORED AT *A13(PDATA),W				 *
-*									 *
-**************************************************************************
 C_PD_M:
 	CALLA	LM_SETUP	;SETUP THE MESSAGE
 	MOVE	*A13(PDATA),A3	;GET THE X
 	movx	a3,a9		;Move X
 	JUMP	A1		;AND "CALL" THE ROUTINE
 
-**************************************************************************
-*									 *
-*	   DIGSRT							 *
-*									 *
-*	   THIS IS CALLED ON ENTRY TO DIAGNOSTICS.			 *
-*									 *
-**************************************************************************
 
 DIGSRT
 	CALLR	DIAG_STATE
@@ -726,11 +507,10 @@ DIGSRT
 	clr	a1
 	not	a1
 	calla	EXISTP
-	jrz	lerqno_bleedin_announcer
+	jrz	zaitno_bleedin_announcer
 	calla	KILL
-lerqno_bleedin_announcer
+zaitno_bleedin_announcer
 	CALLR	DIAG_COLORS	;RESTART THE COLOR PROCESSES.
-;	JSRP	QSNDRST		;kill any sounds in progress
 	calla	nosounds
 	calla	dpageflip_off
 	MOVK	1,A0
@@ -759,11 +539,6 @@ DIAG_CYCLE_COLOR_START	.EQU	03CH
 
 	.BSS	DIAG_CRAM,NUM_DIAG_CYCLE_COLORS*16,1	;RAM FOR TRANSFER
 
-**************************************************************************
-*									    			*
-* DIAG_COLORS - PROCESS THAT CYCLE COLORS FOR THE DIAGNOSTIC MENUS.	 	*
-*									    			*
-**************************************************************************
 DIAG_COLORS
 	MMTM	SP,A0,A1,A7
 	MOVI	COLRPID,A0
@@ -785,29 +560,18 @@ DIAG_COLORS
 	MMFM	SP,A0,A1,A7
 	RETS
 
-**************************************************************************
-*												*
-* TABLE DRIVEN COLOR RAM PROCESSES					 *
-*												*
-**************************************************************************
-*	18000B0(11)	-	BPR
-*	18000C0(12)	-	DECAY
-*	18000D0(13)	-	LASER FLASH
-*	18000E0(14)	-	RGB
 
 RGB	CALLR	TABDRIVE
 	.LONG	RGBTAB,DIAG_CRAM+30H
 	.WORD	8
 RGBTAB	.WORD	07C00H,001FH,077A0H,0741AH,0FFFFH
 
-*
 DECAY	CALLR	TABDRIVE
 	.LONG	DCATAB,DIAG_CRAM+010H
 	.WORD	2
 DCATAB	.WORD	001CH,001CH,011CH,021CH,031CH,039CH,239CH,2390H,2388H
 	.WORD	2380H,4300H,5280H,7180H,6180H,7080H,7000H,6000H,5000H
 	.WORD	4000H,3000H,2000H,1000H,0FFFFH
-*
 BPR	CALLR	TABDRIVE
 	.LONG	BPRTAB,DIAG_CRAM
 	.WORD	1
@@ -815,11 +579,6 @@ BPRTAB	.WORD	001CH,101CH,201CH,301CH,401CH,501CH,601CH,701CH,7010H
 	.WORD	7010H,7008H,7008H,7000H,7000H,7008H,7008H,7010H,7010H
 	.WORD	701CH,701CH,601CH,501CH,401CH,301CH,201CH,101CH,0FFFFH
 
-**************************************************************************
-*									    *
-* LFLASH - PROCESS TO CREATE THE FAMOUS LASER FLASH COLOR 		 *
-*									    *
-**************************************************************************
 LFLASH	MOVI	07FFFH,A0
 	MOVE	A0,@DIAG_CRAM+20H,W
 	SLEEPK	2
@@ -840,11 +599,6 @@ COLTAB	.WORD	0380H,1380H,2380H,3380H,4380H,5380H,6380H,7380H,7300H
 	.WORD	139CH,239CH,339CH,539CH,739CH,7390H,7380H,6380H,4380H
 	.WORD	0FFFFH
 
-**************************************************************************
-*												*
-* THE TABLE DRIVEN PROCESS						 *
-*												*
-**************************************************************************
 TABDRIVE
 	MOVE	*SP+,A0,L
 	MOVE	*A0+,A11,L	;A11 = TABLE START
@@ -860,12 +614,6 @@ TABDRV2
 	MOVI	TABDRV2,A7
 	JAUC	PRCLSP		;LOOP SLEEP
 
-**************************************************************************
-*									    *
-* PC_TRANSFER - PROCESS TO TRANSFER CYCLE COLORS TO THE COLOR		 *
-*		RAM EVERY TICK.						 *
-*									    *
-**************************************************************************
 PC_TRANSFER
 	MOVI	DIAG_CRAM,A0
 	MOVI	DIAG_CYCLE_COLOR_START,A1
@@ -873,20 +621,6 @@ PC_TRANSFER
 	CALLA	pal_set
 	SLOOP	1,PC_TRANSFER
 
-**************************************************************************
-*									 *
-*	   CHK_CMOS							 *
-*									 *
-*	   This is the routine that is called at power up.		 *
-*									 *
-*	   It checks to see if CMOS adjustments are in tact.		 *
-*	   IF THE ADJUSTMENTS ARE BAD, OR SET FOR A DIFFERENT		 *
-*	   GAME OR REVISION, we cause a factory setting to		 *
-*	   occur.  We then try and validate the all time		 *
-*	   HSTD table.	If this is bad we then zero audits.		 *
-*	   If HSTD table is ok, then we leave audits alone.		 *
-*									 *
-**************************************************************************
 CHK_CMOS
 	CALLR	DIGSRT	    ;CLEAR OUT THE SCREEN...(MESSAGE WILL FOLLOW!)
 	CALLA	CMOS_VAL
@@ -896,33 +630,12 @@ CHK_CMOS
 	JSRP	TOP_BOX
 	SLEEPK	18H
 	RETP
-;	 JAUC	 WARMSET	      ;CMOS IS OK....RETURN!
-*
-*	WE NEED TO FACTORY SET THIS THING (DUE TO BAD SETTINGS.)
-*
 FAC_TIME:
 	JSRP	GET_FAC 		  ;GET THE GAME TO FACTORY SETTINGS!
-;	 JSRP	 WW_ADV 		   ;WAIT WHILE ADVANCE IS PRESSED
-;
-;	 JSRP	 WT_ADV 		   ;NOW WAIT TILL ADVANCE IS PRESSED
-;
 	CALLA	CLR_SCRN		  ;PRESSED....BLANK THE SCREEN AND
 					   ;HOLD TILL HE LETS GO.
-;
-;	 JSRP	 WW_ADV 		   ;HOLD CONTROL HERE TILL HE LETS GO
 	JAUC	 WARMSET	      ;CMOS IS OK....RETURN!
-;	 JRUC	 DIAG_JUMP		   ;NOW INTO TEST MODE FOR ADV. BUTTON.
 
-**************************************************************************
-*									 *
-*	   GET_FAC							 *
-*									 *
-*	   THIS IS CALLED TO BRING THE GAME TO A FACTORY SETTINGS	 *
-*	   STATE.  IT WILL STORE THE FACTORY SETTINGS OR WAIT		 *
-*	   UNTIL THE DOOR IS OPEN.  IF IT CAN'T GET FACTORY SETTINGS     *
-*	   IT WILL PRINT A FAILURE MESSAGE.				 *
-*									 *
-**************************************************************************
 GET_FAC
 
 FAC_LOOP
@@ -938,131 +651,19 @@ FAC_LOOP
 	JRUC	WAIT_POINT		;WE'RE DEAD..ADVANCE TAKES US TO TEST MODE!
 
 CMOS_FIXED
-*
-*	THIS IS WHERE WE ARE ONCE WE HAVE FACTORY SET....
-*	MESSAGE WOULD GO HERE.
-*
 	CALLR	CENT_BOX		;PUT A BOX AROUND IT
 
 	MOVI	MESS_FAC,A8		;POINT AT DATA
 	JSRP	L_MESS			;DISPLAY LARRY MESSAGE
 
-*	NOW.....CLEAR HIGH SCORE TABLE
-*	CLEAR OUT THE AUDITS.
 
 	CALLA	FAC_STUF		;DO REST OF FULL FACTORY STUFF!
 
-*	AT THIS POINT WE HANG WAITING FOR THE ADVANCE SWITCH.
 
 WAIT_POINT
 	RETP				;NOW LET CALLER TAKE OVER.
 
-**************************************************************************
-*									 *
-*	   WT_ADV							 *
-*									 *
-*	   WAIT TILL ADVANCE.  THIS HOLDS CONTROL UNTIL ADVANCE 	 *
-*	   BUTTON IS PRESSED.						 *
-*									 *
-**************************************************************************
-;WT_ADV:
-;	SLEEPK	2
-;
-;WT_A6: 
-;	CALLR	GET_ADV 	      ;SCAN THE BUTTON
-;	 JRNZ	 WT_ADV 	       ;NOT PRESSED.
-;	 RETP
-;
 
-;**************************************************************************
-;*									  *
-;*	     WW_ADV							   *
-;*									  *
-;*	    WAIT WHILE ADVANCE.  THIS HOLDS CONTROL WHILE ADVANCE	  *
-;*	    BUTTON IS HELD (OR STUCK).					  *
-;*									  *
-;**************************************************************************
-;WW_ADV:
-;	SLEEPK	2
-;	 CALLR	 GET_ADV
-;	 JRZ	 WW_ADV
-;	 RETP
-;
-;**************************************************************************
-;*									  *
-;*	    GET_ADV							  *
-;*									  *
-;*	    THIS GETS PHYSICAL STATE OF ADVANCE BUTTON. 		  *
-;*									  *
-;*	    .EQ.    PRESSED						  *
-;*	    .NE.    OPEN						  *
-;*									  *
-;**************************************************************************
-;GET_ADV:
-;	 MMTM	 SP,A0
-;	 MOVE	 @COINS,A0,W		   ;FETCH COIN SWITCHES (LOOKING FOR ADVANCE)
-;	 ANDI	 ADV_BIT,A0		   ;KEEP ADVANCE BIT.
-;	MMFM	SP,A0
-;	RETS
-;
-;**************************************************************************
-;*									  *
-;*	    CK_DOOR						   *
-;*									  *
-;*	    THIS IS CALLED TO SEE IF THE FRONT DOOR (MEMORY		  *
-;*	    PROTECT SWITCH IS OPEN.					  *
-;*									  *
-;*	    .NE.    OPEN  (OK TO WRITE CMOS)				  *
-;*	    .EQ.    CLOSED (CAN'T WRITE CMOS)                             *
-;*									  *
-;**************************************************************************
-;CK_DOOR:
-;	 MMTM	 SP,A0
-;	 MOVE	 @COINS,A0,W		   ;FETCH COIN SWITCHES (LOOKING FOR ADVANCE)
-;	 ANDI	 DOOR_BIT,A0		   ;KEEP COIN DOOR MEMORY PROTECT.
-;	MMFM	SP,A0
-;	RETS
-;
-**************************************************************************
-*									 *
-*	   GET_MENU							 *
-*									 *
-*	   This routine is called (via JSRP) to display a menu on	 *
-*	   screen and receive a selection from the operator.		 *
-*									 *
-*	   The menu descriptor is passed in A8. 			 *
-*									 *
-*	   The selection number is returned in a8. (line 1 = 1) 	 *
-*	   The routine address is returned in a9.			 *
-*	   A10 is returned non-zero if advance was the button used	 *
-*									 *
-*	   A menu (pointed to by A8) is defined as follows:		 *
-*									 *
-*		       FONT TO BE USED		   (LONG)		 *
-*		       X FOR LEFT MARGIN	   (WORD)		 *
-*		       Y FOR TOP LINE		   (WORD)		 *
-*		       DY PER ENTRY		   (WORD)		 *
-*		       TEXT_COLOR		   (WORD)		 *
-*		       HEIGHT OF SELECTION BAR	   (WORD)		 *
-*		       DX FROM TOP OF TEXT TO SEL. BAR	(WORD)		 *
-*									 *
-*	   A9 POINTS AT ENTRY TO START WITH				 *
-*									 *
-*	   Then for each entry: 					 *
-*									 *
-*		       TEXT POINTER	   (LONG)			 *
-*		       ACTIVATION ROUTINE  (LONG)			 *
-*									 *
-*	   The list is terminated by a zero.				 *
-*									 *
-*	   This routine forks a separate process to do the work 	 *
-*	   for it.  Therefore the caller has full use of		 *
-*	   the PDATA area.						 *
-*									 *
-**************************************************************************
-*
-*	 Equates for GET_MENU slave process.
-*
 MEN_OFF   EQU	  PDATA 	       ;WORD-OFFSET INTO MENU OF SELECTION
 MEN_ROUT  EQU	  MEN_OFF+WORD_SIZE    ;LONG-ROUTINE FOR SELECTION
 MEN_ROM   EQU	  MEN_ROUT+LONG_SIZE   ;LONG-POINTER TO ROM STRUCTURE
@@ -1118,19 +719,6 @@ GM1:
 	RETP				;AND RETURN
 
 	
-**************************************************************************
-*									 *
-*	   GM_SLAVE							 *
-*									 *
-*	   This displays the menu.......moves the selection bar 	 *
-*	   and returns the selection information by stuffing		 *
-*	   it in its process area and changing its ID to		 *
-*	   MDUN_PID once selection is made.				 *
-*									 *
-*	   On entry....A8 points at the GET_MENU data structure.	 *
-*		       A9 is which entry to start with selected.	 *
-*									 *
-**************************************************************************
 BD_SLAVE
 	CALLR	MENU_BORDER	     ;DRAW THE BORDER FOR SELCTIONS.
 	SLEEP	3
@@ -1140,10 +728,6 @@ GM_SLAVE
 
 	CALLR	STUFF_MENU_PROCESS   ;MOVE DATA INTO PDATA AREA
 
-*	PLOT ENTIRE MENU
-*
-*	DO_MENU_LINE WILL RETURN CARRY SET
-*	WHEN WE GET BEYOND THE END.
 
 	MOVK	1,A0			    ;SETUP FOR LINE 1.
 
@@ -1158,37 +742,17 @@ DO_ANOTHER_LINE
 	MOVE	*A13(MEN_ENTS),A1,W	  ;SEE IF WE'RE DONE.
 	CMP	A1,A0
 	JRLS	DO_ANOTHER_LINE
-*
-*	MAIN MENU PLOTTED......NOW LET THE DMA UN-LOAD BEFORE PLOTTING HELP
-*
 	SLEEP	2
 	CALLR	PLOT_HELP		  ;PLOT HELP FOR 1ST IF NECESSARY
 
-*	SLEEPK	 2			  ;NOW MAKE SURE THE HELP GETS PLOTTED
-*
-*	NOW WE JUST WANT TO UPDATE BASED ON STICK...ACT
-*	ON BUTTONS!
-*
-*	RESPONSES:   UP....DOWN....BUTTON....NOTHING....
-*
-*	NOTHING = 0
-*	UP = 1
-*	DOWN = 2
-*	BUTTON = 3
-*
-*	A0 = RESPONSE
-*	A1 = MEN_CUR VALUE.
 
 MENU_LOOP
 	SLEEPK	1
 	calla	READ_DIP		;Get the current dip switch bits
 	btst	DPTEST_B,a0
-	jrnz	lerqdipon
+	jrnz	zaitdipon
 
-;	move	@COINS,a5
-;	btst	4,a5
-;	jrnz	DIAG_EX			;Test switch off?
-lerqdipon
+zaitdipon
 	MOVI	MENU_TYPO,A5
 	JSRP	GETSTICK		;ASK THE STICK HANDLER.......
 	MOVE	A0,A0			;SEE WHAT GET_STICK RETURNED.
@@ -1204,9 +768,6 @@ lerqdipon
 
 	CMPI	2,A0
 	JRZ	MENU_DOWN		;ITS DOWN....
-*
-*	REQUEST TO GO UP....ARE WE AT lerq1
-*
 	CMPI	1,A1			;WELL?
 	JRLS	MENU_LOOP		;YEP....IGNORE
 
@@ -1231,26 +792,14 @@ JOIN_DOWN:
 	PUSHP	a3
 	MOVE	A0,*A13(MEN_CUR),W	;PUT BACK
 	JSRP	DO_MENU_LINE		;PUT OUT LINE IN A0.
-*
-*	MAKE THE "DINK" SOUND HERE FOR ENTRY TO ENTRY MOVEMENT
-*
 	CALLR	PLOT_HELP		;PLOT HELP NEW ONE
 	SLEEPK	1			;DELAY BEEP 1 FRAME
 	PULLP	a3
 	calla	SNDSND
 
 	JRUC	MENU_LOOP		;AND WAIT FOR NEXT RESPONSE.
-*
-*	CONTROL COMES HERE WHEN A BUTTON IS PRESSED
-*
-*	  The selection number is returned in a8. (line 1 = 1)		
-*	  The routine address is returned in a9.			
 
 MENU_BUTTON:
-*
-*	A0 HAS A 3.
-*	A2 HAS THE BUTTON BIT.....IS IT ADVANCE?
-*
 	MOVE	*A13(MEN_ROM),A0,L
 	CMPI	MEN_ADJ,A0		; SPECIAL CASE FOR MENU ADJ
 	JRNZ	MBNOTADJ
@@ -1303,23 +852,6 @@ menu_escape:
 	move	a0,*a13(PROCID),W
 	jruc	MENU_DONE
 
-**************************************************************************
-*									 *
-*		  MENU UTILITIES					 *
-*									 *
-**************************************************************************
-**************************************************************************
-*									 *
-*	   BUTTON_STALL 						 *
-*									 *
-*	   THIS IS CALLED WHEN THE MENU GETS A BUTTON HIT.		 *
-*	   A1 HAS THE BIT OF THE BUTTON.				 *
-*									 *
-*	   WE PAINT THE MENU SQUARE TO FEEDBACK THE HIT.		 *
-*									 *
-*	   THEN WE HANG ON THE BUTTON UNTIL ITS LET GO. 		 *
-*									 *
-**************************************************************************
 BUTTON_STALL:
 	MOVE	A2,@LAST_BUT,L	     ;PUSH THE BUTTON STATE
 
@@ -1342,16 +874,9 @@ BUTTON_STALL:
 	MOVE	@LAST_BUT,A8,L		  ;GET BUTTON BACK
 	MOVI	08H,A9			  ;MINIMUM TIME FOR BUTTON HIGHLITE
 
-;	 MOVI	 2AH,A10	      ;.5 SECONDS OF ADVANCE HOLD-DOWN
-*				      ;WILL EXIT TEST MODE.
 WAIT_FOR_RELEASE:
-;	 CMPI	 ADV_HIGH,A8		   ;IS IT ADVANCE BUTTON?
-;	 JRNZ	 NOT_ADV		   ;NOPE.....NEVER MIND
 
-;	 DEC	 A10		      ;1 LESS TIME UNIT
-;	 JRZ	 DIAG_EX	    ;IF HE HOLDS ADVANCE...WE'RE GONE!
 
-;NOT_ADV:
 	SLEEPK	1
 	
 	MOVE	A9,A9		     ;REDUCE FOR HELD TIME
@@ -1362,8 +887,6 @@ WAIT_1:
 	CALLR	FORM_SWS	;WAIT FOR THIS ONE TO GO TO ZERO
 	AND	A8,A0		     ;IS OUR BUTTON STILL DOWN?
 	JRNZ	WAIT_FOR_RELEASE
-*
-*	ITS RELEASED...NOW SHOW ORANGE BAR FOR MINIMUM TIME
 
 	INC	A9		     ;MAKE SURE A9 HAS 1 OR MORE
 WAIT_2:
@@ -1394,14 +917,6 @@ DONT_WAIT:
 	.STRING	"SSHHAAWWNN  LLIIPPTTAAKK  "
 	.even
 
-**************************************************************************
-*									 *
-*	   STUFF_MENU_PROCESS						 *
-*									 *
-*	   THIS IS CALLED TO STUFF THE MENU ROM DATA INTO THE		 *
-*	   CURRENT PROCESSES PDATA AREA.				 *
-*									 *
-**************************************************************************
 STUFF_MENU_PROCESS:
 	MMTM	SP,A0,A1,A2,A3,A8
 	MOVE	A13,A0		     ;POINT IN PROCESS AREA
@@ -1415,15 +930,8 @@ GMS1:
 	MOVE	*A8+,A1
 	MOVE	A1,*A0+
 	DSJS	A2,GMS1
-*
-*	ALL THE MENU PARAMETERS ARE NOW IN THE PDATA AREA.
-*	A8 POINTS AT THE FIRST ITEM TO DISPLAY.
-*
 	MOVE	A8,*A13(MEN_TPTR),L  ;STORE IN PROCESS AREA.
-*
-*	NOW WE WANT TO FIND THE NUMBER OF ENTRIES IN THE MENU
-*
-	CLR	A0			  ;START AT lerq1.
+	CLR	A0			  ;START AT zait1.
 HOW_MANY:
 	INC	A0			  ;MOVE TO NEXT ENTRY.
 	CALLR	GET_MENU_DATA		  ;GET THE PARAMETERS FOR THIS ENTRY
@@ -1444,25 +952,10 @@ USE_LAST:
 	MMFM	SP,A0,A1,A2,A3,A8
 	RETS
 
-**************************************************************************
-*									 *
-*	   DO_MENU_LINE 						 *
-*									 *
-*	   A0 HAS THE LINE TO DO. (1 THROUGH N).			 *
-*	   PRINT TEXT NORMAL IF NOT "MEN_CUR".				 *
-*	   PRINT INVERT BAR FOLLOWED BY BLACK TEXT IF			 *
-*	   ITS THE CURRENT ENTRY.					 *
-*									 *
-**************************************************************************
 DO_MENU_LINE:
 	CALLR	GET_MENU_DATA		  ;GET "CURRENT" IN A1
 	CMP	A0,A1			  ;IS IT "CURRENT" ENTRY?
 	JRZ	DO_CURRENT_ENT		  ;YEP....DO INVERSE STUFF
-*
-*	A0 HAS OFFSET (FOR POSITIONING)
-*	A2 HAS TEXT POINTER (FOR MESSAGE)
-*	A1 NEEDS COLOR FOR MESSAGE.
-*
 	MOVE	*A13(MEN_COLR),A1,W	  ;USE THE NORMAL ENTRY COLOR
 	JSRP	MENU_TEXT		  ;PUT UP THE "TEXT" PORTION.
 	RETP				  ;AND RETURN
@@ -1476,13 +969,6 @@ DO_CURRENT_ENT:
 	JSRP	MENU_TEXT		  ;AND WRITE INVERTED TEXT
 	RETP				  ;THAT'S ALL FOLKS.
 
-**************************************************************************
-*									 *
-*	   UN_SELECT							 *
-*									 *
-*	   THIS IS CALLED TO "UN-SELECT" THE CURRENT ENTRY.		 *
-*									 *
-**************************************************************************
 UN_SELECT:
 	MOVE	*A13(MEN_CUR),A0,W	  ;POINT AT CURRENT ENTRY
 	CLR	A1			  ;USE BLACK FOR BACKGROUND
@@ -1493,76 +979,27 @@ UN_SELECT:
 	JSRP	MENU_TEXT		  ;PUT UP THE "TEXT" PORTION.
 	RETP				  ;AND RETURN
 
-**************************************************************************
-*									 *
-*	   MENU_BAR							 *
-*									 *
-*	   THIS IS CALLED TO PUT UP THE SELECTION BAR FOR		 *
-*	   THE ENTRY IN A0, IN THE COLOR IN A1. 			 *
-*									 *
-*	   THIS ROUTINE MUST PRESERVE A0.				 *
-*									 *
-**************************************************************************
-* STRNGLEN - RETURNS THE LENGTH, IN PIXELS, OF A GIVEN STRING		 *
-* A8 = PTR TO STRING							 *
-* A10 = [Y,X] SPACING OF STRING						 *
-* A11 = PTR TO FONT TABLE						 *
-* RETURNS:								 *
-* A7 = LENGTH OF STRING							 *
-* Z BIT SET IF LENGTH IS ZERO						 *
-*
-*	 FOR FILLAREA
-*
-* A1 = <COLOR><PALETTE>
-* A3 = DAG OF AREA [YPOS,XPOS]						
-* A4 = [Y,X] SIZE OF AREA						
-*
 MENU_BAR:
 	MMTM	SP,A0,A1,A3,A4,A5,A6,A7,A8    ;SAVE THE OFFSET
 	MMTM	SP,A1			  ;SAVE COLOR!
 	CALLR	GET_MENU_DATA		  ;GET THE TEXT POINTER
 	CALLR	STLEN_SETUP		  ;SETUP FOR STRLEN CALL.
 	CALLA	STRNGLEN		  ;FIND WIDTH OF STRING.
-*
-*	A7 HAS LENGTH OF STRING.
-*
-*	WE NEED TO GET INTO A3 THE COORDINATES UF UPPER LEFT
-*	AND A4 THE LENGTH.
-*
-*	IF WE'RE CENTERING, WE USE THE BAR WIDTH PARAMETER
-*	ALONG THE CENTER LINE.
-*
-*	IF WE'RE LEFT JUSTIFIED, WE'LL LET THE BOX GO THE
-*	LENGTH OF THE TEXT FOR NOW.
-*
 	MOVE	*A13(MEN_ULX),A3,W	  ;LEFT X IN A3 		
-*
-*	IF WE'RE CENTERING....WE NEED TO MOVE THE "LEFT X" BACK HALF
-*	THE WIDTH OF THE STRING.
-*
 	MOVE	*A13(MEN_ROM),A6,L	  ;GET ROM POINTER
 	MOVE	*A6(MR_TCAL),A6,L	  ;CHECK ROUTINE
 	CMPI	STRCNRM,A6
 	JRNZ	NOT_CENTERING
-*
-*	WE'RE CENTERING....CENTER X IS IN A3
-*
 	MOVE	*A13(MEN_BWID),A7,W	  ;A7 IS THE REGISTER FOR BAR WIDTH
 	MOVE	A7,A4			  ;GET COPY IN A4
 	SRL	1,A4			  ;1/2 OF WIDTH COMES OFF OF CENTER
 	SUB	A4,A3			  ;A3 NOW HAS "LEFT X"
 	JRUC	CENTERING		  ;A7 IS WIDTH...A3 IS X
 
-*
-*	LEFT JUSTIFIED....DO IT THE OLD WAY!
-*
 NOT_CENTERING:
 	MOVE	*A13(MEN_BDX),A4,W	  ;GET EXTRA X UNITS FOR BAR
 	SUB	A4,A3
 
-*	NOW ADD TWICE THE EXTRA X TO THE STRING LENGTH TO
-*	FORM THE BAR LENGTH.
-*
 	SLL	1,A4			  ;NOW DOUBLE THE EXCESS DX FOR BAR
 	ADD	A4,A7			  ;NOW A7 HAS WIDTH OF BAR
 
@@ -1588,27 +1025,6 @@ CENTERING:
 	MMFM	SP,A0,A1,A3,A4,A5,A6,A7,A8    ;SAVE THE OFFSET
 	RETS
 
-**************************************************************************
-*									 *
-*	   MENU_TEXT							 *
-*									 *
-*	   THIS IS CALLED TO DISPLAY THE TEXT FOR AN ENTRY.		 *
-*									 *
-*	   A0 HAS OFFSET (FOR POSITIONING)				 *
-*	   A1 HAS COLOR FOR MESSAGE.					 *
-*	   A2 HAS TEXT POINTER (FOR MESSAGE)				 *
-*									 *
-*	   WE NEED TO SHIFT THE DATA FOR THE TEXT ROUTINE		 *
-*	   AS FOLLOWS:							 *
-*									 *
-*	   A0 = SLEEP							 *
-*	   A6 = COLOR							 *
-*	   A8 = POINTER 						 *
-*	   A9 = ADDRESS 						 *
-*	   A10 = SPACING						 *
-*	   A11 = FONT							 *
-*									 *
-**************************************************************************
 MENU_TEXT:
 	CALLR	GET_ENTRY_Y		  ;GET Y FOR ENTRY IN A5
 	SLL	16,A5			  ;SHIFT Y INTO POSITION
@@ -1631,11 +1047,6 @@ STLEN_SETUP:
 	MOVE	*A11(MR_FONT),A11,L	  ;LOAD FONT
 	RETS
 
-**************************************************************************
-*									 *
-*	   MENU JOYSTICK HANDLING					 *
-*									 *
-**************************************************************************
 ST_STICK:
 	CALLR	FORM_SWS	   ;THIS LATCHES ANYONE ALREADY DOWN.
 	CLR	A0
@@ -1643,62 +1054,17 @@ ST_STICK:
 	MOVE	A0,*A13(MEN_TYPO),W	;CLEAR TYPOMATIC COUNTER.
 	MOVE	A0,*A13(MEN_HITS),W	;CLEAR OUT "CONSECUTIVE HITS"
 	RETP
-*
-*	GETSTICK......RETURN DEBOUNCED/TYPOMATIC FOR
-*			UP AND DOWN......OR EDGE OUT
-*			ANY BUTTON....(INCLUDING ADVANCE)
-*
-*	RETURN A0=
-*
-*	NOTHING = 0
-*	UP = 1
-*	DOWN = 2
-*	BUTTON = 3
-*
-*	A2 = BUTTON BIT ON BUTTON HITS
-*
 UP_OR_DOWN	 EQU	 UP_BITS+DOWN_BITS
 TYPO_COUNT	 EQU	 4
 TYPO_STALL	 EQU	 25
 MENU_TYPO	 EQU	 (TYPO_COUNT*10000H)+14      ;14 HITS FOR MENU TILL STUCK
 	
-*
-*	 TO USE THIS.......FIRST JSRP ST_START.
-*			   THIS STICKS CLOSED SWITCHES AND
-*			   INITIALIZES COUNTERS.
-*
-*			   DATA IS STORED IN YOUR PDATA
-*			   AREA.....AT AREAS DETERMINED
-*			   BY THE "MEN_" STRUCTURE.  THESE
-*			   LOCATIONS MUST BE AVAILABLE.
-*
-*			   A8-A11 ARE NOT TOUCHED.
-*
-*	  AFTER ST_START.....READ AS FOLLOWS.
-*
-*
-*	  LOOP	    SLEEP  1
-*		    MOVI   TYPO_PARMS,A5
-*		    JSRP   GETSTICK
-*
-*		    <LOGICAL STICK STATE RETURNED IN A0>
-*		    <ACT ON LOGICAL STATE>
-*
-*		    JRUC LOOP
-*		
-*
-*	 INPUT A5-----TOP HALF IS TYPOMATIC RATE
-*		      LOW HALF IS COUNT TILL STICK IS CALLED STUCK
-*
 GETSTICK:
 	MOVE	A5,A6
 	SRL	16,A5		     ;TYPO RATE IN A5
 	ANDI	WORD_MASK,A6	     ;STUCK HIT COUNT IN A6
 
 	CALLR	FORM_SWS	;SEE WHAT THEY LOOK LIKE NOW.
-*
-*	RETURN CURRENT STATE IN A0..PREVIOUS STATE IN A1.
-*
 	NOT	A1		     ;LAST = 0 AND NOW = 1 MEANS EDGE!
 
 	AND	A1,A0		     ;1'S WHERE WE HAVE POSITIVE EDGE.
@@ -1710,29 +1076,15 @@ GETSTICK:
 
 	ANDI	BUTTONS|START_BITS,A0	     ;BUTTON SAYS ACT....IGNORE STICK!
 	JRNZ	TEST_BUTS	     ;NEW BUTTON......RETURN IT!
-*
-*	NO BUTTON.....DO STICK TYPOMATIC STUFF!
-*
 	MOVE	*A13(MEN_ACT),A2,L   ;IS THERE ONE TO WATCH?
 	JRZ	NEW_SCAN	     ;NOPE....LOOK FOR NEW STUFF!
-*
-*	WE HAVE ONE THAT'S DOWN THAT WE WANT TO WATCH.
-*
 	CALLR	FORM_SWS	;SEE WHAT THEY LOOK LIKE NOW.
 	AND	A2,A0		     ;IS IT STILL MADE?
 	JRZ	GS_STICK_OPEN	     ;NOPE.......CLEAR OUT ITS STATE.
-*
-*	ITS STILL MADE........DO TYPOMATIC.
-*
 	MOVE	*A13(MEN_TYPO),A1,W  ;DECREMENT TYPOMATIC COUNTER
 	DEC	A1
 	MOVE	A1,*A13(MEN_TYPO),W  ;AND PUT BACK IN MEMORY
 	JRNZ	GS_ZERO 	     ;NOT TIME YET.....RETURN NOTHING
-*
-*	WE HAVE A TYPOMATIC HIT.....WE NEED TO TURN SWITCH BIT (A0)
-*	INTO "UP" OR "DOWN" AND RE-LOAD TYPOMATIC COUNTER.
-*
-*
 	MOVE	*A13(MEN_HITS),A1,W  ;GET NUMBER OF HITS
 	INC	A1		     ;AFTER 15 TYPOS.....KILL TILL OPEN!
 	MOVE	A1,*A13(MEN_HITS)    ;
@@ -1749,23 +1101,14 @@ RETURN_UP_DOWN:
 	MOVK	2,A0		     ;ASSUME DOWN
 	ANDI	DOWN_BITS,A2	     ;IS IT A "DOWN" BIT
 	JRNZ	GS_X		     ;YEP...RETURN "DOWN"
-*
-*	 NOT A TYPOMATIC CONDITION.
-*
 
 GS_GONE:
 	CLR	A0		     ;CLEAR OUT CURRENT HIT.
 	MOVE	A0,*A13(MEN_ACT),L   ;INDICATE READY FOR NEXT HIT!
 	JRUC	GS_X		     ;AND RETURN THIS ZERO (NOTHING!)
-*
-*	STICK THAT WAS CLOSED OPENED......STOP BOUNCE UPWARD!
-*
 GS_STICK_OPEN:
 	SLEEPK	6
 	JRUC	GS_GONE 	     ;NOW.....CLEAR OUT FOR NEXT HIT.
-*
-*	CONTROL COMES HERE WHEN NO BUTTONS ARE PENDING.
-*
 NEW_SCAN:
 	MOVE	A4,A0		     ;LOOK AT THE NEW EDGES.
 
@@ -1781,13 +1124,7 @@ NEW_SCAN:
 	CLR	A1
 	MOVE	A1,*A13(MEN_HITS),W  ;LOAD UP A BUNCH OF HITS
 	JRUC	RETURN_UP_DOWN	     ;RETURN CORRECT CODE UP OR DOWN
-*
-*	NOT UP OR DOWN......SEE IF ITS A BUTTON.
-*
 TEST_BUTS:
-*
-*	ITS A BUTTON...ALL NEW BUTTON EDGES IN A0
-*
 	CALLR	FRST_BIT	     ;USE 1 OF THEM.
 
 	MOVE	A0,A2		     ;RETURN THE BIT.
@@ -1804,13 +1141,6 @@ GS_ZERO:
 GS_X:	
 	RETP
 
-**************************************************************************
-*									 *
-*	   FRST_BIT							 *
-*									 *
-*	   A0 HAS 1 OR MORE BITS SET....RETURN 1 OF THEM.		 *
-*									 *
-**************************************************************************
 FRST_BIT:
 	MMTM	SP,A1,A2
 	MOVK	1,A1		;SHIFT TILL WE FIND IT.
@@ -1825,17 +1155,6 @@ GOT_IT:
 	MMFM	SP,A1,A2
 	RETS
 
-**************************************************************************
-*									 *
-*	   FORM_SWS						    *
-*									 *
-*	   GET THE SWITCHES....1=CLOSED.....AND SAVE			 *
-*	   THIS SCAN AS "LAST STATE".  RETURN:				 *
-*									 *
-*	   CURRENT STATE IN A0						 *
-*	   PREVIOUS STATE IN A1 					 *
-*									 *
-**************************************************************************
 FORM_SWS:
 	callr	fudge_switches
 
@@ -1843,11 +1162,8 @@ FORM_SWS:
 	move	a0,*a13(MEN_STIK),L	;SAVE "STUCK" STATE.
 	rets
 
-**************************************************************************
 fudge_switches
 
-;	move	@COINS,a0,W
-;	move	@SWITCH,a1,W
 	move	@_coin_addr,a0,L
 	move	*a0,a0,W
 	move	@_switch_addr,a1,L
@@ -1922,16 +1238,12 @@ _no_adjustment_mapping
 _no_any_mapping
 _switch_mapping_done
 
-;	move	@SWITCH,a0,L		;GET BOTH SWITCH WORDS
 	not	a0			;COMPLEMENT
-;	move	@SWITCH2,a1		;move action 5 buttons into low 32 bits
 	move	@_switch2_addr,a1,L
 	move	*a1,a1
 	ori	0FFFF0000h,a1
 	not	a1
 
-;	andi	01111b,a1		;make them buttons
-;	sll	4,a1
 
 	move	a1,a14
 	andi	0011b,a14
@@ -1942,12 +1254,7 @@ _switch_mapping_done
 	rets
 
 
-**************************************************************************
-*SPECIAL DIAGNOSTIC VERSION OF fudge_switches
-*USE FCALL WITH B6 AS THE RETURN REGISTER WHEN CALLING.
-*
 fudge_switches_diag
-;	move	@SWITCH,a0,L		;GET BOTH SWITCH WORDS
 	move	@_switch_addr,a0,L
 	move	*a0,a0,W
 	move	@_coin_addr,a1,L
@@ -1955,14 +1262,11 @@ fudge_switches_diag
 	sll	16,a1
 	or	a1,a0
 	not	a0			;COMPLEMENT
-;	move	@SWITCH+20h,a1		;move action 5 buttons into low 32 bits
 
 	move	@_switch2_addr,a1,L
 	move	*a1,a1
 	not	a1
 
-;	andi	01111b,a1
-;	sll	4,a1
 
 	move	a1,a14
 	andi	0011b,a14
@@ -1973,7 +1277,6 @@ fudge_switches_diag
 
 	FRET	B6
 
-**************************************************************************
 fudge_switches2
 
 	callr	fudge_switches
@@ -1986,17 +1289,6 @@ fudge_switches2
 
 	rets
 
-**************************************************************************
-*									 *
-*	   GET_MENU_DATA						 *
-*									 *
-*	   A0 IS OFFSET OF ENTRY OF INTEREST				 *
-*									 *
-*	   RETURN  A1 = CURRENT OFFSET					 *
-*		   A2 = TEXT POINTER					 *
-*		   A3 = ROUTINE 					 *
-*									 *
-**************************************************************************
 GET_MENU_DATA:
 	MMTM	SP,A0		     ;DON'T ALTER A0
 
@@ -2008,15 +1300,6 @@ GET_MENU_DATA:
 	MMFM	SP,A0		     ;DON'T ALTER A0
 	RETS
 
-**************************************************************************
-*									 *
-*	   PM_ENTRY							 *
-*									 *
-*	   A0 = MENU ENTRY OF INTEREST					 *
-*	   RETURN A1 -> POINTS AT <TEXT><ROUTINE><HELP> FOR THIS	 *
-*	   ENTRY.							 *
-*									 *
-**************************************************************************
 PM_ENTRY:
 	MMTM	SP,A0
 	DEC	A0		     ;INDEX FROM ZERO
@@ -2028,14 +1311,6 @@ PM_ENTRY:
 	MMFM	SP,A0
 	RETS
 
-**************************************************************************
-*									 *
-*	   PLOT_HELP							 *
-*									 *
-*	   THIS ROUTINE PLOTS (OR CLEARS) THE HELP AREA 		 *
-*	   FOR THE CURRENT ENTRY.					 *
-*									 *
-**************************************************************************
 PLOT_HELP:
 	MOVE	*A13(MEN_CUR),A0,W	  ;GET CURRENT ENTRY
 	CALLR	PM_ENTRY	  ;A1 POINTS AT GROUP
@@ -2044,125 +1319,10 @@ PLOT_HELP:
 	JRZ	NO_HELP_FOR_THIS_ONE
 	CMPI	ADJ_HELP,A8		  ;ADJUSTMENT HELP REQUESTED?
 	JAEQ	DO_ADJH 		  ;THEN DO IT IN ADJ MODULE!
-;	 CMPI	 SND_HELP,A8		   ;ARE WE IN SOUND TEST?
-;	 JREQ	 DO_SHELP
-;	 CMPI	 SND_PLAY,A8
-;	 JREQ	 DO_SPLAY
 	CALLR	DO_HELP_MENU
 NO_HELP_FOR_THIS_ONE:
 	 RETS
 
-**************************************************************************
-*									 *
-*	   DO_SHELP							 *
-*									 *
-*	   THIS IS CALLED FOR EACH NON PLAYING ENTRY IN THE SOUND	 *
-*	   TABLE MENU.	IT CAUSES THE SOUND BOARD TO BE SHUT		 *
-*	   UP AND THE BOTTOM LINE (WHERE TITLES APPEAR) 		 *
-*	   TO BE ERASED.						 *
-*									 *
-**************************************************************************
-;DO_SHELP:	
-;;	MOVE	@SND_MADE,A0,W	;DID SOMEONE MAKE A SOUND?
-;;	  JRZ	  DO_SH1	  ;NOPE
-;;	  CLR	  A0
-;	 MOVE	 A0,@SND_MADE,W  ;CLEAR THIS AND RESET THE BOARD!
-;	 MOVE	 A0,@SCODE,W
-;	 MOVE	 A0,@DCODE,W
-;	 CALLA	 QSNDRST		;kill any sounds in progress
-;DO_SH1:
-;	CALLR	BLNKSNAM	;BLANK OUT ANY WRITING!
-;	 RETS
-;*
-;*	 A0 CONTAINS 3 FOR SYNTHESIZER...4 FOR DIGITIZER...
-;*	 IF CORRESPONDING "CODE" BYTE IS NON ZERO, THEN DISPLAY
-;*	 THE TEXTLINE THAT CORRESPONDS.  ELSE BLANK OUT THE
-;*	 AREA.
-;*
-;DO_SPLAY:
-;	CALLR	BLNKSNAM	;BLANK OUT LAST MESSAGE
-;	 CMPI	 3,A0		 ;SYNTHESIZER?
-;	 JRZ	 CK_SYNT	 ;YEP.
-;*
-;*	 DIGITIZER.
-;*
-;	 MOVE	 @SCODE,A1,W	 ;HOLD INFO IF SYNTH WAS RUNNING
-;	 CLR	 A0
-;	 MOVE	 A0,@SCODE,W	 ;CLEAR OUT SYNTH CODE
-;	 MOVE	 @DCODE,A0	 ;ANY CODE
-;	 JRZ	 DO_SPQX	 ;NOTHING HERE.....SHUT UP SOUND SYS.
-;
-;	 MOVI	 DTABLE,A1	 ;BASE OF POINTER TABLE FOR DIGITIZER
-;	 JRUC	 DO_SP1 	 ;PRINT THE STRING.
-;
-;
-;CK_SYNT:
-;	MOVE	@DCODE,A1,W	;HOLD INFO IF DIGITIZER WAS RUNNING
-;	 CLR	 A0
-;	 MOVE	 A0,@DCODE,W	 ;CLEAR OUT DIG CODE
-;	 MOVE	 @SCODE,A0	 ;ANY CODE
-;	 JRZ	 DO_SPQX	  ;NOTHING HERE.
-;
-;	 MOVI	 STABLE,A1	 ;BASE OF POINTER TABLE FOR DIGITIZER
-;
-;DO_SP1:
-;	CALLR	MEN_NUMS			   ;A4 = LEFT X  A5 = RIGHT X
-;	 ADDI	 10000H*SND_MESS_Y,A4		    ;UPPER LEFT Y
-;	 ADDI	 10000H*(SND_MESS_Y+SND_BOX_H),A5   ;UPPER LEFT X
-;	 MOVI	 ROBO_WHITE,A9
-;	 CALLR	 STD_BORD	
-;
-;	 DEC	 A0			   ;INDEX FROM 1.
-;	 SLL	 5,A0
-;	 ADD	 A0,A1
-;	 MOVE	 *A1,A2,L		   ;NOW WE HAVE THE MESSAGE
-;
-;	 MOVI	 SND_INST,A8
-;	 JSRP	 L_MESS 		   ;PUT INSTRUCTION OUT.
-;
-;	 MOVI	 SND_SETUP,A8
-;	 CALLA	 LM_SETUP
-;
-;	 MOVE	 A2,A8			
-;	 JSRP	 LM_FINIS		   ;DO THE DEED
-;	 RETS				   ;AND RETURN
-;
-;DO_SPQX:
-;	MOVE	A1,A1			  ;OUR SELECTION ISN'T RUNNING...WAS OTHER?
-;	 JRZ	 DO_SPX 		   ;NOPE
-;	 CALLA	 QSNDRST		   ;KILL SOUNDS IN PROGRESS
-;	 CLR	 A0
-;	 MOVE	 A0,@SND_MADE,W 	   ;NO RESET NECESSARY NOW
-;DO_SPX:
-;	RETS
-;
-;**************************************************************************
-;*									  *
-;*	    BLNKSNAM							  *
-;*									  *
-;*	    CALLED TO BLANK OUT THE SOUND CODE NAME DURING		  *
-;*	    SOUND TEST. 						  *
-;*									  *
-;**************************************************************************
-;*
-;*	  A3 = POINTER
-;*	  A4 = SIZE
-;*
-;BLNKSNAM:
-;	 MOVI	 (SND_MESS_Y*10000H)+20H,A3
-;	 MOVI	 (SND_BOX_H*10000H)+1E0H,A4
-;	 JAUC	 BLNKAREA		   ;ITS BLANK!
-;
-**************************************************************************
-*									 *
-*	   GET_ENTRY_Y							 *
-*									 *
-*	   THIS RETURNS THE Y POSITIONS FOR THE ENTRY SPECIFIED 	 *
-*	   IN A0.							 *
-*									 *
-*	   A5 = Y VALUE IN UNITS.					 *
-*									 *
-**************************************************************************
 GET_ENTRY_Y:
 	MMTM	SP,A0,A1
 	MOVE	*A13(MEN_ULY),A5,W
@@ -2173,45 +1333,12 @@ GET_ENTRY_Y:
 	MMFM	SP,A0,A1
 	RETS
 
-**************************************************************************
-*									 *
-*	   MENU_BORDER							 *
-*									 *
-*	   THIS IS CALLED TO PUT A BORDER AROUND THE MENU.		 *
-*									 *
-*	   A8 = MENU STRUCTURE						 *
-*	   A9 = 1st item to activate as current 			 *
-*									 *
-*	   BORDER IS DONE IN MENU TEXT COLOR				 *
-*									 *
-*	   THIS ASSUMES MENU IS IN THE CENTERING FORMAT 		 *
-*									 *
-**************************************************************************
-*
-*	 1ST WE NEED TO FIND UPPER LEFT.
-*
-*
-*	 X = MENU_X - (BAR_WIDTH/2) - 2       (LESS BORDER WIDTH)
-*	 Y = MENU_Y - BDY		      (LESS BORDER HEIGHT)
-*
-*	 LOWER RIGHT :
-*
-*	 X = MENU_X + (BAR_WIDTH/2) - 2       (PLUS BORDER WIDTH)
-*	 Y = MENU_Y + (MENU_ENTRIES-1) * DY)) - BDY + BAR_HITE
-*
-*
 MENU_BORDER:
 	MMTM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9
 	CALLR	STUFF_MENU_PROCESS   ;MOVE DATA INTO PDATA AREA
-*
-*	FIRST COMPUTE UPPER LEFT
-*
 	CALLR	MENU_UL_A4_A5		  ;GET UPPER LEFT COORDINATES
 	SLL	16,A5
 	ADD	A5,A4			  ;A4 POINTS TO UPPER LEFT.
-*
-*	FORM LOWER RIGHT
-*
 	CALLR	MENU_LR_A6_A5
 	SLL	16,A5			  ;SHIFT A5 DOWN
 	ADD	A6,A5			  ;A5 POINTS AT LOWER RIGHT
@@ -2222,17 +1349,6 @@ MENU_BORDER:
 	MMFM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9
 	RETS
 
-**************************************************************************
-*									 *
-*	   MCSETUP							 *
-*									 *
-*	   RETURN:							 *
-*		   A0 = CENTER OF MENU					 *
-*		   A1 = 1/2 BAR WIDTH					 *
-*		   A2 = Y FOR FIRST LINE OF TEXT OF MENU		 *
-*		   A3 = DELTA Y (NEGATIVE TO GET FROM TEXT TO BAR.	 *
-*									 *
-**************************************************************************
 MCSETUP:
 	MOVE	*A13(MEN_ULX),A0,W	  ;UPPER LEFT X (ACTUALLY CENTER)
 	MOVE	*A13(MEN_BWID),A1,W	  ;BAR_WIDTH
@@ -2242,16 +1358,6 @@ MCSETUP:
 	RETS
 
 
-**************************************************************************
-*									 *
-*	   MENU_UL_A4_A5						 *
-*									 *
-*	   RETURN WINDOW UPPER LEFT CORNER				 *
-*									 *
-*	   A4 = X							 *
-*	   A5 = Y							 *
-*									 *
-**************************************************************************
 MENU_UL_A4_A5:
 	MMTM	SP,A0,A1,A2,A3
 	CALLR	MCSETUP 		  ;STUFF THE REGGIES
@@ -2267,16 +1373,6 @@ MENU_UL_A4_A5:
 	MMFM	SP,A0,A1,A2,A3
 	RETS
 
-**************************************************************************
-*									 *
-*	   MENU_LR_A6_A5						 *
-*									 *
-*	   RETURN WINDOW LOWER RIGHT CORNER				 *
-*									 *
-*	   A6 = X							 *
-*	   A5 = Y							 *
-*									 *
-**************************************************************************
 MENU_LR_A6_A5:
 	MMTM	SP,A0,A1,A2,A3
 	CALLR	MCSETUP 		  ;STUFF THE REGGIES
@@ -2297,17 +1393,6 @@ MENU_LR_A6_A5:
 	RETS
 
 
-**************************************************************************
-*									 *
-*	   F_TITLE							 *
-*									 *
-*	   THIS IS CALLED TO FRAME A TITLE IN THE SAME WIDTH		 *
-*	   AS THE MAIN TITLE.						 *
-*									 *
-*	   A0 = Y LEVEL OF 15 POINT TEXT				 *
-*	   A9 = COLOR							 *
-*									 *
-**************************************************************************
 F_TITLE:
 	MMTM	SP,A4,A5,A0
 	MOVE	A0,A4		;COPY Y
@@ -2326,18 +1411,6 @@ F_TITLE:
 
 FIRST_BORDER_COLOR	 EQU	 0E0E0H
 LAST_BORDER_COLOR	 EQU	 0EFEFH
-**************************************************************************
-*									 *
-*	   G_BORDER							 *
-*									 *
-*	   THIS IS CALLED TO DO A "HSTD TABLE" TYPE CYCLING		 *
-*	   BORDER.  THIS ROUTINE GETS:					 *
-*									 *
-*	   A4 = UPPER LEFT Y,X						 *
-*	   A5 = LOWER RIGHT Y,X 					 *
-*	   A6 = NUMBER OF SLICES GOING IN.				 *
-*									 *
-**************************************************************************
 G_BORDER:
 	MMTM	SP,A0,A1,A2,A3,A4,A5,A6
 	MOVI	10001H,A0		  ;1 BY 1 DIMENSION
@@ -2360,37 +1433,10 @@ COLOK:
 	MMFM	SP,A0,A1,A2,A3,A4,A5,A6
 	RETS
 
-**************************************************************************
-*									 *
-*	   DOBORDER							 *
-*									 *
-*	   THIS IS CALLED TO DRAW A BORDER FRAME.			 *
-*									 *
-*	   A4 = UPPER LEFT Y,X						 *
-*	   A5 = LOWER RIGHT Y,X 					 *
-*	   A0 = Y,X WIDTH OF BORDER					 *
-*	   A9 = COLOR OF BORDER.					 *
-*									 *
-*	   THIS ROUTINE *** CLEARS OUT ALL AREA INSIDE THE BORDER***	 *
-*	   AS A FUNCTION OF ITS OPERATION.				 *
-*									 *
-*	   THE BORDER IS DONE IN THE "ROBO" PALETTE			*
-*									 *
-*	   IT IS ASSUMED THAT THE DISPLAY SYSTEM IS RUNNING!		 *
-*									 *
-**************************************************************************
-*
-* A1 = <COLOR><PALETTE>
-* A3 = DAG OF AREA [YPOS,XPOS]						
-* A4 = [Y,X] SIZE OF AREA						
-*
 DOBORDER:
 	MMTM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9
 	MOVE	A9,A1			  ;GET COLOR
 	SLL	16,A1			  ;COLOR ON TOP..PALETTE 0
-*
-*	NOW WE NEED TO MAKE 4 BARS!
-*
 	MOVE	A0,A2			  ;SEPARATE DELTA
 	ANDI	SX_MASK,A0
 	ANDI	SY_MASK,A2
@@ -2407,13 +1453,6 @@ DOBORDER:
 	ANDI	SY_MASK,A7		   ;TOP Y
 	ANDI	SY_MASK,A9		   ;BOTTOM Y
 
-*
-*	FIRST BAR GOES FROM ORIGINAL UL XY TO RIGHT X
-*	AND TOP Y+DELTA Y
-*
-*	A3 IS ORIGINAL A4 PASSED.
-*	FORM DESTINATION IN A4
-*
 	MOVE	A4,A3
 
 	MOVX	A8,A4
@@ -2421,31 +1460,18 @@ DOBORDER:
 	ADDXY	A2,A4			  ;ADD THE DELTA
 
 	CALLR	DO_A_LINE		  ;DO THIS LINE
-*
-*	GOING AROUND CLOCKWISE.....THIS ONE STARTS AT RIGHT X-DELTA
-*	AND TOP Y
-*
 	MOVX	A8,A3
 	SUBXY	A0,A3
 	MOVY	A7,A3
-*
-*	THIS IS THE NATURAL LOWER RIGHT CORNER
-*
 	MOVX	A8,A4
 	MOVY	A9,A4
 
 	CALLR	DO_A_LINE
-*
-*	NOW FOR BOTTOM LINE.....A4 IS STILL SET!
-*
 	MOVX	A6,A3
 	MOVY	A9,A3
 	SUBXY	A2,A3
 
 	CALLR	DO_A_LINE
-*
-*	LEFT WALL....FROM UPPER LEFT
-*
 	MOVX	A6,A3
 	MOVY	A7,A3
 
@@ -2471,26 +1497,6 @@ STD_BORD:
 	CALLA	DOBORDER
 	MMFM	SP,A0
 	RETS
-**************************************************************************
-*									 *
-*	   DO_HELP_MENU 						 *
-*									 *
-*	   THIS IS CALLED TO DISPLAY A HELP MENU FOR THE CURRENT	 *
-*	   MENU ENTRY.							 *
-*									 *
-*	   A HELP MENU IS DEFINED AS FOLLOWS:				 *
-*									 *
-*	   HM_JUST	   WORD    0=CENTER   1=LEFT			 *
-*	   HM_COLOR	   WORD    COLOR OF MENU			 *
-*	   HM_ENTS	   WORD    NUMBER OF LINES IN MENU		 *
-*			   LONG    LONG WORD POINTERS FOR EACH LINE!	 *
-*									 *
-*	   THE PROCESS AREA IS FILLED WITH THE CURRENT MENU		 *
-*	   PARAMETERS.							 *
-*									 *
-*	   A8 = POINTER TO HELP MENU STRUCTURE ABOVE			 *
-*									 *
-**************************************************************************
 DO_HELP_MENU:
 	CALLR	BLNKHELP
 
@@ -2500,9 +1506,6 @@ DO_HELP_MENU:
 	MOVE	*A13(MEN_CUR),A0,W   ;THIS IS CURRENT ENTRY
 	MOVE	A0,A11		     ;PASS ENTRY NUMBER IN A11
 	CALLR	GET_ENTRY_Y	     ;A5 HAS THE Y FOR THE CURRENT ENTRY
-*
-*	NOW WE NEED TO MOVE TO MAKE TOP ENTRY BOX LINE UP.
-*
 	MOVE	*A13(MEN_BDY),A10,W  ;THIS IS NEGATIVE TO GIVE US BOX TOP
 	ADD	A5,A10		     ;NOW WE HAVE BOX TOP
 
@@ -2514,24 +1517,10 @@ DO_HELP_MENU:
 	CALLA	P_FORK		     ;START UP ANOTHER W/ SAME ID TO FLASH!
 DHMX	RETS
 
-**************************************************************************
-*									 *
-*	   BLNKHELP							 *
-*									 *
-*	   THIS IS CALLED TO BLANK OUT THE HELP AREA.  IT IS		 *
-*	   USED BY BOTH THE "NORMAL" HELP PLOTTER AND IS		 *
-*	   CALLED BY THE ADJUSTMENT HELP PROGRAM.			 *
-*									 *
-*	   THIS RETURNS THE LEFT X FOR THE HELP MENU IN A9		 *
-*									 *
-**************************************************************************
 BLNKHELP:
 	MMTM	SP,A3,A4,A5,A6
 	CALLR	MENU_LR_A6_A5	     ;GET RIGHT X OF MAIN MENU IN A6
 	MOVE	A6,A9		     ;PASS TO HELP MENU SLAVE
-*
-*	NOW BLANK OUT THE "HELP" REGION
-*
 	MOVE	A6,A3		     ;UPPER LEFT X OF REGION TO BLANK OUT
 	ADDI	INST_ULY*10000H,A3   ;THIS IS UPPER LEFT OF BLOCK
 
@@ -2542,20 +1531,6 @@ BLNKHELP:
 	MMFM	SP,A3,A4,A5,A6
 	RETS
 
-**************************************************************************
-*									 *
-*	   H_SLAVE							 *
-*									 *
-*	   THIS IS A PROCESS CREATED TO PLOT THE HELP BOX.		 *
-*	   IT DOES ITS PLOTTING THEN DIES.   THIS ALLOWS IT		 *
-*	   TO USE THE PDATA AREA WITHOUT DISTURBING THE CALLER. 	 *
-*									 *
-*	   A8 = POINTER TO HELP BOX STRUCTURE				 *
-*	   A9 = LEFT MARGIN FOR THE HELP BOX.				 *
-*	   A10 = Y OF CENTER OF BOX ...HIGH HALF IS ZERO FOR Y CENTING	 *
-*		 IF HIGH HALF IS NON-ZERO, THEN THIS IS TOP OF BOX	 *
-*									 *
-**************************************************************************
 HM_JUST 	 EQU	 0
 HM_COLOR	 EQU	 HM_JUST+WORD_SIZE
 HM_ENTS 	 EQU	 HM_COLOR+WORD_SIZE
@@ -2571,28 +1546,16 @@ HS_PTR		 EQU	 HS_COLOR+WORD_SIZE ;LONG-CURRENT TEXT POINTER
 H_SLAVE:
 	SLEEPK	1
 
-*
-*	A9 HAS RIGHT X OF MENU
-*
 	MOVE	A9,A1			  ;PUT THIS X VALUE IN A1
 
 	MOVE	*A8(HM_JUST),A0,W	  ;0 = CENTER  1=LEFT
 	JRZ	HS_CENT 		  ;CENTER....SETUP X ACCORDINGLY
-*
-*	LEFT JUSTIFY....STORE ROUTINE
-*
 	MOVI	STRLNRM,A0		  ;LEFT JUSTIFY ROUTIN
-*
-*	NOW FORM X AS SOME MARGIN FROM WINDOW....
-*
 	ADDI	MB_XWID+HELP_X_MARGIN,A1  ;ADD MARGIN TO FORM X FOR TEXT
 	JRUC	CENTER_JOIN		  ;CONTINUE
 
 HS_CENT:
 	MOVI	STRCNRM,A0		  ;USE CENTERING ROUTINE
-*
-*	A1 HAS LEFT X OF HELP BOX...FIND RIGHT X
-*
 	ADDI	TIT_LRX,A1
 	SRL	1,A1			  ;THIS IS CENTER X
 
@@ -2608,32 +1571,10 @@ CENTER_JOIN:
 
 	ADDI	HM_DATA,A8		  ;POINT AT 1ST ENTRY
 	MOVE	A8,*A13(HS_PTR),L	  ;NOW WE'RE READY.
-*
-*	ALL PDATA AREA SET.....NOW WE NEED TO DRAW THE BORDER
-*
-*	  FOR DOBORDER
-*
-*	  A4 = UPPER LEFT Y,X						
-*	  A5 = LOWER RIGHT Y,X					
-*	  A0 = Y,X WIDTH OF BORDER				
-*	  A9 = COLOR OF BORDER. 					
-*
-*	LOWER RIGHT X IS SUCH THAT IT LINES UP WITH TITLE BOX.
-*	THE Y IS A BIT TRICKIER......NUMBER OF ENTRIES IS
-*	SITTING IN A1
-*
 	MOVI	HELP_DY,A5		  ;DISTANCE PER ENTRY
 	MPYU	A1,A5			  ;DISTANCE FOR ALL ENTRIES
 	ADDI	HELP_Y_MARGIN+(MB_YWID*2)+HELP_YLO_MARGIN,A5
-*
-*	A5 NOW CONTAINS FULL HEIGHT OF BOX
-*
-*	NOW SEE IF WE'RE CENTERING ON A10 OR IF A10 IS THE TOP.
-*
 	CALLR	TOP_IN_A10
-*
-*	NOW FORM UPPER LEFT IN A4
-*
 	MOVE	A10,A4			  ;MOVE Y OVER
 	SLL	16,A4			  ;MAKE ROOM FOR X
 	ADD	A9,A4			  ;PUT IN THE X...THIS IS UPPER LEFT!
@@ -2641,29 +1582,12 @@ CENTER_JOIN:
 	ADD	A10,A5			  ;ADD BASE TO OFFSET
 	SLL	16,A5			  ;PUT IN Y POSITION
 	ADDI	TIT_LRX,A5		  ;ADD IN THE X FOR THE CORNER
-*
-*	NOW ADJUST FROM TOP OF BOX TO POSITION OF
-*	1ST ENTRY.
-*
 	ADDI	MB_YWID+HELP_Y_MARGIN,A10  ;Y OF 1ST ENTRY
 	MOVE	A10,*A13(HS_Y),W	   ;PUT AWAY
 
 	MOVE	*A13(HS_COLOR),A9,W	  ;GET THE COLOR FOR DOBORDER
 
 	CALLR	STD_BORD
-*
-*	NOW WE NEED TO WALK THROUGH AND PLOT THE HELP
-*	MENU ENTRIES.
-*
-*	A0 = SLEEP
-*	A1 = ROUTINE
-*	A6 = COLOR
-*	A8 = POINTER
-*	A9 = ADDRESS
-*	A10 = SPACING
-*	A11 = FONT
-*	A14 = FLAGS
-*
 NEXT_HELP:
 	MOVE	*A13(HS_PTR),A2,L	  ;GET OUR CURRENT POINTER
 	MOVE	*A2+,A8,L		  ;GET THE CURRENT MESSAGE POINTER
@@ -2693,20 +1617,6 @@ NEXT_HELP:
 
 	JAUC	SUCIDE			  ;OUR WORK IS DONE!
 
-**************************************************************************
-*									 *
-*	   TOP_IN_A10							 *
-*									 *
-*	   THIS IS CALLED BY H_SLAVE TO GET THE UPPER LEFT		 *
-*	   CORNER OF THE BOX IN A10.  A10 HAS THE PASSED PARAMETER.	 *
-*	   A5 HAS THE HEIGHT OF THE BOX.  IF THE TOP HALF OF A10	 *
-*	   IS ZERO, THEN THEN WE WANT THE BOX CENTER AT THE		 *
-*	   A10 LEVEL.  IF THE TOP HALF OF A10 IS NON-ZERO THEN		 *
-*	   A10 WAS PASSED AS THE TOP.					 *
-*									 *
-*	   RETURN A10 AS THE Y FOR THE TOP OF THE HELP BOX.		 *
-*									 *
-**************************************************************************
 TOP_IN_A10:
 	MMTM	SP,A5
 	CMPI	0FFFFH,A10		  ;IS THE TOP HALF ZERO?
@@ -2717,19 +1627,6 @@ TOP_IS_TOP:
 	MMFM	SP,A5
 	RETS
 
-**************************************************************************
-*									 *
-*	   AREUSURE							 *
-*									 *
-*	   THIS IS CALLED TO GET A CONFIRMATION FROM THE USER.		 *
-*	   A8 = PROMPT...THIS WILL APPEAR ABOVE THE "ARE YOU SURE"	 *
-*	   A9 = ROUTINE TO JSRP TO DO THE DESIRED ACTION		 *
-*	   A10 = MESSAGE TO DISPLAY CONFIRMING COMPLETION		 *
-*									 *
-*	   RETURN A0=0 MEANS YES WAS CHOSEN.				 *
-*		  A0 .NE. 0 MEANS NO					 *
-*									 *
-**************************************************************************
 AREUSURE:
 	CALLA	CLR_SCRN	     ;BLANK IT ALL OUT!
 	MOVE	A9,*A13(PDATA),L     ;SAVE ROUTINE
@@ -2775,14 +1672,6 @@ SURE_X:
 	MOVI	2,A0		     ;RETURN FAILURE
 	RETP
 
-**************************************************************************
-*									 *
-*	   SUR_MESS							 *
-*									 *
-*	   THIS PRINTS MESSAGE IN A8 IN THE ARE U SURE BOX		 *
-*	   CONFIRMATION SPOT.						 *
-*									 *
-**************************************************************************
 SUR_MESS:
 	MOVE	A8,-*A12,L
 	MOVI	MESS_CONFIRM,A8
@@ -2804,11 +1693,6 @@ CBOX_COL:
 	MOVI	00B4016AH,A5
 	jruc	STD_BORD	    ;BORDER-IZE THE WHOLE THING.
 
-*----------------------------------------------------------------------------*
-*----------------------------------------------------------------------------*
-*****************************	 MESSAGES    *********************************
-*----------------------------------------------------------------------------*
-*----------------------------------------------------------------------------*
 
 INSTR_Y  EQU	 INST_ULY+5
 INSTR_2Y EQU	 INSTR_Y+10
@@ -2830,16 +1714,6 @@ MESS_DOOR
 	.byte  "INVALID GAME SETTINGS"
 	.BYTE	 0,1		      ;0 = END OF STRING...1 = MORE MESSAGES!
 	.EVEN
-;MESS_OPEN
-;	MESS_MAC  RD7FONT,SPACING20,200,160,ROBO_WHITE,STRCNRM,0
-;	.byte  "OPEN COIN DOOR TO"
-;	.BYTE   0,1		       ;0 = END OF STRING...1 = MORE MESSAGES!
-;	.EVEN
-;MESS_OPEN_2
-;	MESS_MAC  RD7FONT,SPACING20,200,179,ROBO_WHITE,STRCNRM,0
-;	.byte  "RESTORE FACTORY SETTINGS."
-;	.BYTE    0,0
-;	.EVEN
 
 MESS_FAIL
 	MESS_MAC  RD7FONT,SPACING20,200,112,ROBO_RED,STRCNRM,0
@@ -2866,15 +1740,8 @@ RV_Y	EQU	 TM_Y+18
 
 MESS_REV
 	MESS_MAC  RD7FONT,SPACING20,TM_X,RV_Y,ROBO_YELLOW,STRCNRM,0
-*
-*	THIS IS SETUP FOR THE QUESTION BEING ASKED
-*	BY "ARE YOU SURE"
-*
 MESS_SURE
 	MESS_MAC  RD15FONT,SPACING20,200,102,ROBO_LF,STRCNRM,0
-*
-*	THIS IS THE "ARE YOU SURE" PART.
-*
 M_SURE
 	MESS_MAC  RD15FONT,SPACING20,200,128,ROBO_YELLOW,STRCNRM,0
 	.byte   "ARE YOU SURE?"
@@ -2885,11 +1752,6 @@ MESS_CONFIRM
 	 MESS_MAC  RD15FONT,SPACING20,200,115,COLOR_LF,STRCNRM,0
 
 
-**************************************************************************
-*									    			*
-*	OPERATOR MESSAGE ENTRY						 			*
-*									    			*
-**************************************************************************
 OP_LINE_CHAR	equ	PDATA
 OP_LINE_LINE	equ	PDATA+WORD_SIZE
 OP_LETS		equ	OP_LINE_LINE+WORD_SIZE
@@ -3066,23 +1928,9 @@ DOCCLR
 	jrne	DOLOOP
 
 	callr	opmsg_clr
-;	clr	a7
-;	move	a7,*a13(OP_LINE_LINE)
-;	move	a7,*a13(OP_LETS),L
-;	callr	OM_STORECMOS
-;	movk	1,a7
-;	move	a7,*a13(OP_LINE_LINE)
-;	callr	OM_STORECMOS
-;	movk	2,a7
-;	move	a7,*a13(OP_LINE_LINE)
-;	callr	OM_STORECMOS
-;	callr	BLASTMESS
 
 	jruc	DOCCLEAR
 	
-;
-;	CHECK A8 ( BLINE ) AND A10 ( BCHAR ) FOR BOUNDARY STUFF
-;
 DOPROC
 	movi	cursor_snd4,a3
 	calla	SNDSND
@@ -3109,16 +1957,13 @@ doc8
 	jruc	DOLOOP
 
 
-********************************
-* HERE IS WHERE ONE COMES WHEN DONE ENTERING THE MESSAGE -- ALREADY
-* STORED IN CMOS, TOO
 
 DOCEND
 	SLEEPK	2			;GET EVERYBODY CAUGHT UP
 	CALLA	CLR_SCRN		;CLEAR THE SCREEN
 	CALLR	SURE_BOX
 	MOVI	MESS_SUCCESS,A8 	;THIS IS SUCCESS MESSAGE
-lerqsm	JSRP	SUR_MESS		;PRINT THE MESSAGE
+zaitsm	JSRP	SUR_MESS		;PRINT THE MESSAGE
 	jauc	ANY_BUT 		;NOW RETRIEVE ANY BUTTON THEN RETURN
 
 DOCCLEAR
@@ -3126,7 +1971,7 @@ DOCCLEAR
 	CALLA	CLR_SCRN
 	CALLR	SURE_BOX
 	MOVI	MESS_CLEARED,A8
-	jruc	lerqsm
+	jruc	zaitsm
 
 
 MESS_SUCCESS
@@ -3138,19 +1983,14 @@ MESS_CLEARED
 	.even
 
 BLASTMESS:				;GUY ENTERED A WHOLE MESSAGE
-;	CALLA	CMOSUNLOCK
 	calla	ADJ_PAGE
 	clr	a0
 	movi	VALID_CUSTOM,a7
 	calla	WC_WORD
         calla	F_ADC_S			;FIX UP THE CHECKSUM
-;	calla	CMOSLOCK
 	rets
 
 
-*******************************
-* Clear operator message
-* Trashes scratch, A2
 
  SUBR	opmsg_clr
 
@@ -3158,25 +1998,21 @@ BLASTMESS:				;GUY ENTERED A WHOLE MESSAGE
 
 	movi	CUSTOM_MESSAGE,a7
 	movk	CMESS_LINES,a2
-uzmwlp	clr	a0
+jyoilp	clr	a0
 	calla	WC_BYTEI		;Write a null
 	addi	CMESS_LINE_SIZE,a7
-	dsj	a2,uzmwlp
+	dsj	a2,jyoilp
 
 	calla   F_ADC_S			;Refresh checksum
 	jruc	BLASTMESS
 
 
 
-********************************
-* Get joystick and buttons status
-* 0A0H=Status (0-6)
 
 om_getstick
 
 	PUSH	a1
 
-;	move	@SWITCH,a0,L
 	move	@_switch_addr,a0,L
 	move	*a0,a0,W
 	move	@_coin_addr,a1,L
@@ -3191,7 +2027,6 @@ om_getstick
 	andi	00207f00h,a1		;P2 draw/start/stick
 	srl	8,a1
 	or	a1,a0
-;	move	@SWITCH+32,a1
 	move	@_switch2_addr,a1,L
 	move	*a1,a1,W
 	not	a1
@@ -3201,43 +2036,41 @@ om_getstick
 	btst	0,a0			;U
 	jrz	og2
 	movk	1,a0
-	jruc	uzmwx
+	jruc	jyoix
 og2
 	btst	1,a0			;D
 	jrz	og3
 	movk	2,a0
-	jruc	uzmwx
+	jruc	jyoix
 og3
 	btst	2,a0			;L
 	jrz	og4
 	movk	3,a0
-	jruc	uzmwx
+	jruc	jyoix
 og4
 	btst	3,a0			;R
 	jrz	og5
 	movk	4,a0
-	jruc	uzmwx
+	jruc	jyoix
 og5
 	movi	070H,a1
 	and	a0,a1
 	jrz	og6
 	movk	5,a0
-	jruc	uzmwx
+	jruc	jyoix
 og6
 	andi	0ffffff80h,a0		;Any other bits are start buttons
 	jrz	og7
 	movk	6,a0
-	jruc	uzmwx
+	jruc	jyoix
 og7
 	clr	a0
-uzmwx
+jyoix
 	PULL	a1
 	move	a0,a0
 	rets
 
 
-********************************
-* SETUP THINGS FOR A NEW LINE OF TEXT
 
 OM_STARTLINE
 
@@ -3249,8 +2082,6 @@ OM_STARTLINE
 
 	RETS
 
-********************************
-* PLOT OUT A LINE OF TEXT ON THE SCREEN
 
 OMPLOTTEXT
 
@@ -3287,10 +2118,6 @@ NOUNDER
 	RETS
 
 
-*******************************
-* Add the character pointed to by a8/a10
-* A8 =Line
-* A10=Char on line
 
 OMADDCHAR
 	PUSH	a8,a10
@@ -3302,19 +2129,19 @@ OMADDCHAR
 	add	a10,a8			;char offset
 	movb	*a8,a0			;snag the char
 	cmpi	'_',a0
-	jrne	idpp20
+	jrne	kklv20
 
 	move	*a13(OP_LINE_CHAR),a1	;0BacHkspace
-	jrz	idppx
+	jrz	kklvx
 	dec	a1
 	move	a1,*a13(OP_LINE_CHAR)
 	move	a1,a2
 	clr	a0
 	jruc	rubent
 
-idpp20
+kklv20
 	cmpi	'^',a0
-	jrne	idppaddchar
+	jrne	kklvaddchar
 
 	clr	a11
 	callr	OMPLOTTEXT		; GET RID OF THE FLASHING UNDERSCORE
@@ -3330,14 +2157,10 @@ idpp20
 	CALLR	OM_STARTLINE		; INITIALIZE ALL THE FLAGS FOR IT
 	MOVK	1,A11
 	CALLR	OMPLOTTEXT
-	jruc	idppx
+	jruc	kklvx
 
-;	HERE IS JUST ENTER A NORMAL CHARACTER --
-;
-;	A8 = LINE
-;	A10 = CHARACTER
 
-idppaddchar
+kklvaddchar
 
 	MOVE	*A13(OP_LINE_CHAR),A1
 	MOVE	A1,A2
@@ -3356,18 +2179,15 @@ rubent
 	MOVB	A0,*A8			;MAKE SURE ZERO TERMINATED
 	MOVK	1,A11
 	CALLR	OMPLOTTEXT
-;OMACRET
-idppx	MMFM	SP,A8,A10
+kklvx	MMFM	SP,A8,A10
 	RETS
 
 OMADONE					;COME HERE WHEN REALLY DONE
-;	CALLA	CMOSUNLOCK
         CALLA   ADJ_PAGE		;GUY ENTERED A WHOLE MESSAGE
         MOVI    VALID_CUSTOM,A7
         MOVI    VALID_VALUE,A0
         CALLA   WC_WORD
         CALLA   F_ADC_S			;FIX UP THE CHECKSUM
-;	CALLA	CMOSLOCK
 	MMFM	SP,A8,A10
 	MOVI	0FFH,A8			;FLAG DONE WITH EVERYTHING
 	RETS
@@ -3383,11 +2203,8 @@ OMACMAX
 	rets
 
 
-**************************************************************************
-* STORE THE MESSAGE IN CMOS
 
 OM_STORECMOS
-;	CALLA	CMOSUNLOCK
 	CALLA	ADJ_PAGE		;POINT AT ADJUSTMENTS PAGE
 	MOVE	*A13(OP_LINE_LINE),A7
 	MOVI	CMESS_LINE_SIZE,A6
@@ -3408,7 +2225,6 @@ cmos_loop
 	calla	WC_BYTEI		;Write a null
 
 	calla   F_ADC_S			;REFRESH CHECKSUM
-;	CALLA	CMOSLOCK
 
 	rets
 
@@ -3416,11 +2232,6 @@ OMLOC	.LONG	LET_TEXT1, LET_TEXT2, LET_TEXT3
 
 
 
-**************************************************************************
-* BOXCHAR
-* A8 =WHICH LINE (0-3)
-* A10=CHARACTER ON LINE
-* A11=COLOR TO USE ( 0 = BLACK, 1 = LASER FLASH )
 
 BOXCHAR
 	MMTM	SP,A1,A8,A10
@@ -3456,10 +2267,6 @@ BC2
 	RETS
 
 
-*******************************
-* Plot out a line of characters
-* A8 =Table #
-* A10=Which character to highlight
 
 	.bss	char_s	,16
 
@@ -3477,10 +2284,10 @@ OPPLOTLINE
 	
 	sll	16,a9			;Get in the y position
 	addk	LET_START_X,a9
-ondalp
+tfvqlp
 	movb	*a8,a0			;GRAB CHAR NUMBER
 	move	a0,a0	
-	jrz	ondax
+	jrz	tfvqx
 	movb	a0,@char_s
 	PUSH	a8
 	PUSH	a9
@@ -3506,16 +2313,14 @@ opl1	calla	pal_getf
 	PULL	a8
 	addk	8,a8
 	addi	LET_DIST_X,a9
-	jruc	ondalp
+	jruc	tfvqlp
 
-ondax	PULL	a8,a9,a10,a11
+tfvqx	PULL	a8,a9,a10,a11
 	rets
 
 
 OP_MESS
 	MESS_MAC FONT_T,1,200,95,REDPAL,STRCNRM_1,0
-;	.byte	"%c",0
-;	.long	CHAROUT
 	.even
 
 OLTAB	.long	OL1TAB, OL2TAB, OL3TAB, OL4TAB
@@ -3544,8 +2349,6 @@ underscore_s	.byte	"-",0
 	.even
 
 
-*******************************
-* A8=*MESS_MAC
 
  SUBRP	print_multi
 
@@ -3555,7 +2358,7 @@ underscore_s	.byte	"-",0
 	calla	LM_SETUP
 	move	a9,a3		;1st XY
 
-syutlp	PUSH	a8
+paimlp	PUSH	a8
 	move	a2,a8
 	calla	LM_SETUP
 	PULL	a8
@@ -3568,18 +2371,14 @@ syutlp	PUSH	a8
 	movb	*a8,a0
 	addk	8,a8
 	move	a0,a0
-	jrnz	syutlp
+	jrnz	paimlp
 
 	PULL	a2
 	RETP
 
 
 
-;Jamie, I think we need to keep this NBA message the same, or change
-;the embedded code!?!?!????
 
-****************************************************************
-* Secret embedded copyright notice
 
 ASCIIE	.macro	str
 
@@ -3605,7 +2404,6 @@ ASCIIE	.macro	str
 
 
 
-****************************************************************
 
 	.end
 

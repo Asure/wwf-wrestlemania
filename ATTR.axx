@@ -1,17 +1,3 @@
-****************************************************************
-*
-* Software:	?
-* Initiated:	?
-*
-* Modified:	Shawn Liptak 8/6/91  - Hiscore display and entry (Total carnage)
-* 		Shawn Liptak 11/9/91 - Title screen
-* 		Shawn Liptak 2/7/92  - Stripped for basketball
-*		Jason Skiles 12/9/93 - Stripped for WWF
-*
-* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-*
-*.Last mod - 12/9/93 12:35
-****************************************************************
 	.file	"attract.asm"
 	.title	"attract mode"
 	.width	132
@@ -40,8 +26,6 @@
 	.include	"logo.glo"
 	.include	"dip.equ"
 
-******************************************************************************
-* EXTERNAL REFERENCES
 
 	.ref	ADJ_PAGE,BAKMODS,BEATEN_TAB_ENTRIES,BGND_UD1
 	.ref	BLOW_0_TO_1,CLOSE_PROGRESS_SCREEN,CRD_SCRN2
@@ -101,10 +85,7 @@
 	.ref	story_bgnd
 	.ref	hscore_colcyc,hscore_colcyc2
 
-******************************************************************************
-;symbols defined externally
 
-;ram
 
 	BSSX	hisclong	,16	;!0=Show hiscore table longer
 
@@ -113,10 +94,7 @@
 	.bss	cycram		,8*2*16	;Palette cycle mem
 	.bss	cycram2		,7*2*16	;^
 
-;	.bss	team_cnts	,32	;left team cnt, +16=rgt team cnt
-;	.bss	stick		,32	;stick ram for team selection
 
-;	.bss	loop,		16	;
 
 	.bss	TEMP,16
 
@@ -133,8 +111,6 @@
 	.text
 
 
-********************************
-* Attract mode (Process)
 
 
  SUBR	attract_mode
@@ -170,56 +146,11 @@
 
 
 
-;	;temp!
-;#foo	JSRP	DO_HINTS
-;	jruc	#foo
 
 #loop
-* Please, stop messing with this ! If you want it changed, ask me ! - Jake
 	JSRP	show_hstd
-;TEST PURPOSES ONLY
-;	.ref	show_wrestler_end_story
-;	.ref	which_player
-;	.ref	PSTATUS
-;
-;	clr	a14
-;	move	a14,@PSTATUS
-;
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;	movk	1,a14
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;	movk	2,a14
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;	movk	3,a14
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;	movk	4,a14
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;	movk	5,a14
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;	movk	6,a14
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;	movk	8,a14
-;	move	a14,@which_player
-;	JSRP	show_wrestler_end_story
-;
-;END TEST
 
 	JSRP	DCS_LOGO
-;	JSRP	show_sports_logo
 	JSRP	show_gameplay
 	JSRP	creditscreen
 	JSRP	show_title
@@ -251,7 +182,6 @@
 	btst	0,a0
 	jrnz	#loop
 	JSRP	creditscreen
-;	JSRP	show_hstd
 	JSRP	show_time_date
 	
 	MOVE	@AMODE_LOOPS,A0
@@ -288,13 +218,7 @@ aama_message
 	move	a0,@WORLDTLX,L
 	move	a0,@WORLDTLY,L
 
-;	movi	hstd_mod,a0
-;	move	a0,@BAKMODS,L
-;	calla	BGND_UD1		;create objects for background
-;
-;	SLEEPK	2
 	 
-;	calla	display_unblank
 
 
 	movi	blue_grad_pal,a0
@@ -349,54 +273,17 @@ aama_message
 	SLEEPK	2
 	calla	display_unblank
 
-;Explanation - We MUST allow the fade process created above
-;to finish because if someone wacks out below, the fade
-;process is still running and JakeO's code to do his wipe
-;across the screen stuff for the high score table starts running.
-;His code uses the FADERAM area for those screen wipes and if a fader
-;is running, the data in those areas gets changed by the fader process.
-;Unfortunately, some of the data he is using is used as pointers in a
-;memory to memory copy loop and if those values get changed the memory to
-;memory copy goes haywire and starts scribbling all over the place causing
-;a lockup.  NOTE - The errant writes CAN and do occur into the CMOS area.
-;There are 4 ways to solve the problem.
-;
-;   1. Guarentee that the fader is allowed to run to completion.
-;
-;   2. Kill off the fader after wacking out.
-;
-;   3. Use a different area of memory for the screen wipes.
-;
-;   4. Shoot Jake.
-;
-;Not wanting to go to jail I chose option 3 cause we got plenty of memory.
-;
 	SLEEPK	20
 
 	movi	4*TSEC,a10
 	JSRP	wait_on_butn
 
-;	clr	a10
-;	movk	16,a11
-;	CREATE	FADE_PID,fade_down
-;
-;	SLEEP	TSEC
-;
-;	calla	display_blank
 
 	RETP
 
-;	movi	CLSNEUT|TYPTEXT|SUBTXT,a0
-;	calla	obj_del1c
 
 
-;	calla	display_on
-;	calla	view_page_0
-;	movi	040H*6,a10
-;	JSRP	fadein_jsrp
-;	jruc	amode_fade_retp
 
-;	RETP
 
 #ln1	.string	"AAMA PARENTAL ADVISORY",0
 #ln2	.string	"LIFE-LIKE VIOLENCE",0
@@ -441,52 +328,15 @@ loop2	movi	000020190H,a2
 
 	RETP
 
-**************************************************************************
-*                                                                        *
-* dman - manual dma, all regs must be setup upon calling		 		*
-* a1 = [constant color,palette]						 			*
-* a2 = size [h,w]							 			*
-* a3 = destination [y,x]						 				*
-* a4 = starting address							 			*
-* a5 = [offset,control]							 			*
-*                                                                        *
-**************************************************************************
 dman
 
-*manual dma (setup your own regs)
-*inputs:
-*a1: constant color:palette
-*a2: vsize:hsize
-*a3: destination y:x
-*a4: sag
-*a5: offset:control
 qdman:
 	MMTM	sp,a2,a4,a13
 	jruc	qdma1
 
 
-**************************************************************************
-*												*
-*		   dma queue support routines						*
-*												*
-**************************************************************************
-*
-* qdma puts image on dma q
-* inputs:
-* a1: constant color:palette
-* a3: destination y:x
-* a5: offset:control
-* a14: address of image header
-* gets: a2=h/w; a4=sag
-*
-;qdma
-;	mmtm	sp,a2,a4,a13
-;	move	*a14,a2,l		;get vsize:hsize
-;	move	*a14(isag),a4,l		;get sag
 
 qdma1
-;	movk	1,a13
-;	move	a13,@qdmaflg,w		;q being modified
 
 	.ref	DMAQCUR,DMAQ
 
@@ -497,13 +347,10 @@ qdma1
 	mmtm	a13,a1,a2,a3,a4,a5
 	move	a13,@DMAQCUR,L
 
-;	clr	a13
-;	move	a13,@qdmaflg,w
 
 qdmax	MMFM	sp,a2,a4,a13
 	rets
 
-;*************************************************************************
 
 blue_grad_pal
 	.word	32
@@ -542,28 +389,9 @@ blue_grad_pal
 	.word	1
 	.word	0
 
-************  clear screen routine  *********************
-
-;clr_scrn
-;	clr	a0
-;	mmtm	sp,a1,a2,a3
-;	move	@displayon,a3,w
-;	clr	a1
-;	move	a1,@displayon,w
-;;	callr	dmaqwait			;wait on dma
-;	clr	a1
-;	move	a1,@cmapsel,w			;select color map 0
-;	movi	screen,a1,l
-;	movi	((scrne-2000h)-screen)/32,a2,l
-;clrlp	move	a0,*a1+,l
-;	dsjs	a2,clrlp
-;	move	a3,@displayon,w
-;	mmfm	sp,a1,a2,a3
-;	rets
 
 
-****************************************************************
-* show_gameplay
+
 
  SUBRP	show_gameplay
 
@@ -577,13 +405,13 @@ blue_grad_pal
 	movk	7,a0
 	calla	RNDRNG0
 	cmpi	7,a0
-	jrnz	cacbug
+	jrnz	loocbug
 	inc	a0
 
-cacbug	move	a0,@index1
+loocbug	move	a0,@index1
 
 	;initialize NUM_OPPS and CURRENT_LADDER
-	;choose at random a battle between cac2 and cac6 on the ladder
+	;choose at random a battle between looc2 and looc6 on the ladder
 
 	clr	a14
 	move	a14,@belt_type
@@ -605,7 +433,6 @@ cacbug	move	a0,@index1
 	JSRP	CLOSE_PROGRESS_SCREEN
 	calla	SPECIAL_WIPEOUT
 
-;Eventually, we should show just quick clips of cool gameplay.
 	movk	1,a0
 	move	a0,@SHOW_CRD_FLAG
 
@@ -620,34 +447,28 @@ cacbug	move	a0,@index1
 	movi	10*TSEC,a10
 	JSRP	wait_on_butn
 
-;Freeze action in interesting spots...
-;knockout processes
 	movk	1,a0
 	move	a0,@HALT
 
-;Stop wrestler procs
-;Stop sweat
-;Allow shadows to still shake
 
 	CREATE0	DO_SET_IMAGES
 
 	movi	ACTIVE,a3,L
 
-caclp	move	*a3,a3,L	;Get next
-	jrz	cacx		;End?
+looclp	move	*a3,a3,L	;Get next
+	jrz	loocx		;End?
 	move	*a3(PWAKE),a0,L
 	.ref	DO_SET_IMAGES
 	cmpi	DO_SET_IMAGES,a0
-	jrz	caclp
+	jrz	looclp
 
 	move	*a3(PTIME),a14	;Add sleep
 	addi	3*60,a14
 	move	a14,*a3(PTIME)
-	jruc	caclp
-cacx
+	jruc	looclp
+loocx
 	SLEEP	60
 
-;fade down
 	clr	a10
 	movk	16,a11
 	CREATE	FADE_PID,fade_down
@@ -675,8 +496,6 @@ TURN_OFF_SOUNDS
 SOUNDS_SHOULD_BE_ON
 	RETS
 
-****************************************************************
-* Show an operator message if one has been entered
 
 	STRUCTPD
 	WORD	som_string
@@ -687,29 +506,29 @@ SOUNDS_SHOULD_BE_ON
 	calla	ADJ_PAGE
 	movk	CMESS_LINES,a2		;0CHheck for a message
 	movi	CUSTOM_MESSAGE,a7
-xxgcmlp
+ibqccmlp
 	calla	RC_BYTEI
-	jrnz	xxgmsg
+	jrnz	ibqcmsg
 	addi	CMESS_LINE_SIZE,a7
-	dsj	a2,xxgcmlp
-	jruc	xxgx
-xxgmsg
+	dsj	a2,ibqccmlp
+	jruc	ibqcx
+ibqcmsg
 	JSRP	GENERIC_DISPLAY
 	movk	CMESS_LINES,a2		;0CHheck for a message
 	movi	CUSTOM_MESSAGE,a7
 	movi	[50,200],a9
-xxgprtlp
+ibqcprtlp
 	PUSHP	a2,a7
 
 	calla	ADJ_PAGE
 
 	move	a13,a2
 	addi	som_string,a2
-xxggetlp	calla	RC_BYTEI
+ibqcgetlp	calla	RC_BYTEI
 	movb	a0,*a2
 	addk	8,a2
 	move	a0,a0
-	jrnz	xxggetlp
+	jrnz	ibqcgetlp
 
 
 	movi	GOLD,a0
@@ -727,24 +546,21 @@ xxggetlp	calla	RC_BYTEI
 
 	movi	OBJLST,a14
 
-xxgolp	move	*a14,a14,L	;A14=*Next
-	jrz	xxgoend
+ibqcolp	move	*a14,a14,L	;A14=*Next
+	jrz	ibqcoend
 	move	*a14(ODATA_p),a0,L
-	jrnz	xxgolp
+	jrnz	ibqcolp
 	movi	[0320H,0320H],a1
 	move	a1,*a14(ODATA_p),L
-	jruc	xxgolp
-xxgoend
+	jruc	ibqcolp
+ibqcoend
 
-;	PUSHP	a6
-;	SLEEPK	30
-;	PULLP	a6
 	PULLP	a2,a7
-xxgnxt
+ibqcnxt
 	addi	[45,0],a9
 
 	addi	CMESS_LINE_SIZE,a7
-	dsj	a2,xxgprtlp
+	dsj	a2,ibqcprtlp
 
 	SLEEP	2*60
 
@@ -755,9 +571,8 @@ xxgnxt
 
 	calla	WIPEOUT
 
-xxgx	RETP
+ibqcx	RETP
 
-*****************************************************************************
 
 
 	.def	osgfont_t
@@ -781,9 +596,6 @@ osgfont_t
 	.long	OSGEMD_BAK,OSGEMD_SPC,OSGEMD_SPC		;_`
 
 
-*****************************************************************************
-* Show credits screen
-*
 
  SUBRP	creditscreen
 
@@ -795,24 +607,16 @@ osgfont_t
 	move	a0,*a13(PROCID)
 
 	;fade down
-;	clr	a10
-;	movk	16,a11
-;	CREATE0	fade_down
-;
-;	SLEEP	TSEC
 
 	RETP
 
 
-*****************************************************************************
-* Show time and date
-*
 
  SUBRP	show_time_date
 
 	calla	READ_DIP
 	btst	DPTDON_B,a0
-	jrz	tewstd_exit
+	jrz	bwkfstd_exit
 
 	move	@_clk_rd,a8,L		;Save current auto update state
 	move	a8,@_auto_update_save,L
@@ -824,268 +628,266 @@ osgfont_t
 
 	JSRP	GENERIC_DISPLAY
 
-	movi	tewdate_time_prompt,a2
+	movi	bwkfdate_time_prompt,a2
 	calla	print_message
 	
-	movi	tewday_of_week_setup,a2
+	movi	bwkfday_of_week_setup,a2
 	calla	setup_message
 	move	@_tday,a4
 	cmpi	1,a4
-	jrlt	tewbad_day
+	jrlt	bwkfbad_day
 	cmpi	8,a4
-	jrlt	tewdo_day
-tewbad_day
+	jrlt	bwkfdo_day
+bwkfbad_day
 	movk	1,a4
-tewdo_day
+bwkfdo_day
 	subk	1,a4
 	sll	5,a4
-	addi	tewday_of_week_table,a4
+	addi	bwkfday_of_week_table,a4
 	move	*a4,a4,L
 	calla	print_string_C2
 	
 
 	move	@_tmonth,a4
 	cmpi	1,a4
-	jrlt	tewbad_month
+	jrlt	bwkfbad_month
 	cmpi	13,a4
-	jrlt	tewdo_month
-tewbad_month
+	jrlt	bwkfdo_month
+bwkfbad_month
 	movk	1,a4
-tewdo_month
+bwkfdo_month
 	subk	1,a4
 	sll	5,a4
-	addi	tewmonth_table,a4
+	addi	bwkfmonth_table,a4
 	move	*a4,a4,L
 	calla	copy_rom_string
 
 	move	@_tdate,a0
 	cmpi	1,a0
-	jrlt	tewbad_date
+	jrlt	bwkfbad_date
 	cmpi	32,a0
-	jrlt	tewdo_date
-tewbad_date
+	jrlt	bwkfdo_date
+bwkfbad_date
 	movk	1,a0
-tewdo_date
+bwkfdo_date
 	movi	31,a1
 	calla	dec_to_asc
 	calla	concat_string
 
-	movi	tewd_sep,a4
+	movi	bwkfd_sep,a4
 	calla	concat_rom_string
 
 	move	@_tyear,a0
-	jrn	tewbad_year
+	jrn	bwkfbad_year
 	cmpi	99,a0
-	jrlt	tewdo_year
-tewbad_year
+	jrlt	bwkfdo_year
+bwkfbad_year
 	clr	a0
-tewdo_year
+bwkfdo_year
 	cmpi	9,a0
-	jrgt	tewyear_gt_9
-	movi	tewzero_year,a4
+	jrgt	bwkfyear_gt_9
+	movi	bwkfzero_year,a4
 	PUSHP	a0
 	calla	concat_rom_string
 	PULLP	a0
-tewyear_gt_9
+bwkfyear_gt_9
 	movi	99,a1
 	calla	dec_to_asc
 	calla	concat_string
 
-	movi	tewdate_setup,a2
+	movi	bwkfdate_setup,a2
 	calla	setup_message
 	calla	print_string_C
 
 	move	@_thours,a0
-	jrn	tewbad_hour
+	jrn	bwkfbad_hour
 	cmpi	24,a0
-	jrlt	tewdo_hour
-tewbad_hour
+	jrlt	bwkfdo_hour
+bwkfbad_hour
 	clr	a0
-tewdo_hour
+bwkfdo_hour
 	movi	12,a1
 	modu	a1,a0
-	jrnz	tewnot_mid_or_noon
+	jrnz	bwkfnot_mid_or_noon
 	movk	12,a0
-tewnot_mid_or_noon
+bwkfnot_mid_or_noon
 	movi	13,a1
 	calla	dec_to_asc
 	calla	copy_string
 
-	movi	tewt_sep,a4
+	movi	bwkft_sep,a4
 	calla	concat_rom_string
 
 	move	@_tminutes,a0
-	jrn	tewbad_minute
+	jrn	bwkfbad_minute
 	cmpi	60,a0
-	jrlt	tewdo_minute
-tewbad_minute
+	jrlt	bwkfdo_minute
+bwkfbad_minute
 	clr	a0
-tewdo_minute
+bwkfdo_minute
 	cmpi	9,a0
-	jrgt	tewmin_gt_9
-	movi	tewzero_year,a4
+	jrgt	bwkfmin_gt_9
+	movi	bwkfzero_year,a4
 	PUSHP	a0
 	calla	concat_rom_string
 	PULLP	a0
-tewmin_gt_9
+bwkfmin_gt_9
 	movi	60,a1
 	calla	dec_to_asc
 	calla	concat_string
 
-	movi	tewtime_setup,a2
+	movi	bwkftime_setup,a2
 	calla	setup_message
 	calla	print_string_C
 
 
-	movi	tewits_time_to_message,a2
+	movi	bwkfits_time_to_message,a2
 	calla	print_message
 
-	movi	tewwrestlemania_message,a2
+	movi	bwkfwrestlemania_message,a2
 	calla	print_message
 
 	SLEEPK	25		; Min time to display
 
 	movi	TSEC*5,a2
-tewwait_loop
+bwkfwait_loop
 	PUSHP	a2
 	SLEEPK	1
 	PULLP	a2
 	calla	get_all_buttons_cur2
-	jrnz	tewtime_date_done
-	dsjs	a2,tewwait_loop
-tewtime_date_done
-;	move	@_auto_update_save,a8,L	;Restore Auto Update state
+	jrnz	bwkftime_date_done
+	dsjs	a2,bwkfwait_loop
+bwkftime_date_done
 	clr	a8
 	not	a8
 	move	a8,@_clk_rd,L
 
-tewstd_exit
+bwkfstd_exit
 	RETP
 
-tewdate_time_prompt
+bwkfdate_time_prompt
 	JAM_STR	ogmd10_ascii,10,0,200,40,SGMD8GLD,print_string_C2
 	.string	"THE DATE AND TIME IS...",0
 	.even
 
-tewits_time_to_message
+bwkfits_time_to_message
 	JAM_STR	ogmd10_ascii,10,0,200,150,SGMD8GLD,print_string_C2
 	.string	"THAT MEANS IT'S TIME TO PLAY...",0
 	.even
 
-tewwrestlemania_message
+bwkfwrestlemania_message
 	JAM_STR	wgsf24_ascii,10,0,200,180,WGFS_W_P,print_string_C2
 	.string	"WRESTLEMANIA",0
 	.even
 
-tewday_of_week_setup
+bwkfday_of_week_setup
 	JAM_STR	wsf14_ascii,10,0,200,72,WSF_R_P,print_string_C2
 	.even
 
-tewdate_setup
+bwkfdate_setup
 	JAM_STR	wsf14_ascii,10,0,200,92,WSF_R_P,print_string_C2
 	.even
 
-tewtime_setup
+bwkftime_setup
 	JAM_STR	wsf14_ascii,10,0,200,112,WSF_R_P,print_string_C2
 	.even
 
-tewd_sep
+bwkfd_sep
 	.string	", 19",0
 	.even
 
-tewt_sep
+bwkft_sep
 	.string	":",0
 	.even
 
-tewzero_year
+bwkfzero_year
 	.string	"0",0
 	.even
 
-tewmonday_str
+bwkfmonday_str
 	.string	"MONDAY",0
 	.even
-tewtuesday_str
+bwkftuesday_str
 	.string	"TUESDAY",0
 	.even
-tewwednesday_str
+bwkfwednesday_str
 	.string	"WEDNESDAY",0
 	.even
-tewthursday_str
+bwkfthursday_str
 	.string	"THURSDAY",0
 	.even
-tewfriday_str
+bwkffriday_str
 	.string	"FRIDAY",0
 	.even
-tewsaturday_str
+bwkfsaturday_str
 	.string	"SATURDAY",0
 	.even
-tewsunday_str
+bwkfsunday_str
 	.string	"SUNDAY",0
 	.even
 
-tewjanuary_str
+bwkfjanuary_str
 	.string	"JANUARY ",0
 	.even
-tewfebruary_str
+bwkffebruary_str
 	.string	"FEBRUARY ",0
 	.even
-tewmarch_str
+bwkfmarch_str
 	.string	"MARCH ",0
 	.even
-tewapril_str
+bwkfapril_str
 	.string	"APRIL ",0
 	.even
-tewmay_str
+bwkfmay_str
 	.string	"MAY ",0
 	.even
-tewjune_str
+bwkfjune_str
 	.string	"JUNE ",0
 	.even
-tewjuly_str
+bwkfjuly_str
 	.string	"JULY ",0
 	.even
-tewaugust_str
+bwkfaugust_str
 	.string	"AUGUST ",0
 	.even
-tewseptember_str
+bwkfseptember_str
 	.string	"SEPTEMBER ",0
 	.even
-tewoctober_str
+bwkfoctober_str
 	.string	"OCTOBER ",0
 	.even
-tewnovember_str
+bwkfnovember_str
 	.string	"NOVEMBER ",0
 	.even
-tewdecember_str
+bwkfdecember_str
 	.string	"DECEMBER ",0
 	.even
 
-tewday_of_week_table
-	.long	tewsunday_str
-	.long	tewmonday_str
-	.long	tewtuesday_str
-	.long	tewwednesday_str
-	.long	tewthursday_str
-	.long	tewfriday_str
-	.long	tewsaturday_str
+bwkfday_of_week_table
+	.long	bwkfsunday_str
+	.long	bwkfmonday_str
+	.long	bwkftuesday_str
+	.long	bwkfwednesday_str
+	.long	bwkfthursday_str
+	.long	bwkffriday_str
+	.long	bwkfsaturday_str
 
-tewmonth_table
-	.long	tewjanuary_str
-	.long	tewfebruary_str
-	.long	tewmarch_str
-	.long	tewapril_str
-	.long	tewmay_str
-	.long	tewjune_str
-	.long	tewjuly_str
-	.long	tewaugust_str
-	.long	tewseptember_str
-	.long	tewoctober_str
-	.long	tewnovember_str
-	.long	tewdecember_str
+bwkfmonth_table
+	.long	bwkfjanuary_str
+	.long	bwkffebruary_str
+	.long	bwkfmarch_str
+	.long	bwkfapril_str
+	.long	bwkfmay_str
+	.long	bwkfjune_str
+	.long	bwkfjuly_str
+	.long	bwkfaugust_str
+	.long	bwkfseptember_str
+	.long	bwkfoctober_str
+	.long	bwkfnovember_str
+	.long	bwkfdecember_str
 
 
 
-*****************************************************************************
 
  SUBRP	show_copyright
 
@@ -1110,63 +912,63 @@ tewmonth_table
 
 	clr	a0
 	movi	[01111H,0000],a6		;pal 0, color 17
-	movi	dblln1,a8
+	movi	bzmdln1,a8
 	movi	[50+60,200],a9
  	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln2,a8
+	movi	bzmdln2,a8
 	movi	[62+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln3,a8
+	movi	bzmdln3,a8
 	movi	[74+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln4,a8
+	movi	bzmdln4,a8
 	movi	[86+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln5,a8
+	movi	bzmdln5,a8
 	movi	[98+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln6,a8
+	movi	bzmdln6,a8
 	movi	[110+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln7,a8
+	movi	bzmdln7,a8
 	movi	[122+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln8,a8
+	movi	bzmdln8,a8
 	movi	[134+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln9,a8
+	movi	bzmdln9,a8
 	movi	[146+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
@@ -1203,70 +1005,70 @@ tewmonth_table
 
 	clr	a0
 	movi	[01111H,0000],a6		;pal 0, color 17
-	movi	dblln10,a8
+	movi	bzmdln10,a8
 	movi	[50+60,200],a9
  	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln11,a8
+	movi	bzmdln11,a8
 	movi	[62+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln12,a8
+	movi	bzmdln12,a8
 	movi	[74+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln13,a8
+	movi	bzmdln13,a8
 	movi	[86+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln14,a8
+	movi	bzmdln14,a8
 	movi	[98+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln15,a8
+	movi	bzmdln15,a8
 	movi	[110+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln16,a8
+	movi	bzmdln16,a8
 	movi	[122+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln17,a8
+	movi	bzmdln17,a8
 	movi	[134+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln18,a8
+	movi	bzmdln18,a8
 	movi	[146+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
 	JSRP	STRCNRMO_2
 
 	clr	a0
-	movi	dblln19,a8
+	movi	bzmdln19,a8
 	movi	[158+60,200],a9
 	movk	1,a10
 	movi	RD7FONT,a11
@@ -1279,36 +1081,32 @@ tewmonth_table
 
 	RETP
 
-dblln1	.string	"VIDEO GAME SOFTWARE DESIGNED AND DEVELOPED",0
-dblln2	.string	"BY MIDWAY MANUFACTURING COMPANY",0
-dblln3	.string	"(C) 1995 ASSIGNED TO ACCLAIM ENTERTAINMENT, INC.",0
-dblln4	.string	"[ (C) 1995 TITANSPORTS, INC. ]",0
-dblln5	.string	"ALL DISTINCTIVE NAMES AND CHARACTER LIKENESSES",0
-dblln6	.string	"USED HEREIN ARE TRADEMARKS OF TITANSPORTS, INC.",0
-dblln7	.string	"SUBLICENSED BY MIDWAY MANUFACTURING COMPANY",0
-dblln8	.string	"FROM ACCLAIM ENTERTAINMENT INC.",0
-dblln9	.string	"ALL RIGHTS RESERVED.",0
+bzmdln1	.string	"VIDEO GAME SOFTWARE DESIGNED AND DEVELOPED",0
+bzmdln2	.string	"BY MIDWAY MANUFACTURING COMPANY",0
+bzmdln3	.string	"(C) 1995 ASSIGNED TO ACCLAIM ENTERTAINMENT, INC.",0
+bzmdln4	.string	"[ (C) 1995 TITANSPORTS, INC. ]",0
+bzmdln5	.string	"ALL DISTINCTIVE NAMES AND CHARACTER LIKENESSES",0
+bzmdln6	.string	"USED HEREIN ARE TRADEMARKS OF TITANSPORTS, INC.",0
+bzmdln7	.string	"SUBLICENSED BY MIDWAY MANUFACTURING COMPANY",0
+bzmdln8	.string	"FROM ACCLAIM ENTERTAINMENT INC.",0
+bzmdln9	.string	"ALL RIGHTS RESERVED.",0
 
-dblln10	.string	"'WRESTLEMANIA'",0
-dblln11	.string	"COMPOSED/PERFORMED BY MICHAEL STOCK,",0
-dblln12	.string	"PETER WATERMAN, JAMES HART & J.J. MAGUIRE",0
-dblln13	.string	"COURTESY OF TITANSPORTS INC.  USED BY PERMISSION -",0
-dblln14	.string	"ALL RIGHTS RESERVED",0
-dblln15	.string	"'WRESTLEMANIA' BY WWF SUPERSTARS. (P) 1993  THE",0
-dblln16	.string	"COPYRIGHT IN THIS SOUND RECORDING IS OWNED BY",0
-dblln17	.string	"BMG EURODISC LIMITED AND IS USED BY PERMISSION.",0
-dblln18	.string	"COMPOSED BY STOCK/WATERMAN/WWF AND PUBLISHED BY",0
-dblln19	.string	"BMG MUSIC PUBLISHING LTD./ALL BOYS MUSIC LTD.",0
+bzmdln10	.string	"'WRESTLEMANIA'",0
+bzmdln11	.string	"COMPOSED/PERFORMED BY MICHAEL STOCK,",0
+bzmdln12	.string	"PETER WATERMAN, JAMES HART & J.J. MAGUIRE",0
+bzmdln13	.string	"COURTESY OF TITANSPORTS INC.  USED BY PERMISSION -",0
+bzmdln14	.string	"ALL RIGHTS RESERVED",0
+bzmdln15	.string	"'WRESTLEMANIA' BY WWF SUPERSTARS. (P) 1993  THE",0
+bzmdln16	.string	"COPYRIGHT IN THIS SOUND RECORDING IS OWNED BY",0
+bzmdln17	.string	"BMG EURODISC LIMITED AND IS USED BY PERMISSION.",0
+bzmdln18	.string	"COMPOSED BY STOCK/WATERMAN/WWF AND PUBLISHED BY",0
+bzmdln19	.string	"BMG MUSIC PUBLISHING LTD./ALL BOYS MUSIC LTD.",0
 	.EVEN
 
 
-********************************************************
-*
-* Print general tips
-*
  SUBRP	print_gen_tips
 
-	movi	ubkgen_tip_mes,a2
+	movi	xlongen_tip_mes,a2
 	calla	print_message
 
 	MOVI	[10,0],A0
@@ -1334,80 +1132,75 @@ dblln19	.string	"BMG MUSIC PUBLISHING LTD./ALL BOYS MUSIC LTD.",0
 	calla	BEGINOBJ
 	CREATE	FLASH_PID,JUDDER_SHADOW
 
-	movi	ubkgen_tip_table,a1
+	movi	xlongen_tip_table,a1
 	movi	60,a3
-ubksgt_loop
+xlonsgt_loop
 	move	*a1+,a4,L
-	jrz	ubkdone
+	jrz	xlondone
 	PUSHP	a1,a3
 	calla	copy_rom_string
-	movi	ubkgt_line_setup,a2
+	movi	xlongt_line_setup,a2
 	calla	setup_message
 	move	a3,@mess_cursy
 	calla	print_string_C
 	PULLP	a1,a3
 	addk	15,a3
-	jruc	ubksgt_loop
+	jruc	xlonsgt_loop
 
-ubkdone
+xlondone
 	calla	hscore_colcyc
-;	calla	hscore_colcyc2
 
 	RETP
 
-ubkgt_line_setup
+xlongt_line_setup
 	JAM_STR	ogmd10_ascii,6,0,200,90,SGMD8YEL,print_string
 	.even
 
-ubkgen_tip_mes
+xlongen_tip_mes
 	JAM_STR	osgemd_ascii,10,0,200,10,BLUE,print_string_C2
 	.byte	"TONS O' TIPS",0,0
 	.even
 
-ubkgen_tip1
+xlongen_tip1
 	.string	"PUT YOUR OPPONENT INTO A HEAD HOLD",0
 	.even
-ubkgen_tip1a
+xlongen_tip1a
 	.string	"USING TOWARD-TOWARD-POWERPUNCH.",0
 	.even
-ubkgen_tip2
+xlongen_tip2
 	.string	"FLING YOUR OPPONENT TO THE ROPES",0
 	.even
-ubkgen_tip2a
+xlongen_tip2a
 	.string	"USING AWAY-AWAY-POWERPUNCH.",0
 	.even
-ubkgen_tip3
+xlongen_tip3
 	.string	"WHEN IN CLOSE TO YOUR OPPONENT",0
 	.even
-ubkgen_tip3a
+xlongen_tip3a
 	.string	"USE AWAY-AWAY-PUNCH TO HIP TOSS HIM.",0
 	.even
-ubkgen_tip4
+xlongen_tip4
 	.string	"WHEN AN OPPONENT IS RUNNING AT YOU",0
 	.even
-ubkgen_tip4a
+xlongen_tip4a
 	.string	"USE POWERPUNCH & AWAY TO FLING HIM.",0
 	.even
 
-ubkgen_tip_table
-	.long	ubkgen_tip1
-	.long	ubkgen_tip1a
+xlongen_tip_table
+	.long	xlongen_tip1
+	.long	xlongen_tip1a
 	.long	blank
-	.long	ubkgen_tip2
-	.long	ubkgen_tip2a
+	.long	xlongen_tip2
+	.long	xlongen_tip2a
 	.long	blank
-	.long	ubkgen_tip3
-	.long	ubkgen_tip3a
+	.long	xlongen_tip3
+	.long	xlongen_tip3a
 	.long	blank
-	.long	ubkgen_tip4
-	.long	ubkgen_tip4a
+	.long	xlongen_tip4
+	.long	xlongen_tip4a
 	.long	0
 
 
-********************************************************
-*
-* Show General Gameplay tips
-*
  SUBRP	show_gen_tips
 
 	movi	hstd_mod,a0
@@ -1430,10 +1223,6 @@ ubkgen_tip_table
 
 	RETP
 
-*****************************************************************************
-*
-* Show high score tables
-*
 
  SUBRP	show_hstd
 
@@ -1520,7 +1309,6 @@ JUST_WAIT_I
 	NOT	A1
 	CALLA	KILALL
 
-*********************************************************************************
 	movi	hstd_mod,a0
 	CALLA	SET_UP_PIXEL_WIPE
 
@@ -1602,7 +1390,6 @@ JUST_WAIT
 	NOT	A1
 	CALLA	KILALL
 
-***********************
 	movi	hstd_mod,a0
 	CALLA	SET_UP_PIXEL_WIPE
 
@@ -1618,7 +1405,6 @@ JUST_WAIT
 	movi	5*TSEC,a10
 	JSRP	wait_on_butn
 
-***********************
 	movi	hstd_mod,a0
 	CALLA	SET_UP_PIXEL_WIPE
 
@@ -1691,13 +1477,12 @@ rule_str
 	move	a0,@WORLDTLY,L
 
 
-;Turn on background module
-	MOVI	izslogo_mod,A0
+	MOVI	nzjulogo_mod,A0
 	move	a0,@BAKMODS,L
 	calla	BGND_UD1		;create objects for background
 
 
-	movi	izsgen_tip_mes,a2
+	movi	nzjugen_tip_mes,a2
 	calla	print_message
 
 	SLEEPK	1
@@ -1710,20 +1495,15 @@ rule_str
 
 	calla	display_unblank
 
-;	SLEEPK	32
-;	CREATE	WATER_PID,MOVE_BACK_OFF_SCREEN
 
-;Turn some stuff on
 	CREATE	BALL_PID,DISPATCH
 
 	SLEEPK	32
 	calla	hscore_colcyc
 
-;Wait for 8 more seconds
-izsloop	movi	118*TSEC,a10
+nzjuloop	movi	118*TSEC,a10
 	JSRP	wait_on_butn
-	jruc	izsloop
-;Timed out or hit a button
+	jruc	nzjuloop
 
 
 	movi	BALL_PID,a0
@@ -1742,17 +1522,16 @@ BALL_ID	 .equ	2			;IMG ID
 
 	movi	32,a9			;100 balls
 
-izslpx	CREATE	BALL_PID,ONE_BALL
+nzjulpx	CREATE	BALL_PID,ONE_BALL
 	SLEEPK	5
 
-	dsjs	a9,izslpx
+	dsjs	a9,nzjulpx
 
 	DIE
 
 	.ref	PCNT
 
  SUBRP	ONE_BALL
-;Turn on 1 ball at center of screen, random vels
 
 	movi	80000h,a0
 	calla	RNDRNG0			;# between 0 and a0
@@ -1775,30 +1554,29 @@ izslpx	CREATE	BALL_PID,ONE_BALL
 
 
 	calla	BEGINOBJW		;Begin obj with world added in
-;a8=obj pointer
 
 
-izslp	SLEEPK	1
+nzjulp	SLEEPK	1
 
 	move	*a8(OXVEL),a1,L
 	move	*a8(OXPOS),a0
 	cmpi	400,a0
-	jrlo	izsxok
+	jrlo	nzjuxok
 	neg	a1
 	move	a1,*a8(OXVEL),L
 	SLEEPK	2
-izsxok
+nzjuxok
 	move	*a8(OYVEL),a1,L
 	move	*a8(OYPOS),a0
 	cmpi	255,a0
-	jrlo	izsyok
+	jrlo	nzjuyok
 	neg	a1
 	move	a1,*a8(OYVEL),L
 	SLEEPK	2
-izsyok
-	jruc	izslp
+nzjuyok
+	jruc	nzjulp
 
-izsgen_tip_mes
+nzjugen_tip_mes
 	JAM_STR	osgemd_ascii,10,0,200,20,BLUE,print_string_C2
 	.byte	"WRESTLEMANIA LITE!",0,0
 	.even
@@ -1840,7 +1618,7 @@ LOGO_CREATLOOP
 	jrnz	LOGO_CREATLOOP
 	RETS
 
-izslogo_mod
+nzjulogo_mod
 	.long	SPORTBKBMOD
 	.word	-400-(400*0),400*0
 	.long	SPORTBKBMOD
@@ -1876,66 +1654,8 @@ LOGO_LIST
 	.LONG	0
 
 
-;MOVE_BACK_OFF_SCREEN
-;
-;	MOVE	@WORLDTLX,A0,L
-;	SUBI	[2,0],A0
-;	MOVE	A0,@WORLDTLX,L
-;
-;	MOVE	@WORLDTLY,A0,L
-;	ADDI	[2,0],A0
-;	MOVE	A0,@WORLDTLY,L
-;
-;	CALLA	BGND_UD1
-;
-;	SLOOP	1,MOVE_BACK_OFF_SCREEN
-;
 
-; SUBRP	show_big_wwf_title
-;
-;	calla	display_blank
-;	calla	WIPEOUT			;CLEAN SYSTEM OUT
-;
-;	clr	a0
-;	move	a0,@HALT
-;	move	a0,@dtype		;2d mode
-;	move	a0,@IRQSKYE
-;
-;	movk	1,a0			;page flipping on
-;	move	a0,@dpageflip
-;
-;	SLEEPK	2
-;
-;	movi	SCRNEND,a0		;[256,405]
-;	move	a0,@SCRNLR,L
-;
-;	clr	a0
-;	move	a0,@WORLDTLX,L
-;	move	a0,@WORLDTLY,L
-;
-;	movi	izsbig_wwf_mod,a0
-;	move	a0,@BAKMODS,L
-;	calla	BGND_UD1		;create objects for background
-;
-;	SLEEPK	2
-;
-;	calla	display_unblank
-;
-;	SLEEP	TSEC/2
-;	movi	10*TSEC,a10
-;	JSRP	wait_on_butn
-;
-;	retp
-;
-;izsbig_wwf_mod
-;	.long	bigwwfBMOD
-;	.word	0,0
-;	.long	0
 
-*****************************************************************************
-*
-* Show lava title page
-*
 
  SUBRP	show_title
 
@@ -1959,7 +1679,7 @@ LOGO_LIST
 	move	a0,@WORLDTLX,L
 	move	a0,@WORLDTLY,L
 
-	movi	iortitle_mod,a0
+	movi	ognqtitle_mod,a0
 	move	a0,@BAKMODS,L
 	calla	BGND_UD1		;create objects for background
 
@@ -1968,7 +1688,7 @@ LOGO_LIST
 	calla	display_unblank
 
 
-	CREATE	CYCPID,iorcycle_lava
+	CREATE	CYCPID,ognqcycle_lava
 
 
 	MOVI	[102,7],A8
@@ -1994,7 +1714,7 @@ LOGO_LIST
 
  SUBRP	show_title2
 
-	CREATE	CYCPID,iorcycle_lava
+	CREATE	CYCPID,ognqcycle_lava
 
 	SLEEP	TSEC/2
 	movi	8*TSEC,a10
@@ -2003,7 +1723,6 @@ LOGO_LIST
 	movi	CYCPID,a0
 	calla	KIL1C
 
-;fade down
 	clr	a10
 	movk	16,a11
 	CREATE	FADE_PID,fade_down
@@ -2014,40 +1733,39 @@ LOGO_LIST
 
 	RETP
 
-iortitle_mod
+ognqtitle_mod
 	.long	NTITLESCBMOD
 	.word	0,0
 	.long	0
 
-iorcycle_lava
-	movi	iorcyc_t,a9
-iorlp0
+ognqcycle_lava
+	movi	ognqcyc_t,a9
+ognqlp0
 	move	*a9+,a0,L
 
 	calla	pal_getf
 	move	a0,a8			;Pal thats needs changing
 
 	move	*a9,a0,L
-    	jrz	iorcycle_lava
+    	jrz	ognqcycle_lava
 
 	calla	pal_getf
 	move	a0,a11			;Pal to change into
 
 	movi	BAKLST,a14
-iorlp
+ognqlp
 	move	*a14,a14,L
-	jrz	iorx
+	jrz	ognqx
 	move	*a14(OPAL),a2
 	cmp	a8,a2
-	jrne	iorlp
-;Found matching pal
+	jrne	ognqlp
 	move	a11,*a14(OPAL)
-	jruc	iorlp
+	jruc	ognqlp
 
-iorx	SLEEP	5
-	jruc	iorlp0
+ognqx	SLEEP	5
+	jruc	ognqlp0
 
-iorcyc_t	.long	LAVA1_P
+ognqcyc_t	.long	LAVA1_P
 	.long	LAVA2_P
 	.long	LAVA3_P
 	.long	LAVA4_P
@@ -2058,7 +1776,6 @@ iorcyc_t	.long	LAVA1_P
 	.long	LAVA10_P
 	.long	LAVA10_P
 	.long	LAVA10_P
-;	.long	LAVA9_P
 	.long	LAVA10_P
 	.long	LAVA8_P
 	.long	LAVA7_P
@@ -2085,84 +1802,12 @@ iorcyc_t	.long	LAVA1_P
 	.endif
 
 
-;Keep this code around
-;*****************************************************************************
-;*
-;* Show WWF logo
-;
-; SUBRP	show_big_wwf_logo_screen_thingie
-;
-;	calla	display_blank
-;	calla	WIPEOUT			;CLEAN SYSTEM OUT
-;
-;	clr	a0
-;	move	a0,@HALT
-;	move	a0,@dtype		;2d mode
-;	move	a0,@IRQSKYE
-;
-;	movk	1,a0			;page flipping on
-;	move	a0,@dpageflip
-;
-;	SLEEPK	2
-;
-;	movi	SCRNEND,a0		;[256,405]
-;	move	a0,@SCRNLR,L
-;
-;	clr	a0
-;	move	a0,@WORLDTLX,L
-;	move	a0,@WORLDTLY,L
-;
-;	movi	iorblank_mod,a0
-;	move	a0,@BAKMODS,L
-;	calla	BGND_UD1		;create objects for background
-;
-;	SLEEPK	2
-;
-;	calla	display_unblank
-;
-;	SLEEPK	10
-;
-;	movi	iorlogo_mod,a0
-;	CALLA	SET_UP_PIXEL_WIPE
-;
-;	SLEEPK	1
-;
-;	JSRP	BLOW_0_TO_1
-;
-;
-;	SLEEP	TSEC/2
-;	movi	8*TSEC,a10
-;	JSRP	wait_on_butn
-;
-;;fade down
-;	clr	a10
-;	movk	16,a11
-;	CREATE0	fade_down
-;
-;	SLEEP	TSEC
-;
-;	calla	display_blank
-;
-;	RETP
-;
-;iorlogo_mod
-;	.long	comesoonBMOD
-;	.word	0,0
-;	.long	0
-;iorblank_mod
-;	.long	wwfblankBMOD
-;	.word	0,0
-;	.long	0
 
-*****************************************************************************
-*
-* Show wrestler bios
-*
 	.bss	next_bio,16
 
  SUBRP	show_bios
 
-	movi	idpbio_mod,a0
+	movi	plqbbio_mod,a0
  SUBRP	show_bios_tips
 	CALLA	SET_UP_PIXEL_WIPE
 
@@ -2170,9 +1815,9 @@ iorcyc_t	.long	LAVA1_P
 	andi	00001111b,a10
 	inc	a10
 	cmpi	8,a10
-	jrlt	idpin_range
+	jrlt	plqbin_range
 	clr	a10
-idpin_range
+plqbin_range
 
 	;draw the logo
 	PUSH	a10
@@ -2181,7 +1826,7 @@ idpin_range
 
 	MOVI	018h,a3
 	MOVI	00bh,a4
-	MOVI	idpbio_logos,a5
+	MOVI	plqbbio_logos,a5
 	clr	a7
 
 	CALLR	MAKE_UP_LOGO
@@ -2202,28 +1847,22 @@ idpin_range
 	clr	a6
 	clr	a7
 
-idpmugcreatloop
+plqbmugcreatloop
 	PUSH	a0,a1,a3,a4,a5,a6,a7
 	calla	BEGINOBJ
 	PULL	a0,a1,a3,a4,a5,a6,a7
 	move	*a9+,a2,L
-	jrnz	idpmugcreatloop
+	jrnz	plqbmugcreatloop
 
 
 	.ref	wrestler_attributes,attbars
 	;attributes
 	movi	[0ffh,0],a0
 	movi	[0aeh,0],a1
-;	movi	ATTPL_G,a2
-;	movi	10,a3
 	movi	DMAWNZ,a4
 	movi	CLSNEUT,a5
 	clr	a6
 	clr	a7
-;	PUSH	a0,a1,a4,a5,a6,a7
-;	calla	BEGINOBJ
-;	PULL	a0,a1,a4,a5,a6,a7
-;	subi	2,a1
 	movi	ATT_TXT,a2
 	movk	11,a3
 	PUSH	a0,a1
@@ -2247,7 +1886,7 @@ idpmugcreatloop
 	X64	a10
 	addi	wrestler_attributes,a10
 
-idpabc_loop
+plqbabc_loop
 	PUSH	a0,a1,a3,a4,a5,a6,a7
 	move	*a10+,a2,W
 	X32	a2
@@ -2256,7 +1895,7 @@ idpabc_loop
 	calla	BEGINOBJ
 	PULL	a0,a1,a3,a4,a5,a6,a7
 	addi	[8,0],a1
-	dsj	a9,idpabc_loop
+	dsj	a9,plqbabc_loop
 
 	move	@bios_type,a14
 	jrnz	show_wres_tips
@@ -2267,37 +1906,21 @@ idpabc_loop
 	PULL	a10
 	PUSH	a10
 	X32	a10
-	addi	idpbio_data,a10
+	addi	plqbbio_data,a10
 	move	*a10,a10,L
 	move	*a10+,a11,W
 
 	movi	20,a14
 	move	a14,@mess_line_spacing
 
-;	movi	idpbio_setup1,a2
-;	calla	setup_message
-;	movi	idpbio_center,a14
-;	sub	a11,a14
-;	move	a14,@mess_cursx
-;	movi	idpbio_message1,a4
-;	calla	print_string2
-;
-;	movi	idpbio_setup2,a2
-;	calla	setup_message
-;	movi	idpbio_center,a14
-;	sub	a11,a14
-;	move	a14,@mess_cursx
-;	movi	idpbio_message2,a4
-;	calla	print_string2
-;
 
-	movi	idpbio_setup1,a2
+	movi	plqbbio_setup1,a2
 	calla	setup_message
 
 	;from text
-	movi	idpbio_y,a14
+	movi	plqbbio_y,a14
 	move	a14,@mess_cursy
-	movi	idpbio_center,a14
+	movi	plqbbio_center,a14
 	move	a14,@mess_cursx
 
 	move	*a10+,a4,L
@@ -2305,9 +1928,9 @@ idpabc_loop
 
 	;weight
 
-	movi	idpbio_y+50,a14
+	movi	plqbbio_y+50,a14
 	move	a14,@mess_cursy
-	movi	idpbio_center,a14
+	movi	plqbbio_center,a14
 	addi	16,a14
 	move	a14,@mess_cursx
 
@@ -2319,17 +1942,17 @@ idpabc_loop
 
 	movi	wsf10_ascii,a0
 	move	a0,@message_ascii,L
-	movi	idppounds,a4
-	movi	idpbio_y+54,a14
+	movi	plqbpounds,a4
+	movi	plqbbio_y+54,a14
 	move	a14,@mess_cursy
 	move	@mess_cursx2,a0
 	move	a0,@mess_cursx
 	calla	print_string2
 
 	;height
-	movi	idpbio_y+25,a14
+	movi	plqbbio_y+25,a14
 	move	a14,@mess_cursy
-	movi	idpbio_center,a14
+	movi	plqbbio_center,a14
 	addi	8,a14
 	move	a14,@mess_cursx
 
@@ -2343,10 +1966,10 @@ idpabc_loop
 
 	movi	wsf10_ascii,a0
 	move	a0,@message_ascii,L
-	movi	idpfeet,a4
+	movi	plqbfeet,a4
 	move	@mess_cursx2,a0
 	move	a0,@mess_cursx
-	movi	idpbio_y+29,a14
+	movi	plqbbio_y+29,a14
 	move	a14,@mess_cursy
 	calla	print_string2
 
@@ -2356,7 +1979,7 @@ idpabc_loop
 	movi	999,a1
 	calla	dec_to_asc
 	calla	copy_string
-	movi	idpbio_y+25,a14
+	movi	plqbbio_y+25,a14
 	move	a14,@mess_cursy
 	move	@mess_cursx2,a0
 	move	a0,@mess_cursx
@@ -2364,8 +1987,8 @@ idpabc_loop
 
 	movi	wsf10_ascii,a0
 	move	a0,@message_ascii,L
-	movi	idpinches,a4
-	movi	idpbio_y+29,a14
+	movi	plqbinches,a4
+	movi	plqbbio_y+29,a14
 	move	a14,@mess_cursy
 	move	@mess_cursx2,a0
 	move	a0,@mess_cursx
@@ -2373,9 +1996,9 @@ idpabc_loop
 
 
 	;quote
-	movi	idpbio_y+96+4,a14
+	movi	plqbbio_y+96+4,a14
 	move	a14,@mess_cursy
-	movi	idpbio_center,a14
+	movi	plqbbio_center,a14
 	addk	15,a14
 	move	a14,@mess_cursx
 	movk	14,a14
@@ -2395,7 +2018,7 @@ no_attr
 	JRNZ	NO_MUSIC
 
 	X16	a10
-	addi	idpwrestler_tunes,a10
+	addi	plqbwrestler_tunes,a10
 	move	*a10,a3,L
 	.if MUSIC_ON
 	calla	SNDSND
@@ -2724,204 +2347,184 @@ swt_loop
 	movi	CLSNEUT,a5
 	clr	a6
 
-idpcreatloop
+plqbcreatloop
 	MOVE	A8,A10
 	PUSH	a0,a1,a3,a4,a5,a6,a7
 	calla	BEGINOBJ
 	PULL	a0,a1,a3,a4,a5,a6,a7
 	move	*a9+,a2,L
-	jrnz	idpcreatloop
+	jrnz	plqbcreatloop
 	RETS
 
 
-idpbio_center	.equ	100
-idpbio_halfwidth	.equ	87
+plqbbio_center	.equ	100
+plqbbio_halfwidth	.equ	87
 
-idpbio_y		.equ	106
+plqbbio_y		.equ	106
 
-;idpbio_setup1
-;	JAM_STR	osgmd8_ascii,5,0,0,idpbio_y,SGMD8YEL,print_string2
-;idpbio_message1
-;	.byte	"FROM:",1,"WEIGHT:",1,"HEIGHT:",1,"FINISHING",0
-;	.even
-;
-;idpbio_setup2
-;	JAM_STR	osgmd8_ascii,5,0,0,idpbio_y+71,SGMD8YEL,print_string2
-;idpbio_message2
-;	.byte	"MOVE:",0
-;	.even
 
-;FIX!!
 	.even
-idpbio_setup1
-	JAM_STR	wsf14_ascii,6,0,0,idpbio_y+75,WSF_Y_P,print_string2
+plqbbio_setup1
+	JAM_STR	wsf14_ascii,6,0,0,plqbbio_y+75,WSF_Y_P,print_string2
 	.even
-;idpbio_setup2
-;	JAM_STR	wsf10_ascii,6,10,0,idpbio_y+75,WSF_Y_P,print_string2
-;	.even
 
-idppounds
+plqbpounds
 	.byte	" LBS.",0
 	.even
 
-idpfeet
+plqbfeet
 	.byte	" FT. ",0
 	.even
 
-idpinches
+plqbinches
 	.byte	" IN.",0
 	.even
 
-idpbio_data
-	.long	idpbhart_data,idprazor_data,idptaker_data,idpyoko_data,idpshawn_data
-	.long	idpbambam_data,idpdoink_data,idpluger_data
+plqbbio_data
+	.long	plqbbhart_data,plqbrazor_data,plqbtaker_data,plqbyoko_data,plqbshawn_data
+	.long	plqbbambam_data,plqbdoink_data,plqbluger_data
 
-idpbhart_data
+plqbbhart_data
 	.word	79			;halfwidth
-	.long	idpbhart_fromstr		;from
+	.long	plqbbhart_fromstr		;from
 	.word	234,6,1			;pounds, feet, inches
-	.long	idpbhart_quote		;quote text
+	.long	plqbbhart_quote		;quote text
 
-idprazor_data
+plqbrazor_data
 	.word	77			;halfwidth
-	.long	idprazor_fromstr		;from
+	.long	plqbrazor_fromstr		;from
 	.word	262,6,7			;pounds, feet, inches
-	.long	idprazor_quote		;quote text
+	.long	plqbrazor_quote		;quote text
 
-idptaker_data
+plqbtaker_data
 	.word	78			;halfwidth
-	.long	idptaker_fromstr		;from
+	.long	plqbtaker_fromstr		;from
 	.word	322,6,11		;pounds, feet, inches
-	.long	idptaker_quote		;quote text
+	.long	plqbtaker_quote		;quote text
 
-idpyoko_data
+plqbyoko_data
 	.word	78			;halfwidth
-	.long	idpyoko_fromstr		;from
+	.long	plqbyoko_fromstr		;from
 	.word	568,6,4			;pounds, feet, inches
-	.long	idpyoko_quote		;quote text
+	.long	plqbyoko_quote		;quote text
 
-idpshawn_data
+plqbshawn_data
 	.word	78			;halfwidth
-	.long	idpshawn_fromstr		;from
+	.long	plqbshawn_fromstr		;from
 	.word	235,6,1			;pounds, feet, inches
-	.long	idpshawn_quote		;quote text
+	.long	plqbshawn_quote		;quote text
 
-idpbambam_data
+plqbbambam_data
 	.word	78			;halfwidth
-	.long	idpbambam_fromstr		;from
+	.long	plqbbambam_fromstr		;from
 	.word	400,6,4			;pounds, feet, inches
-	.long	idpbambam_quote		;quote text
+	.long	plqbbambam_quote		;quote text
 
-idpdoink_data
+plqbdoink_data
 	.word	78			;halfwidth
-	.long	idpdoink_fromstr		;from
+	.long	plqbdoink_fromstr		;from
 	.word	243,6,0			;pounds, feet, inches
-	.long	idpdoink_quote		;quote text
+	.long	plqbdoink_quote		;quote text
 
-idpluger_data
+plqbluger_data
 	.word	81			;halfwidth
-	.long	idpluger_fromstr		;from
+	.long	plqbluger_fromstr		;from
 	.word	270,6,4			;pounds, feet, inches
-	.long	idpluger_quote		;quote text
+	.long	plqbluger_quote		;quote text
 
-idpbhart_fromstr
-;	.byte	"CALGARY, ALBERTA",0		;Too long
+plqbbhart_fromstr
 	.byte	"CALGARY",0
 	.even
-idprazor_fromstr
+plqbrazor_fromstr
 	.byte	"MIAMI, FLORIDA",0
 	.even
-idptaker_fromstr
+plqbtaker_fromstr
 	.byte	"DEATH VALLEY",0
 	.even
-idpyoko_fromstr
+plqbyoko_fromstr
 	.byte	"TOKYO, JAPAN",0
 	.even
-idpshawn_fromstr
+plqbshawn_fromstr
 	.byte	"SAN ANTONIO, TX",0
 	.even
-idpbambam_fromstr
+plqbbambam_fromstr
 	.byte	"ASBURY PARK, NJ",0
 	.even
-idpdoink_fromstr
+plqbdoink_fromstr
 	.byte	"THE CIRCUS",0
 	.even
-idpluger_fromstr
+plqbluger_fromstr
 	.byte	"ATLANTA, GA",0
 	.even
 
 
 
 
-idpbhart_quote
+plqbbhart_quote
 	.byte	"{I AM THE EXCELLENCE",1,"OF EXECUTION.}",0
 	.even
-idprazor_quote
+plqbrazor_quote
 	.byte	"{TAKE A LOOK AT",1,"THE BAD GUY.}",0
 	.even
-idptaker_quote
+plqbtaker_quote
 	.byte	"{REST IN PEACE}",0
 	.even
-idpyoko_quote
+plqbyoko_quote
 	.byte	"{BANZAI !!!}",0
 	.even
-idpshawn_quote
+plqbshawn_quote
 	.byte	"{I'M THE GREATEST THING",1,"GOING ON GOD'S GREEN EARTH.}",0
 	.even
-idpbambam_quote
+plqbbambam_quote
 	.byte	"{I'M THE BEAST",1,"FROM THE EAST!",0
 	.even
-idpdoink_quote
+plqbdoink_quote
 	.byte	"{LIFE'S A JOKE!",0
-idpluger_quote
+plqbluger_quote
 	.byte	"{LEX LUGER IS THE",1,"ALL AMERICAN HERO}",0
 	.even
 
-idpbio_mod
+plqbbio_mod
 	.long	biopageBMOD			;wrestler bios
-;	.long	slateBMOD			;wrestler bios
 	.word	0,0
 	.long	0
 
-idpbio_logos
-	LWW	idpbhart_logo,15,9
-	LWW	idprazor_logo,16,9
-	LWW	idpunder_logo,17,9
-	LWW	idpyoko_logo,20,7
-	LWW	idpmichael_logo,18,8
-	LWW	idpbambam_logo,18,7
-	LWW	idpdoink_logo,24,8
-	LWW	idpluger_logo,10,7
+plqbbio_logos
+	LWW	plqbbhart_logo,15,9
+	LWW	plqbrazor_logo,16,9
+	LWW	plqbunder_logo,17,9
+	LWW	plqbyoko_logo,20,7
+	LWW	plqbmichael_logo,18,8
+	LWW	plqbbambam_logo,18,7
+	LWW	plqbdoink_logo,24,8
+	LWW	plqbluger_logo,10,7
 
-idpbhart_logo
+plqbbhart_logo
 	.long	HRT3,0
-idprazor_logo
+plqbrazor_logo
 	.long	RZR3,0
-idpunder_logo		.long	UND3,0
-idpyoko_logo
+plqbunder_logo		.long	UND3,0
+plqbyoko_logo
 	.long	YOK3,0
-idpmichael_logo
+plqbmichael_logo
 	.long	SHN3,0
-idpbambam_logo
+plqbbambam_logo
 	.long	BAM3,0
-idpdoink_logo
+plqbdoink_logo
 	.long	DNK3,0
-idpluger_logo
+plqbluger_logo
 	.long	LEX3,0
 
-idpwrestler_tunes
+plqbwrestler_tunes
 	.word	5,2,1,7,6,4,8,3
 
-******************************************************************************
-*
-* A10 = # of ticks before timing out
 
  SUBR	wait_on_butn
 
-idplp	SLEEPK	1
+plqblp	SLEEPK	1
 
 	calla	get_all_buttons_cur2
-	jrz	idpnobutn
+	jrz	plqbnobutn
 
 	move	@SOUNDSUP,a0
 	move	a0,@TEMP
@@ -2940,133 +2543,20 @@ idplp	SLEEPK	1
 
 	move	@TEMP,a0
 	move	a0,@SOUNDSUP		;turn all sounds off
-	jruc	idpexit
+	jruc	plqbexit
 
-idpnobutn
-	dsj	a10,idplp
+plqbnobutn
+	dsj	a10,plqblp
 
-idpexit
+plqbexit
 	RETP
 
 
-;*****************************************************************************
-;* play vid clips (test)
-;
-; SUBRP	show_movie
-;
-;;bank select 0 bit is bit 8 of SYSCTRL register.
-;
-;	calla	display_blank
-;	calla	WIPEOUT			;CLEAN SYSTEM OUT
-;	calla	pal_clean
-;
-;	clr	a0
-;	move	a0,@HALT
-;	move	a0,@dtype		;2d mode
-;	move	a0,@IRQSKYE
-;
-;	movk	1,a0			;page flipping on
-;	move	a0,@dpageflip
-;
-;	SLEEPK	2
-;
-;	movi	SCRNEND,a0		;[256,405]
-;	move	a0,@SCRNLR,L
-;
-;	clr	a0
-;	move	a0,@WORLDTLX,L
-;	move	a0,@WORLDTLY,L
-;
-;	movi	idpmovie_mod,a0
-;	move	a0,@BAKMODS,L
-;	calla	BGND_UD1		;create objects for background
-;
-;	calla	display_unblank
-;
-;;;;->	movi	shnvid_f,a8
-;	clr	a9
-;	movi	(100+20*512)*8,a10
-;	JSRP	movie_run
-;
-;	clr	a0
-;	move	a0,@dpageflip		;kill the page-flipping!
-;
-;	movi	6*TSEC,a10
-;	JAUC	wait_on_butn
-;
-;idpmovie_mod
-;	.long	slateBMOD			;wrestler bios
-;	.word	0,0
-;	.long	0
-;
-;
-;*****************************************************************************
-;* print that big picture of 'vince'
-;* leave up whatever was on screen until we're ready to make the switch
-;
-; SUBRP	show_vince
-;
-;	;disable auto page flipping
-;	clr	a14
-;	move	a14,@dpageflip
-;
-;	;dump the pic to the draw (inactive) page
-;;;;->	movi	vinsml_f,a8
-;	clr	a9
-;	movi	(idpvince_x+512*(idpvince_y))*8,a10
-;	JSRP	movie_run
-;
-;	;swap 'em...
-;	callr	page_flip
-;
-;	;...and wait
-;	movi	6*TSEC,a10
-;	JSRP	wait_on_butn
-;
-;	;fade down
-;	clr	a10
-;	movk	16,a11
-;	CREATE0	fade_down
-;
-;	SLEEP	TSEC
-;
-;	RETP
-;
-;
-;idpvince_x	equ	(400-0186H)/2
-;idpvince_y	equ	(256-0F5H)/2
 
 
-*****************************************************************************
-* flips the active page
 
-; SUBRP	page_flip
-;
-;	movi	-01004H,a0
-;	move	@dpage,a14
-;	jrz	qrgtp1
-;	movi	-4,a0
-;qrgtp1
-;	move	a0,@DPYSTRT
-;	move	a0,@DPYADR
-;
-;	move	@dpage,a0
-;	not	a0
-;	move	a0,@dpage
-;
-;	rets
 
-*****************************************************************************
 
-;NOW LETS SEE...
-;WORD	TWO PIXELS
-;WORD	TWO PIXELS
-;WORD	TWO PIXELS
-;WORD	TWO PIXELS
-;LONG	XVEL
-;LONG	YVEL
-;LONG	XPOS
-;LONG	YPOS
 
 DCS_LOGO
 	calla	display_blank
@@ -3402,7 +2892,6 @@ NEXT_PIXEL_ROT
 	RETS
 
 
-******************************************************************************
 
  SUBR	GENERIC_DISPLAY
 	calla	display_blank
@@ -3434,50 +2923,13 @@ NEXT_PIXEL_ROT
 	calla	display_unblank
 	RETP
 
-****************************************************************
-* THIS SHOULD BE CALLED IN PLACE OF ANY JRxx $
-* IN CASE OF ERROR. IF WE ARE IN DEBUG MODE
-* IT WILL HANG, IF NOT, THE ERROR WILL BE LOGGED
-* AND IT WILL RETURN.
-* A1 = RETURN ADDRESS OF CALLING ROUTINE
-* A2 = ERROR CODE
 
 ERRORLOG
 	MMTM	SP,A2,A3,A4,A5,A6,A7
-;	SLL	16,A2
-;ERRLOGG				;A8 IS IN A8
-;
-;	MOVE	A13,A7		;PROC. BLOCK IN A7
-;	MOVE	*A7(PROCID),A6
-;	SLL	16,A6
-;	MOVE	*A8(OID),A3
-;	MOVX	A3,A6		;A6 = [PROCID:*A8(OID)]
-;
-;;	MOVE	@CIRCUIT,A5
-;;	SLL	16,A5
-;;	MOVE	@WAVE,A3
-;	MOVX	A3,A5		;A5 = [CIRCUIT#:WAVE#,)]
-;
-;	MOVI	AUD1STRT,A4	;PLAY #
-;	callr	GETAUD4
-;
-;	SLL	16,A4
-;	MOVE	*A0(OID),A3	;A4 = [STRT#:*A0(OID)]
-;	MOVX	A3,A4
-;
-;	MOVE	@GAMSTATE,A3	;A2 = [PSTATUS:GAMSTATE]
-;	MOVX	A3,A2
-;
-;	MOVE	@PSTATUS2,A3	;A2 = [ERROR CODE:PSTATUS]
-;	MOVX	A3,A2
-;;	MOVE	*SP(0C0H),A3,L	;A3=GET THE RETURN ADDRESS
-;	MOVE	*SP(0E0H),A1,L	;A1=CALLING ADDRESS
-;;	CALLA	ADD_DUMP
 
 	MMFM	SP,A2,A3,A4,A5,A6,A7
 	RETS
 
-******************************************************************************
 
 NUM_HINTS	.EQU	5
 
@@ -3517,36 +2969,20 @@ NUM_HINTS	.EQU	5
 
 	;temp!
 	JRUC	WE_DO_THE_DESIGNER_HINTS
-;	JRLO	WE_DO_THE_DESIGNER_HINTS
 
-;	MOVK	NUM_HINTS,A0
-;	CALLA	RNDRNG0
-;
-;	SLL	6,A0
-;	ADDI	GENERAL_HINT,A0
-;	MOVE	*A0+,A4,L
-;	MOVE	*A0+,A5,L
-;	PUSH	A5,A4
-;
-;	CALLA	PUT_UP_BAR
-;
-;	MOVI	GENTIP,A2
-;	CALLA	PUT_UP_TIP_NAME
-;
-;	JRUC	GEN_TIP_BACK_IN_HERE
 
 WE_DO_THE_DESIGNER_HINTS
 
 	move	@last_hint,a0
-	jrn	vdareset_chint
+	jrn	xzvlreset_chint
 	inc	a0
 	cmpi	NUM_HINTS,a0
-	jrge	vdareset_chint
-	jruc	vdashint
+	jrge	xzvlreset_chint
+	jruc	xzvlshint
 
-vdareset_chint
+xzvlreset_chint
 	clr	a0
-vdashint	move	a0,@last_hint
+xzvlshint	move	a0,@last_hint
 
 	PUSHP	A0
 	SLL	7,A0
@@ -3617,7 +3053,7 @@ vdashint	move	a0,@last_hint
 
 GEN_TIP_BACK_IN_HERE
 
-	MOVI	vdaSETUP_LINE_1,A2
+	MOVI	xzvlSETUP_LINE_1,A2
 	CALLA	setup_message
 	CALLA	hscore_colcyc2
 	PULL	A4
@@ -3625,11 +3061,8 @@ GEN_TIP_BACK_IN_HERE
 	PULL	A4
 	PUSHP	A4
 
-;	movk	18,a8
-;	movk	6,a9
-;	JSRP	OPEN_SCREEN_LINE
 
-	MOVI	vdaSETUP_LINE,A2
+	MOVI	xzvlSETUP_LINE,A2
 	CALLA	setup_message
 
 	MOVI	15,A0
@@ -3671,7 +3104,6 @@ PUT_UP_TIP_NAME
 	CLR	A6
 	CLR	A7
 	movi	WGFS_W_P,b0
-;	calla	BEGINOBJ
 	calla	BEGINOBJP
 
 	RETS
@@ -3701,9 +3133,8 @@ PUT_UP_BAR
 	CREATE	FLASH_PID,JUDDER_SHADOW
 	RETS
 
-vdatitle_mod
+xzvltitle_mod
 	.long	slateBMOD
-;	.long	LAVAPGBMOD
 	.word	0,0
 	.long	0
 
@@ -3720,147 +3151,136 @@ WHICH_22_NUM
 	.LONG	WGSF22_0
 
 WHICH_HINT
-	.LONG	vdaHNTT_2,vdaHNT_2,JMSTIP,JASMUG
-	.LONG	vdaHNTT_4,vdaHNT_4,MIKTIP,MIKMUG	 
-	.LONG	vdaHNTT_3,vdaHNT_3,MJTTIP,MRKMUG
-	.LONG	vdaHNTT_7,vdaHNT_7,EUGTIP,EUGMUG
-	.LONG	vdaHNTT_5,vdaHNT_5,SHNTIP,SHNMUG
-	.LONG	vdaHNTT_8,vdaHNT_8,JAKTIP,JAKMUG
-	.LONG	vdaHNTT_1,vdaHNT_1,SALTIP,SALMUG
-	.LONG	vdaHNTT_6,vdaHNT_6,TONTIP,TONMUG
-	.LONG	vdaHNTT_9,vdaHNT_9,JOSTIP,JSHMUG
-	.LONG	vdaHNTT_9,vdaHNT_9,JOSTIP,JSHMUG
-
-;GENERAL_HINT
-;	.LONG	vdaHNTT_10,vdaHNT_10
-;	.LONG	vdaHNTT_10,vdaHNT_10
-;	.LONG	vdaHNTT_10,vdaHNT_10
-;	.LONG	vdaHNTT_10,vdaHNT_10
-;	.LONG	vdaHNTT_10,vdaHNT_10
-;	.LONG	vdaHNTT_10,vdaHNT_10
+	.LONG	xzvlHNTT_2,xzvlHNT_2,JMSTIP,JASMUG
+	.LONG	xzvlHNTT_4,xzvlHNT_4,MIKTIP,MIKMUG	 
+	.LONG	xzvlHNTT_3,xzvlHNT_3,MJTTIP,MRKMUG
+	.LONG	xzvlHNTT_7,xzvlHNT_7,EUGTIP,EUGMUG
+	.LONG	xzvlHNTT_5,xzvlHNT_5,SHNTIP,SHNMUG
+	.LONG	xzvlHNTT_8,xzvlHNT_8,JAKTIP,JAKMUG
+	.LONG	xzvlHNTT_1,xzvlHNT_1,SALTIP,SALMUG
+	.LONG	xzvlHNTT_6,xzvlHNT_6,TONTIP,TONMUG
+	.LONG	xzvlHNTT_9,xzvlHNT_9,JOSTIP,JSHMUG
+	.LONG	xzvlHNTT_9,xzvlHNT_9,JOSTIP,JSHMUG
 
 
-vdaSETUP_LINE_1
+
+xzvlSETUP_LINE_1
 	JAM_STR	osgemd_ascii,10,0,200,50+12,RUBYPAL,print_string_C2
 
-vdaSETUP_LINE
+xzvlSETUP_LINE
 	JAM_STR	wsf10_ascii,10,1,200,90+18,WSF_Y_P,print_string_C2
 
-vdaHNTT_1	.byte	"OUT OF RING",0,0
+xzvlHNTT_1	.byte	"OUT OF RING",0,0
 	.even
-vdaHNT_1	.long	4,vdaHNT_1A,vdaHNT_1B,vdaHNT_1C,vdaHNT_1D
-vdaHNT_1A	.byte	"DON'T STAY OUT OF THE RING FOR",0,0
-vdaHNT_1B	.byte	"LONG.  YOU SUFFER DAMAGE UNTIL",0,0
-vdaHNT_1C	.byte	"YOU RE-ENTER THE RING OR YOUR",0,0
-vdaHNT_1D	.byte	"OPPONENT JOINS YOU OUTSIDE.",0,0
-	.even
-
-
-vdaHNTT_2	.byte	"IN-AIR PICK OFF",0,0
-	.even
-vdaHNT_2	.long	4,vdaHNT_2A,vdaHNT_2B,vdaHNT_2C,vdaHNT_2D
-vdaHNT_2A	.byte	"WHEN YOUR OPPONENT IS RUNNING",0,0
-vdaHNT_2B	.byte	"OR LEAPING AT YOU, AWAY AWAY",0,0
-vdaHNT_2C	.byte	"PUNCH CAN BE USED TO PICK HIM",0,0
-vdaHNT_2D	.byte	"OFF AND DELIVER A BODY SLAM!",0,0
+xzvlHNT_1	.long	4,xzvlHNT_1A,xzvlHNT_1B,xzvlHNT_1C,xzvlHNT_1D
+xzvlHNT_1A	.byte	"DON'T STAY OUT OF THE RING FOR",0,0
+xzvlHNT_1B	.byte	"LONG.  YOU SUFFER DAMAGE UNTIL",0,0
+xzvlHNT_1C	.byte	"YOU RE-ENTER THE RING OR YOUR",0,0
+xzvlHNT_1D	.byte	"OPPONENT JOINS YOU OUTSIDE.",0,0
 	.even
 
 
-vdaHNTT_3	.byte	"TURNBUCKLE LEAPS",0,0
+xzvlHNTT_2	.byte	"IN-AIR PICK OFF",0,0
 	.even
-vdaHNT_3	.long	6,vdaHNT_3A,vdaHNT_3B,vdaHNT_3C,vdaHNT_3D,vdaHNT_3E,vdaHNT_3F
-vdaHNT_3A	.byte	"CLIMB THE TURNBUCKLE AND LEAP AT",0,0
-vdaHNT_3B	.byte	"YOUR OPPONENT, USING THE JOYSTICK",0,0
-vdaHNT_3C	.byte	"TO GUIDE YOUR FLIGHT.  THESE ATTACKS",0,0
-vdaHNT_3D	.byte	"CANNOT BE BLOCKED.  HOWEVER, THEY",0,0
-vdaHNT_3E	.byte	"CAN BE PICKED OFF WITH A WELL TIMED",0,0
-vdaHNT_3F	.byte	"KICK.",0,0
+xzvlHNT_2	.long	4,xzvlHNT_2A,xzvlHNT_2B,xzvlHNT_2C,xzvlHNT_2D
+xzvlHNT_2A	.byte	"WHEN YOUR OPPONENT IS RUNNING",0,0
+xzvlHNT_2B	.byte	"OR LEAPING AT YOU, AWAY AWAY",0,0
+xzvlHNT_2C	.byte	"PUNCH CAN BE USED TO PICK HIM",0,0
+xzvlHNT_2D	.byte	"OFF AND DELIVER A BODY SLAM!",0,0
 	.even
 
 
-vdaHNTT_4	.byte	"COMBO MODE",0,0
+xzvlHNTT_3	.byte	"TURNBUCKLE LEAPS",0,0
 	.even
-vdaHNT_4	.long	6,vdaHNT_4A,vdaHNT_4B,vdaHNT_4C,vdaHNT_4D,vdaHNT_4E,vdaHNT_4F
-vdaHNT_4A	.byte	"PERFORMING A VARIETY OF MOVES",0,0
-vdaHNT_4B	.byte	"ACTIVATES 'COMBO MODE'.  THIS ALLOWS",0,0
-vdaHNT_4C	.byte	"YOU TO LAUNCH SPECIAL DEVASTATING",0,0
-vdaHNT_4D	.byte	"COMBO MOVES FROM THE HEADHOLD.",0,0
-vdaHNT_4E	.byte	"MOST COMBOS START WITH TOWARD",0,0
-vdaHNT_4F	.byte	"TOWARD AND A BUTTON PRESS.",0,0
-	.even
-
-
-vdaHNTT_5	.byte	"REVERSALS",0,0
-	.even
-vdaHNT_5	.long	5,vdaHNT_5A,vdaHNT_5B,vdaHNT_5C,vdaHNT_5D,vdaHNT_5E
-vdaHNT_5A	.byte	"MANY HEADHOLD MOVES, SUCH AS THE",0,0
-vdaHNT_5B	.byte	"PILEDRIVER, CAN BE DONE BY EITHER",0,0
-vdaHNT_5C	.byte	"WRESTLER.  WHOEVER DOES THE CORRECT",0,0
-vdaHNT_5D	.byte	"STICK AND BUTTON COMBINATION FIRST",0,0
-vdaHNT_5E	.byte	"WILL DO THE MOVE.",0,0
+xzvlHNT_3	.long	6,xzvlHNT_3A,xzvlHNT_3B,xzvlHNT_3C,xzvlHNT_3D,xzvlHNT_3E,xzvlHNT_3F
+xzvlHNT_3A	.byte	"CLIMB THE TURNBUCKLE AND LEAP AT",0,0
+xzvlHNT_3B	.byte	"YOUR OPPONENT, USING THE JOYSTICK",0,0
+xzvlHNT_3C	.byte	"TO GUIDE YOUR FLIGHT.  THESE ATTACKS",0,0
+xzvlHNT_3D	.byte	"CANNOT BE BLOCKED.  HOWEVER, THEY",0,0
+xzvlHNT_3E	.byte	"CAN BE PICKED OFF WITH A WELL TIMED",0,0
+xzvlHNT_3F	.byte	"KICK.",0,0
 	.even
 
 
-vdaHNTT_6	.byte	"HIGH RISK MANEUVERS",0,0
+xzvlHNTT_4	.byte	"COMBO MODE",0,0
 	.even
-vdaHNT_6	.long	3,vdaHNT_6A,vdaHNT_6B,vdaHNT_6C
-vdaHNT_6A	.byte	"BOUNCE OFF THE ROPES JUST BEFORE",0,0
-vdaHNT_6B	.byte	"PERFORMING MANY JUMPING ATTACKS",0,0
-vdaHNT_6C	.byte	"FOR AN EXTRA DAMAGE BONUS!",0,0
-	.even
-
-
-vdaHNTT_7	.byte	"SECOND WIND",0,0
-	.even
-vdaHNT_7	.long	6,vdaHNT_7A,vdaHNT_7B,vdaHNT_7C,vdaHNT_7D,vdaHNT_7E,vdaHNT_7F
-	.long	vdaHNT_7G,vdaHNT_7H
-vdaHNT_7A	.byte	"WHEN YOU'RE ABOUT TO BE PINNED",0,0
-vdaHNT_7B	.byte	"FOR THE SECOND TIME, YOU CAN",0,0
-vdaHNT_7C	.byte	"GET YOUR SECOND WIND AND FIGHT",0,0
-vdaHNT_7D	.byte	"ON, BUT ONLY IF YOUR COMBO METER",0,0
-vdaHNT_7E	.byte	"IS LIT.  QUICKLY HIT THE BUTTONS",0,0
-vdaHNT_7F	.byte	"ONCE YOUR HEALTH METER RUNS OUT.",0,0
-vdaHNT_7G	.byte	"NOTE THAT THIS DOES NOT WORK IF",0,0
-vdaHNT_7H	.byte	"IF YOU DIE OUTSIDE THE RING.",0,0
+xzvlHNT_4	.long	6,xzvlHNT_4A,xzvlHNT_4B,xzvlHNT_4C,xzvlHNT_4D,xzvlHNT_4E,xzvlHNT_4F
+xzvlHNT_4A	.byte	"PERFORMING A VARIETY OF MOVES",0,0
+xzvlHNT_4B	.byte	"ACTIVATES 'COMBO MODE'.  THIS ALLOWS",0,0
+xzvlHNT_4C	.byte	"YOU TO LAUNCH SPECIAL DEVASTATING",0,0
+xzvlHNT_4D	.byte	"COMBO MOVES FROM THE HEADHOLD.",0,0
+xzvlHNT_4E	.byte	"MOST COMBOS START WITH TOWARD",0,0
+xzvlHNT_4F	.byte	"TOWARD AND A BUTTON PRESS.",0,0
 	.even
 
 
-vdaHNTT_8	.byte	"HEAD HOLDS",0,0
+xzvlHNTT_5	.byte	"REVERSALS",0,0
 	.even
-vdaHNT_8	.long	6,vdaHNT_8A,vdaHNT_8B,vdaHNT_8C,vdaHNT_8D,vdaHNT_8E,vdaHNT_8F
-vdaHNT_8A	.byte	"RAPIDLY PRESSING THE BUTTONS FROM",0,0
-vdaHNT_8B	.byte	"A HEADHOLD WILL EVENTUALLY CAUSE",0,0
-vdaHNT_8C	.byte	"A PILEDRIVER OR OTHER SPECIAL MOVE",0,0
-vdaHNT_8D	.byte	"TO HAPPEN.  BUT THERE ARE MUCH",0,0
-vdaHNT_8E	.byte	"FASTER WAYS TO DO THEM, SUCH AS",0,0
-vdaHNT_8F	.byte	"TOWARD TOWARD POWER PUNCH.",0,0
-	.even
-
-
-
-vdaHNTT_9	.byte	"EXCESSIVE BLOCKING",0,0
-	.even
-vdaHNT_9	.long	5,vdaHNT_9A,vdaHNT_9B,vdaHNT_9C,vdaHNT_9D,vdaHNT_9E
-vdaHNT_9A	.byte	"IF YOUR OPPONENT IS CONSTANTLY",0,0
-vdaHNT_9B	.byte	"BLOCKING,  TRY GETTING IN CLOSE",0,0
-vdaHNT_9C	.byte	"TO PUT HIM IN A HEADHOLD.  THEY",0,0
-vdaHNT_9D	.byte	"CAN'T BE BLOCKED.  HIP TOSSES",0,0
-vdaHNT_9E	.byte	"ARE ALSO DIFFICULT TO BLOCK.",0,0
+xzvlHNT_5	.long	5,xzvlHNT_5A,xzvlHNT_5B,xzvlHNT_5C,xzvlHNT_5D,xzvlHNT_5E
+xzvlHNT_5A	.byte	"MANY HEADHOLD MOVES, SUCH AS THE",0,0
+xzvlHNT_5B	.byte	"PILEDRIVER, CAN BE DONE BY EITHER",0,0
+xzvlHNT_5C	.byte	"WRESTLER.  WHOEVER DOES THE CORRECT",0,0
+xzvlHNT_5D	.byte	"STICK AND BUTTON COMBINATION FIRST",0,0
+xzvlHNT_5E	.byte	"WILL DO THE MOVE.",0,0
 	.even
 
 
-*****************************************************************************
-*
-* successful octopus brings us to this page.  It's a top-level process, just
-* like the normal attract mode loop
+xzvlHNTT_6	.byte	"HIGH RISK MANEUVERS",0,0
+	.even
+xzvlHNT_6	.long	3,xzvlHNT_6A,xzvlHNT_6B,xzvlHNT_6C
+xzvlHNT_6A	.byte	"BOUNCE OFF THE ROPES JUST BEFORE",0,0
+xzvlHNT_6B	.byte	"PERFORMING MANY JUMPING ATTACKS",0,0
+xzvlHNT_6C	.byte	"FOR AN EXTRA DAMAGE BONUS!",0,0
+	.even
+
+
+xzvlHNTT_7	.byte	"SECOND WIND",0,0
+	.even
+xzvlHNT_7	.long	6,xzvlHNT_7A,xzvlHNT_7B,xzvlHNT_7C,xzvlHNT_7D,xzvlHNT_7E,xzvlHNT_7F
+	.long	xzvlHNT_7G,xzvlHNT_7H
+xzvlHNT_7A	.byte	"WHEN YOU'RE ABOUT TO BE PINNED",0,0
+xzvlHNT_7B	.byte	"FOR THE SECOND TIME, YOU CAN",0,0
+xzvlHNT_7C	.byte	"GET YOUR SECOND WIND AND FIGHT",0,0
+xzvlHNT_7D	.byte	"ON, BUT ONLY IF YOUR COMBO METER",0,0
+xzvlHNT_7E	.byte	"IS LIT.  QUICKLY HIT THE BUTTONS",0,0
+xzvlHNT_7F	.byte	"ONCE YOUR HEALTH METER RUNS OUT.",0,0
+xzvlHNT_7G	.byte	"NOTE THAT THIS DOES NOT WORK IF",0,0
+xzvlHNT_7H	.byte	"IF YOU DIE OUTSIDE THE RING.",0,0
+	.even
+
+
+xzvlHNTT_8	.byte	"HEAD HOLDS",0,0
+	.even
+xzvlHNT_8	.long	6,xzvlHNT_8A,xzvlHNT_8B,xzvlHNT_8C,xzvlHNT_8D,xzvlHNT_8E,xzvlHNT_8F
+xzvlHNT_8A	.byte	"RAPIDLY PRESSING THE BUTTONS FROM",0,0
+xzvlHNT_8B	.byte	"A HEADHOLD WILL EVENTUALLY CAUSE",0,0
+xzvlHNT_8C	.byte	"A PILEDRIVER OR OTHER SPECIAL MOVE",0,0
+xzvlHNT_8D	.byte	"TO HAPPEN.  BUT THERE ARE MUCH",0,0
+xzvlHNT_8E	.byte	"FASTER WAYS TO DO THEM, SUCH AS",0,0
+xzvlHNT_8F	.byte	"TOWARD TOWARD POWER PUNCH.",0,0
+	.even
+
+
+
+xzvlHNTT_9	.byte	"EXCESSIVE BLOCKING",0,0
+	.even
+xzvlHNT_9	.long	5,xzvlHNT_9A,xzvlHNT_9B,xzvlHNT_9C,xzvlHNT_9D,xzvlHNT_9E
+xzvlHNT_9A	.byte	"IF YOUR OPPONENT IS CONSTANTLY",0,0
+xzvlHNT_9B	.byte	"BLOCKING,  TRY GETTING IN CLOSE",0,0
+xzvlHNT_9C	.byte	"TO PUT HIM IN A HEADHOLD.  THEY",0,0
+xzvlHNT_9D	.byte	"CAN'T BE BLOCKED.  HIP TOSSES",0,0
+xzvlHNT_9E	.byte	"ARE ALSO DIFFICULT TO BLOCK.",0,0
+	.even
+
+
 
 	.ref	_switch_addr,_switch2_addr
 
 OCTOBTN	.macro	VAL,TIMEOUT
 	movi	:VAL:,a8
 	movi	:TIMEOUT:,a9
-	JSRP	azswait_but
-	jrc	azsocto_init
+	JSRP	ioyywait_but
+	jrc	ioyyocto_init
 	.endm
 
  SUBR	octopus_page
@@ -3887,7 +3307,7 @@ OCTOBTN	.macro	VAL,TIMEOUT
 
 	movi	TSEC*10,a10
 
-azsocto_init
+ioyyocto_init
 
 	;check overall timeout
 	TEST	a10
@@ -3910,21 +3330,21 @@ azsocto_init
 	;begin a normal attract mode
 	jruc	attract_mode
 
- SUBRP	azswait_but
+ SUBRP	ioyywait_but
 
-	calla	azsmk_a0
+	calla	ioyymk_a0
 	cmp	a0,a8
-	jreq	azsgotit
+	jreq	ioyygotit
 	SLEEPK	1
 	dec	a10
-	dsj	a9,azswait_but
+	dsj	a9,ioyywait_but
 	setc
 	RETP
-azsgotit	clrc
+ioyygotit	clrc
 	RETP
 
 
- SUBRP	azsmk_a0
+ SUBRP	ioyymk_a0
 	move	@_switch_addr,a0,L
 	move	@_switch2_addr,a1,L
 	move	*a0,a0
@@ -3933,7 +3353,6 @@ azsgotit	clrc
 	and	a1,a0
 	rets
 
-******************************************************************************
 
 	.end
 

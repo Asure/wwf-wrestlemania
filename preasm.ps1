@@ -21,11 +21,22 @@ function Get-UniqueRandomSectionDescriptor {
     return $descriptor
 }
 
+# Create a default section at the beginning of the file
+$defaultSection = @{
+    "SectionName" = "Default Section"
+    "SectionDescriptor" = Get-UniqueRandomSectionDescriptor
+    "SectionHeader" = "#** Default Section"
+    "SectionStart" = 0
+    "SectionEnd" = 0
+    "Labels" = @()
+}
+
 foreach ($asmFile in $asmFiles) {
     Write-Host "Processing file: $($asmFile.Name)"
 
     $content = Get-Content $asmFile.FullName
-    $sections = @()
+#    $sections = @()
+    $sections = @($defaultSection)
 
     $sectionStartLineNumber = $null
     $lineNumber = 0
@@ -94,6 +105,9 @@ foreach ($asmFile in $asmFiles) {
 
     # Replace #* with * in the entire content
     $content = $content -replace "#\*", "*"
+    # Memory optimize, remove lines starting with * and ;
+    $content = $content | Where-Object { -not ($_ -match '^\*') }
+    $content = $content | Where-Object { -not ($_ -match '^\;') }
 
     # Save the modified content to the same file
     # $modifiedFile = Join-Path -Path $folderPath -ChildPath ("modified_" + $asmFile.Name)

@@ -1,13 +1,3 @@
-**************************************************************
-*
-* Software:	Mike Lynch, Jason Skiles, Mark Turmell
-* Initiated:	05/12/95
-*
-* Modified:
-*
-* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-*
-**************************************************************
 
 	.file	"fireword.asm"
 	.title	"wrestling game program"
@@ -67,9 +57,7 @@
 EXP_FW_SND	.equ	1252
 FLR_FW_SND	.equ	1244
 
-**********************************************************************
-*
- SUBRP	wgpfwexa_anim
+ SUBRP	dxmofwexa_anim
 	.long	FWEXPA01
 	.long	FWEXPA02
 	.long	FWEXPA03
@@ -83,7 +71,7 @@ FLR_FW_SND	.equ	1244
 	.long	FWEXPA11
 	.long	0
 
- SUBRP	wgpfwexb_anim
+ SUBRP	dxmofwexb_anim
 	.long	FWEXPB01
 	.long	FWEXPB02
 	.long	FWEXPB03
@@ -97,17 +85,17 @@ FLR_FW_SND	.equ	1244
 	.long	FWEXPB11
 	.long	0
 
- SUBRP	wgpfwexp_tbl
-	.long	wgpfwexa_anim
-	.long	wgpfwexb_anim
+ SUBRP	dxmofwexp_tbl
+	.long	dxmofwexa_anim
+	.long	dxmofwexb_anim
 
- SUBRP	wgpflare_anim
+ SUBRP	dxmoflare_anim
 	.long	FWFLAR01
 	.long	FWFLAR02
 	.long	FWFLAR03
 	.long	FWFLAR04
 	.long	FWFLAR05
- SUBRP	wgpflare_anim2
+ SUBRP	dxmoflare_anim2
 	.long	FWFLAR06
 	.long	FWFLAR07
 	.long	FWFLAR08
@@ -118,7 +106,7 @@ FLR_FW_SND	.equ	1244
 	.long	FWFLAR13
 	.long	0
 
- SUBRP	wgpfw_pals
+ SUBRP	dxmofw_pals
 	.long	FWWHT_P
 	.long	FWBLV_P
 	.long	FWPNK_P
@@ -127,7 +115,7 @@ FLR_FW_SND	.equ	1244
 
 EXP_FWY	.equ	-160
 
- SUBRP	wgpanimate_fwexp
+ SUBRP	dxmoanimate_fwexp
 
 	; First Get a random position to place the explosion
 	movi	64,a0		; Get a random vertical position
@@ -149,7 +137,7 @@ EXP_FWY	.equ	-160
 	movi	1,a0		; Get a random explosion to use
 	calla	RNDRNG0
 	sll	5,a0
-	addi	wgpfwexp_tbl,a0
+	addi	dxmofwexp_tbl,a0
 	move	*a0,a11,L	; Get pointer to image table
 	move	*a11+,a2,L	; Get the first image
 
@@ -164,7 +152,7 @@ EXP_FWY	.equ	-160
 	calla	RNDRNG0
 	move	a0,b0		; Get entry from palette table
 	sll	5,b0
-	addi	wgpfw_pals,b0
+	addi	dxmofw_pals,b0
 	move	*b0,b0,L
 	
 	; Set up the x and y positions for the object
@@ -181,19 +169,19 @@ EXP_FWY	.equ	-160
 	calla	SNDSND
 
 	; And animate the whole works
-wgpanimate_loop
+dxmoanimate_loop
 	SLEEPK	2
 	move	*a11+,a0,L	; Get the next image
-	jrz	wgpfwanim_done	; Are we done ? - br = yes
+	jrz	dxmofwanim_done	; Are we done ? - br = yes
 	move	*a8(OCTRL),a1	; Get the current control
 	calla	obj_aniq	; Change the image
 	move	*a8(OYPOS),a1	; Make it fall a little
 	addk	4,a1
 	move	a1,*a8(OYPOS)
-	jruc	wgpanimate_loop	; Go do next image
+	jruc	dxmoanimate_loop	; Go do next image
 
 	; We all done - soooo get rid of the object and die
-wgpfwanim_done
+dxmofwanim_done
 	calla	DELOBJA8	; Kill off the object
 	DIE			; And die
 
@@ -208,7 +196,7 @@ wgpfwanim_done
 	calla	RNDRNG0
 	move	a0,b0
 	sll	5,b0
-	addi	wgpfw_pals,b0
+	addi	dxmofw_pals,b0
 	move	*b0,b0,L
 
 	move	a9,a0
@@ -218,7 +206,7 @@ wgpfwanim_done
 	move	a9,a1
 	sll	16,a1
 
-	movi	wgpflare_anim,a9
+	movi	dxmoflare_anim,a9
 	move	*a9+,a2,L
 
 	movi	810h,a3
@@ -235,33 +223,33 @@ wgpfwanim_done
 	calla	SNDSND
 	PULL	a0,a1,a2,a3,a4,a5,a6,a7
 
-wgpflare_loop
+dxmoflare_loop
 	SLEEPK	2
-wgpfl_loop
+dxmofl_loop
 	move	*a9+,a0,L
-	jrz	wgpreset_flare
+	jrz	dxmoreset_flare
 	move	*a8(OCTRL),a1
 	calla	obj_aniq
-	jruc	wgpflare_loop
+	jruc	dxmoflare_loop
 
-wgpreset_flare
+dxmoreset_flare
 	move	@fizzle_flare,a9
-	jrnz	wgpflare_fizzle
-	movi	wgpflare_anim2,a9
-	jruc	wgpfl_loop
+	jrnz	dxmoflare_fizzle
+	movi	dxmoflare_anim2,a9
+	jruc	dxmofl_loop
 
-wgpflare_fizzle
+dxmoflare_fizzle
 
-	movi	wgpflare_anim2,a9
-wgpff_loop
+	movi	dxmoflare_anim2,a9
+dxmoff_loop
 	SLEEPK	4
-	cmpi	wgpflare_anim,a9
-	jrz	wgpff_exit
+	cmpi	dxmoflare_anim,a9
+	jrz	dxmoff_exit
 	move	-*a9,a0,L
 	move	*a8(OCTRL),a1
 	calla	obj_aniq
-	jruc	wgpff_loop
-wgpff_exit
+	jruc	dxmoff_loop
+dxmoff_exit
 
 	calla	DELOBJA8
 	DIE
@@ -270,7 +258,6 @@ wgpff_exit
 
  SUBR	do_fireworks
 
-;	RETP
 	PUSHP	a9,a10
 
 	calla	pal_clean	; Get rid of extra palettes
@@ -366,10 +353,10 @@ wgpff_exit
 	; Back of ring flares
 	movk	12,a10		; Make 12 flares
 	movi	[798,128],a9	; [sx,y] of flare positions
-wgpdo_flare
+dxmodo_flare
 	CREATE	FIREWRK_PID,firework_flare
 	addi	[50,0],a9	; Increment x position
-	dsjs	a10,wgpdo_flare	; go do next flare
+	dsjs	a10,dxmodo_flare	; go do next flare
 
 	; Left Side flares
 	movi	[770,148],a9
@@ -401,49 +388,49 @@ wgpdo_flare
 	SLEEPK	16
 
 	calla	is_8_on_1
-	jrc	wgpdo_pan
+	jrc	dxmodo_pan
 	move	@royal_rumble,a14
-	jrz	wgpno_pan
-wgpdo_pan
+	jrz	dxmono_pan
+dxmodo_pan
 	clr	a0
 	move	a0,@pan_down
 	CREATE0	pan_around
-	jruc	wgpnot_1_on_3
-wgpno_pan
+	jruc	dxmonot_1_on_3
+dxmono_pan
 	; Print 1vs3 congrats message
 	clr	a14
 	callr	print_congrats
-	jruc	wgpno_exp_fw		; Don't bother with exploders
-wgpnot_1_on_3
+	jruc	dxmono_exp_fw		; Don't bother with exploders
+dxmonot_1_on_3
 
 	movi	100,a8		; Number of exploding fire works to do
-wgpdo_exfw_loop
-	CREATE0	wgpanimate_fwexp	; Create an exploding firework
+dxmodo_exfw_loop
+	CREATE0	dxmoanimate_fwexp	; Create an exploding firework
 
 	movk	10,a0		; Sleep a random amount of time
 	calla	RNDRNG0
 	addk	1,a0		; Make sure we sleep at least 1
 	calla	PRCSLP		; Sleep
 
-	dsjs	a8,wgpdo_exfw_loop
+	dsjs	a8,dxmodo_exfw_loop
 	SLEEPK	30
 	movk	1,a0
 	move	a0,@pan_down
 	movi	TSEC*2,a9
-	jruc	wgpcheer_lp
-wgpno_exp_fw
+	jruc	dxmocheer_lp
+dxmono_exp_fw
 	movi	TSEC*5,a9
-wgpcheer_lp
+dxmocheer_lp
 	move	a9,a9
-	jrle	wgpclp_done
+	jrle	dxmoclp_done
 	PUSH	a0,a1,a2,a3,a4,a5,a6,a7,a8,a9
 	movk	1,a3		; And make 'em do something
 	calla	crowd_cheer
 	PULL	a0,a1,a2,a3,a4,a5,a6,a7,a8,a9
 	SLEEPK	15
 	subk	15,a9
-	jruc	wgpcheer_lp
-wgpclp_done
+	jruc	dxmocheer_lp
+dxmoclp_done
 	
 
 	movk	1,a0		; Tell flares to fizzle out
@@ -485,8 +472,6 @@ panning_points					; figure 8
 	.bss	p2x,32			; End X point
 	.bss	p2y,32			; End Y point
 
-*************************************************************
-*
  SUBRP	calc_dxdy
 	PUSH	a8,a9,a10,a11
 
@@ -510,8 +495,6 @@ panning_points					; figure 8
 	rets
 
 
-*************************************************************
-*
  SUBRP	move_camera
 	PUSH	a0
 
@@ -529,8 +512,6 @@ panning_points					; figure 8
 	PULL	a0
 	rets
 
-**************************************************************
-*
  SUBRP	check_camera_position
 	PUSH	a0
 
@@ -540,27 +521,25 @@ panning_points					; figure 8
 	sub	a0,a14			; Subtract the two
 	abs	a14			; Make sure it is positive
 	cmpi	3,a14			; Are we within 3 ?
-	jrgt	azpcheck_y		; br = no
+	jrgt	xhaecheck_y		; br = no
 	clr	a14
 	move	a14,@dx,L		; Stop X movement
 
-azpcheck_y
+xhaecheck_y
 	move	@WORLDTLY,a14,L		; Get current Y position
 	sra	16,a14			; Get rid of fractional portion
 	move	@targ_y,a0		; Get current target Y position
 	sub	a0,a14			; Subtract the two
 	abs	a14			; Make sure it is positive
 	cmpi	3,a14			; Are we within 3 ?
-	jrgt	azpcheck_done		; br = no
+	jrgt	xhaecheck_done		; br = no
 	clr	a14
 	move	a14,@dy,L		; Stop Y movement
 
-azpcheck_done
+xhaecheck_done
 	PULL	a0
 	rets
 
-*******************************************************************
-*
  SUBRP	pan_around
 
 	SLEEP	TSEC/2
@@ -575,10 +554,10 @@ azpcheck_done
 	move	a14,@final_y,L		; Save off for pan back
 	move	a14,@p1y,L		; Set as the starting Y point
 
-cfapan_again
+ixpapan_again
 	movi	panning_points,a8	; Get pointer to pan points table
 
-cfap1on8_lp
+ixpap1on8_lp
 	move	*a8+,a14,L		; Get Ticks for the move
 	move	a14,@ticks,L		; Set ticks for this move
 	move	*a8+,a14,L		; Get Target X position
@@ -591,7 +570,7 @@ cfap1on8_lp
 	move	a14,@targ_y		; Store it as the target Y position
 	movk	15,a10			; Number of ticks for this move
 	callr	calc_dxdy		; Calculate dx and dy
-cfanext_move
+ixpanext_move
 	callr	move_camera		; Move the camera
 	calla	BGND_UD1		; Update the background
 	SLEEPK	1			; Let it actually move
@@ -604,28 +583,28 @@ cfanext_move
 	move	@dx,a14,L		; Get current dx
 	move	@dy,a0,L		; Get current dy
 	or	a0,a14			; Or 'em together
-	jrnz	cfanext_move		; Done with this segment ? - br - no
+	jrnz	ixpanext_move		; Done with this segment ? - br - no
 
 	; This is probably where I want to put up different lines of text
 	move	@pan_status,a14
-	jrnz	cfatext_is_up
+	jrnz	ixpatext_is_up
 
 	SLEEPK	5
 
 	movk	1,a14
 	move	a14,@pan_status
 	move	@royal_rumble,a14
-	jrz	cfado_8_on_1
+	jrz	ixpado_8_on_1
 
 	; Print 2vs8 congrats message - GAWD IS THIS UUUUGGGLY
 	movk	2,a14
-	jruc	cfapcx
-cfado_8_on_1
+	jruc	ixpapcx
+ixpado_8_on_1
 	; Print 1vs8 congrats message - GAWD IS THIS UUUUGGGLY
 	movk	1,a14
-cfapcx	callr	print_congrats
+ixpapcx	callr	print_congrats
 	SLEEPK	2
-cfatext_is_up
+ixpatext_is_up
 
 
 	move	@p2x,a14,L		; Get Last End X position
@@ -633,14 +612,14 @@ cfatext_is_up
 	move	@p2y,a14,L		; Get Last End Y position
 	move	a14,@p1y,L		; Store as new Start Y position
 	move	@pan_down,a14
-	jrnz	cfapan_done
+	jrnz	ixpapan_done
 	move	*a8,a14,L		; Get next X target
-	jrnz	cfap1on8_lp		; Done ? - br = no
+	jrnz	ixpap1on8_lp		; Done ? - br = no
 
 	move	@pan_down,a14
-	jrz	cfapan_again
+	jrz	ixpapan_again
 
-cfapan_done
+ixpapan_done
 	move	@final_x,a14,L		; Get final X position
 	move	a14,@p2x,L		; Store it as new End Y postion
 	srl	16,a14			; Lop off fractional part
@@ -654,7 +633,7 @@ cfapan_done
 	move	a14,@ticks,L		; Store ticks for this move
 
 	callr	calc_dxdy		; Calculate dx and dy
-cfanpb_move
+ixpanpb_move
 	callr	move_camera		; Move the camera
 	calla	BGND_UD1		; Update the background
 	SLEEPK	1			; Let it actually move
@@ -667,7 +646,7 @@ cfanpb_move
 	move	@dx,a14,L		; Get current dx
 	move	@dy,a0,L		; Get current dy
 	or	a0,a14			; Or 'em together
-	jrnz	cfanpb_move		; Done with last segment ? - br = no
+	jrnz	ixpanpb_move		; Done with last segment ? - br = no
 
 	movi	CLSMK3,a0
 	calla	obj_del1c	; Get rid of the text when we pan back down
@@ -675,73 +654,70 @@ cfanpb_move
 	DIE
 
 
-***************************************
-*
- SUBRP	cygc1v3s_tbl
-	.long	cygcongrat_1v8_1
-	.long	cygcongrat_1v8_2
-	.long	cygcongrat_1v8_3
-	.long	cygcongrat_1v8_4
-	.long	cygcongrat_1v8_5
+ SUBRP	ptxlc1v3s_tbl
+	.long	ptxlcongrat_1v8_1
+	.long	ptxlcongrat_1v8_2
+	.long	ptxlcongrat_1v8_3
+	.long	ptxlcongrat_1v8_4
+	.long	ptxlcongrat_1v8_5
 	.long	0
 
- SUBRP	cygc1v8s_tbl
-	.long	cygcongrat_1v8_1
-	.long	cygcongrat_1v8_2
-	.long	cygcongrat_1v8_3
-	.long	cygcongrat_1v8_4
-	.long	cygcongrat_1v8_5
+ SUBRP	ptxlc1v8s_tbl
+	.long	ptxlcongrat_1v8_1
+	.long	ptxlcongrat_1v8_2
+	.long	ptxlcongrat_1v8_3
+	.long	ptxlcongrat_1v8_4
+	.long	ptxlcongrat_1v8_5
 	.long	0
 
- SUBRP	cygc2v8s_tbl
-	.long	cygcongrat_1v8_1
-	.long	cygcongrat_1v8_2
-	.long	cygcongrat_1v8_3
+ SUBRP	ptxlc2v8s_tbl
+	.long	ptxlcongrat_1v8_1
+	.long	ptxlcongrat_1v8_2
+	.long	ptxlcongrat_1v8_3
 	.long	0
 
- SUBRP	cygcongrats_setup_tbl
-	.long	cygc1v3s_tbl
-	.long	cygc1v8s_tbl
-	.long	cygc2v8s_tbl
+ SUBRP	ptxlcongrats_setup_tbl
+	.long	ptxlc1v3s_tbl
+	.long	ptxlc1v8s_tbl
+	.long	ptxlc2v8s_tbl
 
 
- SUBRP	cygc1v3_tbl
-	.long	cygcongrat_1v8_1_str
-	.long	cygcongrat_1v3_2_str
-	.long	cygcongrat_1v3_3_str
-	.long	cygcongrat_1v3_4_str
-	.long	cygcongrat_1v8_5_str
+ SUBRP	ptxlc1v3_tbl
+	.long	ptxlcongrat_1v8_1_str
+	.long	ptxlcongrat_1v3_2_str
+	.long	ptxlcongrat_1v3_3_str
+	.long	ptxlcongrat_1v3_4_str
+	.long	ptxlcongrat_1v8_5_str
 
- SUBRP	cygc1v8_tbl
-	.long	cygcongrat_1v8_1_str
-	.long	cygcongrat_1v8_2_str
-	.long	cygcongrat_1v8_3_str
-	.long	cygcongrat_1v8_4_str
-	.long	cygcongrat_1v8_5_str
+ SUBRP	ptxlc1v8_tbl
+	.long	ptxlcongrat_1v8_1_str
+	.long	ptxlcongrat_1v8_2_str
+	.long	ptxlcongrat_1v8_3_str
+	.long	ptxlcongrat_1v8_4_str
+	.long	ptxlcongrat_1v8_5_str
 
- SUBRP	cygc2v8_tbl
-	.long	cygcongrat_1v8_1_str
-	.long	cygcongrat_2v8_2_str
-	.long	cygcongrat_2v8_3_str
+ SUBRP	ptxlc2v8_tbl
+	.long	ptxlcongrat_1v8_1_str
+	.long	ptxlcongrat_2v8_2_str
+	.long	ptxlcongrat_2v8_3_str
 
- SUBRP	cygcongrats_str_tbl
-	.long	cygc1v3_tbl
-	.long	cygc1v8_tbl
-	.long	cygc2v8_tbl
+ SUBRP	ptxlcongrats_str_tbl
+	.long	ptxlc1v3_tbl
+	.long	ptxlc1v8_tbl
+	.long	ptxlc2v8_tbl
 
-; a14 = 0 - 1v3, 1 - 1vs8, 2 - 2vs 8
  SUBRP	print_congrats
 	PUSH	a8,a9,a10,a11
 	sll	5,a14
 	move	a14,a9
 	move	a14,a10
-	addi	cygcongrats_setup_tbl,a9
-	addi	cygcongrats_str_tbl,a10
+	addi	ptxlcongrats_setup_tbl,a9
+	addi	ptxlcongrats_str_tbl,a10
 	move	*a9,a9,L
 	move	*a10,a10,L
-cygprint_clp
+ptxlprint_clp
 	move	*a9+,a8,L
-	jrz	cygc_done
+	jrz	ptxlc_done
 	move	*a10+,a11,L
 	move	a8,a2
 	calla	setup_message
@@ -749,65 +725,64 @@ cygprint_clp
 	move	a4,@mess_objid
 	move	a11,a4
 	calla	print_string_C2
-	jruc	cygprint_clp
-cygc_done
+	jruc	ptxlprint_clp
+ptxlc_done
 	PULL	a8,a9,a10,a11
 	rets
 
-cygcongrat_1v3_2_str
+ptxlcongrat_1v3_2_str
 	.string	"YOU ARE AN EXCELLENT WRESTLER, BUT...",0
 	.even
-cygcongrat_1v3_3_str
+ptxlcongrat_1v3_3_str
 	.string	"FOR A REAL CHALLENGE, TRY GOING FOR",0
 	.even
-cygcongrat_1v3_4_str
+ptxlcongrat_1v3_4_str
 	.string	"THE WORLD WRESTLING FEDERATION BELT!!!",0
 	.even
 
 
-cygcongrat_1v8_1_str
+ptxlcongrat_1v8_1_str
 	.string	"CONGRATULATIONS!!!",0
 	.even
-cygcongrat_1v8_2_str
+ptxlcongrat_1v8_2_str
 	.string	"YOU HAVE SUCESSFULLY ACHIEVED THE",0
 	.even
-cygcongrat_1v8_3_str
+ptxlcongrat_1v8_3_str
 	.string	"WORLD WRESTLING FEDERATION CHAMPIONSHIP.",0
 	.even
-cygcongrat_1v8_4_str
+ptxlcongrat_1v8_4_str
 	.string	"YOU ARE THE GREATEST WRESTLER!!!",0
 	.even
-cygcongrat_1v8_5_str
+ptxlcongrat_1v8_5_str
 	.string	"...THANK YOU FOR PLAYING...",0
 	.even
 
 
-cygcongrat_2v8_2_str
+ptxlcongrat_2v8_2_str
 	.string	"YOUR WRESTLING TEAM IS ONE OF",0
 	.even
-cygcongrat_2v8_3_str
+ptxlcongrat_2v8_3_str
 	.string	"THE BEST TEAMS OF ALL TIME!!!",0
 	.even
 
 
-cygcongrat_1v8_1
+ptxlcongrat_1v8_1
 	JAM_STR	wsf14_ascii,10,0,200,70,WSF_R_P,print_string_C2
 	.even
-cygcongrat_1v8_2
+ptxlcongrat_1v8_2
 	JAM_STR	font9_ascii,10,0,200,100,FNT9YEL_P,print_string_C2
 	.even
-cygcongrat_1v8_3
+ptxlcongrat_1v8_3
 	JAM_STR	font9_ascii,10,0,200,113,FNT9YEL_P,print_string_C2
 	.even
-cygcongrat_1v8_4
+ptxlcongrat_1v8_4
 	JAM_STR	font9_ascii,10,0,200,126,FNT9YEL_P,print_string_C2
 	.even
-cygcongrat_1v8_5
+ptxlcongrat_1v8_5
 	JAM_STR	font9_ascii,10,0,200,152,FNT9YEL_P,print_string_C2
 	.even
 
 
-******************************************************************************
 
 	.end
 

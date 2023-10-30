@@ -105,76 +105,76 @@
 	move	a0,a4
 
 	btst	MOVE_UP_BIT,a4		;check if player should climb
-	jrz	whbnot_top		;up the turnbuckle
+	jrz	yobgnot_top		;up the turnbuckle
 
 	move	*a13(INRING),a0
-	jrnz	whbno_climb
+	jrnz	yobgno_climb
 
 	move	*a13(OBJ_ZPOSINT),a0
 	cmpi	RING_TOP+5,a0		;give 'em 5 pixels of leeway
-	jrgt	whbnot_top
+	jrgt	yobgnot_top
 
 
 	move	*a13(OBJ_XPOSINT),a0
 	cmpi	RING_X_CENTER,a0
-	jrgt	whbright
-;whbleft
+	jrgt	yobgright
+;yobgleft
 	calla	get_rope_x
 	move	*a13(OBJ_COLLX1),a1
 	subk	5,a1			;give 'em 5
 	cmp	a0,a1			;a1-a0
-	jrgt	whbno_climb
+	jrgt	yobgno_climb
 
 	movk	MOVE_UP_LEFT,a3		;face top left turnbuckle
 	cmp	a3,a4			;Make sure UP/LEFT is pressed
-	jreq	whbclimbit
-	jruc	whbno_climb
+	jreq	yobgclimbit
+	jruc	yobgno_climb
 
-whbright
+yobgright
 	calla	get_rope_x
 	move	*a13(OBJ_COLLX2),a1
 	addk	5,a1			;give 'em 5
 	cmp	a0,a1			;a1-a0
-	jrlt	whbno_climb
+	jrlt	yobgno_climb
 
 	movk	MOVE_UP_RIGHT,a3	;face top right turnbuckle
 	cmp	a3,a4			;Make sure UP/RIGHT is pressed
-	jrne	whbno_climb
+	jrne	yobgno_climb
 
 
-whbclimbit
+yobgclimbit
 
 ;If anybody is already on turnbuckles, ignore this
 	movi	process_ptrs,a4
 	movi	NUM_WRES,a5
 
-whbloop	move	*a4+,a0,L
-	jrz	whbnxt			;skip inactive
+yobgloop	move	*a4+,a0,L
+	jrz	yobgnxt			;skip inactive
 
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_ONTURNBKL,a14
-	jrz	whbfound_climber
+	jrz	yobgfound_climber
 	cmpi	MODE_CLIMBTURNBKL,a14
-	jrz	whbfound_climber
-	jruc	whbnxt
+	jrz	yobgfound_climber
+	jruc	yobgnxt
 
-whbfound_climber
+yobgfound_climber
 	;check to see if we're trying to climb the one he's on
 	move	*a13(OBJ_XPOSINT),a14
 	move	*a0(OBJ_XPOSINT),a10
 	cmpi	RING_X_CENTER,a14
-	jrgt	whbck_rt
+	jrgt	yobgck_rt
 
 	;left tbukl
 	cmpi	RING_X_CENTER,a10
-	jrlt	whbno_climb
-	jruc	whbnxt
+	jrlt	yobgno_climb
+	jruc	yobgnxt
 
-whbck_rt	;right tbukl
+yobgck_rt	;right tbukl
 	cmpi	RING_X_CENTER,a10
-	jrgt	whbno_climb
+	jrgt	yobgno_climb
 
-whbnxt	dsj	a5,whbloop
+yobgnxt	dsj	a5,yobgloop
 
 
 	;we're going to climb - because we allow 'near misses' to climb,
@@ -184,29 +184,29 @@ whbnxt	dsj	a5,whbloop
 
 	move	*a13(WRESTLERNUM),a0
 	X16	a0
-	addi	whbface_turnbuckle,a0
+	addi	yobgface_turnbuckle,a0
 	move	*a0,a0				;flip facing?
-	jrz	whbno_flip
+	jrz	yobgno_flip
 	xori	MOVE_UP|MOVE_DOWN|MOVE_LEFT|MOVE_RIGHT,a3	;opposite
-whbno_flip
+yobgno_flip
 	move	a3,*a13(NEW_FACING_DIR)
 	move	*a13(FACING_DIR),a0
 	cmp	a0,a3
-	jreq	whbclimb
+	jreq	yobgclimb
 	calla	set_rotate_anim
 	calla	change_anim1a
 
-	movi	whbclimb,a0			;this routine gets executed
+	movi	yobgclimb,a0			;this routine gets executed
 	move	a0,*a13(CODE_ADDR),L		;when the rotate anim
 	SETMODE	WAITANIM			;finishes
 
 	setc
 	rets
 
-whbclimb
+yobgclimb
 	move	*a13(WRESTLERNUM),a0
 	X32	a0
-	addi	whbclimb_anims,a0
+	addi	yobgclimb_anims,a0
 	move	*a0,a0,L
 	calla	change_anim1a
 
@@ -215,14 +215,14 @@ whbclimb
 	setc
 	rets
 
-whbnot_top
-whbno_climb
+yobgnot_top
+yobgno_climb
 	clrc
 	rets
 
 ;0 = face turnbuckle before climb
 ;1 = back to turnbuckle
-whbface_turnbuckle
+yobgface_turnbuckle
 	.word	1	;0 Bret Hart
 	.word	1	;1 Razor Ramon
 	.word	1	;2 Undertaker
@@ -235,7 +235,7 @@ whbface_turnbuckle
 	.word	0	;9 Referee
 
 
-whbclimb_anims
+yobgclimb_anims
 	.long	hrt_climb_up_anim	;0 Bret Hart
 	.long	rzr_climb_up_anim	;1 Razor Ramon
 	.long	und_climb_up_anim	;2 Undertaker
@@ -256,44 +256,44 @@ whbclimb_anims
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ATTACHED,a14
-	jreq	cuxdone
+	jreq	dbihdone
 	cmpi	MODE_RUNNING,a14
-	jreq	cuxdone
+	jreq	dbihdone
 	cmpi	MODE_OPPOVERHEAD,a14
-	jreq	cuxdone
+	jreq	dbihdone
 
 ;	calla	get_opp_process
 ;	move	*a0(INRING),a0
-;	jrz	cuxdone
+;	jrz	dbihdone
 	callr	any_opp_outside
-	jrnc	cuxdone
+	jrnc	dbihdone
 
 	;Far enough away from posts?
 	move	*a13(OBJ_XPOSINT),a0
 	subi	RING_X_CENTER,a0
 	abs	a0
 	cmpi	10Dh,a0
-	jrgt	cuxdone
+	jrgt	dbihdone
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	cuxdone
+	jrnz	dbihdone
 
 	;make sure we're at the bottom edge of the ring.
 	move	*a13(OBJ_ZPOS),a0,L
 	cmpi	[RING_BOT,0],a0
-	jrne	cuxdone
+	jrne	dbihdone
 
 	;dummy check
 	callr	idiot_check
-	jrc	cuxclimb
+	jrc	dbihclimb
 
 	;button press
 	move	*a13(BUT_VAL_CUR),a0
 	move	a0,a0
-	jrz	cuxdone
+	jrz	dbihdone
 
-cuxclimb	move	*a13(WRESTLERNUM),a0
+dbihclimb	move	*a13(WRESTLERNUM),a0
 	X32	a0
 	addi	climbthru_bot_anims,a0
 	move	*a0,a0,L
@@ -301,7 +301,7 @@ cuxclimb	move	*a13(WRESTLERNUM),a0
 	movk	2,a0
 	move	a0,*a13(CLIMBING_THRU)
 
-cuxdone	rets
+dbihdone	rets
 
 
 ********
@@ -309,48 +309,48 @@ cuxdone	rets
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ATTACHED,a14
-	jreq	wdfdone
+	jreq	bdxldone
 	cmpi	MODE_DEAD,a14
-	jreq	wdfdone
+	jreq	bdxldone
 	cmpi	MODE_RUNNING,a14
-	jreq	wdfdone
+	jreq	bdxldone
 	cmpi	MODE_INAIR,a14
-	jreq	wdfdone
+	jreq	bdxldone
 	cmpi	MODE_INAIR2,a14
-	jreq	wdfdone
+	jreq	bdxldone
 	cmpi	MODE_OPPOVERHEAD,a14
-	jreq	wdfdone
+	jreq	bdxldone
 
 	move	*a13(CLIMBING_THRU),a0		;1=Climbing thru ropes flag
-	jrnz	wdfdone
+	jrnz	bdxldone
 
 	move	*a13(OBJ_XPOSINT),a0
 	subi	RING_X_CENTER,a0
 	abs	a0
 ;Far enough away from posts?
 	cmpi	0C0h,a0		;48h
-	jrgt	wdfdone
+	jrgt	bdxldone
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	wdfdone
+	jrnz	bdxldone
 
 	;make sure we're at the top edge of the mat.
 	move	*a13(OBJ_ZPOS),a0,L
 	cmpi	[MAT_TOP-5,0],a0
-	jrne	wdfdone
+	jrne	bdxldone
 	move	*a13(MOVE_DIR),a0
 	btst	MOVE_DOWN_BIT,a0
-	jrz	wdfdone
+	jrz	bdxldone
 
 	callr	idiot_check
-	jrc	wdfclimb
+	jrc	bdxlclimb
 
 	move	*a13(BUT_VAL_CUR),a0
 	move	a0,a0
-	jrz	wdfdone
+	jrz	bdxldone
 
-wdfclimb	
+bdxlclimb	
 
 	move	*a13(WRESTLERNUM),a0
 	X32	a0
@@ -360,7 +360,7 @@ wdfclimb
 	movk	2,a0
 	move	a0,*a13(CLIMBING_THRU)
 
-wdfdone	rets
+bdxldone	rets
 
 
 ********
@@ -369,48 +369,48 @@ wdfdone	rets
 	;roll right on through if we're a zombie.
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_ZOMBIE,a14
-	jrnz	jlhzombie
+	jrnz	hvhrzombie
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ATTACHED,a14
-	jreq	jlhdone
+	jreq	hvhrdone
 	cmpi	MODE_RUNNING,a14
-	jreq	jlhdone
+	jreq	hvhrdone
 	cmpi	MODE_OPPOVERHEAD,a14
-	jreq	jlhdone
+	jreq	hvhrdone
 
 ;	calla	get_opp_process
 ;	move	*a0(INRING),a0
-;	jrz	jlhdone
+;	jrz	hvhrdone
 	callr	any_opp_outside
-	jrnc	jlhdone
+	jrnc	hvhrdone
 
 	;Far enough away from posts?
 	move	*a13(OBJ_XPOSINT),a0
 	subi	RING_X_CENTER,a0
 	abs	a0
 	cmpi	0C0h,a0
-	jrgt	jlhdone
+	jrgt	hvhrdone
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	jlhdone
+	jrnz	hvhrdone
 
 	;make sure we're at the top edge of the ring.
 	move	*a13(OBJ_ZPOS),a0,L
 	cmpi	[RING_TOP,0],a0
-	jrne	jlhdone
+	jrne	hvhrdone
 
 	;dummy check
 	callr	idiot_check
-	jrc	jlhclimb
+	jrc	hvhrclimb
 
 	;button press
 	move	*a13(BUT_VAL_CUR),a0
 	move	a0,a0
-	jrz	jlhdone
+	jrz	hvhrdone
 
-jlhclimb	move	*a13(WRESTLERNUM),a0
+hvhrclimb	move	*a13(WRESTLERNUM),a0
 	X32	a0
 	addi	climbthru_top_anims,a0
 	move	*a0,a0,L
@@ -418,20 +418,20 @@ jlhclimb	move	*a13(WRESTLERNUM),a0
 	movk	2,a0
 	move	a0,*a13(CLIMBING_THRU)
 
-jlhdone	rets
+hvhrdone	rets
 
-jlhzombie	move	*a13(WRESTLERNUM),a0
+hvhrzombie	move	*a13(WRESTLERNUM),a0
 	X32	a0
 	addi	rollthru_top_anims,a0
 	move	*a0,a0,L
 
 	move	*a13(ANIBASE),a14,L
 	cmp	a0,a14
-	jreq	jlhskp			;skip if we're already doing it.
+	jreq	hvhrskp			;skip if we're already doing it.
 	calla	change_anim1a
 	movk	2,a0
 	move	a0,*a13(CLIMBING_THRU)
-jlhskp	rets
+hvhrskp	rets
 
 
 ********
@@ -439,51 +439,51 @@ jlhskp	rets
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ATTACHED,a14
-	jreq	mardone
+	jreq	fihddone
 	cmpi	MODE_DEAD,a14
-	jreq	mardone
+	jreq	fihddone
 	cmpi	MODE_RUNNING,a14
-	jreq	mardone
+	jreq	fihddone
 	cmpi	MODE_INAIR,a14
-	jreq	mardone
+	jreq	fihddone
 	cmpi	MODE_INAIR2,a14
-	jreq	mardone
+	jreq	fihddone
 	cmpi	MODE_OPPOVERHEAD,a14
-	jreq	mardone
+	jreq	fihddone
 
 	move	*a13(CLIMBING_THRU),a0		;1=Climbing thru ropes flag
-	jrnz	mardone
+	jrnz	fihddone
 
 	;Far enough away from posts?
 	move	*a13(OBJ_XPOSINT),a0
 	subi	RING_X_CENTER,a0
 	abs	a0
 	cmpi	10Dh,a0
-	jrgt	mardone
+	jrgt	fihddone
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	mardone
+	jrnz	fihddone
 
 	;make sure we're up against the bottom of the ring
 	move	*a13(OBJ_ZPOS),a0,L
 	cmpi	[MAT_BOT+5,0],a0
-	jrne	mardone
+	jrne	fihddone
 
 	move	*a13(MOVE_DIR),a0
 	btst	MOVE_UP_BIT,a0
-	jrz	mardone
+	jrz	fihddone
 
 	;dummy check
 	callr	idiot_check
-	jrc	marclimb
+	jrc	fihdclimb
 
 	;button press
 	move	*a13(BUT_VAL_CUR),a0
 	move	a0,a0
-	jrz	mardone
+	jrz	fihddone
 
-marclimb  
+fihdclimb  
 
 	move	*a13(WRESTLERNUM),a0
 	X32	a0
@@ -493,95 +493,95 @@ marclimb
 	movk	2,a0
 	move	a0,*a13(CLIMBING_THRU)
 
-mardone	rets
+fihddone	rets
 
 ********
  SUBR	ck_climb_out_side
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ATTACHED,a14
-	jreq	elcdone
+	jreq	lyuddone
 	cmpi	MODE_RUNNING,a14
-	jreq	elcdone
+	jreq	lyuddone
 	cmpi	MODE_OPPOVERHEAD,a14
-	jreq	elcdone
+	jreq	lyuddone
 
 ;	calla	get_opp_process
 ;	move	*a0(INRING),a1
-;	jrz	elcdone
+;	jrz	lyuddone
 	callr	any_opp_outside
-	jrnc	elcdone
+	jrnc	lyuddone
 	move	*a0(CLIMBING_THRU),a0
 	CMPI	1,A0
-	JREQ	elcdone
+	JREQ	lyuddone
 
 	;Far enough away from posts?
 	move	*a13(OBJ_ZPOSINT),a0
 	subi	RING_Z_CENTER,a0
 	abs	a0
 	cmpi	48h,a0
-	jrgt	elcdone
+	jrgt	lyuddone
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	elcdone
+	jrnz	lyuddone
 
 	;make sure we're up against one of the sides
 	calla	get_rope_x
 	move	a0,a4
 	cmpi	RING_X_CENTER,a0
-	jrgt	elcrt
+	jrgt	lyudrt
 
-elclf	move	*a13(STICK_VAL_CUR),a0
+lyudlf	move	*a13(STICK_VAL_CUR),a0
 	btst	MOVE_LEFT_BIT,a0
-	jrz	elcdone
+	jrz	lyuddone
 
 	move	a4,a0
 	move	*a13(OBJ_COLLX1),a1
 	cmp	a0,a1
-	jrle	elcout_lf
-	jruc	elcdone
+	jrle	lyudout_lf
+	jruc	lyuddone
 
-elcrt	move	*a13(STICK_VAL_CUR),a0
+lyudrt	move	*a13(STICK_VAL_CUR),a0
 	btst	MOVE_RIGHT_BIT,a0
-	jrz	elcdone
+	jrz	lyuddone
 
 	move	a4,a0
 	move	*a13(OBJ_COLLX2),a1
 	cmp	a0,a1
-	jrge	elcout_rt
-	jruc	elcdone
+	jrge	lyudout_rt
+	jruc	lyuddone
 
-elcout_lf	movk	MOVE_DOWN_LEFT,a2
-	jruc	elcdummy
+lyudout_lf	movk	MOVE_DOWN_LEFT,a2
+	jruc	lyuddummy
 
-elcout_rt	movk	MOVE_DOWN_RIGHT,a2
+lyudout_rt	movk	MOVE_DOWN_RIGHT,a2
 
-elcdummy	;dummy check
+lyuddummy	;dummy check
 	callr	idiot_check
-	jrc	elcspecial_face
+	jrc	lyudspecial_face
 
 	;button press
 	move	*a13(BUT_VAL_CUR),a0
 	move	a0,a0
-	jrz	elcdone
+	jrz	lyuddone
 
-elcface	move	*a13(FACING_DIR),a1
+lyudface	move	*a13(FACING_DIR),a1
 	cmp	a2,a1
-	jreq	elcclimb
+	jreq	lyudclimb
 
 	move	a2,*a13(NEW_FACING_DIR)
 	calla	set_rotate_anim
 	calla	change_anim1a
 
-	movi	elcclimb,a0
+	movi	lyudclimb,a0
 	move	a0,*a13(CODE_ADDR),L
 	SETMODE	WAITANIM
 	movk	1,a0
 	move	a0,*a13(CLIMBING_THRU)
 	rets
 
-elcclimb	move	*a13(WRESTLERNUM),a0
+lyudclimb	move	*a13(WRESTLERNUM),a0
 	X32	a0
 	addi	climbthru_side_anims,a0
 	move	*a0,a0,L
@@ -591,121 +591,121 @@ elcclimb	move	*a13(WRESTLERNUM),a0
 
 	movk	1,a0
 	move	a0,*a13(CLIMBING_THRU)
-elcdone	rets
+lyuddone	rets
 
-elcspecial_face
+lyudspecial_face
 	move	*a13(PLYRMODE),A1
 	CMPI	MODE_WAITANIM,a1
-	JREQ	elcdone
-	jruc	elcface
+	JREQ	lyuddone
+	jruc	lyudface
 
 ********
  SUBR	ck_climb_in_side
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ATTACHED,a14
-	jreq	yhvdone
+	jreq	dwzpdone
 	cmpi	MODE_DEAD,a14
-	jreq	yhvdone
+	jreq	dwzpdone
 	cmpi	MODE_OPPOVERHEAD,a14
-	jreq	yhvdone
+	jreq	dwzpdone
 
 	move	*a13(CLIMBING_THRU),a0		;1=Climbing thru ropes flag
-	jrnz	yhvdone
+	jrnz	dwzpdone
 
 ;Far enough away from posts?
 	move	*a13(OBJ_ZPOSINT),a0
 	subi	RING_Z_CENTER,a0
 	abs	a0
 	cmpi	0D8h,a0
-	jrgt	yhvdone
+	jrgt	dwzpdone
 
 	;is he close enough to the ring?
 	move	*a13(OBJ_XPOSINT),a0
 	cmpi	RING_X_CENTER,a0
-	jrlt	yhvon_left
+	jrlt	dwzpon_left
 
 	;he's right of center
 	movk	MOVE_LEFT_BIT,A2
 	movi	vln_right_matedge2,a6
 	movk	MOVE_DOWN_LEFT,a7
 	move	*a13(OBJ_COLLX1),a14
-	jruc	yhvd_set
+	jruc	dwzpd_set
 
-yhvon_left
+dwzpon_left
 	;he's left of center
 	movk	MOVE_RIGHT_BIT,A2
 	movi	vln_left_matedge2,a6
 	movk	MOVE_DOWN_RIGHT,a7
 	move	*a13(OBJ_COLLX2),a14
 
-yhvd_set
+dwzpd_set
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_RUNNING,a0
 	jrne	no_special_check
 
 	move	*a13(GETUP_TIME),a0
-	jrnz	yhvdone
+	jrnz	dwzpdone
 
 	jruc	running_back_in_here
 
 no_special_check
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	yhvdone
+	jrnz	dwzpdone
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_HEADHELD,a0
-	jreq	yhvdone
+	jreq	dwzpdone
 	cmpi	MODE_HEADHOLD,a0
-	jreq	yhvdone
+	jreq	dwzpdone
 	cmpi	MODE_INAIR,a0
-	jreq	yhvdone
+	jreq	dwzpdone
 	cmpi	MODE_INAIR2,a0
-	jreq	yhvdone
+	jreq	dwzpdone
 
 running_back_in_here
 	calla	calc_line_x
 	sub	a14,a0
 	abs	a0
 	cmpi	10,a0
-	jrgt	yhvdone
+	jrgt	dwzpdone
 
 	move	*a13(MOVE_DIR),a0
 	btst	A2,a0
-	jrz	yhvdone
+	jrz	dwzpdone
 
 	;idiot check
 	callr	idiot_check
-	jrc	yhvclimb
+	jrc	dwzpclimb
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_RUNNING,a0
-	jrz	yhvclimb
+	jrz	dwzpclimb
 
 	;button press
 	move	*a13(BUT_VAL_CUR),a0
 	move	a0,a0
-	jrz	yhvdone
+	jrz	dwzpdone
 
-yhvclimb	;he's within five pixels of his mat edge.  face the ring
+dwzpclimb	;he's within five pixels of his mat edge.  face the ring
 	move	*a13(FACING_DIR),a1
 	cmp	a7,a1
-	jreq	yhvjump_in
+	jreq	dwzpjump_in
 
 	move	a7,*a13(NEW_FACING_DIR)
 	calla	set_rotate_anim
 	calla	change_anim1a
 
-	movi	yhvjump_in,a0
+	movi	dwzpjump_in,a0
 	move	a0,*a13(CODE_ADDR),L
 	SETMODE	WAITANIM
 	movk	1,a0
 	move	a0,*a13(CLIMBING_THRU)
 	rets
 
-yhvjump_in
+dwzpjump_in
 	move	*a13(WRESTLERNUM),a0
 	X32	a0
 	addi	climbin_side_anims,a0
@@ -716,7 +716,7 @@ yhvjump_in
 	movk	1,a0
 	move	a0,*a13(CLIMBING_THRU)
 
-yhvdone	rets
+dwzpdone	rets
 
 climbthru_bot_anims
 	.long	hrt_climbthru_bot_anim	;0 Bret Hart
@@ -813,30 +813,30 @@ rollthru_top_anims
 * isn't PCNT or PCNT-1, set it and CLIMB_START to PCNT, clrc, and rets.
 *		
 
-lngIDIOT_COUNT	.equ	21
+oeyvIDIOT_COUNT	.equ	21
 
  SUBRP	idiot_check
 
 	move	*a13(CLIMB_LAST),a14
 	move	@PCNT,a0
 	cmp	a0,a14
-	jreq	lngno
+	jreq	oeyvno
 
 	inc	a14
 	cmp	a0,a14
-	jreq	lngcont
+	jreq	oeyvcont
 
 	;new stick.
 	move	a0,*a13(CLIMB_START)
 	move	a0,*a13(CLIMB_LAST)
-lngno	clrc
+oeyvno	clrc
 	rets
 
-lngcont	move	a0,*a13(CLIMB_LAST)
+oeyvcont	move	a0,*a13(CLIMB_LAST)
 	move	*a13(CLIMB_START),a14
 	sub	a14,a0
-	cmpi	lngIDIOT_COUNT,a0
-	jrlt	lngno
+	cmpi	oeyvIDIOT_COUNT,a0
+	jrlt	oeyvno
 
 	;climb!
 	setc
@@ -853,9 +853,9 @@ lngcont	move	a0,*a13(CLIMB_LAST)
 ;
 ;	clr	a0
 ;	movk	20,a1			;8 longs
-;lngclr_loop
+;oeyvclr_loop
 ;	move	a0,*a2+,L
-;	dsj	a1,lngclr_loop
+;	dsj	a1,oeyvclr_loop
 ;
 ;	rets
 ;
@@ -868,7 +868,7 @@ lngcont	move	a0,*a13(CLIMB_LAST)
 ; SUBR	log_damage
 ;
 ;	move	a0,a0
-;	jrnn	lngnot_damage
+;	jrnn	oeyvnot_damage
 ;
 ;	PUSH	a1,a2,a3
 ;
@@ -879,8 +879,8 @@ lngcont	move	a0,*a13(CLIMB_LAST)
 ;	addi	DAMAGE_HIST+20*32,a2	;move everything down 1 long
 ;
 ;	movk	19,a3
-;lnglp	move	-*a1,-*a2,L
-;	dsjs	a3,lnglp
+;oeyvlp	move	-*a1,-*a2,L
+;	dsjs	a3,oeyvlp
 ;
 ;	move	a0,a1			;damage amount
 ;	neg	a1
@@ -892,7 +892,7 @@ lngcont	move	a0,*a13(CLIMB_LAST)
 ;
 ;	PULL	a1,a2,a3
 ;
-;lngnot_damage
+;oeyvnot_damage
 ;	rets
 ;
 ;
@@ -915,20 +915,20 @@ lngcont	move	a0,*a13(CLIMB_LAST)
 ;	addi	DAMAGE_HIST,a1		;start of damage stucture
 ;
 ;	movk	20,a6
-;lngloop
+;oeyvloop
 ;	move	*a1+,a2			;tick count
-;	jrz	lngexit			;can't have a 0 tick count
+;	jrz	oeyvexit			;can't have a 0 tick count
 ;	move	*a1+,a3			;damage
 ;
 ;	move	a4,a14
 ;	sub	a2,a14
 ;	cmp	a0,a14			;> timespan?
-;	jrgt	lngexit
+;	jrgt	oeyvexit
 ;
 ;	add	a3,a5
-;	dsj	a6,lngloop
+;	dsj	a6,oeyvloop
 ;
-;lngexit
+;oeyvexit
 ;	move	a5,a0
 ;	rets
 ;
@@ -955,11 +955,11 @@ OFFSCR_X	equ	221
 	; him on the other team.  This shouldn't break anything.
 
 	move	@royal_rumble,a14
-	jrz	xnenorum
+	jrz	phntnorum
 	cmpi	1,a10		;(plyrnum)
-	jrne	xnenorum
+	jrne	phntnorum
 	movk	1,a9		;act like plyr 1 is on team 1.
-xnenorum
+phntnorum
 
 	move	a10,a11			;a11 is PLYRNUM
 	move	a10,a1
@@ -975,65 +975,65 @@ xnenorum
 
 	move	*a10(PLYR_TYPE),a14
 	cmpi	PTYPE_PLAYER,a14
-	jreq	xneyes		;humans get getup meters
+	jreq	phntyes		;humans get getup meters
 
 	movk	NUM_WRES,a0
 	movi	process_ptrs,a1
 	move	*a10(PLYR_SIDE),a2	;we'll need that later anyway.
-xnelp0	move	*a1+,a3,L
-	jrz	xnenxt0		;skip inactive
+phntlp0	move	*a1+,a3,L
+	jrz	phntnxt0		;skip inactive
 	cmp	a3,a10
-	jreq	xnenxt0		;skip self
+	jreq	phntnxt0		;skip self
 	move	*a3(PLYR_SIDE),a14
 	cmp	a14,a2
-	jrne	xnenxt0		;skip other team
+	jrne	phntnxt0		;skip other team
 	move	*a3(PLYR_TYPE),a14
 	cmpi	PTYPE_PLAYER,a14
-	jreq	xnedie		;we have a human teammate so we don't get one
-	jruc	xnenxt0
+	jreq	phntdie		;we have a human teammate so we don't get one
+	jruc	phntnxt0
 
-xnedie	clr	a14
+phntdie	clr	a14
 	move	a14,*a10(METER_PROC),L
 	DIE			;multi-drone team--no meters
 
-xnenxt0	dsjs	a0,xnelp0
+phntnxt0	dsjs	a0,phntlp0
 
 	;we got through the loop and found no teammates, so we're a lone
 	; drone and we get a meter only if GETUP_POWER is set.
 ;	move	@GETUP_POWER,a14
 	move	@drone_meters_on,a14
-	jrz	xnedie		;no GETUP_POWER--no meter
+	jrz	phntdie		;no GETUP_POWER--no meter
 
 	move	@NUM_OPPS,a1
 	cmpi	2,a1	   
-	jrge	xnedie
+	jrge	phntdie
 
 
-xneyes	clr	a0
+phntyes	clr	a0
 	move	a0,*a13(DISPLAY_VAL)
 
 	;set our x-position based on PLYR_SIDE
 	movi	[OFFSCR_X,0],a10
 	move	a9,a9
-	jrnz	xnep2
+	jrnz	phntp2
 
 	dec	a10
 	neg	a10
-xnep2
+phntp2
 
 	movi	RECVRBLK,a2			;* image (green bar)
 	movi	[109,0],a1			;y pos
 	movi	1801h,a3			;z pos
-	callr	xnebegin_obj
+	callr	phntbegin_obj
 	move	a8,*a13(IPTR_GREEN),L
 	movi	RECVR_R,a2			;* image (frame)
 	move	a9,a9
-	jrnz	xnep2_meter
+	jrnz	phntp2_meter
 	movi	RECVR_L,a2			;* image (frame)
-xnep2_meter
+phntp2_meter
 	movi	[189,0],a1			;y pos
 	movi	1800h,a3			;z pos
-	callr	xnebegin_obj
+	callr	phntbegin_obj
 	move	a8,*a13(IPTR_FRAME),L
 
 	move	a11,a1
@@ -1049,44 +1049,44 @@ xnep2_meter
 	move	a0,*a10(DELAY_METER)
 
 	movk	10,a11
-xneoffscr_loop
+phntoffscr_loop
 	move	a11,a11
-	jrz	xneupdate
+	jrz	phntupdate
 	dec	a11
-	jruc	xnecont
-xneupdate
+	jruc	phntcont
+phntupdate
 	movi	[OFFSCR_X,0],a0
-	callr	xneset_x
+	callr	phntset_x
 
 	move	*a10(WHOHITME),A0,L
 	move	*a0(COMBO_COUNT),A14
-	jrnz	xnecont
+	jrnz	phntcont
 	move	*a10(DELAY_METER),a14
-	jrnz	xnecont
+	jrnz	phntcont
 	move	*a10(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrz	xnecont
+	jrz	phntcont
 ;If health meter is down low, don't have getup meter come out.
 ;Unless it was a fling!
 	move	*a10(PLYRNUM),a1
 	.ref	get_health
 	calla	get_health
 	cmpi	20,a0
-	jrgt	xnenorm
+	jrgt	phntnorm
 	move	*a10(GETUP_TIME),a14
 	cmpi	FLUNG_TIME,a14
-	jrz	xneonscr
+	jrz	phntonscr
 
-xnenorm
+phntnorm
 	move	*a10(GETUP_TIME),a14
-	jrnz	xneonscr
+	jrnz	phntonscr
 
-xnecont
+phntcont
 	SLEEPK	1
-	jruc	xneoffscr_loop
+	jruc	phntoffscr_loop
 
 
-xneonscr
+phntonscr
 	move	a14,a11
 
 	movi	GETUP_SIZE,a0
@@ -1098,49 +1098,49 @@ xneonscr
 	movi	120,a6
 	move	*a10(GETUP_TIME),a5
 
-xneonscr_loop
+phntonscr_loop
 
 	movi	[ONSCR_X,0],a0
-	callr	xneset_x
+	callr	phntset_x
 
 	move	*a10(GETUP_TIME),a7
 
 	;if a7 (current getup) is greater than a11 (starting getup), our
 	; scale will be messed up.  In this case, just move a7 into a11.
 	cmp	a11,a7
-	jrle	xnerescale
+	jrle	phntrescale
 	move	a7,a11
 
-xnerescale
+phntrescale
 	movi	GETUP_SIZE,a0
 	mpyu	a0,a7			;* GETUP_SIZE
 	divu	a11,a7			;/ INITIAL GETUP TIME
 
 	move	*a13(DISPLAY_VAL),a0
 	cmp	a0,a7			;has getup been incremented?
-	jrle	xneok1
+	jrle	phntok1
 
 	move	a7,a11
 	movi	GETUP_SIZE,a0
 	mpyu	a0,a7			;* GETUP_SIZE
 	divu	a11,a7			;/ INITIAL GETUP TIME
-xneok1
+phntok1
 	.ref	dufus_msg_on
 
 	subk	1,a6
-	jrnz	xnedont_bother
+	jrnz	phntdont_bother
 	move	*a10(GETUP_TIME),a0
 	sub	a0,a5
 	cmpi	175,a5
-	jrgt	xnedont_bother
+	jrgt	phntdont_bother
 	PUSH	a2,a7,a9
 	movk	2,a9
 	CREATE	4000h|AWARD_PID,dufus_msg_on
 	PULL	a2,a7,a9
-xnedont_bother
+phntdont_bother
 
 	PUSH	a5,a6
-	callr	xneupdate_meter
+	callr	phntupdate_meter
 	PULL	a5,a6
 
 	move	a7,a7
@@ -1153,16 +1153,16 @@ xnedont_bother
 	PUSHP	a5,a6
 	SLEEPK	1
 	PULLP	a5,a6
-	jruc	xneonscr_loop
+	jruc	phntonscr_loop
 
 
 **********
- SUBRP	xneset_x
+ SUBRP	phntset_x
 
 	move	a9,a9
-	jrnz	xnep22
+	jrnz	phntp22
 	neg	a0
-xnep22
+phntp22
 	addi	[200-1,0],a0			;center of screen
 	move	a13,a14
 	addi	IPTR_FRAME,a14
@@ -1171,16 +1171,16 @@ xnep22
 	sub	a1,a0
 	sra	2,a0
 	movk	3-1,a1
-xnelp	move	*a14+,a8,L
+phntlp	move	*a14+,a8,L
 	move	*a8(OXVAL),a2,L
 	add	a0,a2
 	move	a2,*a8(OXVAL),L
-	dsj	a1,xnelp
+	dsj	a1,phntlp
 	rets
 
 
 **********
- SUBRP	xnebegin_obj
+ SUBRP	phntbegin_obj
 
 	movi	[200-1,0],a0			;x pos
 	add	a10,a0
@@ -1194,7 +1194,7 @@ xnelp	move	*a14+,a8,L
 
 
 **********
- SUBRP	xneupdate_meter
+ SUBRP	phntupdate_meter
 
 	move	*a13(DISPLAY_VAL),a0
 	add	a0,a7
@@ -1204,13 +1204,13 @@ xnelp	move	*a14+,a8,L
 
 	neg	a1
 	addi	GETUP_SIZE,a1
-	jrp	xneok
+	jrp	phntok
 	clr	a1
-xneok	movi	GETUP_SIZE,a0
+phntok	movi	GETUP_SIZE,a0
 	cmp	a0,a1				;meter can't be taller
-	jrle	xneok2				;than GETUP_SIZE pixels
+	jrle	phntok2				;than GETUP_SIZE pixels
 	move	a0,a1
-xneok2	move	*a13(IPTR_GREEN),a8,L
+phntok2	move	*a13(IPTR_GREEN),a8,L
 
 	MOVI	GETUP_SIZE,A2
 	SUB	A1,A2
@@ -1242,15 +1242,15 @@ xneok2	move	*a13(IPTR_GREEN),a8,L
  SUBR	ditch_getup_meter
 
 	move	*a13(GETUP_TIME),a0
-	jrz	aywcont
+	jrz	raejcont
 	move	*a13(PLYR_DIZZY),a0
-	jrnz	aywcont
+	jrnz	raejcont
 
 ;This guy has a getup meter on screen and is running out of control!
 ;Cause getup meter to slide off screen.
 
 	move	*a13(METER_PROC),a0,L
-	jrz	aywcont		;skip if we don't have a meter.
+	jrz	raejcont		;skip if we don't have a meter.
 	PUSH	a8,a9,a10
 	move	*a0(PA8),a8,L
 	move	*a0(PA9),a9,L
@@ -1260,7 +1260,7 @@ xneok2	move	*a13(IPTR_GREEN),a8,L
 	calla	XFERPROC
 	PULL	a8,a9,a10
 
-aywcont	rets
+raejcont	rets
 
 *****************************************************************************
 *
@@ -1272,10 +1272,10 @@ aywcont	rets
 	PUSH	a14
 	move	*a13(GETUP_TIME),a14
 	cmpi	20,a14
-	jrlt	vrbexit
+	jrlt	dtwuexit
 	add	a0,a14
 	move	a14,*a13(GETUP_TIME)
-vrbexit
+dtwuexit
 	PULL	a14
 	rets
 
@@ -1291,30 +1291,30 @@ vrbexit
 
 	move	*a13(OBJ_ZPOSINT),a0
 	move	*a13(Z_BOUND),a14
-	jrz	slgreg
+	jrz	lpatreg
 
 	sub	a0,a14
 	abs	a14		;<-new!
 	cmpi	6,a14
-	jrle	slgno_roll
-slgreg
+	jrle	lpatno_roll
+lpatreg
 	move	*a13(STICK_VAL_CUR),a0
 	andi	MOVE_UP|MOVE_DOWN,a0
-	jrz	slgno_roll
+	jrz	lpatno_roll
 
 	move	*a13(WRESTLERNUM),a14
 	X32	a14
-	addi	slgroll_table,a14
+	addi	lpatroll_table,a14
 	move	*a14,a14,L
 
 	move	*a14+,a1		;roll speed
 	move	*a14+,a2,L		;z velocity
 
 	btst	MOVE_DOWN_BIT,a0
-	jrnz	slgdown
+	jrnz	lpatdown
 	neg	a1			;must be up
 	neg	a2
-slgdown
+lpatdown
 	move	a2,*a13(OBJ_ZVEL),L
 
 	move	*a13(ROLL_POS),a0
@@ -1328,29 +1328,29 @@ slgdown
 	add	a1,a14
 	move	*a14,a0,L
  .if DEBUG
-	jrnz	slgok
+	jrnz	lpatok
  	LOCKUP
-slgok
+lpatok
  .endif
 
 	move	*a0,a0,L
  .if DEBUG
-	jrnz	slgok2
+	jrnz	lpatok2
  	LOCKUP
-slgok2
+lpatok2
  .endif
 
 	move	a0,*a13(CUR_FRAME),L
 	rets
 
 
-slgno_roll
+lpatno_roll
 	clr	a0
 	move	a0,*a13(OBJ_ZVEL),L
 	rets
 
 
-slgroll_table
+lpatroll_table
 	REFLONG	hrt_roll_frames	;0 Bret Hart
 	REFLONG	rzr_roll_frames	;1 Razor Ramon
 	REFLONG	und_roll_frames	;2 Undertaker
@@ -1383,9 +1383,9 @@ slgroll_table
 ;
 ;	cmpi	65,a0
 ;
-;	jrlt	slgno_dizzy
+;	jrlt	lpatno_dizzy
 ;
-;	jruc	slgno_dizzy
+;	jruc	lpatno_dizzy
 ;
 ;
 ;	calla	clear_damage_log
@@ -1396,12 +1396,12 @@ slgroll_table
 ;	.ref	get_health
 ;	calla	get_health
 ;	cmpi	30,a0
-;	jrlt	slgno_dizzy
+;	jrlt	lpatno_dizzy
 ;
 ;;Too many dizzies this round?
 ;	move	*a13(PLYR_DIZZY_CNT),a0
 ;	cmpi	1,a0				;Max dizzies per round
-;	jrge	slgno_dizzy
+;	jrge	lpatno_dizzy
 ;
 ;	inc	a0
 ;	move	a0,*a13(PLYR_DIZZY_CNT)
@@ -1411,7 +1411,7 @@ slgroll_table
 ;	move	a0,*a13(PLYR_DIZZY)
 ;	rets
 ;
-;slgno_dizzy
+;lpatno_dizzy
 ;	clr	a0	;return FALSE
 ;	rets
 
@@ -1444,9 +1444,9 @@ slgroll_table
 ;	movi	[0f6h,0],a1
 ;	movi	[44h,0],a0
 ;	move	*a10(PLYRNUM),a2
-;	jrz	xgiok
+;	jrz	mlzkok
 ;	movi	[401-44h,0],a0
-;xgiok
+;mlzkok
 ;	movi	WHAK0001,a2
 ;	movi	frame_z+2,a3			;Z
 ;	movi	DMAWNZ|M_3D|M_SCRNREL,a4	;DMA flags
@@ -1459,9 +1459,9 @@ slgroll_table
 ;	movi	[0f6h,0],a1
 ;	movi	[44h,0],a0
 ;	move	*a10(PLYRNUM),a2
-;	jrz	xgiok2
+;	jrz	mlzkok2
 ;	movi	[401-44h,0],a0
-;xgiok2
+;mlzkok2
 ;	movi	WKBUTT01,a2
 ;	movi	frame_z+3,a3			;Z
 ;	movi	DMAWNZ|M_3D|M_SCRNREL,a4	;DMA flags
@@ -1470,21 +1470,21 @@ slgroll_table
 ;	clr	a7
 ;	calla	BEGINOBJ
 ;
-;xgistart
+;mlzkstart
 ;	movi	butn_l,a9
 ;
-;xgilp	move	*a10(GETUP_TIME),a0
-;	jrz	xgidie
+;mlzklp	move	*a10(GETUP_TIME),a0
+;	jrz	mlzkdie
 ;
 ;	move	*a9+,a0,L
-;	jrz	xgistart
+;	jrz	mlzkstart
 ;	move	*a8(OCTRL),a1
 ;	calla	obj_aniq
-;xginoani
+;mlzknoani
 ;	SLEEPK	3
-;	jruc	xgilp			;Going up?
+;	jruc	mlzklp			;Going up?
 ;
-;xgidie
+;mlzkdie
 ;	SLEEPK	10
 ;
 ;	move	a11,a0
@@ -1517,37 +1517,37 @@ slgroll_table
 	move	*a0(IPCOUNT),a9
 
 	.if DEBUG
-	jrle	faibad
+	jrle	ehsmbad
 	cmpi	5,a9
-	jrgt	faibad
-	jruc	faiok
-faibad	LOCKUP
-faiok
+	jrgt	ehsmbad
+	jruc	ehsmok
+ehsmbad	LOCKUP
+ehsmok
 	.endif
 
 	move	*a0(IANIOFFX),a1
 	move	*a0(IANIOFFY),a2
 	addi	ICBZ,a0
 	dec	a9
-	jrle	faidone
+	jrle	ehsmdone
 
-failoop
+ehsmloop
 	move	*a0(IANIOFFX),a14
 	cmp	a1,a14
-	jrle	faixc
+	jrle	ehsmxc
 	move	a14,a1			;new hi x
 
-faixc
+ehsmxc
 	move	*a0(IANIOFFY),a14
 	cmp	a2,a14
-	jrle	faiyc
+	jrle	ehsmyc
 	move	a14,a2			;new hi y
 
-faiyc
+ehsmyc
 	addi	ICPBZ,a0
-	dsj	a9,failoop
+	dsj	a9,ehsmloop
 
-faidone
+ehsmdone
 	sla	16,a2
 	move	a2,a0
 	zext	a1			;clear out sign
@@ -1578,27 +1578,27 @@ faidone
 	sub	a1,a2
 	addi	ICBZ,a0
 	dec	a9
-	jrz	lvddone
+	jrz	pezfdone
 
-lvdloop
+pezfloop
 	move	*a0(IANIOFFX),a14
 	cmp	a1,a14
-	jrle	lvdac
+	jrle	pezfac
 	move	a14,a1			;new hi x
 
-lvdac
+pezfac
 	move	*a0(ISIZEX),a14
 	move	*a0(IANIOFFX),a3
 	sub	a3,a14
 	cmp	a2,a14
-	jrle	lvdsac
+	jrle	pezfsac
 	move	a14,a2			;new hi y
 
-lvdsac
+pezfsac
 	addi	ICPBZ,a0
-	dsj	a9,lvdloop
+	dsj	a9,pezfloop
 
-lvddone
+pezfdone
 	move	a2,a0
 	add	a1,a0
 	PULL	a1,a2,a3,a9
@@ -1624,16 +1624,16 @@ lvddone
 	move	*a13(OBJ_XVEL),a0,L
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	sfwabs
+	jrnz	vkubabs
 	neg	a0
-sfwabs
+vkubabs
 	move	a0,a0
-	jrnn	sfwok
+	jrnn	vkubok
 
 	move	*a13(OBJ_XVEL),a0,L
 	sra	1,a0
 	move	a0,*a13(OBJ_XVEL),L
-sfwok
+vkubok
 	rets
 
 
@@ -1666,11 +1666,11 @@ sfwok
 *
 
 
-xstBUFFER	equ	[20,0]
+ozpcBUFFER	equ	[20,0]
 
-xstXMINUSX	.equ	0
-xstYMINUSX	.equ	xstXMINUSX+32*(NUM_WRES+1)
-xstZMINUSX	.equ	xstYMINUSX+32*(NUM_WRES+1)
+ozpcXMINUSX	.equ	0
+ozpcYMINUSX	.equ	ozpcXMINUSX+32*(NUM_WRES+1)
+ozpcZMINUSX	.equ	ozpcYMINUSX+32*(NUM_WRES+1)
 
 LIMITXL	.EQU	[12FH,0]
 LIMITXR	.EQU	[5E8H,0]
@@ -1685,27 +1685,27 @@ LIMITYB	.EQU	[97h,0]
 	.ref	in_finish_move
 
 	move	@in_finish_move,a0
-	jrnz	xstx
+	jrnz	ozpcx
 
 	move	@HALT,a0
-	jrnz	xstx
+	jrnz	ozpcx
 
 	;first, check for a royal rumble
 	move	@royal_rumble,a14
-	jrnz	xstrumble
+	jrnz	ozpcrumble
 
 	;check for two human players
 	move	@PSTATUS2,a0
-	jrz	xstno_humans
+	jrz	ozpcno_humans
 	cmpi	3,a0
-	jrne	xstone_human
+	jrne	ozpcone_human
 
 	;two humans.  track on them.
 	clr	a2
 	movk	1,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xstone_human
+ozpcone_human
 	;okay, we have only one player.  If this is one-on-one, track on
 	; him and the drone.  (also, get the human's process ptr in a8)
 	move	a0,a8
@@ -1716,14 +1716,14 @@ xstone_human
 
 	move	@NUM_OPPS,a14
 	dec	a14
-	jrnz	xstone_v_many
+	jrnz	ozpcone_v_many
 
 	;plyr v. one drone
 	move	*a8(PLYRNUM),a2
 	movk	2,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xstone_v_many
+ozpcone_v_many
 	;count live opponents.  If there is one, track the human and his
 	; closest opponent, which should be the live drone. If there are
 	; none or more than one, track only on the human.
@@ -1734,33 +1734,33 @@ xstone_v_many
 	move	*a8(PLYR_SIDE),a2
 	move	*a8(INRING),a5
 	clr	a4		;live enemy counter
-xstlp0	move	*a1+,a3,L
-	jrz	xstdone0		;quit at first inactive since we're only
+ozpclp0	move	*a1+,a3,L
+	jrz	ozpcdone0		;quit at first inactive since we're only
 				;looking at drones
 	move	*a3(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	xstnxt0		;skip dead
+	jreq	ozpcnxt0		;skip dead
 
 	move	*a3(PLYR_SIDE),a14
 	cmp	a2,a14
-	jreq	xstnxt0		;skip teammates
+	jreq	ozpcnxt0		;skip teammates
 
 	move	*a3(INRING),a14
 	cmp	a5,a14
-	jrne	xstnxt0		;skip bad INRINGS
+	jrne	ozpcnxt0		;skip bad INRINGS
 
 	inc	a4
-xstnxt0	dsj	a0,xstlp0
+ozpcnxt0	dsj	a0,ozpclp0
 
-xstdone0	dec	a4
-	jrn	xsttrack_human_only	;0 live opponents
-	jrz	xst1opp			;1 live opponent
+ozpcdone0	dec	a4
+	jrn	ozpctrack_human_only	;0 live opponents
+	jrz	ozpc1opp			;1 live opponent
 	dec	a4
-	jrz	xst2ops			;2 live opponents
-	jruc	xst3ops			;3 live opponents
+	jrz	ozpc2ops			;2 live opponents
+	jruc	ozpc3ops			;3 live opponents
 
 
-	;for the three cases (xst2ops, xst3ops, xstrumble) where we're tracking on
+	;for the three cases (ozpc2ops, ozpc3ops, ozpcrumble) where we're tracking on
 	; a mean position rather than an actual wrestler, we store the mean
 	; position in the long word immediately before wrestler_[xyz].
 	; There's extra space allocated there.
@@ -1771,7 +1771,7 @@ xstdone0	dec	a4
 	;	a7 = z accumulator
 
 
-xstrumble	;There are anywhere from 1 to 4 live wrestlers.  Track on the live
+ozpcrumble	;There are anywhere from 1 to 4 live wrestlers.  Track on the live
 	; ones.  If there's three, double-weight the one with the dead
 	; teammate.  Since we've only got space for one artificial set
 	; of coordinates, if we get all four alive, compute the average
@@ -1786,60 +1786,60 @@ xstrumble	;There are anywhere from 1 to 4 live wrestlers.  Track on the live
 	clr	a5		; of
 	clr	a6		;  live
 	clr	a7		;   wrestlers
-xstlp3	move	*a0+,a2,L
+ozpclp3	move	*a0+,a2,L
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	xstnxt3
+	jreq	ozpcnxt3
 	move	*a2(I_WILL_DIE),a14
-	jrnz	xstnxt3
+	jrnz	ozpcnxt3
 	inc	a3
 	move	a6,a7
 	move	a5,a6
 	move	a4,a5
 	move	*a2(PLYRNUM),a4
-xstnxt3	dsj	a1,xstlp3
+ozpcnxt3	dsj	a1,ozpclp3
 
 	;okay, branch based on the live count
 	dec	a3
-	jrn	xstrr0liv		;none alive?  shouldn't happen.
-	jrz	xstrr1liv
+	jrn	ozpcrr0liv		;none alive?  shouldn't happen.
+	jrz	ozpcrr1liv
 	subk	2,a3
-	jrn	xstrr2liv
-	jrz	xstrr3liv
-	jruc	xstrr4liv
+	jrn	ozpcrr2liv
+	jrz	ozpcrr3liv
+	jruc	ozpcrr4liv
 
-xstrr0liv	;none alive(!?)  Track on the humans
+ozpcrr0liv	;none alive(!?)  Track on the humans
 	clr	a2
 	movk	1,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xstrr1liv	;one alive.  Track on him.
+ozpcrr1liv	;one alive.  Track on him.
 	move	a4,a2
 	move	a4,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xstrr2liv	;two alive.  Track on them.
+ozpcrr2liv	;two alive.  Track on them.
 	move	a4,a2
 	move	a5,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xstrr3liv	;three alive.  Since one human CAN'T be dead, the dead one must
+ozpcrr3liv	;three alive.  Since one human CAN'T be dead, the dead one must
 	; be a drone.  Track on the drone and the average position of the
 	; wrestlers. (a5 and a6 must be the humans, a4 the drone)
 
-	;xst0 (human)
+	;ozpc0 (human)
 	movi	wrestler_x,a0
-	move	*a0(xstXMINUSX),a5,L
-	move	*a0(xstYMINUSX),a6,L
-	move	*a0(xstZMINUSX),a7,L
+	move	*a0(ozpcXMINUSX),a5,L
+	move	*a0(ozpcYMINUSX),a6,L
+	move	*a0(ozpcZMINUSX),a7,L
 
-	;xst1 (human)
+	;ozpc1 (human)
 	movi	wrestler_x+20h,a0
-	move	*a0(xstXMINUSX),a14,L
+	move	*a0(ozpcXMINUSX),a14,L
 	add	a14,a5
-	move	*a0(xstYMINUSX),a14,L
+	move	*a0(ozpcYMINUSX),a14,L
 	add	a14,a6
-	move	*a0(xstZMINUSX),a14,L
+	move	*a0(ozpcZMINUSX),a14,L
 	add	a14,a7
 
 	;divide
@@ -1849,49 +1849,49 @@ xstrr3liv	;three alive.  Since one human CAN'T be dead, the dead one must
 
 	;store
 	movi	wrestler_x-20h,a0
-	move	a5,*a0(xstXMINUSX),L
-	move	a6,*a0(xstYMINUSX),L
-	move	a7,*a0(xstZMINUSX),L
+	move	a5,*a0(ozpcXMINUSX),L
+	move	a6,*a0(ozpcYMINUSX),L
+	move	a7,*a0(ozpcZMINUSX),L
 
 	;go
 	movi	-1,a2
 	move	a4,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
 
-xstrr4liv	;four alive.  Track on all of 'em.
+ozpcrr4liv	;four alive.  Track on all of 'em.
 
-	;xst0
+	;ozpc0
 	movi	wrestler_x,a0
-	move	*a0(xstXMINUSX),a5,L
-	move	*a0(xstYMINUSX),a6,L
-	move	*a0(xstZMINUSX),a7,L
+	move	*a0(ozpcXMINUSX),a5,L
+	move	*a0(ozpcYMINUSX),a6,L
+	move	*a0(ozpcZMINUSX),a7,L
 
-	;xst1
+	;ozpc1
 	movi	wrestler_x+20h,a0
-	move	*a0(xstXMINUSX),a14,L
+	move	*a0(ozpcXMINUSX),a14,L
 	add	a14,a5
-	move	*a0(xstYMINUSX),a14,L
+	move	*a0(ozpcYMINUSX),a14,L
 	add	a14,a6
-	move	*a0(xstZMINUSX),a14,L
+	move	*a0(ozpcZMINUSX),a14,L
 	add	a14,a7
 
-	;xst2
+	;ozpc2
 	movi	wrestler_x+40h,a0
-	move	*a0(xstXMINUSX),a14,L
+	move	*a0(ozpcXMINUSX),a14,L
 	add	a14,a5
-	move	*a0(xstYMINUSX),a14,L
+	move	*a0(ozpcYMINUSX),a14,L
 	add	a14,a6
-	move	*a0(xstZMINUSX),a14,L
+	move	*a0(ozpcZMINUSX),a14,L
 	add	a14,a7
 
-	;xst3
+	;ozpc3
 	movi	wrestler_x+60h,a0
-	move	*a0(xstXMINUSX),a14,L
+	move	*a0(ozpcXMINUSX),a14,L
 	add	a14,a5
-	move	*a0(xstYMINUSX),a14,L
+	move	*a0(ozpcYMINUSX),a14,L
 	add	a14,a6
-	move	*a0(xstZMINUSX),a14,L
+	move	*a0(ozpcZMINUSX),a14,L
 	add	a14,a7
 
 	;divide
@@ -1901,51 +1901,51 @@ xstrr4liv	;four alive.  Track on all of 'em.
 
 	;store
 	movi	wrestler_x-20h,a0
-	move	a5,*a0(xstXMINUSX),L
-	move	a6,*a0(xstYMINUSX),L
-	move	a7,*a0(xstZMINUSX),L
+	move	a5,*a0(ozpcXMINUSX),L
+	move	a6,*a0(ozpcYMINUSX),L
+	move	a7,*a0(ozpcZMINUSX),L
 
 	;go
 	movi	-1,a2
 	movi	-1,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
 
-xst3ops	;opponents must be plyrnum's 2, 3, and 4.
+ozpc3ops	;opponents must be plyrnum's 2, 3, and 4.
 
 	;closest
 	move	*a8(CLOSEST_NUM),a0
 	X32	a0
 	addi	wrestler_x,a0
-	move	*a0(xstXMINUSX),a5,L
-	move	*a0(xstYMINUSX),a6,L
-	move	*a0(xstZMINUSX),a7,L
+	move	*a0(ozpcXMINUSX),a5,L
+	move	*a0(ozpcYMINUSX),a6,L
+	move	*a0(ozpcZMINUSX),a7,L
 
-	;xst2
+	;ozpc2
 	movi	wrestler_x+40h,a0
-	move	*a0(xstXMINUSX),a14,L
+	move	*a0(ozpcXMINUSX),a14,L
 	add	a14,a5
-	move	*a0(xstYMINUSX),a14,L
+	move	*a0(ozpcYMINUSX),a14,L
 	add	a14,a6
-	move	*a0(xstZMINUSX),a14,L
+	move	*a0(ozpcZMINUSX),a14,L
 	add	a14,a7
 
-	;xst3
+	;ozpc3
 	movi	wrestler_x+60h,a0
-	move	*a0(xstXMINUSX),a14,L
+	move	*a0(ozpcXMINUSX),a14,L
 	add	a14,a5
-	move	*a0(xstYMINUSX),a14,L
+	move	*a0(ozpcYMINUSX),a14,L
 	add	a14,a6
-	move	*a0(xstZMINUSX),a14,L
+	move	*a0(ozpcZMINUSX),a14,L
 	add	a14,a7
 
-	;xst4
+	;ozpc4
 	movi	wrestler_x+80h,a0
-	move	*a0(xstXMINUSX),a14,L
+	move	*a0(ozpcXMINUSX),a14,L
 	add	a14,a5
-	move	*a0(xstYMINUSX),a14,L
+	move	*a0(ozpcYMINUSX),a14,L
 	add	a14,a6
-	move	*a0(xstZMINUSX),a14,L
+	move	*a0(ozpcZMINUSX),a14,L
 	add	a14,a7
 
 	;divide
@@ -1955,16 +1955,16 @@ xst3ops	;opponents must be plyrnum's 2, 3, and 4.
 
 	;store
 	movi	wrestler_x-20h,a0
-	move	a5,*a0(xstXMINUSX),L
-	move	a6,*a0(xstYMINUSX),L
-	move	a7,*a0(xstZMINUSX),L
+	move	a5,*a0(ozpcXMINUSX),L
+	move	a6,*a0(ozpcYMINUSX),L
+	move	a7,*a0(ozpcZMINUSX),L
 
 	;go
 	move	*a8(PLYRNUM),a2
 	movi	-1,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xst2ops	;opponents could have 2, 3, or 4.  loop.
+ozpc2ops	;opponents could have 2, 3, or 4.  loop.
 	clr	a5
 	clr	a6
 	clr	a7
@@ -1972,20 +1972,20 @@ xst2ops	;opponents could have 2, 3, or 4.  loop.
 	movi	process_ptrs+40h,a1
 	move	*a8(PLYR_SIDE),a2
 	move	*a8(INRING),a11
-xstlp2	move	*a1+,a0,L
-	jrz	xstdone2		;quit at first inactive--only checking drones
+ozpclp2	move	*a1+,a0,L
+	jrz	ozpcdone2		;quit at first inactive--only checking drones
 
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	xstnxt2		;skip dead
+	jreq	ozpcnxt2		;skip dead
 
 	move	*a0(PLYR_SIDE),a14
 	cmp	a14,a2
-	jreq	xstnxt2		;skip teammates
+	jreq	ozpcnxt2		;skip teammates
 
 	move	*a0(INRING),a14
 	cmp	a14,a11
-	jrne	xstnxt2		;skip bad INRINGs
+	jrne	ozpcnxt2		;skip bad INRINGs
 
 	move	*a0(OBJ_XPOS),a14,L
 	add	a14,a5
@@ -1994,59 +1994,59 @@ xstlp2	move	*a1+,a0,L
 	move	*a0(OBJ_ZPOS),a14,L
 	add	a14,a7
 
-xstnxt2	dsj	a9,xstlp2
+ozpcnxt2	dsj	a9,ozpclp2
 
-xstdone2	;divide
+ozpcdone2	;divide
 	sra	1,a5
 	sra	1,a6
 	sra	1,a7
 
 	;store
 	movi	wrestler_x-20h,a0
-	move	a5,*a0(xstXMINUSX),L
-	move	a6,*a0(xstYMINUSX),L
-	move	a7,*a0(xstZMINUSX),L
+	move	a5,*a0(ozpcXMINUSX),L
+	move	a6,*a0(ozpcYMINUSX),L
+	move	a7,*a0(ozpcZMINUSX),L
 
 	;go
 	move	*a8(PLYRNUM),a2
 	movi	-1,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
 
-xst1opp	move	*a8(PLYRNUM),a2
+ozpc1opp	move	*a8(PLYRNUM),a2
 	move	*a8(CLOSEST_NUM),a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xsttrack_human_only
+ozpctrack_human_only
 	move	*a8(PLYRNUM),a2
 	move	a2,a3
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xstno_humans
+ozpcno_humans
 	;attract mode play.  track on first live drone and his closest
 	; opponent.
 	movk	NUM_WRES,a0
 	movi	process_ptrs,a1
-xstlp1	move	*a1+,a2,L
-	jrz	xstnxt1		;skip inactive
+ozpclp1	move	*a1+,a2,L
+	jrz	ozpcnxt1		;skip inactive
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	xstnxt1		;skip dead (shouldn't happen)
+	jreq	ozpcnxt1		;skip dead (shouldn't happen)
 
 	;found a live drone.  track on him and his closest opp
 	move	*a2(CLOSEST_NUM),a3
 	move	*a2(PLYRNUM),a2
-	jruc	xstindices_set
+	jruc	ozpcindices_set
 
-xstnxt1	dsj	a0,xstlp1
+ozpcnxt1	dsj	a0,ozpclp1
 
 	;bizarre.  everyone's dead in the attract mode.  Just track on
 	; first two drones.
 	movk	2,a2
 	movk	3,a3
-	;fall through to xstindices_set
+	;fall through to ozpcindices_set
 
-xstindices_set
+ozpcindices_set
 	;a2 and a3 are PLYRNUM's of wrestlers to track on.  They MAY be
 	; the same.
 	move	a2,a0
@@ -2072,7 +2072,7 @@ xstindices_set
 	;wrestler1 (*x,*y,*z) = (a0,a10,a8)
 	;wrestler2 (*x,*y,*z) = (a1,a11,a9)
 
-xstvalues_set
+ozpcvalues_set
 	move	*a0,a0,L
 	move	*a1,a1,L
 	add	a0,a1
@@ -2081,26 +2081,26 @@ xstvalues_set
 
 	move	@WORLDTLX,a2,L
 	sub	a2,a1
-	jrp	xstpos
+	jrp	ozpcpos
 
-	addi	xstBUFFER,a1
-	jrp	xstwide
-	jruc	xstcont
+	addi	ozpcBUFFER,a1
+	jrp	ozpcwide
+	jruc	ozpccont
 
-xstpos	subi	xstBUFFER,a1
-	jrn	xstwide
+ozpcpos	subi	ozpcBUFFER,a1
+	jrn	ozpcwide
 
-xstcont	sra	3,a1
+ozpccont	sra	3,a1
 	add	a1,a2
 
 	cmpi	[12fh,0],a2
-	jrlt	xstwide
+	jrlt	ozpcwide
 	cmpi	[648h,0],a2
-	jrgt	xstwide
+	jrgt	ozpcwide
 
 	move	a2,@WORLDTLX,L
 
-xstwide	move	*a8,a0,L
+ozpcwide	move	*a8,a0,L
 	move	*a9,a1,L
 	add	a0,a1
 	sra	1+16,a1
@@ -2118,22 +2118,22 @@ xstwide	move	*a8,a0,L
 	;Check for SCROLL_CTRL bits on active wrestlers.
 	movi	process_ptrs,a0
 	movk	NUM_WRES,a9
-xstlp4	move	*a0+,a3,L
-	jrz	xstnxt4		;skip inactive
+ozpclp4	move	*a0+,a3,L
+	jrz	ozpcnxt4		;skip inactive
 
 	move	*a3(STATUS_FLAGS),a14
 	btst	B_SCROLL_CTRL,a14
-	jrz	xstnxt4
+	jrz	ozpcnxt4
 
 	;control found.  On screen in X?
 	move	*a3(OBJ_XPOS),a1,L
 	move	@WORLDTLX,a14,L
 	subi	[60,0],a14
 	cmp	a14,a1
-	jrlt	xstnxt4
+	jrlt	ozpcnxt4
 	addi	[400+120,0],a14
 	cmp	a14,a1
-	jrgt	xstnxt4
+	jrgt	ozpcnxt4
 
 	;calc hi pt
 	move	*a3(OBJ_ZPOSINT),a1
@@ -2146,15 +2146,15 @@ xstlp4	move	*a0+,a3,L
 	sub	a14,a1
 
 	cmp	a2,a1
-	jrge	xstnxt4
+	jrge	ozpcnxt4
 	
-xsttop_ok	move	a1,a2
+ozpctop_ok	move	a1,a2
 
-xstnxt4	dsj	a9,xstlp4
+ozpcnxt4	dsj	a9,ozpclp4
 
 
 
-xstsc_done
+ozpcsc_done
 	move	@WORLDTLY,a1,L
 	sub	a1,a2
 	sra	2,a2
@@ -2162,10 +2162,10 @@ xstsc_done
 
 	;Don't allow scroller to go past front fence
 	cmpi	[97h,0],a1
-	jrgt	xstlow
+	jrgt	ozpclow
 	move	a1,@WORLDTLY,L
-xstlow
-xstx	MMFM	SP,A8,A9,A10,A11
+ozpclow
+ozpcx	MMFM	SP,A8,A9,A10,A11
 	rets
 
 *****************************************************************************
@@ -2174,15 +2174,15 @@ xstx	MMFM	SP,A8,A9,A10,A11
 * it's goal is to keep either wrestler from moving
 * offscreen if one or both are outside the ring
 
-vjnBUFF1	equ	185
-vjnBUFF2	equ	185	;140
+wetcBUFF1	equ	185
+wetcBUFF2	equ	185	;140
 
  SUBR	keep_onscreen
 
 	;confine only in two-player game.
 	move	@PSTATUS2,a14
 	cmpi	3,a14			;is it a 2-player game?
-	jrne	vjnno_2_player
+	jrne	wetcno_2_player
 
 	move	@WORLDTLX+16,a0		;world x int
 	addi	200,a0			;center of screen
@@ -2190,79 +2190,79 @@ vjnBUFF2	equ	185	;140
 	move	a0,a1
 
 	cmpi	RING_X_CENTER,a0
-	jrgt	vjnright_side
+	jrgt	wetcright_side
 
-vjnleft_side
-	subi	vjnBUFF2,a0	;left edge
-	addi	vjnBUFF1,a1	;right edge
-	jruc	vjncont
+wetcleft_side
+	subi	wetcBUFF2,a0	;left edge
+	addi	wetcBUFF1,a1	;right edge
+	jruc	wetccont
 
-vjnright_side
-	subi	vjnBUFF1,a0
-	addi	vjnBUFF2,a1
-vjncont
+wetcright_side
+	subi	wetcBUFF1,a0
+	addi	wetcBUFF2,a1
+wetccont
 	move	@process_ptrs,a10,L	;player 1
 	move	@process_ptrs+20h,a11,L	;player 2
 
 ;	move	*a10(DEC_DELAY),a14
-;	jrnz	vjninring
+;	jrnz	wetcinring
 ;	move	*a11(DEC_DELAY),a14
-;	jrnz	vjninring
+;	jrnz	wetcinring
 
 	.ref	allow_offscrn
 
 	move	@allow_offscrn,a14
-	jrz	vjnok
+	jrz	wetcok
 	dec	a14
 	move	a14,@allow_offscrn
-	jrnz	vjninring
-vjnok
+	jrnz	wetcinring
+wetcok
 	move	*a10(INRING),a14
-	jrnz	vjnoutside
+	jrnz	wetcoutside
 
 	move	*a11(INRING),a14
-	jrz	vjninring
+	jrz	wetcinring
 
 
-vjnoutside	;at least 1 player outside the ring
+wetcoutside	;at least 1 player outside the ring
 
 	move	a10,a9
-	callr	vjndo_check
+	callr	wetcdo_check
 	move	a11,a9
-	callr	vjndo_check
+	callr	wetcdo_check
 
-vjninring
-vjnno_2_player
+wetcinring
+wetcno_2_player
 	rets
 
-vjndo_check
+wetcdo_check
 	move	*a9(OBJ_XPOSINT),a14
 	cmp	a0,a14
-	jrgt	vjnok1
+	jrgt	wetcok1
 
 ;past left edge
 	move	*a9(OBJ_XVEL),a14,L
-	jrz	vjndone
-	jrn	vjnclrx
+	jrz	wetcdone
+	jrn	wetcclrx
 	rets
-vjnok1
+wetcok1
 	cmp	a1,a14
-	jrlt	vjnok2
+	jrlt	wetcok2
 
 ;past right edge
 	move	*a9(OBJ_XVEL),a14,L
-	jrz	vjndone
-	jrn	vjndone
-vjnclrx
+	jrz	wetcdone
+	jrn	wetcdone
+wetcclrx
 	move	*a9(CLIMBING_THRU),a14	;1=Climbing thru ropes flag
-	jrnz	vjndone
+	jrnz	wetcdone
 
 	clr	a14
 	move	a14,*a9(OBJ_XVEL),L
 
 	move	*a9(PLYRMODE),a14
 	cmpi	MODE_RUNNING,a14
-	jrne	vjndone
+	jrne	wetcdone
 
 	movi	MODE_NORMAL,a14
 	move	a14,*a9(PLYRMODE)
@@ -2270,8 +2270,8 @@ vjnclrx
 
 	callr	ditch_getup_meter_a9
 
-vjnok2
-vjndone
+wetcok2
+wetcdone
 	rets
 
 
@@ -2282,7 +2282,7 @@ MAX_YVEL	equ	-1000000h	;-40000h
  SUBR	wrestler_veladd
 
 	move	@HALT,a0
-	jrnz	ebox
+	jrnz	qackx
 
 	move	*a13(OBJ_XPOS),a0,L
 	move	*a13(OBJ_XVEL),a1,L
@@ -2295,34 +2295,34 @@ MAX_YVEL	equ	-1000000h	;-40000h
 	sub	a2,a0			;- GROUND_Y
 	move	*a13(OBJ_YVEL),a1,L
 	add	a1,a0
-	jrnn	eboyok
+	jrnn	qackyok
 
 	;under ground.  clr Yvel unless we're attached and MODE_GHOST
 	move	*a13(ATTACH_PROC),a14,L
-	jrz	eboset_yvel
+	jrz	qackset_yvel
 	move	*a14(ATTACH_PROC),a14,L
 	cmp	a13,a14			;valid link?
-	jrne	eboset_yvel
+	jrne	qackset_yvel
 	move	*a13(ANIMODE),a14,L
 	btst	MODE_GHOST_BIT,a14
-	jrnz	eboyok
+	jrnz	qackyok
 	move	a1,a1			;if yvel is positive then keep
-	jrn	eboset_yvel		;velocity & put at ground level
+	jrn	qackset_yvel		;velocity & put at ground level
 	clr	a0
-	jruc	eboyok
+	jruc	qackyok
 
-eboset_yvel
+qackset_yvel
 	;we've hit the ground -- if our WAITHITOPP bit is set, stuff
 	; a 1 in ANICNT.
 	move	*a13(ANIMODE),a14
 	btst	MODE_WAITHITOPP_BIT,a14
-	jrz	ebonwho
+	jrz	qacknwho
 	movk	1,a14
 	move	a14,*a13(ANICNT)
 
-ebonwho	clr	a0
+qacknwho	clr	a0
 	move	a0,*a13(OBJ_YVEL),L
-eboyok
+qackyok
 	add	a2,a0			;+ GROUND_Y
 	move	a0,*a13(OBJ_YPOS),L
 
@@ -2335,20 +2335,20 @@ eboyok
 	move	*a13(GROUND_Y),a2
 	sll	16,a2
 	cmp	a0,a2			;a2-a0
-	jrlt	ebook
+	jrlt	qackok
 	;we're under ground...  Unless we're attached and set MODE_GHOST,
 	; stay above.
 	move	*a13(ATTACH_PROC),a14,L
-	jrz	eboset_ground_y
+	jrz	qackset_ground_y
 	move	*a14(ATTACH_PROC),a14,L
-	jrz	eboset_ground_y
+	jrz	qackset_ground_y
 	move	*a13(ANIMODE),a14,L
 	btst	MODE_GHOST_BIT,a14
-	jrnz	ebook
+	jrnz	qackok
 
-eboset_ground_y
+qackset_ground_y
 	move	a2,a0
-ebook
+qackok
 	move	a0,*a13(OBJ_YPOS),L
 
 	move	*a13(OBJ_ZPOS),a0,L
@@ -2358,25 +2358,25 @@ ebook
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_NOGRAVITY_BIT,a0
-	jrnz	ebono_gravity
+	jrnz	qackno_gravity
 
 	move	*a13(GROUND_Y),a0
 	sll	16,a0
 	move	*a13(OBJ_YPOS),a1,L
 	cmp	a0,a1
-	jreq	ebono_gravity
+	jreq	qackno_gravity
 
 	move	*a13(OBJ_YVEL),a0,L
 	move	*a13(OBJ_GRAVITY),a14,L
 	sub	a14,a0
 	cmpi	MAX_YVEL,a0
-	jrge	ebograv_ok
+	jrge	qackgrav_ok
 	movi	MAX_YVEL,a0
-ebograv_ok
+qackgrav_ok
 	move	a0,*a13(OBJ_YVEL),L
-ebono_gravity
+qackno_gravity
 
-ebox
+qackx
 	rets
 
 
@@ -2385,40 +2385,40 @@ ebox
  SUBRP	calc_ground_y
 
 	move	*a13(INRING),a0
-	jrz	bswinring
+	jrz	wdecinring
 
 	movi	117,a1
 	move	*a13(OBJ_ZPOSINT),a0
 	cmpi	05bdh,a0
-	jrgt	bswsetit
+	jrgt	wdecsetit
 
 	movi	103,a1
-	jruc	bswsetit
+	jruc	wdecsetit
 
-bswinring
+wdecinring
 	movi	112,a1
 
-bswsetit
+wdecsetit
 	move	a1,*a13(OBJ_PRIORITY)
 
 	movi	vln_right_matedge,a6
 	calla	calc_line_x
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;a1-a0
-	jrge	bswoutside
+	jrge	wdecoutside
 
 	movi	vln_left_matedge,a6
 	calla	calc_line_x
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;a1-a0
-	jrle	bswoutside
+	jrle	wdecoutside
 
 
 	;an unsuccessful attempt to fix throw-into-ring bug
 	;-we fucked up climbins from behind
 	;trying again - climbin top and bottom weren't setting this flag!
 	move	*a13(CLIMBING_THRU),a14
-	jrz	bswskip
+	jrz	wdecskip
 
 	movi	MAT_Y,a0
 	move	a0,*a13(GROUND_Y)
@@ -2427,16 +2427,16 @@ bswsetit
 	move	a0,*a13(INRING)
 	rets
 
-bswoutside
+wdecoutside
 	clr	a0
 	move	a0,*a13(GROUND_Y)
 	MOVE	@GAMSTATE,A0
 	CMPI	INPREGAME2,A0
-	jreq	bswskip
+	jreq	wdecskip
 
 	movk	1,a0
 	move	a0,*a13(INRING)
-bswskip
+wdecskip
 	rets
 
 
@@ -2445,11 +2445,11 @@ bswskip
 
 PATCH FOR SCROLLER
 
-qhbMAX_DIST	equ	380
+uoqzMAX_DIST	equ	380
 
 	move	@PSTATUS2,a14
 	cmpi	3,a14			;is it a 2-player game?
-	jrne	qhbno_2_player
+	jrne	uoqzno_2_player
 
 	move	@process_ptrs,a10,L	;player 1
 	move	@process_ptrs+20h,a11,L	;player 2
@@ -2459,8 +2459,8 @@ qhbMAX_DIST	equ	380
 
 	sub	a0,a1			;a1-a0
 	abs	a1
-	cmpi	qhbMAX_DIST,a1
-	jrlt	qhbok
+	cmpi	uoqzMAX_DIST,a1
+	jrlt	uoqzok
 
 ;the 2 human wrestlers are too far apart
 ;now bias towards the guy in the ring -
@@ -2469,8 +2469,8 @@ qhbMAX_DIST	equ	380
 ;the keep_onscreen code).
 
 
-qhbok
-qhbno_2_player
+uoqzok
+uoqzno_2_player
 
 
  .endif
@@ -2483,12 +2483,12 @@ qhbno_2_player
  SUBR	wres_get_but_val_down
 
 	move	*a0(PLYR_TYPE),a14
-	jrnz	ecqdrndt
+	jrnz	ohfpdrndt
 	move	*a0(PLYRNUM),a0
 	callr	get_but_val_down
 	rets
 
-ecqdrndt
+ohfpdrndt
 	move	*a0(DRN_BUTDT),a0
 	rets
 
@@ -2497,12 +2497,12 @@ ecqdrndt
  SUBR	wres_get_but_val_cur
 
 	move	*a0(PLYR_TYPE),a14
-	jrnz	tkrdrndt
+	jrnz	adeadrndt
 	move	*a0(PLYRNUM),a0
 	callr	get_but_val_cur
 	rets
 
-tkrdrndt
+adeadrndt
 	move	*a0(DRN_BUT),a0
 	rets
 
@@ -2511,12 +2511,12 @@ tkrdrndt
  SUBR	wres_get_but_val_up
 
 	move	*a0(PLYR_TYPE),a14
-	jrnz	yrxdrnut
+	jrnz	fvtddrnut
 	move	*a0(PLYRNUM),a0
 	callr	get_but_val_up
 	rets
 
-yrxdrnut
+fvtddrnut
 	move	*a0(DRN_BUTUT),a0
 	rets
 
@@ -2546,12 +2546,12 @@ drn_joy
 	move	*a0(PLYRNUM),a0
 	callr	get_stick_val_cur
 	btst	B_FLIPH,a14
-	jrz	vuxdone
+	jrz	lobmdone
 
 	X16	a0
-	addi	vuxxflip_table,a0
+	addi	lobmxflip_table,a0
 	move	*a0,a0
-vuxdone
+lobmdone
 	rets
 
 
@@ -2563,7 +2563,7 @@ vuxdone
 
 
 	move	*a0(PLYR_TYPE),a14
-	jrnz	vuxnot_human2
+	jrnz	lobmnot_human2
 
 ;shawn - this needs patching too...
 
@@ -2578,41 +2578,41 @@ vuxdone
 	callr	get_stick_val_down
 	pull	a1
 	or	a1,a0
-	jrz	vuxdone2		;no stick
+	jrz	lobmdone2		;no stick
 
 	move	*a10(OBJ_CONTROL),a14
 	move	*a10(PLYRNUM),a0
 	callr	get_stick_val_cur
 	btst	B_FLIPH,a14
-	jrz	vuxdone2
+	jrz	lobmdone2
 
 	X16	a0
-	addi	vuxxflip_table,a0
+	addi	lobmxflip_table,a0
 	move	*a0,a0
-vuxdone2
+lobmdone2
 	pull	a1,a10
 	rets
 
 
-vuxnot_human2
+lobmnot_human2
 	move	a0,a14
 	move	*a14(DRN_JOYDT),a0
 	move	*a14(DRN_JOYUT),a1
 	or	a1,a0
-	jrz	vuxdx
+	jrz	lobmdx
 	move	*a14(DRN_JOY),a0
 	move	*a14(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	vuxdx
+	jrz	lobmdx
 
 	X16	a0
-	addi	vuxxflip_table,a0
+	addi	lobmxflip_table,a0
 	move	*a0,a0
-vuxdx
+lobmdx
 	rets
 
 
-vuxxflip_table	;convert to forward / away  if facing left
+lobmxflip_table	;convert to forward / away  if facing left
 	.word	0000b	;0
 	.word	0001b	;1
 	.word	0010b	;2
@@ -2635,12 +2635,12 @@ vuxxflip_table	;convert to forward / away  if facing left
  SUBR	wres_get_stick_val_down
 
 	move	*a0(PLYR_TYPE),a14
-	jrnz	ctsdrnjoy
+	jrnz	euvsdrnjoy
 	move	*a0(PLYRNUM),a0
 	callr	get_stick_val_down
 	rets
 
-ctsdrnjoy
+euvsdrnjoy
 	move	*a0(DRN_JOYDT),a0
 	rets
 
@@ -2649,12 +2649,12 @@ ctsdrnjoy
  SUBR	wres_get_stick_val_up
 
 	move	*a0(PLYR_TYPE),a14
-	jrnz	szdnot_human
+	jrnz	ukcfnot_human
 	move	*a0(PLYRNUM),a0
 	callr	get_stick_val_up
 	rets
 
-szdnot_human
+ukcfnot_human
 	move	*a0(DRN_JOYUT),a0
 	rets
 
@@ -2819,26 +2819,26 @@ but_offs2	.word	20h-3,24h-3
 
  SUBR	read_switches
 
-;blzwait
+;pnddwait
 ;	move	@vcount,a0
 ;	andi	31,a0
-;	jrnz	blzwait
+;	jrnz	pnddwait
 ;	TINTON
 
 	movi	process_ptrs,a9
 	movk	NUM_WRES,a11
-blznext
+pnddnext
 	move	*a9+,a10,L
-	jrz	blzskip
+	jrz	pnddskip
 
 	;ignore all switches if wrestler is immobilized
 	move	*a10(IMMOBILIZE_TIME),a14
-	jrp	blzimmob
+	jrp	pnddimmob
 
 	move	*a10(PLYR_TYPE),a14
-	jrz	blzno_drone
+	jrz	pnddno_drone
 
-blzdrone
+pndddrone
 	move	*a10(DRN_BUT),*a10(BUT_VAL_CUR)
 	move	*a10(DRN_BUTDT),*a10(BUT_VAL_DOWN)
 	move	*a10(DRN_BUTUT),*a10(BUT_VAL_UP)
@@ -2846,9 +2846,9 @@ blzdrone
 	move	*a10(DRN_JOY),*a10(STICK_VAL_CUR)
 	move	*a10(DRN_JOYDT),*a10(STICK_VAL_DOWN)
 	move	*a10(DRN_JOYUT),*a10(STICK_VAL_UP)
-	jruc	blzcont
+	jruc	pnddcont
 
-blzimmob	clr	a14
+pnddimmob	clr	a14
 	move	a14,*a10(BUT_VAL_CUR)
 	move	a14,*a10(BUT_VAL_DOWN)
 	move	a14,*a10(BUT_VAL_UP)
@@ -2857,9 +2857,9 @@ blzimmob	clr	a14
 	move	a14,*a10(STICK_VAL_UP)
 	move	a14,*a10(STICK_REL_CUR)
 	move	a14,*a10(STICK_REL_NEW)
-	jruc	blzskip
+	jruc	pnddskip
 
-blzno_drone
+pnddno_drone
 	move	*a10(PLYRNUM),a8
 
 	move	a8,a1
@@ -2944,18 +2944,18 @@ blzno_drone
 	andi	01111b,a0
 	move	a0,*a10(STICK_VAL_UP)
 
-blzcont
+pnddcont
 ;wres_get_stick_rel_cur
 ;facing reletive joystick value
 
 	move	*a10(STICK_VAL_CUR),a0
 	move	*a10(FACING_DIR),a14
 	btst	PLAYER_RIGHT_BIT,a14
-	jrnz	blzno_flip
+	jrnz	pnddno_flip
 	X16	a0
-	addi	blzxflip_table,a0
+	addi	pnddxflip_table,a0
 	move	*a0,a0
-blzno_flip
+pnddno_flip
 	move	a0,*a10(STICK_REL_CUR)
 
 
@@ -2966,28 +2966,28 @@ blzno_flip
 	move	*a10(STICK_VAL_UP),a0
 	move	*a10(STICK_VAL_DOWN),a1
 	or	a1,a0
-	jrz	blzno_stick
+	jrz	pnddno_stick
 	move	*a10(STICK_VAL_CUR),a0
 	move	*a10(FACING_DIR),a14
 	btst	PLAYER_RIGHT_BIT,a14
-	jrnz	blzno_flip2
+	jrnz	pnddno_flip2
 	X16	a0
-	addi	blzxflip_table,a0
+	addi	pnddxflip_table,a0
 	move	*a0,a0
-blzno_flip2
-blzno_stick
+pnddno_flip2
+pnddno_stick
 	move	a0,*a10(STICK_REL_NEW)
 
 
-blzskip
-	dsj	a11,blznext
+pnddskip
+	dsj	a11,pnddnext
 ; TINTOFF
 
 	rets
 
 
 
-blzxflip_table	;convert to forward / away  if facing left
+pnddxflip_table	;convert to forward / away  if facing left
 	.word	0000b	;0
 	.word	0001b	;1
 	.word	0010b	;2
@@ -3015,15 +3015,15 @@ blzxflip_table	;convert to forward / away  if facing left
 ;
 ;	move	*a13(PLYR_TYPE),a14
 ;	cmpi	PTYPE_DRONE,a14
-;	jreq	blzsafe
+;	jreq	pnddsafe
 ;
 ;	move	*a13(SAFE_TIME),a14
-;	jrz	blznot_safe
+;	jrz	pnddnot_safe
 ;
-;blzsafe	movk	MODE_BLOCK,a14
+;pnddsafe	movk	MODE_BLOCK,a14
 ;	move	a14,*a13(PLYRMODE)
 ;
-;blznot_safe
+;pnddnot_safe
 ;	rets
 
 *****************************************************************************
@@ -3041,7 +3041,7 @@ blzxflip_table	;convert to forward / away  if facing left
 
 	move	*a13(WRESTLERNUM),a14
 	cmpi	W_YOKO,a14
-	jreq	wbeclear_noconfine
+	jreq	ursvclear_noconfine
 
 	;a3 is the 'everyone is dead' flag.
 	clr	a3
@@ -3049,42 +3049,42 @@ blzxflip_table	;convert to forward / away  if facing left
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	wbedfset
+	jrne	ursvdfset
 
 	inc	a3		;entire other team is dead.
 
-wbedfset	movi	process_ptrs,a0,L
+ursvdfset	movi	process_ptrs,a0,L
 	movk	NUM_WRES,a10
 	move	*a13(PLYR_SIDE),a2
-wbeloop
+ursvloop
 	move	*a0+,a1,L
-	jrz	wbenxt		;skip inactive
+	jrz	ursvnxt		;skip inactive
 
 	cmp	a1,a13
-	jreq	wbenxt		;skip self
+	jreq	ursvnxt		;skip self
 
 	move	*a1(PLYR_SIDE),a14
 	cmp	a14,a2
-	jreq	wbenxt		;skip teammates
+	jreq	ursvnxt		;skip teammates
 
 	;skip the dead check if everyone on enemy side is dead
 	TEST	a3
-	jrnz	wbensd
+	jrnz	ursvnsd
 
 	move	*a1(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	wbenxt		;skip dead
+	jreq	ursvnxt		;skip dead
 
-wbensd	move	*a1(INRING),a14
-	jrnz	wbeset_noconfine
+ursvnsd	move	*a1(INRING),a14
+	jrnz	ursvset_noconfine
 
-wbenxt	dsj	a10,wbeloop
+ursvnxt	dsj	a10,ursvloop
 	;fall through
-wbeclear_noconfine
+ursvclear_noconfine
 
 	;he might have drifted out already, so we gotta yank 'em back in.
 	move	*a13(INRING),a14
-	jrz	wbein
+	jrz	ursvin
 
 	;rats.  he's out.  fix it.
 	clr	a14
@@ -3093,39 +3093,39 @@ wbeclear_noconfine
 	move	a14,*a13(GROUND_Y)
 	move	*a13(OBJ_ZPOSINT),a14
 	cmpi	RING_TOP,a14
-	jrge	wbezok
+	jrge	ursvzok
 	movi	RING_TOP,a14
 	move	a14,*a13(OBJ_ZPOSINT)
-wbezok	move	*a13(OBJ_XPOSINT),a2
+ursvzok	move	*a13(OBJ_XPOSINT),a2
 	cmpi	RING_X_CENTER,a2
-	jrgt	wbert
+	jrgt	ursvrt
 
 	;on left
 	movi	vln_left_rope,a6
 	calla	calc_line_x
-	jrz	wbexok		;bad news.  leave it alone.
+	jrz	ursvxok		;bad news.  leave it alone.
 	cmp	a0,a2
-	jrge	wbexok
+	jrge	ursvxok
 	move	a0,*a13(OBJ_XPOSINT)
-	jruc	wbexok
+	jruc	ursvxok
 
-wbert	;on right
+ursvrt	;on right
 	movi	vln_right_rope,a6
 	calla	calc_line_x
-	jrz	wbexok		;bad news.  leave it alone.
+	jrz	ursvxok		;bad news.  leave it alone.
 	cmp	a0,a2
-	jrle	wbexok
+	jrle	ursvxok
 	move	a0,*a13(OBJ_XPOSINT)
 
-wbexok
-wbein	move	*a13(ANIMODE),a14
+ursvxok
+ursvin	move	*a13(ANIMODE),a14
 	andni	MODE_NOCONFINE,a14
-	jruc	wbecont
+	jruc	ursvcont
 
-wbeset_noconfine
+ursvset_noconfine
 	move	*a13(ANIMODE),a14
 	ori	MODE_NOCONFINE,a14
-wbecont
+ursvcont
 	move	a14,*a13(ANIMODE)
 	rets
 
@@ -3140,15 +3140,15 @@ wbecont
 ;	move	*a13(PLYRNUM),a1
 ;	calla	get_health
 ;	dec	a0
-;	jrle	wbedone
+;	jrle	ursvdone
 ;	movk	4,a14
 ;	cmp	a14,a0
-;	jrle	wbeok
+;	jrle	ursvok
 ;	move	a14,a0
-;wbeok	neg	a0
+;ursvok	neg	a0
 ;	clr	a10
 ;	calla	adjust_health
-;wbedone	rets
+;ursvdone	rets
 
 
 	.if DEBUG
@@ -3209,23 +3209,23 @@ wbecont
 
 	.if DEBUG
 	move	*a13(ATTACH_PROC),a14,L
-	jrnz	drpok1
+	jrnz	cfnzok1
 
 	LOCKUP	;I'm not attached!
 	nop
 
-drpok1	move	*a14(ATTACH_PROC),a14,L
-	jrnz	drpok2
+cfnzok1	move	*a14(ATTACH_PROC),a14,L
+	jrnz	cfnzok2
 	LOCKUP	;I'm attached, but he's not attached to me!
 	nop
 
-drpok2	cmp	a14,a13
-	jreq	drpok3
+cfnzok2	cmp	a14,a13
+	jreq	cfnzok3
 	LOCKUP	;We're both attached, but not to each other!
 	nop
 
 	.endif
-drpok3	rets
+cfnzok3	rets
 
 *****************************************************************************
 *
@@ -3258,26 +3258,26 @@ drpok3	rets
 	movi	process_ptrs,a1
 	move	*a13(PLYR_SIDE),a2
 
-ioelp	move	*a1+,a3,L
-	jrz	ioenxt		;skip inactive
+sffalp	move	*a1+,a3,L
+	jrz	sffanxt		;skip inactive
 
 	cmp	a3,a13
-	jreq	ioenxt		;skip self
+	jreq	sffanxt		;skip self
 
 	move	*a3(PLYR_SIDE),a14
 	cmp	a14,a2
-	jrne	ioenxt		;skip enemies
+	jrne	sffanxt		;skip enemies
 
 	move	*a3(STATUS_FLAGS),a14
 	btst	B_DID_PIN,a14
-	jrz	ioenxt		;skip guys who didn't pin
+	jrz	sffanxt		;skip guys who didn't pin
 
 	;got a pinning teammate
 	PULL	a2,a3
 	setc
 	rets
 
-ioenxt	dsj	a0,ioelp
+sffanxt	dsj	a0,sffalp
 
 	;no pinning teammates
 	PULL	a2,a3
@@ -3301,40 +3301,40 @@ ioenxt	dsj	a0,ioelp
 	; playing the same wrestler
 	move	@PSTATUS2,a14		; Get status
 	cmpi	3,a14			; Do we have 2 humans playing ?
-	jrnz	ejbpp_go			; br = no
+	jrnz	hviqpp_go			; br = no
 
 	;if buddy mode, choose special pals
 	move	@buddy_mode_on,a14
-	jrnz	ejbbuddy_mode
+	jrnz	hviqbuddy_mode
 
 	clr	a2
 	clr	a14
 	neg	a14
 	movi	process_ptrs,a0
-ejbf_loop
+hviqf_loop
 	move	*a0+,a3,L
-	jrz	ejbf_done
+	jrz	hviqf_done
 	move	*a3(PLYRNUM),a4
-	jrnz	ejbnot_p1
+	jrnz	hviqnot_p1
 	move	*a3(WRESTLERNUM),a2
-ejbnot_p1
+hviqnot_p1
 	cmpi	1,a4
-	jrnz	ejbnot_p2
+	jrnz	hviqnot_p2
 	move	*a3(WRESTLERNUM),a14
-ejbnot_p2
-	jruc	ejbf_loop
-ejbf_done
+hviqnot_p2
+	jruc	hviqf_loop
+hviqf_done
 	move	a14,a14			; Does player 2 exist ?
-	jrn	ejbpp_go			; br = no
+	jrn	hviqpp_go			; br = no
 	cmp	a2,a14			; Are player 1 and 2 same wrestler ?
-	jrnz	ejbpp_go			; br = no (no need to adjust pals)
+	jrnz	hviqpp_go			; br = no (no need to adjust pals)
 	move	@player_pal_pref,a0	; Get player 1 palette preference
 	cmpi	7,a0			; Is it last palette ?
-	jrnz	ejbset_pal		; br = no
+	jrnz	hviqset_pal		; br = no
 	movk	2,a0			; force a palette above what'll be used by drones
-ejbset_pal
+hviqset_pal
 	move	a0,@player_pal_pref+10h	; Set player 2 palette
-ejbpp_go
+hviqpp_go
 	.endif
 
 	;count identical wrestlers with lower PLYRNUMs.
@@ -3342,50 +3342,50 @@ ejbpp_go
 	clr	a4			; match count
 	move	*a13(PLYRNUM),a2	; Get player number
 	cmpi	2,a2			; Are we human ?
-	jrge	ejbnot_player		; br = no
+	jrge	hviqnot_player		; br = no
 	X16	a2			; Get playre palette preference
 	addi	player_pal_pref,a2
 	move	*a2,a4			; Init the counter to preference
-ejbnot_player
+hviqnot_player
 	move	*a13(WRESTLERNUM),a1
 
 	;loop from 0 to our PLYRNUM looking for matches, UNLESS we're a
 	; drone doink, in which case we just check 0 and 1.
 	move	*a13(PLYRNUM),a2
-	jrz	ejbend0
+	jrz	hviqend0
 	cmpi	2,a2		;first drone is okay too.
-	jrle	ejblp0
+	jrle	hviqlp0
 	cmpi	W_DOINK,a1
-	jrne	ejblp0
+	jrne	hviqlp0
 	movk	2,a2
-ejblp0	move	*a0+,a3,L
-	jrz	ejbnxt0		;skip inactive
+hviqlp0	move	*a0+,a3,L
+	jrz	hviqnxt0		;skip inactive
 	move	*a3(WRESTLERNUM),a14
 	cmp	a1,a14
-	jrne	ejbnxt0
+	jrne	hviqnxt0
 	inc	a4		;got a match--inc count
-ejbnxt0	dsj	a2,ejblp0
-ejbend0	andi	7,a4
+hviqnxt0	dsj	a2,hviqlp0
+hviqend0	andi	7,a4
 	X32	a4
 	X256	a1
 	add	a1,a4
-	addi	ejbwrestler_pal_table,a4
+	addi	hviqwrestler_pal_table,a4
 	move	*a4,a14,L	
 	move	a14,b0
 	rets
 
-ejbbuddy_mode
+hviqbuddy_mode
 	move	*a13(WRESTLERNUM),a0
 	X64	a0
 	move	*a13(PLYR_SIDE),a14
 	X32	a14
 	add	a14,a0
-	addi	ejbbuddy_mode_pals,a0
+	addi	hviqbuddy_mode_pals,a0
 	move	*a0,a14,L
 	move	a14,b0
 	rets
 
-ejbwrestler_pal_table
+hviqwrestler_pal_table
 	;                                            pnch     ppnch    kick     pkick
 	REFLONG	HRTPNK_P,HRTBLU_P,HRTORG_P,HRTYEL_P,HRTRED_P,HRTGRN_P,HRTPRP_P,HRTGRY_P	;(Bret)
 	REFLONG	RZRGRN_P,RZRPRP_P,RZRYEL_P,RZRORG_P,RZRPNK_P,RZRBLU_P,RZRRED_P,RZRGRY_P	;(Razor)
@@ -3397,7 +3397,7 @@ ejbwrestler_pal_table
 	.long	0,0,0,0,0,0,0,0
 	REFLONG	LEXWHT_P,LEXPRP_P,LEXRED_P,LEXYEL_P,LEXGRN_P,LEXPNK_P,LEXORG_P,LEXGRY_P	;(Lex)
 
-ejbbuddy_mode_pals
+hviqbuddy_mode_pals
 	.long	HRTBLU_P,HRTRED_P
 	.long	RZRBLU_P,RZRRED_P
 	.long	UNDBLU_P,UNDRED_P
@@ -3417,13 +3417,13 @@ ejbbuddy_mode_pals
 
 	move	*a13(PLYRNUM),a14
 	cmpi	2,a14
-	jrge	vfndone			;don't check real drones
+	jrge	xtzidone			;don't check real drones
 
 	;don't bother checking if they're a drone or not.  In either case,
 	; turning them human again won't hurt.
 	movi	PTYPE_PLAYER,a14
 	move	a14,*a13(PLYR_TYPE)
-vfndone	rets
+xtzidone	rets
 
 
 *****************************************************************************
@@ -3434,9 +3434,9 @@ vfndone	rets
 
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
 	.word	ANI_SETFACING		;so the offset works properly
-	WL	ANI_CODE,oucx_flip
+	WL	ANI_CODE,hivpx_flip
 	.word	ANI_OFFSET,20,0,0
-	WL	ANI_CODE,oucok2
+	WL	ANI_CODE,hivpok2
 	.word	ANI_GETUP,FLUNG_TIME			;Flung time
 	.word	ANI_END
 
@@ -3445,10 +3445,10 @@ vfndone	rets
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
 ;Is this a good idea?
 	.word	ANI_DETACH
-	WL	ANI_CODE,oucsetup_run
+	WL	ANI_CODE,hivpsetup_run
 	.word	ANI_END
 
-oucsetup_run
+hivpsetup_run
 ;	move	a13,a0
 ;	calla	wres_get_stick_val_cur
 	PUSH	a1
@@ -3458,15 +3458,15 @@ oucsetup_run
 	PULL	a1
 	move	*a13(STICK_VAL_CUR),a0
 	andi	MOVE_LEFT+MOVE_RIGHT,a0
-	jrnz	oucuse_joy1
+	jrnz	hivpuse_joy1
 
 	move	*a13(FACING_DIR),a0	;use facing
 	andi	MOVE_LEFT+MOVE_RIGHT,a0
-oucuse_joy1
+hivpuse_joy1
 	move	*a13(FACING_DIR),a1
 	andi	MOVE_LEFT+MOVE_RIGHT,a1
 	cmp	a0,a1
-	jrz	oucok1
+	jrz	hivpok1
 
 ;He wants to run in the opposite direction than he is facing
 ;Rotate him around first.
@@ -3481,16 +3481,16 @@ oucuse_joy1
 ;	move	a13,a2				;a2 = * process
 ;	calla	change_anim_anim
 
-oucok1
-;	movi	oucdorun,a0			;this routine gets executed
-	jruc	oucdorun
-	jruc	ouccontx
-oucok2
+hivpok1
+;	movi	hivpdorun,a0			;this routine gets executed
+	jruc	hivpdorun
+	jruc	hivpcontx
+hivpok2
 ;Whenever you fling someone, a meter can & will appear
 	clr	a0
 	move	a0,*a13(DELAY_METER)
-	movi	oucdorun_flung,a0			;this routine gets executed
-ouccontx
+	movi	hivpdorun_flung,a0			;this routine gets executed
+hivpcontx
 	move	a0,*a13(CODE_ADDR),L		;when the rotate anim
 	SETMODE	WAITANIM			;finishes
 
@@ -3502,17 +3502,17 @@ ouccontx
 
 	rets
 
-oucx_flip
+hivpx_flip
 	move	*a13(FACING_DIR),a14
 	xori	00CH,a14
 	move	a14,*a13(FACING_DIR)
 	rets
 
-oucdorun
+hivpdorun
 	clr	a0
 	move	a0,*a13(GETUP_TIME)	;in control
 
-oucdorun_flung
+hivpdorun_flung
 	clr	a0
 	move	a0,*a13(USR_VAR1)	;with x-xel
 	move	a0,*a13(RUN_TIME)
@@ -3527,7 +3527,7 @@ oucdorun_flung
 ;	andi	MOVE_LEFT+MOVE_RIGHT,a0
 ;	xori	0ch,a0
 
-oucok
+hivpok
 	move	a0,*a13(MOVE_DIR)
 
 	move	*a13(NEW_FACING_DIR),a1
@@ -3537,7 +3537,7 @@ oucok
 
 	move	*a13(WRESTLERNUM),a0
 	X32	a0
-	addi	oucrun_anims,a0
+	addi	hivprun_anims,a0
 	move	*a0,a0,L		;run anim
 	calla	change_anim1a
 
@@ -3557,7 +3557,7 @@ oucok
 	.ref	und_run_anim
 	.ref	yok_run_anim
 
-oucrun_anims
+hivprun_anims
 	.long	hrt_run_anim	;0 Bret Hart
 	.long	rzr_run_anim	;1 Razor Ramon
 	.long	und_run_anim	;2 Undertaker
@@ -3605,23 +3605,23 @@ oucrun_anims
 	move	*a0(PLYR_SIDE),a1
 	movi	process_ptrs,a2
 	movk	NUM_WRES,a3
-rjzlp	move	*a2+,a4,L
-	jrz	rjznxt		;skip inactive
+vsqilp	move	*a2+,a4,L
+	jrz	vsqinxt		;skip inactive
 	cmp	a4,a0
-	jreq	rjznxt		;skip self
+	jreq	vsqinxt		;skip self
 	move	*a4(PLYR_SIDE),a14
 	cmp	a14,a1
-	jrne	rjznxt		;skip other team
+	jrne	vsqinxt		;skip other team
 	move	*a4(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	rjznxt		;skip dead
+	jreq	vsqinxt		;skip dead
 
 	;found live teammate.
 	PULL	a2,a3,a4
 	setc
 	rets
 
-rjznxt	dsj	a3,rjzlp
+vsqinxt	dsj	a3,vsqilp
 	PULL	a2,a3,a4
 	clrc
 	rets
@@ -3641,20 +3641,20 @@ rjznxt	dsj	a3,rjzlp
 	move	*a0(PLYR_SIDE),a1
 	movi	process_ptrs,a2
 	movk	NUM_WRES,a3
-najlp	move	*a2+,a4,L
-	jrz	najnxt		;skip inactive
+kswelp	move	*a2+,a4,L
+	jrz	kswenxt		;skip inactive
 	cmp	a4,a0
-	jreq	najnxt		;skip self
+	jreq	kswenxt		;skip self
 	move	*a4(PLYR_SIDE),a14
 	cmp	a14,a1
-	jrne	najnxt		;skip other team
+	jrne	kswenxt		;skip other team
 
 	;found a teammate.
 	PULL	a2,a3,a4
 	setc
 	rets
 
-najnxt	dsj	a3,najlp
+kswenxt	dsj	a3,kswelp
 	PULL	a2,a3,a4
 	clrc
 	rets
@@ -3685,14 +3685,14 @@ najnxt	dsj	a3,najlp
 	;if a13 is human and this is a royal rumble, make sure @FINAL_PTR is
 	;FFh.  If it isn't, don't raise arm.
 	move	@royal_rumble,a14
-	jrz	jfrhack_done
+	jrz	kwsfhack_done
 	move	*a13(PLYR_TYPE),a14
-	jrnz	jfrhack_done		;PLAYER=0
+	jrnz	kwsfhack_done		;PLAYER=0
 	move	@FINAL_PTR,a14,L
 	move	*a14,a14
-	jrn	jfrhack_done
-	jruc	jfrclrc			;no good
-jfrhack_done
+	jrn	kwsfhack_done
+	jruc	kwsfclrc			;no good
+kwsfhack_done
 
 	move	*a13(PLYR_SIDE),a0
 
@@ -3700,40 +3700,40 @@ jfrhack_done
 	movi	process_ptrs,a2
 	clr	a4		;'is any opponent inside' flag.
 
-jfrlp	move	*a2+,a3,L
-	jrz	jfrnxt		;skip inactive
+kwsflp	move	*a2+,a3,L
+	jrz	kwsfnxt		;skip inactive
 
 	move	*a3(PLYR_SIDE),a14
 	cmp	a14,a0
-	jreq	jfrnxt		;skip a13 and teammates
+	jreq	kwsfnxt		;skip a13 and teammates
 
 	move	*a3(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	jfrclrc		;opp dead?
+	jrne	kwsfclrc		;opp dead?
 
 	move	*a3(STATUS_FLAGS),a14,L
 	btst	B_ZOMBIE,a14
-	jrnz	jfrclrc		;zombie?
+	jrnz	kwsfclrc		;zombie?
 
 	move	*a3(INRING),a3
-	jrnz	jfrnxt
+	jrnz	kwsfnxt
 
 	;dead !zombie bad guy is inside.  set a4
 	inc	a4
-jfrnxt	dsj	a1,jfrlp
+kwsfnxt	dsj	a1,kwsflp
 
 	;okay, all our opponents are dead and staying that way.  now check
 	; the inside/outside stuff.
 	move	*a13(INRING),a14
-	jrnz	jfrsetc		;am I outside?
+	jrnz	kwsfsetc		;am I outside?
 
 	TEST	a4
-	jrnz	jfrclrc		;is any opponent inside?
+	jrnz	kwsfclrc		;is any opponent inside?
 
-jfrsetc	setc
+kwsfsetc	setc
 	rets
 
-jfrclrc	clrc
+kwsfclrc	clrc
 	rets
 
 *****************************************************************************
@@ -3788,17 +3788,16 @@ jfrclrc	clrc
 	movk	MAX_PIECES-1,a9
 	move	*a13(OBJ_BASE),a1,L
 	addk	20h,a1			;skip shadow
-* AM i had to remove this, it caused a compile error. not sure if ok.
-;vdcnxt	move	*a1+,a8,L
-;	move	a0,*a8(OPAL)
-;	dsj	a9,vdcnxt
+fminnxt	move	*a1+,a8,L
+	move	a0,*a8(OPAL)
+	dsj	a9,fminnxt
 
 ****	;re-initialize animation
 	movi	MODE_NORMAL,a14
 	move	a14,*a13(PLYRMODE)
 	move	*a13(WRESTLERNUM),a9
 	X64	a9
-	addi	vdcinit_anims,a9
+	addi	fmininit_anims,a9
 	move	*a9+,a0,L
 	calla	change_anim1a
 	move	*a9,a0,L
@@ -3816,33 +3815,33 @@ jfrclrc	clrc
 	move	a14,*a13(I_WILL_DIE)
 
 ****	;set new position
-	movi	vdcinit_positions,a0
-vdclp1	move	*a0(vdcnxt),a14,W
-	jrn	vdcusea0		;if last entry, use by default.
+	movi	fmininit_positions,a0
+fminlp1	move	*a0(fminNXT),a14,W
+	jrn	fminusea0		;if last entry, use by default.
 
 	;use current entry if:
 	; X <= WORLDTLX-30 or
 	; X >= WORLDTLX+400+30
 
-	move	*a0(vdcXPOS),a1
+	move	*a0(fminXPOS),a1
 	move	@WORLDTLX,a14,L
 	sra	16,a14
 	subk	30,a14
 	cmp	a14,a1
-	jrle	vdcusea0
+	jrle	fminusea0
 	addi	460,a14
 	cmp	a14,a1
-	jrge	vdcusea0
+	jrge	fminusea0
 
 
-vdcnxt1	addi	vdcSIZE,a0
-	jruc	vdclp1
+fminnxt1	addi	fminSIZE,a0
+	jruc	fminlp1
 
-vdcusea0	move	*a0(vdcXPOS),*a13(OBJ_XPOSINT)
-	move	*a0(vdcZPOS),*a13(OBJ_ZPOSINT)
-	move	*a0(vdcYPOS),*a13(OBJ_YPOSINT)
-	move	*a0(vdcYPOS),*a13(GROUND_Y)
-	move	*a0(vdcINRING),*a13(INRING)
+fminusea0	move	*a0(fminXPOS),*a13(OBJ_XPOSINT)
+	move	*a0(fminZPOS),*a13(OBJ_ZPOSINT)
+	move	*a0(fminYPOS),*a13(OBJ_YPOSINT)
+	move	*a0(fminYPOS),*a13(GROUND_Y)
+	move	*a0(fminINRING),*a13(INRING)
 
 ****	;clear old velocities
 	clr	a14
@@ -3853,7 +3852,7 @@ vdcusea0	move	*a0(vdcXPOS),*a13(OBJ_XPOSINT)
 	rets
 
 
-vdcinit_anims
+fmininit_anims
 	REFLONG	hrt_stand4_anim,hrt_torso4_anim
 	REFLONG	rzr_stand4_anim,rzr_torso4_anim
 	REFLONG	und_stand4_anim,und_torso4_anim
@@ -3870,15 +3869,15 @@ vdcinit_anims
 	; never happen,) use the last entry in the table.
 
 	STRUCT	0
-	WORD	vdcXPOS
-	WORD	vdcZPOS
-	WORD	vdcYPOS
-	WORD	vdcINRING
-	LABEL	vdcSIZE
-	WORD	vdcnxt	;first element of NEXT entry. check for -1.
+	WORD	fminXPOS
+	WORD	fminZPOS
+	WORD	fminYPOS
+	WORD	fminINRING
+	LABEL	fminSIZE
+	WORD	fminNXT	;first element of NEXT entry. check for -1.
 
 	;XPOSINT, ZPOSINT, YPOSINT/GROUND_Y, INRING
-vdcinit_positions
+fmininit_positions
 	.word	RING_X_CENTER,RING_Z_CENTER,MAT_Y,0	;center
 	.word	RING_TOP_LEFT,RING_Z_CENTER,MAT_Y,0	;center left
 	.word	RING_TOP_RIGHT,RING_Z_CENTER,MAT_Y,0	;center right
@@ -3900,22 +3899,22 @@ vdcinit_positions
 	;loop through the processes. Anything with a PID of SMOVE_PID, and
 	; a PA8 that matches our a13 must go.
 	move	@ACTIVE,a3,L
-ilxlp0	move	a3,a2		;a2 = p->this
-	jrz	ilxdone0
+qrtalp0	move	a3,a2		;a2 = p->this
+	jrz	qrtadone0
 	move	*a2,a3,L	;a3 = p->next
 	move	*a2(PROCID),a14
 	cmpi	SMOVE_PID,a14
-	jrne	ilxlp0
+	jrne	qrtalp0
 	move	*a2(PA8),a14,L
 	cmp	a14,a13
-	jrne	ilxlp0
+	jrne	qrtalp0
 
 	;match.  kill this one
 	move	a2,a0
 	calla	KILL
-	jruc	ilxlp0
+	jruc	qrtalp0
 
-ilxdone0	PULL	a2,a3
+qrtadone0	PULL	a2,a3
 	rets
 
 *****************************************************************************
@@ -3931,34 +3930,34 @@ ilxdone0	PULL	a2,a3
 	movi	process_ptrs,a0
 	movk	NUM_WRES,a1
 	move	*a13(PLYR_SIDE),a3
-herlp0	move	*a0+,a2,L
-	jrz	hernxt0			;skip inactive
+qplslp0	move	*a0+,a2,L
+	jrz	qplsnxt0			;skip inactive
 	move	*a2(PLYR_SIDE),a14
 	cmp	a14,a3
-	jreq	hernxt0			;skip teammates
+	jreq	qplsnxt0			;skip teammates
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	herclrc
+	jrne	qplsclrc
 	move	*a2(STATUS_FLAGS),a14
 	btst	B_ZOMBIE,a14
-	jrnz	herclrc
-hernxt0	dsjs	a1,herlp0
+	jrnz	qplsclrc
+qplsnxt0	dsjs	a1,qplslp0
 
 	;check range
 	move	*a13(CLOSEST_DIST),a0
 	cmpi	70h,a0
-	jrgt	herclrc
+	jrgt	qplsclrc
 	move	*a13(CLOSEST_ZDIST),a0
 	cmpi	50h,a0
-	jrgt	herclrc
+	jrgt	qplsclrc
 
 	calla	get_opp_process
 
 	move	*a0(STATUS_FLAGS),a14
 	btst	B_PINABLE,a14
-	jrz	herclrc
+	jrz	qplsclrc
 
-hersetc	;just to be safe, set the PINNED bit on the guy
+qplssetc	;just to be safe, set the PINNED bit on the guy
 	move	*a0(STATUS_FLAGS),a14
 	ori	M_PINNED,a14
 	move	a14,*a0(STATUS_FLAGS)
@@ -3983,7 +3982,7 @@ hersetc	;just to be safe, set the PINNED bit on the guy
 	setc
 	rets
 
-herclrc	clrc
+qplsclrc	clrc
 	rets
 
 *****************************************************************************
@@ -3995,9 +3994,9 @@ herclrc	clrc
 	.word	ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
 	.word	ANI_SETPLYRMODE,MODE_DEAD
 
-	WL	ANI_CODE,zckset_pinable_bit
+	WL	ANI_CODE,rjxhset_pinable_bit
 
-	WL	ANI_CODE,zckko_if_drone
+	WL	ANI_CODE,rjxhko_if_drone
 
 	.word	ANI_ROT		;just sit and do nothing
 
@@ -4006,41 +4005,41 @@ herclrc	clrc
 *****
 * KO my process if I'm a drone.
 
- SUBRP	zckko_if_drone
+ SUBRP	rjxhko_if_drone
 
 	;don't go to sleep if this is an 8-on-1 or 8-on-2 match, UNLESS
 	; wrestler_count is 0, which means there's no hope of becoming
 	; a zombie.
 	move	@royal_rumble,a14
-	jrnz	zckis8
+	jrnz	rjxhis8
 	calla	is_8_on_1
-	jrnc	zcknot8
-zckis8	move	@wrestler_count,a14
-	jrnz	zckrets
-zcknot8
+	jrnc	rjxhnot8
+rjxhis8	move	@wrestler_count,a14
+	jrnz	rjxhrets
+rjxhnot8
 
 	move	*a13(PLYR_TYPE),a14
 	cmpi	PTYPE_DRONE,a14
-	jrne	zckrets
+	jrne	rjxhrets
 
 	;don't KO if I've been pinned
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_PINNED,a14
-	jrnz	zckrets
+	jrnz	rjxhrets
 
 	;don't KO if our NO_KO bit is set.
 	btst	B_NO_KO,a14
-	jrnz	zckrets
+	jrnz	rjxhrets
 
 	ori	M_KOD,a14
 	move	a14,*a13(STATUS_FLAGS)
 
-zckrets	rets
+rjxhrets	rets
 
 *****
 * set the PINABLE bit in STATUS_FLAGS
 
- SUBRP	zckset_pinable_bit
+ SUBRP	rjxhset_pinable_bit
 
 	move	*a13(STATUS_FLAGS),a14
 	ori	M_PINABLE,a14
@@ -4060,26 +4059,26 @@ zckrets	rets
 
 	move	*a13(WRESTLERNUM),a2,W
 	X32	a2
-	addi	gmyspecial_moves,a2
+	addi	cdsdspecial_moves,a2
 	move	*a2,a2,L
-	jrz	gmydone
+	jrz	cdsddone
 
-gmyloop
+cdsdloop
 	move	*a2+,a7,L
-	jrz	gmydone
+	jrz	cdsddone
 	movi	SMOVE_PID,a1
 	move	a13,a8
 	calla	GETPRC_INSERT
 
 	;store reset address
 	move	*a0(PWAKE),*a0(SM_RESET_ADDRESS),L
-	jruc	gmyloop
+	jruc	cdsdloop
 
-gmydone
+cdsddone
 	rets
 
 
-gmyspecial_moves
+cdsdspecial_moves
 	REFLONG	hrt_smove_table		;Bret
 	REFLONG	rzr_smove_table		;Razor
 	REFLONG	und_smove_table		;Taker
@@ -4092,8 +4091,8 @@ gmyspecial_moves
 
 *****************************************************************************
 
-	.bss	kulpin_timeout,16		;pin idiot check cntdown
-	.bss	kullast_dead,16		;PCNT last time we had a one-team
+	.bss	kqatpin_timeout,16		;pin idiot check cntdown
+	.bss	kqatlast_dead,16		;PCNT last time we had a one-team
 					; dead condition.	
 
  SUBR	match_timer
@@ -4104,7 +4103,7 @@ gmyspecial_moves
 	clr	a0
 	move	a0,@match_time+20h	;fractional
 
-	callr	kulcreate_timer
+	callr	kqatcreate_timer
 
 	SLEEP	TSEC*2
 
@@ -4117,110 +4116,110 @@ gmyspecial_moves
 
 	;slow the clock to 1/3 speed if this is the royal rumble
 	move	@royal_rumble,a14
-	jrnz	kulisrum
+	jrnz	kqatisrum
 
 	;slow the clock (2/3 speed) if it's 1v3.
 	move	@PSTATUS2,a14
-	jrz	kulnfin
+	jrz	kqatnfin
 	cmpi	3,a14
-	jreq	kulnfin
+	jreq	kqatnfin
 
 	move	@NUM_OPPS,a14
 	cmpi	3,a14
-	jrne	kulnfin
+	jrne	kqatnfin
 
-kulisrum	movi	0AAAAH,a14
+kqatisrum	movi	0AAAAH,a14
 	mpyu	a14,a1
 	srl	16,a1
 
 	;slow it yet again (down to 1/3 speed) if this is the final battle,
 	calla	is_final_match
-	jrc	kulisfin
+	jrc	kqatisfin
 	move	@royal_rumble,a14
-	jrz	kulnfin
-kulisfin	sra	1,a1
+	jrz	kqatnfin
+kqatisfin	sra	1,a1
 
-kulnfin	move	a1,a10
+kqatnfin	move	a1,a10
 
-	;initialize kullast_dead
+	;initialize kqatlast_dead
 	clr	a14
-	move	a14,@kullast_dead
+	move	a14,@kqatlast_dead
 
-	;initialize kulpin_timeout - we need to do this because one time in
+	;initialize kqatpin_timeout - we need to do this because one time in
 	; 2^16, when we hit our first all-dead condition, PCNT will be 1,
 	; and the code will think that this isn't a new condition and it
 	; won't reset this value.  Hey, it could happen.
 	movi	4*TSEC,a14
-	move	a14,@kulpin_timeout
+	move	a14,@kqatpin_timeout
 
-kulloop
+kqatloop
 	SLEEPK	1
 
 	move	@HALT,a0
-	jrnz	kulloop
+	jrnz	kqatloop
 
 	move	@match_time,a0,L
-	jrz	kulloop
+	jrz	kqatloop
 
-	;call kuldec_timer and update_timer only if there's a live member
+	;call kqatdec_timer and update_timer only if there's a live member
 	; of every team. (for this purpose, zombies count as live members)
 
 	callr	get_live_bits
 	move	a0,a3
 
 	cmpi	3,a3
-	jrne	kul1tmded		;a team is completely dead
+	jrne	kqat1tmded		;a team is completely dead
 
-	callr	kuldec_timer
+	callr	kqatdec_timer
 	callr	update_timer
 
-	jruc	kulloop
+	jruc	kqatloop
 
-kul1tmded	;one team is completely dead - wait five seconds, and if there's
+kqat1tmded	;one team is completely dead - wait five seconds, and if there's
 	; no pin by then, award the round to the team that's sitting on
 	; it's silly drone ass instead of pinning.
 
-	;check kullast_dead to see if this is a new all-dead condition or
-	; an old one.  if it's a new one, we need to reset kulpin_timeout.
+	;check kqatlast_dead to see if this is a new all-dead condition or
+	; an old one.  if it's a new one, we need to reset kqatpin_timeout.
 	move	@PCNT,a14
-	move	@kullast_dead,a0
+	move	@kqatlast_dead,a0
 	sub	a0,a14
 	dec	a14
-	jrz	kulold
+	jrz	kqatold
 
-	;new dead condition.  reset kulpin_timeout.
+	;new dead condition.  reset kqatpin_timeout.
 	;temp! - 314
 	.if DEBUG
 	DBEVENT	BDE_ALL_DEAD,a13,L,a13,L,a13,L
 	.endif
 
 	movi	5*TSEC,a14
-	move	a14,@kulpin_timeout
+	move	a14,@kqatpin_timeout
 
 	;clear reduce_bog.  if we're in 8-on-1 or 8-on-2 mode, clear this
 	; only if the human team is dead, or the drones are dead and no
 	; more are coming.
 	move	@royal_rumble,a14
-	jrnz	kulck8_2
+	jrnz	kqatck8_2
 	calla	is_8_on_1
-	jrnc	kulcrb
+	jrnc	kqatcrb
 
-kulck8_1	;check the 8-on-1 case
+kqatck8_1	;check the 8-on-1 case
 	move	@PSTATUS2,a14
 	and	a3,a14		;a3 is bit of live team
-	jrz	kulcrb		;on z, human team is dead
-	jruc	kuldtd		;else dead team is drones
+	jrz	kqatcrb		;on z, human team is dead
+	jruc	kqatdtd		;else dead team is drones
 
-kulck8_2	;check the 8-on-2 case
+kqatck8_2	;check the 8-on-2 case
 	btst	0,a3		;team 0 is always humans in 8 on 2
-	jrz	kulcrb		;on z, human team is dead
+	jrz	kqatcrb		;on z, human team is dead
 
-kuldtd	;dead team is drones
+kqatdtd	;dead team is drones
 	move	@wrestler_count,a14
 	cmpi	1,a14
-	jrge	kulncrb
+	jrge	kqatncrb
 
-kulcrb	clr	a14
+kqatcrb	clr	a14
 	move	a14,@reduce_bog
 
 	;wake the crowd
@@ -4229,50 +4228,50 @@ kulcrb	clr	a14
 	move	a14,*a0(PTIME)
 
 
-kulncrb	;create the PIN HIM message process.
+kqatncrb	;create the PIN HIM message process.
 	move	a3,a9
 	xori	3,a9
 	srl	1,a9		;a8 is dead team (0 or 1)
 	CREATE	PINHIM_ANIM_PID,pin_prompt
 
-kulold	;update kullast_dead
+kqatold	;update kqatlast_dead
 	move	@PCNT,a14
-	move	a14,@kullast_dead
+	move	a14,@kqatlast_dead
 
 	;dec pin_timeout and call the round if time's up.
-	move	@kulpin_timeout,a14
-	jrz	kulloop			;we've already called this round
+	move	@kqatpin_timeout,a14
+	jrz	kqatloop			;we've already called this round
 	dec	a14
-	jrz	kulend			;time's up - do it.
-	move	a14,@kulpin_timeout
-	jruc	kulloop
+	jrz	kqatend			;time's up - do it.
+	move	a14,@kqatpin_timeout
+	jruc	kqatloop
 
-kulend
+kqatend
 	CREATE	ANNC_PID,announce_rnd_winner
 	.if DEBUG
-	move	a13,*a0(PDATA),L	;kulCREATOR (pdata)
+	move	a13,*a0(PDATA),L	;kqatCREATOR (pdata)
 	movi	$,a14
-	move	a14,*a0(PDATA+20h),L	;kulORIGIN
+	move	a14,*a0(PDATA+20h),L	;kqatORIGIN
 	.endif
 
-	;stuff a 0 in kulpin_timeout so we'll know that there's no further
+	;stuff a 0 in kqatpin_timeout so we'll know that there's no further
 	; action to be taken on this all-dead condition.
 	clr	a14
-	move	a14,@kulpin_timeout
-	jruc	kulloop
+	move	a14,@kqatpin_timeout
+	jruc	kqatloop
 
 
 ********************
 
-kulcreate_timer
+kqatcreate_timer
 
 	;set pal
 	movi	WGFS_W_P,b0
 	calla	is_8_on_1
-	jrnc	kulnfin2
+	jrnc	kqatnfin2
 	movi	WGSF_Y_P,b0
 
-kulnfin2	movi	[186,0],a0			;x pos
+kqatnfin2	movi	[186,0],a0			;x pos
 	movi	[21,0],a1			;y pos
 	movi	WGSF20_9,a2
 	movi	200,a3			;z pos
@@ -4295,33 +4294,33 @@ kulnfin2	movi	[186,0],a0			;x pos
 
 ********************
 
-kuldec_timer
+kqatdec_timer
 	move	@match_time,a0,L
 	cmpi	090009h,a0
-	jrne	kulno_reset_pal
+	jrne	kqatno_reset_pal
 	movi	WGFS_W_P,a0
 	calla	is_8_on_1
-	jrnc	kulnfin3
+	jrnc	kqatnfin3
 	movi	WGSF_Y_P,a0
 
-kulnfin3	calla	pal_getf
+kqatnfin3	calla	pal_getf
 	move	*a13(PDATA+20h),a8,L	;10's image pointer
 	move	a0,*a8(OPAL)
 	move	*a13(PDATA),a8,L	;10's image pointer
 	move	a0,*a8(OPAL)
 
-kulno_reset_pal
+kqatno_reset_pal
 
 	move	@match_time+20h,a0	;fractional
 	sub	a10,a0
 
 	move	a0,@match_time+20h
-	jrnc	kulno_change
+	jrnc	kqatno_change
 
 	move	@match_time+10h,a0	;1's
 	dec	a0
 	move	a0,@match_time+10h
-	jrnc	kulno_borrow
+	jrnc	kqatno_borrow
 
 	movk	9,a0
 	move	a0,@match_time+10h
@@ -4332,7 +4331,7 @@ kulno_reset_pal
 
 	cmpi	0,a0
 
-	jrne	kulno_borrow
+	jrne	kqatno_borrow
 	movi	WGSF_R_P,a0
 	calla	pal_getf
 	move	*a13(PDATA+20h),a8,L	;10's image pointer
@@ -4340,7 +4339,7 @@ kulno_reset_pal
 	move	*a13(PDATA),a8,L	;10's image pointer
 	move	a0,*a8(OPAL)
 
-kulno_borrow
+kqatno_borrow
 	;if time is less than 15, make noise
 	move	@match_time,a0,L
 	move	a0,a1
@@ -4349,11 +4348,11 @@ kulno_borrow
 	sla	4,a1
 	or	a1,a0
 	cmpi	10h,a0
-	jrgt	kulno_change
+	jrgt	kqatno_change
 	movk	10,a0			;Time warning sound
 	calla	triple_sound
 
-kulno_change
+kqatno_change
 	rets
 
 timer_table
@@ -4373,11 +4372,11 @@ timer_table
 	move	@match_time,a0		;10's
 	.if DEBUG
 	cmpi	10,a0
-	jrlt	kulok1
+	jrlt	kqatok1
 
 	;clock digit out of range!
 	LOCKUP
-kulok1
+kqatok1
 	.endif
 
 	X32	a0
@@ -4390,12 +4389,12 @@ kulok1
 	move	@match_time+10h,a0	;1's
 	.if DEBUG
 	cmpi	10,a0
-	jrlt	kulok2
+	jrlt	kqatok2
 
 	;clock digit out of range!
 	LOCKUP
 	.endif
-kulok2
+kqatok2
 
 	X32	a0
 	addi	digit_tbl,a0
@@ -4420,11 +4419,11 @@ kulok2
 	clr	a11
 	move	@PSTATUS2,a14
 	cmpi	3,a14
-	jrz	wbvno_adj
+	jrz	gicjno_adj
 	btst	1,a14
-	jrz	wbvno_adj
+	jrz	gicjno_adj
 	movi	[11ah,0],a11
-wbvno_adj
+gicjno_adj
 	sub	a11,a0
 	movi	[32h,0],a1
 	movi	remaining,a2
@@ -4450,25 +4449,25 @@ name_z		equ	9
 	movi	WSF_Y_P,b0
 	calla	BEGINOBJP
 
-wbvwc_loop
+gicjwc_loop
 	SLEEP	07fffh			; Sleep until woken up
 
 	move	@wrestler_count,a14	; Get current count
-	jrz	wbvwc_exit		; Is it 0 ? - br = yes
+	jrz	gicjwc_exit		; Is it 0 ? - br = yes
 	cmp	a9,a14			; Has it changed from last time ?
-	jrz	wbvwc_loop
+	jrz	gicjwc_loop
 	move	a14,a9			; Save for reprint
 
 	move	@wrestler_count,a0	; Get current count
 	X32	a0
-	addi	wbvdigit10_tbl,a0
+	addi	gicjdigit10_tbl,a0
 	move	*a0,a0,L		;* image
 	move	*a8(OCTRL),a1		;DMA flags
 	calla	change_image
 	
-	jruc	wbvwc_loop		; Go redo it
+	jruc	gicjwc_loop		; Go redo it
 
-wbvwc_exit
+gicjwc_exit
 	clr	a0
 	move	a0,@wrestler_count_proc,L
 
@@ -4477,7 +4476,7 @@ wbvwc_exit
 	jauc	DELOBJDIE
 
 
-wbvdigit10_tbl
+gicjdigit10_tbl
 	.long	WSF10_0
 	.long	WSF10_1
 	.long	WSF10_2
@@ -4497,16 +4496,16 @@ digit_tbl
 *****************************************************************************
 
  SUBR	maybe_do_flashes
-nnptop	SLEEPK	5
+pyewtop	SLEEPK	5
 	move	@reduce_bog,a1
-	jrnz	nnpdie
+	jrnz	pyewdie
 	MOVE	@WORLDTLY,A0,L
 	CMPI	[0ff97H,0],A0
-	JRGT	nnptop
+	JRGT	pyewtop
 	CALLA	START_HI_FLASHES
 	SLEEPK	30
-	JRUC	nnptop
-nnpdie	DIE
+	JRUC	pyewtop
+pyewdie	DIE
 
 *****************************************************************************
 *
@@ -4529,14 +4528,14 @@ nnpdie	DIE
 
 	move	*a13(STATUS_FLAGS),a14,L
 	btst	B_DID_RAISEARM,a14
-	jrz	uqdset
+	jrz	prftset
 
-uqdclr	move	*a13(ANIMODE),a14
+prftclr	move	*a13(ANIMODE),a14
 	andni	MODE_STATUS2,a14
 	move	a14,*a13(ANIMODE)
 	rets
 
-uqdset	move	*a13(ANIMODE),a14
+prftset	move	*a13(ANIMODE),a14
 	ori	MODE_STATUS2,a14
 	move	a14,*a13(ANIMODE)
 	rets
@@ -4564,10 +4563,10 @@ uqdset	move	*a13(ANIMODE),a14
 	move	a7,a14
 	clr	a8
 	movk	8,a0
-ugzlp1	srl	1,a14
-	jrnc	ugznxt1
+erhblp1	srl	1,a14
+	jrnc	erhbnxt1
 	inc	a8
-ugznxt1	dsj	a0,ugzlp1
+erhbnxt1	dsj	a0,erhblp1
 
 	;get the first one
 	calla	get_rnd_wrestler
@@ -4596,25 +4595,25 @@ ugznxt1	dsj	a0,ugzlp1
 	move	*a14(OBJ_XPOSINT),a1
 	move	*a13(OBJ_XPOSINT),a14
 	sub	a1,a14
-	jrn	egzonrt
+	jrn	svdxonrt
 
-egzonlt	;opponent on my left
+svdxonlt	;opponent on my left
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_LEFT_BIT,a14
-	jrz	egzbehind
-;	jruc	egzahead
+	jrz	svdxbehind
+;	jruc	svdxahead
 
-egzahead	PULL	a1
+svdxahead	PULL	a1
 	clrc
 	rets
 
-egzonrt	;opponent on my right
+svdxonrt	;opponent on my right
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	egzahead
-;	jruc	egzbehind
+	jrnz	svdxahead
+;	jruc	svdxbehind
 
-egzbehind	PULL	a1
+svdxbehind	PULL	a1
 	setc
 	rets
 
@@ -4627,7 +4626,7 @@ egzbehind	PULL	a1
 
 	move	@PSTATUS2,a14
 	cmpi	3,a14
-	jrne	onfrets
+	jrne	jutirets
 
 	move	@match_winner,a1
 	NOT	A1
@@ -4637,16 +4636,16 @@ egzbehind	PULL	a1
 
 	ADDI	p1oldwinstreak,A1
 	MOVE	*A1,A1
-	jrz	onfrets
+	jrz	jutirets
 	MOVK	2,A0
 	CALLA	RNDRNG0
 	SLL	4,A0
-	ADDI	onfspeech,A0
+	ADDI	jutispeech,A0
 	MOVE	*A0,A0
 	CALLA	ADD_VOICE
-onfrets	rets
+jutirets	rets
 
-onfspeech	;.word	CONGRATULATIONS
+jutispeech	;.word	CONGRATULATIONS
 	.word	SOMEHOW_I_DONT_THINK
 ;	.word	L_CONGRATS
 	.word	L_BACK_TO_SANDBOX
@@ -4674,31 +4673,31 @@ onfspeech	;.word	CONGRATULATIONS
 
 	;skip all this crap after a royal_rumble
 	move	@royal_rumble,a14
-	jrnz	gearets
+	jrnz	gbvyrets
 
 	;increment AUD_VSHUMF or AUD_VSCPUF (and AUD_CPUWIN)
 	movi	AUD_VSHUMF,a0
 	move	@PSTATUS2,a14
 	cmpi	03h,a14
-	jreq	geavshum
+	jreq	gbvyvshum
 	movi	AUD_VSCPUF,a0
-geavshum	calla	AUD1
+gbvyvshum	calla	AUD1
 
 	;add to AUD_2PBTIME, AUD_CPUWINTIME, or AUD_CPULOSETIME
 	move	@PSTATUS2,a14
 	cmpi	03h,a14
-	jreq	gea2pbtime
+	jreq	gbvy2pbtime
 
 	move	@match_winner,a0
 	and	a0,a14
-	jrnz	geacpulosetime
-	jruc	geacpuwintime
+	jrnz	gbvycpulosetime
+	jruc	gbvycpuwintime
 
-gea2pbtime
+gbvy2pbtime
 	movi	AUD_2PBTIME,a0
-	jruc	geaaddtime
+	jruc	gbvyaddtime
 
-geacpuwintime
+gbvycpuwintime
 	MOVE	@PSTARTS,A0
 	JRZ	NO_UPDATE_ANYTHING
 
@@ -4715,75 +4714,75 @@ NO_UPDATE_ANYTHING
 	movi	AUD_CPUWIN,a0
 	calla	AUD1
 	movi	AUD_CPUWINTIME,a0
-	jruc	geaaddtime
-geacpulosetime
+	jruc	gbvyaddtime
+gbvycpulosetime
 	movi	AUD_CPULOSETIME,a0
-	jruc	geaaddtime
+	jruc	gbvyaddtime
 
-geaaddtime
+gbvyaddtime
 	move	@match_realtime,a1
 	calla	AUD
 
 	;update record speeds
 	move	@PSTATUS2,a14
 	cmpi	03h,a14
-	jreq	geafast_2p
+	jreq	gbvyfast_2p
 
 	move	@match_winner,a0
 	and	a0,a14
-	jrnz	geafast_cpulose
-	jruc	geafast_cpuwin
+	jrnz	gbvyfast_cpulose
+	jruc	gbvyfast_cpuwin
 
-geafast_2p
+gbvyfast_2p
 	movi	AUD_FASTHDH,a0
 	calla	GET_AUD
-	jrz	geano_prior_hdh
+	jrz	gbvyno_prior_hdh
 	move	@match_realtime,a2
 	cmp	a1,a2
-	jrge	gearecordspeed_done
-geano_prior_hdh
+	jrge	gbvyrecordspeed_done
+gbvyno_prior_hdh
 	movi	AUD_FASTHDH,a0
 	move	@match_realtime,a1
 	calla	STORE_AUDIT
-	jruc	gearecordspeed_done
+	jruc	gbvyrecordspeed_done
 
-geafast_cpulose
+gbvyfast_cpulose
 	movi	AUD_FASTHDC,a0
 	calla	GET_AUD
-	jrz	geano_prior_hdc
+	jrz	gbvyno_prior_hdc
 	move	@match_realtime,a2
 	cmp	a1,a2
-	jrge	gearecordspeed_done
-geano_prior_hdc
+	jrge	gbvyrecordspeed_done
+gbvyno_prior_hdc
 	movi	AUD_FASTHDC,a0
 	move	@match_realtime,a1
 	calla	STORE_AUDIT
-	jruc	gearecordspeed_done
+	jruc	gbvyrecordspeed_done
 
-geafast_cpuwin
+gbvyfast_cpuwin
 	movi	AUD_FASTCDH,a0
 	calla	GET_AUD
-	jrz	geano_prior_cdh
+	jrz	gbvyno_prior_cdh
 	move	@match_realtime,a2
 	cmp	a1,a2
-	jrge	gearecordspeed_done
-geano_prior_cdh
+	jrge	gbvyrecordspeed_done
+gbvyno_prior_cdh
 	movi	AUD_FASTCDH,a0
 	move	@match_realtime,a1
 	calla	STORE_AUDIT
 
-gearecordspeed_done
+gbvyrecordspeed_done
 ;No speedy victories in 3 rnd matches!
 	move	@current_round,a0
 	cmpi	3,a0
-	jrz	gearets
+	jrz	gbvyrets
 
 
 	;increment the proper wrestler use thingies
 
 	MOVE	@PSTATUS2,A0
 	CMPI	3,A0
-	JREQ	gea2pmatch
+	JREQ	gbvy2pmatch
 
 	;it's a one-player match.
 	move	@index1,a2
@@ -4794,11 +4793,11 @@ gearecordspeed_done
 	MOVK	1,A1
 
 AUDIT_THE_HUMAN
-	CALLR	geaaudit_wrestler
+	CALLR	gbvyaudit_wrestler
 
 	move	@NUM_OPPS,a14
 	cmpi	1,a14
-	jrne	gearets		;don't audit 1-vs-many matches
+	jrne	gbvyrets		;don't audit 1-vs-many matches
 
 	;audit the computer
 	move	@CURRENT_LADDER,a0,L
@@ -4808,64 +4807,64 @@ AUDIT_THE_HUMAN
 
 	;convert 7 to 8.
 	cmpi	7,a2
-	jrne	geavok0
+	jrne	gbvyvok0
 	inc	a2
-geavok0
+gbvyvok0
 
 	move	@PSTATUS2,a1
 	xori	3,a1
 	srl	1,a1		;CPU side in a3 (!PSTATUS >> 1)
 
-	callr	geaaudit_wrestler
+	callr	gbvyaudit_wrestler
 
 	rets
 	
 
 ;human vs. human match
-gea2pmatch
+gbvy2pmatch
 	;player 1
 	move	@index1,a2
 	CLR	A1
-	CALLR	geaaudit_wrestler
+	CALLR	gbvyaudit_wrestler
 
 	;player 2
 	move	@index2,a2
 	MOVK	1,A1
-	CALLR	geaaudit_wrestler
+	CALLR	gbvyaudit_wrestler
 
-gearets	RETS
+gbvyrets	RETS
 
 ******************
 * a2 = WRESTLERNUM
 * a1 = PLYR_SIDE
 
- SUBRP	geaaudit_wrestler
+ SUBRP	gbvyaudit_wrestler
 
 	TEST	a2
-	jrnn	geaok
+	jrnn	gbvyok
 	.if DEBUG
 	LOCKUP
 	.endif
 	rets
-geaok
+gbvyok
 	X64	a2			;x 4 words
 	addi	wrestler_audits,a2
 
 	move	@PSTATUS2,a0
 	btst	A1,a0
-	jrnz	geap1hum
+	jrnz	gbvyp1hum
 	addi	20h,a2			;skip 2 words
-geap1hum
+gbvyp1hum
 	move	*a2+,a0,W		;increment uses
 	calla	AUD1
 
 	move	@match_winner,a0
 	btst	A1,a0
-	jrz	geap1_audited
+	jrz	gbvyp1_audited
 	move	*a2+,a0,W		;increment wins
 	calla	AUD1
 
-geap1_audited
+gbvyp1_audited
 	RETS
 
 
@@ -4882,29 +4881,29 @@ geap1_audited
 	movi	process_ptrs,a1
 	clr	a3
 
-xfclp1	move	*a1+,a2,L
-	jrz	xfcnxt1		;skip inactive
+kypilp1	move	*a1+,a2,L
+	jrz	kypinxt1		;skip inactive
 
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	xfclive
+	jrne	kypilive
 
 	move	*a2(STATUS_FLAGS),a14
 	btst	B_ZOMBIE,a14
-	jrz	xfcnxt1		;skip dead &! zombie
+	jrz	kypinxt1		;skip dead &! zombie
 
-xfclive	;live wrestler.  flag his team
+kypilive	;live wrestler.  flag his team
 	move	*a2(PLYR_SIDE),a14
-	jrnz	xfct2
+	jrnz	kypit2
 
 	;member of team 1
 	ori	01h,a3	
-	jruc	xfcnxt1
+	jruc	kypinxt1
 
-xfct2	;member of team 2
+kypit2	;member of team 2
 	ori	02h,a3
 
-xfcnxt1	dsj	a0,xfclp1
+kypinxt1	dsj	a0,kypilp1
 	move	a3,a0
 	PULL	a1,a2,a3
 
@@ -4923,23 +4922,23 @@ xfcnxt1	dsj	a0,xfclp1
 	movi	process_ptrs,a0
 	movi	NUM_WRES,a1
 	move	*a13(PLYR_SIDE),a2
-lgylp0	move	*a0+,a3,L
-	jrz	lgynxt0			;skip inactive
+steolp0	move	*a0+,a3,L
+	jrz	steonxt0			;skip inactive
 	move	*a3(PLYR_SIDE),a14
 	cmp	a14,a2
-	jreq	lgynxt0			;skip teammates
+	jreq	steonxt0			;skip teammates
 	move	*a3(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	lgynxt0			;skip dead guys
+	jreq	steonxt0			;skip dead guys
 	move	*a3(INRING),a14
-	jrnz	lgysetc			;is outside?
-lgynxt0	dsj	a1,lgylp0
+	jrnz	steosetc			;is outside?
+steonxt0	dsj	a1,steolp0
 
 	PULL	a3
 	clrc
 	rets
 
-lgysetc	PULL	a3
+steosetc	PULL	a3
 	setc
 	rets
 
@@ -4953,12 +4952,12 @@ lgysetc	PULL	a3
 
 	calla	get_opp_plyrmode
 	cmpi	MODE_DEAD,a0
-	jreq	sqgdead
+	jreq	ckqkdead
 	movi	MODE_INAIR2,a0
-	jruc	sqggo
+	jruc	ckqkgo
 
-sqgdead	movi	MODE_INAIR,a0
-sqggo	move	a0,*a13(PLYRMODE)
+ckqkdead	movi	MODE_INAIR,a0
+ckqkgo	move	a0,*a13(PLYRMODE)
 	rets
 	
 *****************************************************************************
@@ -4981,19 +4980,19 @@ sqggo	move	a0,*a13(PLYRMODE)
 	abs	a14
 	srl	16,a14
 	cmpi	15,a14
-	jrlt	mqsset
+	jrlt	icrjset
 
 
 ;	move	*a13(STICK_REL_CUR),a14
 ;	btst	MOVE_AWAY_BIT,a14
-;	jrz	mqsclr
+;	jrz	icrjclr
 
 	move	*a13(BUT_VAL_CUR),a14
 	cmpi	PLAYER_BLOCK_VAL,a14
-	jreq	mqsset
-;mqsclr
+	jreq	icrjset
+;icrjclr
 	andni	MODE_STATUS2,a0
-mqsset
+icrjset
 	move	a0,*a13(ANIMODE)
 	rets
 

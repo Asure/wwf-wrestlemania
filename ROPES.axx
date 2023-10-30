@@ -1,11 +1,3 @@
-*************************************************************
-*
-* Software:		Jason Skiles
-* Initiated:		9 March 94
-*
-* COPYRIGHT (C) 1995 WILLIAMS ELECTRONICS GAMES, INC.
-*
-**************************************************************
 
 	.file	"ropes.asm"
 	.title	"rope code"
@@ -24,21 +16,11 @@
 	.include	"miscimg.glo"
 	.include	"ropeimg.glo"
 
-******************************************************************************
-* EXTERNAL REFERENCES
 
 	.ref	XFERPROC,front_rproc,reduce_bog
 
-******************************************************************************
-* SYMBOLS DEFINED IN THIS FILE
 
-******************************************************************************
-* EQUATES FOR THIS FILE
 
-;Don't add any more rope commands!  It won't work.  RANI_SETPRIORITY
-; was only being used in one place, and it wasn't doing much, so to strip
-; this time-comsuming rope thing down, I've removed most of the command
-; structure, and any word with bit 15 set will be treated as RANI_GOTO.
 
 RANI_GOTO		.equ	0 + 8000h
 
@@ -46,71 +28,67 @@ SSPRING_PRI	.equ	10
 DSPRING_PRI	.equ	9
 SHAKE_PRI	.equ	5
 
-*****************************************************************************
-*
-* IN: a11 = group # (0=front, 1=back, 2=left, 3=right )
-*
 
 	STRUCTPD
 
 	LONG	ROPE_ACTION		;UHW
 
-	LONG	hicRED_OBJ		;UHL top rope
-	LONG	hicRED_OBJ2		;UHL top rope (right half)
-	LONG	hicRED_SCPTR		;UHL top rope script ptr
-	WORD	hicRED_SCCNT		;UHW top rope script counter
-	LONG	hicRED_SQPTR		;UHL top rope sequence ptr
-	WORD	hicRED_SQCNT		;UHW top rope sequence counter
-	WORD	hicRED_PRIORITY		;UHW top rope anim priority
+	LONG	fmpeRED_OBJ		;UHL top rope
+	LONG	fmpeRED_OBJ2		;UHL top rope (right half)
+	LONG	fmpeRED_SCPTR		;UHL top rope script ptr
+	WORD	fmpeRED_SCCNT		;UHW top rope script counter
+	LONG	fmpeRED_SQPTR		;UHL top rope sequence ptr
+	WORD	fmpeRED_SQCNT		;UHW top rope sequence counter
+	WORD	fmpeRED_PRIORITY		;UHW top rope anim priority
 
-	LONG	hicWHITE_OBJ		;UHL middle rope
-	LONG	hicWHITE_OBJ2		;UHL middle rope (right half)
-	LONG	hicWHITE_SCPTR		;UHL middle rope script ptr
-	WORD	hicWHITE_SCCNT		;UHW middle rope script counter
-	LONG	hicWHITE_SQPTR		;UHL middle rope sequence ptr
-	WORD	hicWHITE_SQCNT		;UHW middle rope sequence counter
-	WORD	hicWHITE_PRIORITY		;UHW middle rope anim priority
+	LONG	fmpeWHITE_OBJ		;UHL middle rope
+	LONG	fmpeWHITE_OBJ2		;UHL middle rope (right half)
+	LONG	fmpeWHITE_SCPTR		;UHL middle rope script ptr
+	WORD	fmpeWHITE_SCCNT		;UHW middle rope script counter
+	LONG	fmpeWHITE_SQPTR		;UHL middle rope sequence ptr
+	WORD	fmpeWHITE_SQCNT		;UHW middle rope sequence counter
+	WORD	fmpeWHITE_PRIORITY		;UHW middle rope anim priority
 
-	LONG	hicBLUE_OBJ 		;UHL bottom rope
-	LONG	hicBLUE_OBJ2 		;UHL bottom rope (right half)
-	LONG	hicBLUE_SCPTR		;UHL bottom rope script ptr
-	WORD	hicBLUE_SCCNT		;UHW bottom rope script counter
-	LONG	hicBLUE_SQPTR		;UHL bottom rope sequence ptr
-	WORD	hicBLUE_SQCNT		;UHW bottom rope sequence counter
-	WORD	hicBLUE_PRIORITY		;UHW bottom rope anim priority
+	LONG	fmpeBLUE_OBJ 		;UHL bottom rope
+	LONG	fmpeBLUE_OBJ2 		;UHL bottom rope (right half)
+	LONG	fmpeBLUE_SCPTR		;UHL bottom rope script ptr
+	WORD	fmpeBLUE_SCCNT		;UHW bottom rope script counter
+	LONG	fmpeBLUE_SQPTR		;UHL bottom rope sequence ptr
+	WORD	fmpeBLUE_SQCNT		;UHW bottom rope sequence counter
+	WORD	fmpeBLUE_PRIORITY		;UHW bottom rope anim priority
 
-	LONG	hicSHAD_OBJ 		;UHL rope shadow
-	LONG	hicSHAD_OBJ2 		;UHL rope shadow (right half)
-	LONG	hicSHAD_SCPTR		;UHL rope shadow script ptr
-	WORD	hicSHAD_SCCNT		;UHW rope shadow script counter
-	LONG	hicSHAD_SQPTR		;UHL rope shadow sequence ptr
-	WORD	hicSHAD_SQCNT		;UHW rope shadow sequence counter
-	WORD	hicSHAD_PRIORITY		;UHW rope shadow anim priority
+	LONG	fmpeSHAD_OBJ 		;UHL rope shadow
+	LONG	fmpeSHAD_OBJ2 		;UHL rope shadow (right half)
+	LONG	fmpeSHAD_SCPTR		;UHL rope shadow script ptr
+	WORD	fmpeSHAD_SCCNT		;UHW rope shadow script counter
+	LONG	fmpeSHAD_SQPTR		;UHL rope shadow sequence ptr
+	WORD	fmpeSHAD_SQCNT		;UHW rope shadow sequence counter
+	WORD	fmpeSHAD_PRIORITY		;UHW rope shadow anim priority
 
-PDBLKSTART	.equ	hicRED_OBJ
-PDBLKSIZ	.equ	hicWHITE_OBJ-hicRED_OBJ
+PDBLKSTART	.equ	fmpeRED_OBJ
+PDBLKSIZ	.equ	fmpeWHITE_OBJ-fmpeRED_OBJ
 
 
-PD_OBJ		.equ	hicRED_OBJ - hicRED_OBJ
-PD_OBJ2		.equ	hicRED_OBJ2 - hicRED_OBJ
-PD_SCPTR	.equ	hicRED_SCPTR - hicRED_OBJ
-PD_SCCNT	.equ	hicRED_SCCNT - hicRED_OBJ
-PD_SQPTR	.equ	hicRED_SQPTR - hicRED_OBJ
-PD_SQCNT	.equ	hicRED_SQCNT - hicRED_OBJ
-PD_PRIORITY	.equ	hicRED_PRIORITY - hicRED_OBJ
+PD_OBJ		.equ	fmpeRED_OBJ - fmpeRED_OBJ
+PD_OBJ2		.equ	fmpeRED_OBJ2 - fmpeRED_OBJ
+PD_SCPTR	.equ	fmpeRED_SCPTR - fmpeRED_OBJ
+PD_SCCNT	.equ	fmpeRED_SCCNT - fmpeRED_OBJ
+PD_SQPTR	.equ	fmpeRED_SQPTR - fmpeRED_OBJ
+PD_SQCNT	.equ	fmpeRED_SQCNT - fmpeRED_OBJ
+PD_PRIORITY	.equ	fmpeRED_PRIORITY - fmpeRED_OBJ
 
 
 	;reg use (overall)
-	; a11 = * to our entry in the hicmaster_table
+	; a11 = * to our entry in the fmpemaster_table
 
  SUBR	rope
 
-	;position a11 at the beginning of the hicmaster_table entry for
+	;position a11 at the beginning of the fmpemaster_table entry for
 	; the current bank of ropes.
 	move	a11,a10
-	movi	hicmtable_size,a14
+	movi	fmpemtable_size,a14
 	mpyu	a14,a11
-	addi	hicmaster_table,a11
+	addi	fmpemaster_table,a11
 
 	;set priority and action
 	clr	a14
@@ -118,13 +96,13 @@ PD_PRIORITY	.equ	hicRED_PRIORITY - hicRED_OBJ
 
 	;initialize the shadow stuff to zero in case this is a horz rope
 	clr	a14
-	move	a14,*a13(hicSHAD_OBJ),L
-	move	a14,*a13(hicSHAD_OBJ2),L
-	move	a14,*a13(hicSHAD_SCPTR),L
-	move	a14,*a13(hicSHAD_SCCNT),W
-	move	a14,*a13(hicSHAD_SQPTR),L
-	move	a14,*a13(hicSHAD_SQCNT),W
-	move	a14,*a13(hicSHAD_PRIORITY),W
+	move	a14,*a13(fmpeSHAD_OBJ),L
+	move	a14,*a13(fmpeSHAD_OBJ2),L
+	move	a14,*a13(fmpeSHAD_SCPTR),L
+	move	a14,*a13(fmpeSHAD_SCCNT),W
+	move	a14,*a13(fmpeSHAD_SQPTR),L
+	move	a14,*a13(fmpeSHAD_SQCNT),W
+	move	a14,*a13(fmpeSHAD_PRIORITY),W
 
 	;reg use (creation)
 	; a0-a8 - create stuff
@@ -132,13 +110,13 @@ PD_PRIORITY	.equ	hicRED_PRIORITY - hicRED_OBJ
 	; a10   - pointer to initial position table entry
 
 	;create the ropes
-	move	*a11(hicPOS_TABLE),a10,L
+	move	*a11(fmpePOS_TABLE),a10,L
 	move	a13,a9
-	addi	hicRED_OBJ,a9
+	addi	fmpeRED_OBJ,a9
 
-hiccreate_loop
+fmpecreate_loop
 	move	*a10+,a2,L
-	jrz	hicfirst3_done
+	jrz	fmpefirst3_done
 	move	*a10+,a4,W
 	ori	DMAWNZ|M_3D,a4
 	move	*a10+,a5,W
@@ -152,7 +130,7 @@ hiccreate_loop
 	addi	104,a0
 	addi	-258,a1
 
-hicno_flip
+fmpeno_flip
 	
 	sla	16,a0
 	sla	16,a1
@@ -169,9 +147,9 @@ hicno_flip
 	move	a8,*a9(PD_SQCNT),W
 	move	a8,*a9(PD_PRIORITY),W
 	addi	PDBLKSIZ,a9
-	jruc	hiccreate_loop
+	jruc	fmpecreate_loop
 
-hicfirst3_done
+fmpefirst3_done
 	;first three objects down and we hit one zero.  If there's another
 	; zero after that one, then we're done.  If there's another table
 	; entry, then we need to make three more ropes and stick them in
@@ -179,11 +157,11 @@ hicfirst3_done
 	; back banks, and the bottom-half ropes on the sides
 
 	move	a13,a9
-	addi	hicRED_OBJ,a9
+	addi	fmpeRED_OBJ,a9
 
-hiccreate2_loop
+fmpecreate2_loop
 	move	*a10+,a2,L
-	jrz	hiccreate_done
+	jrz	fmpecreate_done
 	move	*a10+,a4,W
 	ori	DMAWNZ|M_3D,a4
 	move	*a10+,a5,W
@@ -197,7 +175,7 @@ hiccreate2_loop
 	addi	104,a0
 	addi	-258,a1
 
-hicno_flip2
+fmpeno_flip2
 	
 	sla	16,a0
 	sla	16,a1
@@ -208,7 +186,7 @@ hicno_flip2
 	move	a8,*a9(PD_OBJ2),L
 	addi	PDBLKSIZ,a9
 
-	jruc	hiccreate2_loop
+	jruc	fmpecreate2_loop
 
 new_command_wake
 	;the only way to get here is an XFERPROC.
@@ -218,90 +196,89 @@ new_command_wake
 	;prepare the red rope pointers
 	move	*a0+,a14,W		;priority check
 	move	*a0+,a1,L
-	move	*a13(hicRED_PRIORITY),a2,W
+	move	*a13(fmpeRED_PRIORITY),a2,W
 	cmp	a14,a2
-	jrgt	hicskip_red
-	move	a14,*a13(hicRED_PRIORITY),W
-	move	a1,*a13(hicRED_SCPTR),L
+	jrgt	fmpeskip_red
+	move	a14,*a13(fmpeRED_PRIORITY),W
+	move	a1,*a13(fmpeRED_SCPTR),L
 	move	*a1+,a2,W
-	move	a2,*a13(hicRED_SCCNT),W
+	move	a2,*a13(fmpeRED_SCCNT),W
 	move	*a1+,a2,L
-	move	a2,*a13(hicRED_SQPTR),L
+	move	a2,*a13(fmpeRED_SQPTR),L
 	movk	1,a2
-	move	a2,*a13(hicRED_SQCNT),W
-hicskip_red
+	move	a2,*a13(fmpeRED_SQCNT),W
+fmpeskip_red
 
 	;prepare the white rope pointers
 	move	*a0+,a14,W		;priority check
 	move	*a0+,a1,L
-	move	*a13(hicWHITE_PRIORITY),a2,W
+	move	*a13(fmpeWHITE_PRIORITY),a2,W
 	cmp	a14,a2
-	jrgt	hicskip_white
-	move	a14,*a13(hicWHITE_PRIORITY),W
-	move	a1,*a13(hicWHITE_SCPTR),L
+	jrgt	fmpeskip_white
+	move	a14,*a13(fmpeWHITE_PRIORITY),W
+	move	a1,*a13(fmpeWHITE_SCPTR),L
 	move	*a1+,a2,W
-	move	a2,*a13(hicWHITE_SCCNT),W
+	move	a2,*a13(fmpeWHITE_SCCNT),W
 	move	*a1+,a2,L
-	move	a2,*a13(hicWHITE_SQPTR),L
+	move	a2,*a13(fmpeWHITE_SQPTR),L
 	movk	1,a2
-	move	a2,*a13(hicWHITE_SQCNT),W
-hicskip_white
+	move	a2,*a13(fmpeWHITE_SQCNT),W
+fmpeskip_white
 
 	;prepare the blue rope pointers
 	move	*a0+,a14,W		;priority check
 	move	*a0+,a1,L
-	move	*a13(hicBLUE_PRIORITY),a2,W
+	move	*a13(fmpeBLUE_PRIORITY),a2,W
 	cmp	a14,a2
-	jrgt	hicskip_blue
-	move	a14,*a13(hicBLUE_PRIORITY),W
-	move	a1,*a13(hicBLUE_SCPTR),L
+	jrgt	fmpeskip_blue
+	move	a14,*a13(fmpeBLUE_PRIORITY),W
+	move	a1,*a13(fmpeBLUE_SCPTR),L
 	move	*a1+,a2,W
-	move	a2,*a13(hicBLUE_SCCNT),W
+	move	a2,*a13(fmpeBLUE_SCCNT),W
 	move	*a1+,a2,L
-	move	a2,*a13(hicBLUE_SQPTR),L
+	move	a2,*a13(fmpeBLUE_SQPTR),L
 	movk	1,a2
-	move	a2,*a13(hicBLUE_SQCNT),W
+	move	a2,*a13(fmpeBLUE_SQCNT),W
 
-hicskip_blue
+fmpeskip_blue
 	;prepare the rope shadow pointers
-	move	*a13(hicSHAD_OBJ),a14,L	;exist check
-	jrz	hicskip_shadow
+	move	*a13(fmpeSHAD_OBJ),a14,L	;exist check
+	jrz	fmpeskip_shadow
 
 	move	*a0+,a14,W		;priority check
 	move	*a0+,a1,L
-	move	*a13(hicSHAD_PRIORITY),a2,W
+	move	*a13(fmpeSHAD_PRIORITY),a2,W
 	cmp	a14,a2
-	jrgt	hicskip_shadow
-	move	a14,*a13(hicSHAD_PRIORITY),W
-	move	a1,*a13(hicSHAD_SCPTR),L
+	jrgt	fmpeskip_shadow
+	move	a14,*a13(fmpeSHAD_PRIORITY),W
+	move	a1,*a13(fmpeSHAD_SCPTR),L
 	move	*a1+,a2,W
-	move	a2,*a13(hicSHAD_SCCNT),W
+	move	a2,*a13(fmpeSHAD_SCCNT),W
 	move	*a1+,a2,L
-	move	a2,*a13(hicSHAD_SQPTR),L
+	move	a2,*a13(fmpeSHAD_SQPTR),L
 	movk	1,a2
-	move	a2,*a13(hicSHAD_SQCNT),W
+	move	a2,*a13(fmpeSHAD_SQCNT),W
 
-hicskip_shadow
-	jruc	hicmain_loop
-
-
-hicmaster_table
-	.long	hicfront_ptable
-	.long	hicback_ptable
-hicsiderope_start
-	.long	hicleft_ptable
-	.long	hicright_ptable
-hicmaster_tablex
-
-hicmtable_size	.equ	(hicmaster_tablex-hicmaster_table)/4
-
-hicPOS_TABLE	.equ	0
+fmpeskip_shadow
+	jruc	fmpemain_loop
 
 
-;Initial position tables
+fmpemaster_table
+	.long	fmpefront_ptable
+	.long	fmpeback_ptable
+fmpesiderope_start
+	.long	fmpeleft_ptable
+	.long	fmperight_ptable
+fmpemaster_tablex
+
+fmpemtable_size	.equ	(fmpemaster_tablex-fmpemaster_table)/4
+
+fmpePOS_TABLE	.equ	0
 
 
-hicfront_ptable
+
+
+fmpefront_ptable
 	;FRONT LEFT
 	LWWWWW	ROPE_F_R,0,CLSNEUT|SUBROPE|SUBHORZ,673+1,402-2,015aah
 	LWWWWW	ROPE_F_W,0,CLSNEUT|SUBROPE|SUBHORZ,671+1,426-2,015aah
@@ -315,7 +292,7 @@ hicfront_ptable
 	.long	0,0
 
 
-hicback_ptable
+fmpeback_ptable
 	;BACK LEFT
 	LWWWWW	ROPE_B_R,0,CLSNEUT|SUBROPE|SUBHORZ,749+1,318-2,013cah
 	LWWWWW	ROPE_B_W,0,CLSNEUT|SUBROPE|SUBHORZ,749+1,341-2,013cah
@@ -330,7 +307,7 @@ hicback_ptable
 
 
 
-hicleft_ptable
+fmpeleft_ptable
 	;LEFT TOP
 	LWWWWW	ROPE_S_Ra,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,323-2,013cch
 	LWWWWW	ROPE_S_Wa,0,CLSNEUT|SUBROPE|SUBSIDE,676+1,346-2,013cbh
@@ -345,7 +322,7 @@ hicleft_ptable
 	LWWWWW	ROPSHADB,0,CLSNEUT|SUBROPE|SUBSIDE,2c7h,189h,013c8h
 	.long	0,0
 
-hicright_ptable
+fmperight_ptable
 	;RIGHT TOP
 	LWWWWW	ROPE_S_Ra,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,322-2,013cch
 	LWWWWW	ROPE_S_Wa,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,1164+1+100,345-2,013cbh
@@ -360,15 +337,15 @@ hicright_ptable
 	LWWWWW	ROPSHADB,M_FLIPH,CLSNEUT|SUBROPE|SUBSIDE,469h+100,189h,013c8h
 	.long	0,0
 
-hiccreate_done
+fmpecreate_done
 
 	;sleep a bit, then check the reduce_bog flag
 	SLEEPK	2
 	move	@reduce_bog,a14
-	jrz	hicbog_ok
+	jrz	fmpebog_ok
 
-	cmpi	hicsiderope_start,a11
-	jrge	hicbog_ok
+	cmpi	fmpesiderope_start,a11
+	jrge	fmpebog_ok
 
 	;we're a front or back rope.  Die.
 
@@ -381,53 +358,34 @@ hiccreate_done
 
 	;yikes!  We're in bog-reduction mode.  Die if we're a horz rope proc.
 
-hicbog_ok	;reg use (main loop)
+fmpebog_ok	;reg use (main loop)
 	; a9  -  permanent storage of rope_update() address
 	;a10  -  temp storage of rope_update() address
-	;a11  -  pointer to our entry in the hicmaster_table
+	;a11  -  pointer to our entry in the fmpemaster_table
 
 	movi	rope_update,a9
 
 	.align
 
-hicmain_loop
+fmpemain_loop
 	SLEEPK	1
 
 	move	a13,a5
-	addi	hicRED_OBJ,a5		;top rope
+	addi	fmpeRED_OBJ,a5		;top rope
 
 	movi	fastanic,a1		;required by rope_update
 	movi	PDBLKSIZ,a3
 
 	movk	4,a2
 
-hictightloop
+fmpetightloop
 	move	a9,a10
 	exgpc	a10
 	add	a3,a5
-	dsjs	a2,hictightloop
-	jruc	hicmain_loop
+	dsjs	a2,fmpetightloop
+	jruc	fmpemain_loop
 
-*****************************************************************************
-*
-*  a5 = ptr to section of PDATA for the current rope (use those PD_???
-*       offsets defined earlier to access the data )
-*
-*  a1 = address of fastanic routine (helps speed things up a shade)
-*
-* a10 = return address (this routine is called with exgpc)
-*
 
-;NOTES:
-;	PD_OBJ contains the object pointer for a rope
-;	---> since PD_OBJ is zero, we simply use *aN instead of *aN(PD_OBJ)
-;	PD_SCPTR points to the CURRENTLY ACTIVE sequence in the script
-;		table.
-;	PD_SCCNT is the number of repetitions of a the current sequence
-;		to be performed.
-;	PD_SQPTR points to the NEXT frame in the current sequence.
-;	PD_SQCNT is the number of ticks to hold the current frame.
-;
 
 	;WARNING!!!!!
 	;This routine is heavily compacted in the name of speed and size
@@ -440,59 +398,59 @@ hictightloop
 
 	;time to move on to the next frame in our sequence?
 	move	*a5(PD_SQCNT),a6,W
-	jrz	qntdone			;not even IN a sequence.  quit
+	jrz	wiwbdone			;not even IN a sequence.  quit
 
 	;make sure this rope exists
 	move	*a5,a8,L	;*a5 == *a5(PD_OBJ)
-	jrz	qntdone		;rope doesn't exist.  ignore it.
+	jrz	wiwbdone		;rope doesn't exist.  ignore it.
 
 	;dec frame time
 	dec	a6
-	jrnz	qnthold_current_frame
+	jrnz	wiwbhold_current_frame
 
-qntnew_sequence_frame
+wiwbnew_sequence_frame
 	;timer has run out on current frame.  get a new one.
 	move	*a5(PD_SQPTR),a6,L
 	move	*a6+,a7,W		;next time increment
-	jrp	qntnext_frame
-	jrn	qntsequence_goto
+	jrp	wiwbnext_frame
+	jrn	wiwbsequence_goto
 
-qntend_of_sequence
+wiwbend_of_sequence
 	;that was the last frame in the sequence.  look at the script.
 	move	*a5(PD_SCCNT),a6,W
 	dec	a6
-	jrnz	qntrepeat_sequence
+	jrnz	wiwbrepeat_sequence
 
 	;move on to the next sequence
-qntnew_sequence
+wiwbnew_sequence
 	move	*a5(PD_SCPTR),a6,L
 	addi	30h,a6			;point at next entry
 	move	a6,*a5(PD_SCPTR),L	;and stuff it.
 	move	*a6,a6,W		;get the repeat count
-	jrp	qntrepeat_sequence
-	jrn	qntscript_goto
+	jrp	wiwbrepeat_sequence
+	jrn	wiwbscript_goto
 
-qntend_of_script
+wiwbend_of_script
 	clr	a14
 	move	a14,*a5(PD_SQCNT),L	;This hits both CNT and PRIORITY
 
-qntdone
+wiwbdone
 	jump	a10
 
 	;it's some kind of special command
 	;Just assume it's a goto, the only legal command these days.
-qntsequence_goto
+wiwbsequence_goto
 	move	*a6(0),*a5(PD_SQPTR),L
-	jruc	qntnew_sequence_frame
+	jruc	wiwbnew_sequence_frame
 
-qnthold_current_frame
+wiwbhold_current_frame
 	;timer hasn't run out on current frame.  stuff the new counter
 	; and return
 	move	a6,*a5(PD_SQCNT),W
 	jump	a10		;return address
 
 	;there's another valid frame in the sequence.  use it.
-qntnext_frame
+wiwbnext_frame
 	;figure out if this is a front/back rope or a side rope.  They're
 	; handled differently.
 	move	*a8(OID),a14,W
@@ -500,10 +458,10 @@ qntnext_frame
 	move	a7,*a5(PD_SQCNT),W
 
 	btst	SUBHORZ_BIT,a14
-	jrnz	qntfb_rope
+	jrnz	wiwbfb_rope
 
 
-qntside_rope	;it's a side rope
+wiwbside_rope	;it's a side rope
 	;for these ropes, the 'image' in the sequence is a label where
 	; we'll find the top and bottom image header pointers, in that order.
 	; thus the extra indirection.
@@ -511,7 +469,7 @@ qntside_rope	;it's a side rope
 	move	*a7+,a0,L
 	move	*a7,a4,L
 
-qntrope_common
+wiwbrope_common
 	move	a1,a14		;a1 = fastanic
 	exgpc	a14
 	move	*a5(PD_OBJ2),a8,L
@@ -522,43 +480,33 @@ qntrope_common
 	move	a6,*a5(PD_SQPTR),L
 	jump	a10		;return address
 
-qntfb_rope	;it's a front or back rope
+wiwbfb_rope	;it's a front or back rope
 	;for these ropes, the image is in the sequence, and it's used
 	; for both halves.  The one on the right is flipped.
 	move	*a6+,a0,L
 	move	a0,a4
-	jruc	qntrope_common
+	jruc	wiwbrope_common
 
 	;it's some kind of special command
 	;assume it's a GOTO.  It'd sure as hell BETTER be...
-qntscript_goto
+wiwbscript_goto
 	move	*a5(PD_SCPTR),a6,L
 	move	*a6(10h),*a5(PD_SCPTR),L
-	jruc	qntnew_sequence
+	jruc	wiwbnew_sequence
 
-qntrepeat_sequence
+wiwbrepeat_sequence
 	move	a6,*a5(PD_SCCNT),W
 	move	*a5(PD_SCPTR),a6,L
 	addk	10h,a6			;skip the repeat count
 	move	*a6,a6,L		;points now to a sequence
 	move	a6,*a5(PD_SQPTR),L	;stuff it as the new SQPTR
-	jruc	qntnew_sequence_frame	;and pretend we got there normally...
+	jruc	wiwbnew_sequence_frame	;and pretend we got there normally...
 
-*****************************************************************************
-* Change an objects image (Doesn't check VFLIP)
-* A0=*New image
-* A8=*Obj
-* Trashes scratch
-*
-* ---> This is more or less identical to the civanic found in ROBO.ASM,
-*      but it's called with EXGPC instead of CALL[R/A].
-*
-* ---> returns via JUMP a14
 
  SUBRP	fastanic
 
 	cmpi	ROM,a0
-	jrlo	hiqanierr
+	jrlo	znujanierr
 
 	;set new anim points
 	move	*a0(IANIOFF),*a8(ODOFF),L
@@ -571,24 +519,18 @@ qntrepeat_sequence
 	move	*a0(ICTRL+7),*a8(OCTRL+7) ;Write 5 z comp bits
 	setf	16,1,0
 
-hiqx	jump	a14
+znujx	jump	a14
 
-hiqanierr 
+znujanierr 
 	.if	DEBUG
 	LOCKUP
 	eint
 	.else
 	CALLERR	2,2
 	.endif
-	jruc	hiqx
+	jruc	znujx
 
 
-*****************************************************************************
-*
-* a0 = rope process
-* a1 = rope index (R_TOP,R_MIDDLE,R_BOTTOM)
-* a2 = rope action (RZ_NORM,RZ_HIGH)
-*
 
  SUBR	set_rope_z
 
@@ -605,25 +547,17 @@ hiqanierr
 	movi	015a9h,a0
 
 	cmpi	RZ_HIGH,a2
-	jreq	lhbset_high
+	jreq	tgspset_high
 
 	move	*a3(OZPOS),a0,W
 
-lhbset_high
+tgspset_high
 	move	a0,*a4(OZPOS)
 
 	PULL	a4
 
 	rets
 
-*****************************************************************************
-*
-* a0 = rope number (use defined constants from game.equ)
-* a1 = type of action
-* a2 = rope position(0-5) (for side bounces)
-* a2 = magnitude(0-3) (for general shakes)
-* a3 = Z position of wrestler (only for side springs)
-*
 
 	;reg use
 	; a0-3  input
@@ -641,56 +575,56 @@ lhbset_high
 	mpyu	a14,a5
 	move	a5,a4
 	
-	addi	bekcommand_table,a4
+	addi	okwgcommand_table,a4
 	move	a1,a14
 	X32	a14
 	add	a14,a4
 	move	*a4,a4,L
-	jrz	bekinvalid_action
+	jrz	okwginvalid_action
      
 	;get the rope proc pointer
 	move	a0,a5
 	X32	a5
 	addi	front_rproc,a5
 	move	*a5,a5,L
-	jrz	bekdone		;ignore if there's no process for that rope.
+	jrz	okwgdone		;ignore if there's no process for that rope.
 
 	;check for a side-spring
-	cmpi	beksspring,a4
-	jreq	beksloop
-	cmpi	bekdspring,a4
-	jreq	beksloop
-	jruc	bekno_spring
+	cmpi	okwgsspring,a4
+	jreq	okwgsloop
+	cmpi	okwgdspring,a4
+	jreq	okwgsloop
+	jruc	okwgno_spring
 
 	;it's a side-spring.  figure out which one to use
-beksloop
+okwgsloop
 	move	*a4+,a14,L
 	cmp	a14,a3
-	jrlt	beksfound
+	jrlt	okwgsfound
 	addi	20h*6,a4
-	jruc	beksloop
+	jruc	okwgsloop
 
-beksfound
+okwgsfound
 	move	a2,a14
 	X32	a14
 	add	a14,a4
 	move	*a4,a4,L
-	jruc	bekscript_set
+	jruc	okwgscript_set
 
-bekno_spring
+okwgno_spring
 	;check for a side shake
 	cmpi	ROPE_BOUNCEUD,a1
-	jrne	bekno_updown
+	jrne	okwgno_updown
 
 	;it's an up-down shake.
 	move	a2,a14
 	X32	a14
 	add	a14,a4
 	move	*a4,a4,L
-	jruc	bekscript_set
+	jruc	okwgscript_set
 
-bekno_updown
-bekscript_set
+okwgno_updown
+okwgscript_set
 	;start the bank of ropes doing it's thing
 	move	a4,*a5(ROPE_ACTION),L
 
@@ -702,67 +636,63 @@ bekscript_set
 	move	*a5(PA11),a11,L
 	move	a5,a0
 	calla	XFERPROC
-bekinvalid_action
-bekdone
+okwginvalid_action
+okwgdone
 
 	pull	a0,a1,a2,a3,a4,a7,a10
 
 	rets
 
-bekcommand_table
-	.long	bekfrontud_table,0,0,0,0,0
-	.long	bekbackud_table,0,0,0,0,0
-	.long	beksideud,side_bounceio_t,beksspring,bekdspring,sspr_trans_t,dspr_trans_t
-	.long	beksideud,side_bounceio_t,beksspring,bekdspring,sspr_trans_t,dspr_trans_t
+okwgcommand_table
+	.long	okwgfrontud_table,0,0,0,0,0
+	.long	okwgbackud_table,0,0,0,0,0
+	.long	okwgsideud,side_bounceio_t,okwgsspring,okwgdspring,sspr_trans_t,dspr_trans_t
+	.long	okwgsideud,side_bounceio_t,okwgsspring,okwgdspring,sspr_trans_t,dspr_trans_t
 
-bekfrontud_table
+okwgfrontud_table
 	.long	front_bounceud1_t
 	.long	front_bounceud2_t
 	.long	front_bounceud3_t
 	.long	front_bounceud4_t
 
-bekbackud_table
+okwgbackud_table
 	.long	back_bounceud1_t
 	.long	back_bounceud2_t
 	.long	back_bounceud3_t
 	.long	back_bounceud4_t
 
-beksideud
+okwgsideud
 	.long	side_bounceud1_t
 	.long	side_bounceud2_t
 	.long	side_bounceud3_t
 	.long	side_bounceud4_t
 
-bekLANE_WIDTH	.equ	(RING_BOT - RING_TOP) / 5
+okwgLANE_WIDTH	.equ	(RING_BOT - RING_TOP) / 5
 
-beksspring
-	.long	( RING_TOP + ( 1 * bekLANE_WIDTH )) << 16
+okwgsspring
+	.long	( RING_TOP + ( 1 * okwgLANE_WIDTH )) << 16
 	.long	sspr11_t,sspr12_t,sspr13_t,sspr14_t,sspr15_t,0
-	.long	( RING_TOP + ( 2 * bekLANE_WIDTH )) << 16
+	.long	( RING_TOP + ( 2 * okwgLANE_WIDTH )) << 16
 	.long	sspr11_t,sspr22_t,sspr23_t,sspr24_t,sspr25_t,0
-	.long	( RING_TOP + ( 3 * bekLANE_WIDTH )) << 16
+	.long	( RING_TOP + ( 3 * okwgLANE_WIDTH )) << 16
 	.long	sspr21_t,sspr32_t,sspr33_t,sspr34_t,sspr35_t,0
-	.long	( RING_TOP + ( 4 * bekLANE_WIDTH )) << 16
+	.long	( RING_TOP + ( 4 * okwgLANE_WIDTH )) << 16
 	.long	sspr31_t,sspr42_t,sspr43_t,sspr44_t,sspr45_t,0
 	.long	7FFFFFFFh
 	.long	sspr41_t,sspr52_t,sspr53_t,sspr54_t,sspr55_t,0
 
-bekdspring
-	.long	( RING_TOP + ( 1 * bekLANE_WIDTH )) << 16
+okwgdspring
+	.long	( RING_TOP + ( 1 * okwgLANE_WIDTH )) << 16
 	.long	dspr11_t,dspr12_t,dspr13_t,dspr14_t,dspr15_t,dspr16_t
-	.long	( RING_TOP + ( 2 * bekLANE_WIDTH )) << 16
+	.long	( RING_TOP + ( 2 * okwgLANE_WIDTH )) << 16
 	.long	dspr11_t,dspr22_t,dspr23_t,dspr24_t,dspr25_t,dspr26_t
-	.long	( RING_TOP + ( 3 * bekLANE_WIDTH )) << 16
+	.long	( RING_TOP + ( 3 * okwgLANE_WIDTH )) << 16
 	.long	dspr21_t,dspr32_t,dspr33_t,dspr34_t,dspr35_t,dspr36_t
-	.long	( RING_TOP + ( 4 * bekLANE_WIDTH )) << 16
+	.long	( RING_TOP + ( 4 * okwgLANE_WIDTH )) << 16
 	.long	dspr31_t,dspr42_t,dspr43_t,dspr44_t,dspr45_t,dspr46_t
 	.long	7FFFFFFFh
 	.long	dspr41_t,dspr52_t,dspr53_t,dspr54_t,dspr55_t,dspr56_t
 
-***************************************
-*
-* Front ropes, up and down
-*
 
  SUBRP	front_bounceud4_t	;(script table)
 	WL	SHAKE_PRI,front_bounceud4_R
@@ -785,40 +715,40 @@ bekdspring
 	WL	SHAKE_PRI,front_bounceud1_B
 
  SUBRP	front_bounceud4_R	;(script)
-	WL	1,foyf_bncud1_R
+	WL	1,kavpf_bncud1_R
  SUBRP	front_bounceud3_R	;(script)
-	WL	1,foyf_bncud2_R
+	WL	1,kavpf_bncud2_R
  SUBRP	front_bounceud2_R	;(script)
-	WL	2,foyf_bncud3
+	WL	2,kavpf_bncud3
  SUBRP	front_bounceud1_R	;(script)
-	WL	3,foyf_bncud4
+	WL	3,kavpf_bncud4
 	.word	0
 
  SUBRP	front_bounceud4_W	;(script)
-	WL	1,foyf_bncud1_W
+	WL	1,kavpf_bncud1_W
  SUBRP	front_bounceud3_W	;(script)
-	WL	1,foyf_bncud2_W
+	WL	1,kavpf_bncud2_W
  SUBRP	front_bounceud2_W	;(script)
-	WL	2,foyf_bncud3
+	WL	2,kavpf_bncud3
  SUBRP	front_bounceud1_W	;(script)
-	WL	3,foyf_bncud4
+	WL	3,kavpf_bncud4
 	.word	0
 
  SUBRP	front_bounceud4_B	;(script)
-	WL	1,foyf_bncud1_B
+	WL	1,kavpf_bncud1_B
  SUBRP	front_bounceud3_B	;(script)
-	WL	1,foyf_bncud2_B
+	WL	1,kavpf_bncud2_B
  SUBRP	front_bounceud2_B	;(script)
-	WL	2,foyf_bncud3
+	WL	2,kavpf_bncud3
  SUBRP	front_bounceud1_B	;(script)
-	WL	3,foyf_bncud4
+	WL	3,kavpf_bncud4
 	.word	0
 
-foyf_bncud1_R	;(sequence)
+kavpf_bncud1_R	;(sequence)
 	WL	1,RPFBUP02
-foyf_bncud1_B	;(sequence)
+kavpf_bncud1_B	;(sequence)
 	WL	1,RPFBUP03
-foyf_bncud1_W	;(sequence)
+kavpf_bncud1_W	;(sequence)
 	WL	1,RPFBUP05
 	WL	1,RPFBUP04
 	WL	1,RPFBUP03
@@ -832,11 +762,11 @@ foyf_bncud1_W	;(sequence)
 	WL	1,ROPE_F_R
 	.word	0
 
-foyf_bncud2_R	;sequence
+kavpf_bncud2_R	;sequence
 	WL	1,RPFBUP02
-foyf_bncud2_B	;sequence
+kavpf_bncud2_B	;sequence
 	WL	1,RPFBUP03
-foyf_bncud2_W	;sequence
+kavpf_bncud2_W	;sequence
 	WL	1,RPFBUP04
 	WL	1,RPFBUP03
 	WL	1,RPFBUP01
@@ -848,7 +778,7 @@ foyf_bncud2_W	;sequence
 	WL	1,ROPE_F_R
 	.word	0
 
-foyf_bncud3	;sequence
+kavpf_bncud3	;sequence
 	WL	1,RPFBUP02
 	WL	1,RPFBUP03
 	WL	1,RPFBUP02
@@ -859,7 +789,7 @@ foyf_bncud3	;sequence
 	WL	1,ROPE_F_R
 	.word	0
 
-foyf_bncud4	;sequence
+kavpf_bncud4	;sequence
 	WL	1,RPFBUP01
 	WL	1,RPFBUP02
 	WL	1,RPFBUP01
@@ -871,10 +801,6 @@ foyf_bncud4	;sequence
 	.word	0
 
 
-****************************************
-*
-* Back ropes, up and down
-*
 
  SUBRP	back_bounceud4_t	;(script table)
 	WL	SHAKE_PRI,back_bounceud4_R
@@ -897,41 +823,41 @@ foyf_bncud4	;sequence
 	WL	SHAKE_PRI,back_bounceud1_B
 
  SUBRP	back_bounceud4_R	;(script)
-	WL	1,foyb_bncud1_R
+	WL	1,kavpb_bncud1_R
  SUBRP	back_bounceud3_R	;(script)
-	WL	1,foyb_bncud2_R
+	WL	1,kavpb_bncud2_R
  SUBRP	back_bounceud2_R	;(script)
-	WL	2,foyb_bncud3_R
+	WL	2,kavpb_bncud3_R
  SUBRP	back_bounceud1_R	;(script)
-	WL	3,foyb_bncud4_R
+	WL	3,kavpb_bncud4_R
 	.word	0
 
  SUBRP	back_bounceud4_W	;(script)
-	WL	1,foyb_bncud1_W
+	WL	1,kavpb_bncud1_W
  SUBRP	back_bounceud3_W	;(script)
-	WL	1,foyb_bncud2_W
+	WL	1,kavpb_bncud2_W
  SUBRP	back_bounceud2_W	;(script)
-	WL	2,foyb_bncud3_W
+	WL	2,kavpb_bncud3_W
  SUBRP	back_bounceud1_W	;(script)
-	WL	3,foyb_bncud4_W
+	WL	3,kavpb_bncud4_W
 	.word	0
 
  SUBRP	back_bounceud4_B	;(script)
-	WL	1,foyb_bncud1_B
+	WL	1,kavpb_bncud1_B
  SUBRP	back_bounceud3_B	;(script)
-	WL	1,foyb_bncud2_B
+	WL	1,kavpb_bncud2_B
  SUBRP	back_bounceud2_B	;(script)
-	WL	2,foyb_bncud3_B
+	WL	2,kavpb_bncud3_B
  SUBRP	back_bounceud1_B	;(script)
-	WL	3,foyb_bncud4_B
+	WL	3,kavpb_bncud4_B
 	.word	0
 
 
-foyb_bncud1_B	;(sequence)
+kavpb_bncud1_B	;(sequence)
 	WL	1,RPBBUP02
-foyb_bncud1_R	;(sequence)
+kavpb_bncud1_R	;(sequence)
 	WL	1,RPBBUP03
-foyb_bncud1_W	;(sequence)
+kavpb_bncud1_W	;(sequence)
 	WL	1,RPBBUP05
 	WL	1,RPBBUP04
 	WL	1,RPBBUP03
@@ -945,11 +871,11 @@ foyb_bncud1_W	;(sequence)
 	WL	1,ROPE_B_R
 	.word	0
 
-foyb_bncud2_B	;(sequence)
+kavpb_bncud2_B	;(sequence)
 	WL	1,RPBBUP02
-foyb_bncud2_R	;(sequence)
+kavpb_bncud2_R	;(sequence)
 	WL	1,RPBBUP03
-foyb_bncud2_W	;(sequence)
+kavpb_bncud2_W	;(sequence)
 	WL	1,RPBBUP04
 	WL	1,RPBBUP03
 	WL	1,RPBBUP01
@@ -961,10 +887,10 @@ foyb_bncud2_W	;(sequence)
 	WL	1,ROPE_B_R
 	.word	0
 
-foyb_bncud3_R	;(sequence)
-foyb_bncud3_W	;(sequence)
+kavpb_bncud3_R	;(sequence)
+kavpb_bncud3_W	;(sequence)
 	WL	1,RPBBUP02
-foyb_bncud3_B	;(sequence)
+kavpb_bncud3_B	;(sequence)
 	WL	1,RPBBUP03
 	WL	1,RPBBUP02
 	WL	1,ROPE_B_R
@@ -974,10 +900,10 @@ foyb_bncud3_B	;(sequence)
 	WL	1,ROPE_B_R
 	.word	0
 
-foyb_bncud4_W	;(sequence)
-foyb_bncud4_B	;(sequence)
+kavpb_bncud4_W	;(sequence)
+kavpb_bncud4_B	;(sequence)
 	WL	1,RPBBUP01
-foyb_bncud4_R	;(sequence)
+kavpb_bncud4_R	;(sequence)
 	WL	1,RPBBUP02
 	WL	1,RPBBUP01
 	WL	1,ROPE_B_R
@@ -988,10 +914,6 @@ foyb_bncud4_R	;(sequence)
 	.word	0
 
 
-****************************************
-*
-* Side ropes, up and down
-*
 
  SUBRP	side_bounceud4_t	;(script table)
 	WL	SHAKE_PRI,side_bounceud4_R
@@ -1018,44 +940,44 @@ foyb_bncud4_R	;(sequence)
 	WL	SHAKE_PRI,side_bounceud_S
 
  SUBRP	side_bounceud_S		;(script)
-	WL	1,foys_bncud_S
+	WL	1,kavps_bncud_S
 	.word	0
 
  SUBRP	side_bounceud4_R	;(script)
-	WL	1,foys_bncud1_R
+	WL	1,kavps_bncud1_R
  SUBRP	side_bounceud3_R	;(script)
-	WL	1,foys_bncud2_R
+	WL	1,kavps_bncud2_R
  SUBRP	side_bounceud2_R	;(script)
-	WL	2,foys_bncud3_R
+	WL	2,kavps_bncud3_R
  SUBRP	side_bounceud1_R	;(script)
-	WL	3,foys_bncud4_R
+	WL	3,kavps_bncud4_R
 	.word	0
 
  SUBRP	side_bounceud4_W	;(script)
-	WL	1,foys_bncud1_W
+	WL	1,kavps_bncud1_W
  SUBRP	side_bounceud3_W	;(script)
-	WL	1,foys_bncud2_W
+	WL	1,kavps_bncud2_W
  SUBRP	side_bounceud2_W	;(script)
-	WL	2,foys_bncud3_W
+	WL	2,kavps_bncud3_W
  SUBRP	side_bounceud1_W	;(script)
-	WL	3,foys_bncud4_W
+	WL	3,kavps_bncud4_W
 	.word	0
 
  SUBRP	side_bounceud4_B	;(script)
-	WL	1,foys_bncud1_B
+	WL	1,kavps_bncud1_B
  SUBRP	side_bounceud3_B	;(script)
-	WL	1,foys_bncud2_B
+	WL	1,kavps_bncud2_B
  SUBRP	side_bounceud2_B	;(script)
-	WL	2,foys_bncud3_B
+	WL	2,kavps_bncud3_B
  SUBRP	side_bounceud1_B	;(script)
-	WL	3,foys_bncud4_B
+	WL	3,kavps_bncud4_B
 	.word	0
 
-foys_bncud1_B	;(sequence)
+kavps_bncud1_B	;(sequence)
 	WL	1,RPSBUP02
-foys_bncud1_W	;(sequence)
+kavps_bncud1_W	;(sequence)
 	WL	1,RPSBUP03
-foys_bncud1_R	;(sequence)
+kavps_bncud1_R	;(sequence)
 	WL	1,RPSBUP05
 	WL	1,RPSBUP04
 	WL	1,RPSBUP03
@@ -1069,11 +991,11 @@ foys_bncud1_R	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncud2_B	;(sequence)
+kavps_bncud2_B	;(sequence)
 	WL	1,RPSBUP02
-foys_bncud2_W	;(sequence)
+kavps_bncud2_W	;(sequence)
 	WL	1,RPSBUP03
-foys_bncud2_R	;(sequence)
+kavps_bncud2_R	;(sequence)
 	WL	1,RPSBUP04
 	WL	1,RPSBUP03
 	WL	1,RPSBUP01
@@ -1085,10 +1007,10 @@ foys_bncud2_R	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncud3_R	;(sequence)
-foys_bncud3_W	;(sequence)
+kavps_bncud3_R	;(sequence)
+kavps_bncud3_W	;(sequence)
 	WL	1,RPSBUP02
-foys_bncud3_B	;(sequence)
+kavps_bncud3_B	;(sequence)
 	WL	1,RPSBUP03
 	WL	1,RPSBUP02
 	WL	1,ROPE_S_R
@@ -1098,10 +1020,10 @@ foys_bncud3_B	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncud4_R	;(sequence)
-foys_bncud4_B	;(sequence)
+kavps_bncud4_R	;(sequence)
+kavps_bncud4_B	;(sequence)
 	WL	1,RPSBUP01
-foys_bncud4_W	;(sequence)
+kavps_bncud4_W	;(sequence)
 	WL	1,RPSBUP02
 	WL	1,RPSBUP01
 	WL	1,ROPE_S_R
@@ -1111,15 +1033,11 @@ foys_bncud4_W	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncud_S	;(sequence)
+kavps_bncud_S	;(sequence)
 	WL	1,ROPSHAD
 	.word	0
 
 
-****************************************
-*
-* Side ropes, in and out
-*
 
  SUBRP	side_bounceio_t		;(script table)
 	WL	SHAKE_PRI,side_bounceio_R
@@ -1128,39 +1046,38 @@ foys_bncud_S	;(sequence)
 	WL	SHAKE_PRI,side_bounceio_S
 
  SUBRP	side_bounceio_S		;(script)
-	WL	1,foys_bncio_S
+	WL	1,kavps_bncio_S
 	.word	0
 
  SUBRP	side_bounceio_R		;(script)
-	WL	1,foys_bncio1_R
+	WL	1,kavps_bncio1_R
  SUBRP	side_bounceio2_R	;(script)
-;	WL	RANI_SETPRIORITY,SHAKE_PRI-1
-	WL	1,foys_bncio2_R
-	WL	1,foys_bncio3
-	WL	2,foys_bncio4
+	WL	1,kavps_bncio2_R
+	WL	1,kavps_bncio3
+	WL	2,kavps_bncio4
 	.word	0
 
  SUBRP	side_bounceio_W		;(script)
-	WL	1,foys_bncio1_W
+	WL	1,kavps_bncio1_W
  SUBRP	side_bounceio2_W	;(script)
-	WL	1,foys_bncio2_W
-	WL	1,foys_bncio3
-	WL	2,foys_bncio4
+	WL	1,kavps_bncio2_W
+	WL	1,kavps_bncio3
+	WL	2,kavps_bncio4
 	.word	0
 
  SUBRP	side_bounceio_B		;(script)
-	WL	1,foys_bncio1_B
-	WL	1,foys_bncio2_B
-	WL	1,foys_bncio3
-	WL	2,foys_bncio4
+	WL	1,kavps_bncio1_B
+	WL	1,kavps_bncio2_B
+	WL	1,kavps_bncio3
+	WL	2,kavps_bncio4
 	.word	0
 
 
-foys_bncio1_R	;(sequence)
+kavps_bncio1_R	;(sequence)
 	WL	1,RPSBIN02
-foys_bncio1_B	;(sequence)
+kavps_bncio1_B	;(sequence)
 	WL	1,RPSBIN03
-foys_bncio1_W	;(sequence)
+kavps_bncio1_W	;(sequence)
 	WL	1,RPSBIN05
 	WL	1,RPSBIN04
 	WL	1,RPSBIN03
@@ -1174,11 +1091,11 @@ foys_bncio1_W	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncio2_R	;(sequence)
+kavps_bncio2_R	;(sequence)
 	WL	1,RPSBIN02
-foys_bncio2_B	;(sequence)
+kavps_bncio2_B	;(sequence)
 	WL	1,RPSBIN03
-foys_bncio2_W	;(sequence)
+kavps_bncio2_W	;(sequence)
 	WL	1,RPSBIN04
 	WL	1,RPSBIN03
 	WL	1,RPSBIN01
@@ -1190,7 +1107,7 @@ foys_bncio2_W	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncio3	;(sequence)
+kavps_bncio3	;(sequence)
 	WL	1,RPSBIN02
 	WL	1,RPSBIN03
 	WL	1,RPSBIN02
@@ -1201,7 +1118,7 @@ foys_bncio3	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncio4	;(sequence)
+kavps_bncio4	;(sequence)
 	WL	1,RPSBIN01
 	WL	1,RPSBIN02
 	WL	1,RPSBIN01
@@ -1212,511 +1129,507 @@ foys_bncio4	;(sequence)
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_bncio_S	;(sequence)
+kavps_bncio_S	;(sequence)
 	WL	1,ROPSHAD
 	.word	0
 
-****************************************
-*
-* Side ropes, spring sideways
-*
 
 sspr11_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr11,SSPRING_PRI,foyssprXX
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad11
+	WLWL	SSPRING_PRI,kavpsspr11,SSPRING_PRI,kavpssprXX
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad11
 sspr12_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr12,SSPRING_PRI,foysspr11
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad12
+	WLWL	SSPRING_PRI,kavpsspr12,SSPRING_PRI,kavpsspr11
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad12
 sspr13_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr13,SSPRING_PRI,foysspr12
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad13
+	WLWL	SSPRING_PRI,kavpsspr13,SSPRING_PRI,kavpsspr12
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad13
 sspr14_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr14,SSPRING_PRI,foysspr12
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad13
+	WLWL	SSPRING_PRI,kavpsspr14,SSPRING_PRI,kavpsspr12
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad13
 sspr15_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr15,SSPRING_PRI,foysspr11
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad12
+	WLWL	SSPRING_PRI,kavpsspr15,SSPRING_PRI,kavpsspr11
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad12
 
 sspr21_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr21,SSPRING_PRI,foyssprXX
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad21
+	WLWL	SSPRING_PRI,kavpsspr21,SSPRING_PRI,kavpssprXX
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad21
 sspr22_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr22,SSPRING_PRI,foysspr21
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad22
+	WLWL	SSPRING_PRI,kavpsspr22,SSPRING_PRI,kavpsspr21
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad22
 sspr23_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr23,SSPRING_PRI,foysspr22
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad23
+	WLWL	SSPRING_PRI,kavpsspr23,SSPRING_PRI,kavpsspr22
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad23
 sspr24_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr24,SSPRING_PRI,foysspr22
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad23
+	WLWL	SSPRING_PRI,kavpsspr24,SSPRING_PRI,kavpsspr22
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad23
 sspr25_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr25,SSPRING_PRI,foysspr21
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad22
+	WLWL	SSPRING_PRI,kavpsspr25,SSPRING_PRI,kavpsspr21
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad22
 
 sspr31_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr31,SSPRING_PRI,foyssprXX
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad31
+	WLWL	SSPRING_PRI,kavpsspr31,SSPRING_PRI,kavpssprXX
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad31
 sspr32_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr32,SSPRING_PRI,foysspr31
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad32
+	WLWL	SSPRING_PRI,kavpsspr32,SSPRING_PRI,kavpsspr31
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad32
 sspr33_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr33,SSPRING_PRI,foysspr32
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad33
+	WLWL	SSPRING_PRI,kavpsspr33,SSPRING_PRI,kavpsspr32
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad33
 sspr34_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr34,SSPRING_PRI,foysspr32
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad33
+	WLWL	SSPRING_PRI,kavpsspr34,SSPRING_PRI,kavpsspr32
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad33
 sspr35_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr35,SSPRING_PRI,foysspr31
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad32
+	WLWL	SSPRING_PRI,kavpsspr35,SSPRING_PRI,kavpsspr31
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad32
 
 sspr41_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr41,SSPRING_PRI,foyssprXX
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad41
+	WLWL	SSPRING_PRI,kavpsspr41,SSPRING_PRI,kavpssprXX
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad41
 sspr42_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr42,SSPRING_PRI,foysspr41
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad42
+	WLWL	SSPRING_PRI,kavpsspr42,SSPRING_PRI,kavpsspr41
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad42
 sspr43_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr43,SSPRING_PRI,foysspr42
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad43
+	WLWL	SSPRING_PRI,kavpsspr43,SSPRING_PRI,kavpsspr42
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad43
 sspr44_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr44,SSPRING_PRI,foysspr42
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad43
+	WLWL	SSPRING_PRI,kavpsspr44,SSPRING_PRI,kavpsspr42
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad43
 sspr45_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr45,SSPRING_PRI,foysspr41
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad42
+	WLWL	SSPRING_PRI,kavpsspr45,SSPRING_PRI,kavpsspr41
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad42
 
 sspr51_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr51,SSPRING_PRI,foyssprXX
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad51
+	WLWL	SSPRING_PRI,kavpsspr51,SSPRING_PRI,kavpssprXX
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad51
 sspr52_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr52,SSPRING_PRI,foysspr51
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad52
+	WLWL	SSPRING_PRI,kavpsspr52,SSPRING_PRI,kavpsspr51
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad52
 sspr53_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr53,SSPRING_PRI,foysspr52
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad53
+	WLWL	SSPRING_PRI,kavpsspr53,SSPRING_PRI,kavpsspr52
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad53
 sspr54_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr54,SSPRING_PRI,foysspr52
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad53
+	WLWL	SSPRING_PRI,kavpsspr54,SSPRING_PRI,kavpsspr52
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad53
 sspr55_t	;(script table)
-	WLWL	SSPRING_PRI,foysspr55,SSPRING_PRI,foysspr51
-	WLWL	SSPRING_PRI,foyssprXX,SSPRING_PRI,foysprshad52
+	WLWL	SSPRING_PRI,kavpsspr55,SSPRING_PRI,kavpsspr51
+	WLWL	SSPRING_PRI,kavpssprXX,SSPRING_PRI,kavpsprshad52
 
 sspr_trans_t	;(script table)
-	WL	SSPRING_PRI,foysspr_trans_R
-	WL	SSPRING_PRI,foysspr_trans_W
-	WL	SSPRING_PRI,foysspr_trans_B
-	WL	SSPRING_PRI,foysprshad_trans
+	WL	SSPRING_PRI,kavpsspr_trans_R
+	WL	SSPRING_PRI,kavpsspr_trans_W
+	WL	SSPRING_PRI,kavpsspr_trans_B
+	WL	SSPRING_PRI,kavpsprshad_trans
 
-foyssprXX		;(script)
-	WL	1,foys_stop
+kavpssprXX		;(script)
+	WL	1,kavps_stop
 	.word	0
-foysspr11		;(script)
-	WL	1,foys_sspr11
+kavpsspr11		;(script)
+	WL	1,kavps_sspr11
 	.word	0
-foysspr12		;(script)
-	WL	1,foys_sspr12
+kavpsspr12		;(script)
+	WL	1,kavps_sspr12
 	.word	0
-foysspr13		;(script)
-	WL	1,foys_sspr13
+kavpsspr13		;(script)
+	WL	1,kavps_sspr13
 	.word	0
-foysspr14		;(script)
-	WL	1,foys_sspr14
+kavpsspr14		;(script)
+	WL	1,kavps_sspr14
 	.word	0
-foysspr15		;(script)
-	WL	1,foys_sspr15
+kavpsspr15		;(script)
+	WL	1,kavps_sspr15
 	.word	0
-foysspr16		;(script)
-	WL	1,foys_sspr16
+kavpsspr16		;(script)
+	WL	1,kavps_sspr16
 	.word	0
-foysspr21		;(script)
-	WL	1,foys_sspr21
+kavpsspr21		;(script)
+	WL	1,kavps_sspr21
 	.word	0
-foysspr22		;(script)
-	WL	1,foys_sspr22
+kavpsspr22		;(script)
+	WL	1,kavps_sspr22
 	.word	0
-foysspr23		;(script)
-	WL	1,foys_sspr23
+kavpsspr23		;(script)
+	WL	1,kavps_sspr23
 	.word	0
-foysspr24		;(script)
-	WL	1,foys_sspr24
+kavpsspr24		;(script)
+	WL	1,kavps_sspr24
 	.word	0
-foysspr25		;(script)
-	WL	1,foys_sspr25
+kavpsspr25		;(script)
+	WL	1,kavps_sspr25
 	.word	0
-foysspr26		;(script)
-	WL	1,foys_sspr26
+kavpsspr26		;(script)
+	WL	1,kavps_sspr26
 	.word	0
-foysspr31		;(script)
-	WL	1,foys_sspr31
+kavpsspr31		;(script)
+	WL	1,kavps_sspr31
 	.word	0
-foysspr32		;(script)
-	WL	1,foys_sspr32
+kavpsspr32		;(script)
+	WL	1,kavps_sspr32
 	.word	0
-foysspr33		;(script)
-	WL	1,foys_sspr33
+kavpsspr33		;(script)
+	WL	1,kavps_sspr33
 	.word	0
-foysspr34		;(script)
-	WL	1,foys_sspr34
+kavpsspr34		;(script)
+	WL	1,kavps_sspr34
 	.word	0
-foysspr35		;(script)
-	WL	1,foys_sspr35
+kavpsspr35		;(script)
+	WL	1,kavps_sspr35
 	.word	0
-foysspr36		;(script)
-	WL	1,foys_sspr36
+kavpsspr36		;(script)
+	WL	1,kavps_sspr36
 	.word	0
-foysspr41		;(script)
-	WL	1,foys_sspr41
+kavpsspr41		;(script)
+	WL	1,kavps_sspr41
 	.word	0
-foysspr42		;(script)
-	WL	1,foys_sspr42
+kavpsspr42		;(script)
+	WL	1,kavps_sspr42
 	.word	0
-foysspr43		;(script)
-	WL	1,foys_sspr43
+kavpsspr43		;(script)
+	WL	1,kavps_sspr43
 	.word	0
-foysspr44		;(script)
-	WL	1,foys_sspr44
+kavpsspr44		;(script)
+	WL	1,kavps_sspr44
 	.word	0
-foysspr45		;(script)
-	WL	1,foys_sspr45
+kavpsspr45		;(script)
+	WL	1,kavps_sspr45
 	.word	0
-foysspr46		;(script)
-	WL	1,foys_sspr46
+kavpsspr46		;(script)
+	WL	1,kavps_sspr46
 	.word	0
-foysspr51		;(script)
-	WL	1,foys_sspr51
+kavpsspr51		;(script)
+	WL	1,kavps_sspr51
 	.word	0
-foysspr52		;(script)
-	WL	1,foys_sspr52
+kavpsspr52		;(script)
+	WL	1,kavps_sspr52
 	.word	0
-foysspr53		;(script)
-	WL	1,foys_sspr53
+kavpsspr53		;(script)
+	WL	1,kavps_sspr53
 	.word	0
-foysspr54		;(script)
-	WL	1,foys_sspr54
+kavpsspr54		;(script)
+	WL	1,kavps_sspr54
 	.word	0
-foysspr55		;(script)
-	WL	1,foys_sspr55
+kavpsspr55		;(script)
+	WL	1,kavps_sspr55
 	.word	0
-foysspr56		;(script)
-	WL	1,foys_sspr56
-	.word	0
-
-foysprshad11	;(script)
-	WL	1,foys_sprshad11
-	.word	0
-foysprshad12	;(script)
-	WL	1,foys_sprshad12
-	.word	0
-foysprshad13	;(script)
-	WL	1,foys_sprshad13
-	.word	0
-foysprshad14	;(script)
-	WL	1,foys_sprshad14
-	.word	0
-foysprshad15	;(script)
-	WL	1,foys_sprshad15
-	.word	0
-foysprshad21	;(script)
-	WL	1,foys_sprshad21
-	.word	0
-foysprshad22	;(script)
-	WL	1,foys_sprshad22
-	.word	0
-foysprshad23	;(script)
-	WL	1,foys_sprshad23
-	.word	0
-foysprshad24	;(script)
-	WL	1,foys_sprshad24
-	.word	0
-foysprshad25	;(script)
-	WL	1,foys_sprshad25
-	.word	0
-foysprshad31	;(script)
-	WL	1,foys_sprshad31
-	.word	0
-foysprshad32	;(script)
-	WL	1,foys_sprshad32
-	.word	0
-foysprshad33	;(script)
-	WL	1,foys_sprshad33
-	.word	0
-foysprshad34	;(script)
-	WL	1,foys_sprshad34
-	.word	0
-foysprshad35	;(script)
-	WL	1,foys_sprshad35
-	.word	0
-foysprshad41	;(script)
-	WL	1,foys_sprshad41
-	.word	0
-foysprshad42	;(script)
-	WL	1,foys_sprshad42
-	.word	0
-foysprshad43	;(script)
-	WL	1,foys_sprshad43
-	.word	0
-foysprshad44	;(script)
-	WL	1,foys_sprshad44
-	.word	0
-foysprshad45	;(script)
-	WL	1,foys_sprshad45
-	.word	0
-foysprshad51	;(script)
-	WL	1,foys_sprshad51
-	.word	0
-foysprshad52	;(script)
-	WL	1,foys_sprshad52
-	.word	0
-foysprshad53	;(script)
-	WL	1,foys_sprshad53
-	.word	0
-foysprshad54	;(script)
-	WL	1,foys_sprshad54
-	.word	0
-foysprshad55	;(script)
-	WL	1,foys_sprshad55
+kavpsspr56		;(script)
+	WL	1,kavps_sspr56
 	.word	0
 
-foysspr_trans_R	;(script)
-	WL	1,foys_sspr_trans_R
+kavpsprshad11	;(script)
+	WL	1,kavps_sprshad11
+	.word	0
+kavpsprshad12	;(script)
+	WL	1,kavps_sprshad12
+	.word	0
+kavpsprshad13	;(script)
+	WL	1,kavps_sprshad13
+	.word	0
+kavpsprshad14	;(script)
+	WL	1,kavps_sprshad14
+	.word	0
+kavpsprshad15	;(script)
+	WL	1,kavps_sprshad15
+	.word	0
+kavpsprshad21	;(script)
+	WL	1,kavps_sprshad21
+	.word	0
+kavpsprshad22	;(script)
+	WL	1,kavps_sprshad22
+	.word	0
+kavpsprshad23	;(script)
+	WL	1,kavps_sprshad23
+	.word	0
+kavpsprshad24	;(script)
+	WL	1,kavps_sprshad24
+	.word	0
+kavpsprshad25	;(script)
+	WL	1,kavps_sprshad25
+	.word	0
+kavpsprshad31	;(script)
+	WL	1,kavps_sprshad31
+	.word	0
+kavpsprshad32	;(script)
+	WL	1,kavps_sprshad32
+	.word	0
+kavpsprshad33	;(script)
+	WL	1,kavps_sprshad33
+	.word	0
+kavpsprshad34	;(script)
+	WL	1,kavps_sprshad34
+	.word	0
+kavpsprshad35	;(script)
+	WL	1,kavps_sprshad35
+	.word	0
+kavpsprshad41	;(script)
+	WL	1,kavps_sprshad41
+	.word	0
+kavpsprshad42	;(script)
+	WL	1,kavps_sprshad42
+	.word	0
+kavpsprshad43	;(script)
+	WL	1,kavps_sprshad43
+	.word	0
+kavpsprshad44	;(script)
+	WL	1,kavps_sprshad44
+	.word	0
+kavpsprshad45	;(script)
+	WL	1,kavps_sprshad45
+	.word	0
+kavpsprshad51	;(script)
+	WL	1,kavps_sprshad51
+	.word	0
+kavpsprshad52	;(script)
+	WL	1,kavps_sprshad52
+	.word	0
+kavpsprshad53	;(script)
+	WL	1,kavps_sprshad53
+	.word	0
+kavpsprshad54	;(script)
+	WL	1,kavps_sprshad54
+	.word	0
+kavpsprshad55	;(script)
+	WL	1,kavps_sprshad55
+	.word	0
+
+kavpsspr_trans_R	;(script)
+	WL	1,kavps_sspr_trans_R
 	WL	RANI_GOTO,side_bounceio2_R
 
-foysspr_trans_W	;(script)
-	WL	1,foys_sspr_trans_W
+kavpsspr_trans_W	;(script)
+	WL	1,kavps_sspr_trans_W
 	WL	RANI_GOTO,side_bounceio2_W
 
-foysspr_trans_B	;(script)
-	WL	2,foys_bncio4
+kavpsspr_trans_B	;(script)
+	WL	2,kavps_bncio4
 	.word	0
 
-foysprshad_trans	;(script)
-	WL	1,foys_sprshad_trans
-	WL	1,foys_stop_shadow
+kavpsprshad_trans	;(script)
+	WL	1,kavps_sprshad_trans
+	WL	1,kavps_stop_shadow
 	.word	0
 
-foys_sspr11	;(sequence)
+kavps_sspr11	;(sequence)
 	WL	10,RPSS1_01
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr12	;(sequence)
+kavps_sspr12	;(sequence)
 	WL	10,RPSS1_02
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr13	;(sequence)
+kavps_sspr13	;(sequence)
 	WL	10,RPSS1_03
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr14	;(sequence)
+kavps_sspr14	;(sequence)
 	WL	10,RPSS1_04
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr15	;(sequence)
+kavps_sspr15	;(sequence)
 	WL	10,RPSS1_05
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr16	;(sequence)
+kavps_sspr16	;(sequence)
 	WL	10,RPSS1_06
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr21	;(sequence)
+kavps_sspr21	;(sequence)
 	WL	10,RPSS2_01
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr22	;(sequence)
+kavps_sspr22	;(sequence)
 	WL	10,RPSS2_02
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr23	;(sequence)
+kavps_sspr23	;(sequence)
 	WL	10,RPSS2_03
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr24	;(sequence)
+kavps_sspr24	;(sequence)
 	WL	10,RPSS2_04
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr25	;(sequence)
+kavps_sspr25	;(sequence)
 	WL	10,RPSS2_05
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr26	;(sequence)
+kavps_sspr26	;(sequence)
 	WL	10,RPSS2_06
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr31	;(sequence)
+kavps_sspr31	;(sequence)
 	WL	10,RPSS3_01
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr32	;(sequence)
+kavps_sspr32	;(sequence)
 	WL	10,RPSS3_02
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr33	;(sequence)
+kavps_sspr33	;(sequence)
 	WL	10,RPSS3_03
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr34	;(sequence)
+kavps_sspr34	;(sequence)
 	WL	10,RPSS3_04
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr35	;(sequence)
+kavps_sspr35	;(sequence)
 	WL	10,RPSS3_05
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr36	;(sequence)
+kavps_sspr36	;(sequence)
 	WL	10,RPSS3_06
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr41	;(sequence)
+kavps_sspr41	;(sequence)
 	WL	10,RPSS4_01
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr42	;(sequence)
+kavps_sspr42	;(sequence)
 	WL	10,RPSS4_02
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr43	;(sequence)
+kavps_sspr43	;(sequence)
 	WL	10,RPSS4_03
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr44	;(sequence)
+kavps_sspr44	;(sequence)
 	WL	10,RPSS4_04
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr45	;(sequence)
+kavps_sspr45	;(sequence)
 	WL	10,RPSS4_05
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr46	;(sequence)
+kavps_sspr46	;(sequence)
 	WL	10,RPSS4_06
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr51	;(sequence)
+kavps_sspr51	;(sequence)
 	WL	10,RPSS5_01
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr52	;(sequence)
+kavps_sspr52	;(sequence)
 	WL	10,RPSS5_02
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr53	;(sequence)
+kavps_sspr53	;(sequence)
 	WL	10,RPSS5_03
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr54	;(sequence)
+kavps_sspr54	;(sequence)
 	WL	10,RPSS5_04
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr55	;(sequence)
+kavps_sspr55	;(sequence)
 	WL	10,RPSS5_05
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
-foys_sspr56	;(sequence)
+kavps_sspr56	;(sequence)
 	WL	10,RPSS5_06
-	WL	RANI_GOTO,foys_stop
+	WL	RANI_GOTO,kavps_stop
 	.word	0
 
-foys_sprshad11	;(sequence)
+kavps_sprshad11	;(sequence)
 	WL	10,RCSH1_01
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad12	;(sequence)
+kavps_sprshad12	;(sequence)
 	WL	10,RCSH1_02
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad13	;(sequence)
+kavps_sprshad13	;(sequence)
 	WL	10,RCSH1_03
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad14	;(sequence)
+kavps_sprshad14	;(sequence)
 	WL	10,RCSH1_04
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad15	;(sequence)
+kavps_sprshad15	;(sequence)
 	WL	10,RCSH1_05
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad21	;(sequence)
+kavps_sprshad21	;(sequence)
 	WL	10,RCSH2_01
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad22	;(sequence)
+kavps_sprshad22	;(sequence)
 	WL	10,RCSH2_02
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad23	;(sequence)
+kavps_sprshad23	;(sequence)
 	WL	10,RCSH2_03
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad24	;(sequence)
+kavps_sprshad24	;(sequence)
 	WL	10,RCSH2_04
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad25	;(sequence)
+kavps_sprshad25	;(sequence)
 	WL	10,RCSH2_05
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad31	;(sequence)
+kavps_sprshad31	;(sequence)
 	WL	10,RCSH3_01
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad32	;(sequence)
+kavps_sprshad32	;(sequence)
 	WL	10,RCSH3_02
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad33	;(sequence)
+kavps_sprshad33	;(sequence)
 	WL	10,RCSH3_03
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad34	;(sequence)
+kavps_sprshad34	;(sequence)
 	WL	10,RCSH3_04
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad35	;(sequence)
+kavps_sprshad35	;(sequence)
 	WL	10,RCSH3_05
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad41	;(sequence)
+kavps_sprshad41	;(sequence)
 	WL	10,RCSH4_01
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad42	;(sequence)
+kavps_sprshad42	;(sequence)
 	WL	10,RCSH4_02
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad43	;(sequence)
+kavps_sprshad43	;(sequence)
 	WL	10,RCSH4_03
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad44	;(sequence)
+kavps_sprshad44	;(sequence)
 	WL	10,RCSH4_04
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad45	;(sequence)
+kavps_sprshad45	;(sequence)
 	WL	10,RCSH4_05
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad51	;(sequence)
+kavps_sprshad51	;(sequence)
 	WL	10,RCSH5_01
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad52	;(sequence)
+kavps_sprshad52	;(sequence)
 	WL	10,RCSH5_02
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad53	;(sequence)
+kavps_sprshad53	;(sequence)
 	WL	10,RCSH5_03
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad54	;(sequence)
+kavps_sprshad54	;(sequence)
 	WL	10,RCSH5_04
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
-foys_sprshad55	;(sequence)
+kavps_sprshad55	;(sequence)
 	WL	10,RCSH5_05
-	WL	RANI_GOTO,foys_stop_shadow
+	WL	RANI_GOTO,kavps_stop_shadow
 	.word	0
 
-foys_sspr_trans_R	;(sequence)
+kavps_sspr_trans_R	;(sequence)
 	WL	1,RPSBIN06
 	WL	2,RPSBIN08
 	WL	1,RPSBIN07
@@ -1725,13 +1638,13 @@ foys_sspr_trans_R	;(sequence)
 	WL	1,RPSBOU01
 	WL	1,RPSBOU03
 	WL	1,RPSBOU06
-foys_sspr_trans_W	;(sequence)
+kavps_sspr_trans_W	;(sequence)
 	WL	1,RPSBOU04
 	WL	1,RPSBOU03
 	WL	1,RPSBOU02
 	.word	0
 
-foys_sprshad_trans ;(sequence)
+kavps_sprshad_trans ;(sequence)
 	WL	2,RBSH_02
 	WL	2,RBSH_03
 	WL	2,RBSH_04
@@ -1741,358 +1654,354 @@ foys_sprshad_trans ;(sequence)
 	WL	2,RBSH_01
 	.word	0
 
-foys_stop		;(sequence) - halt a side rope entirely
+kavps_stop		;(sequence) - halt a side rope entirely
 	WL	1,ROPE_S_R
 	.word	0
 
-foys_stop_shadow	;(sequence) - halt a side shadow entirely
+kavps_stop_shadow	;(sequence) - halt a side shadow entirely
 	WL	1,ROPSHAD
 	.word	0
 
-****************************************
-*
-* Side ropes, spring up and down
-*
 
 dspr11_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr15,DSPRING_PRI,foydspr11
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr15,DSPRING_PRI,kavpdspr11
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr12_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr16,DSPRING_PRI,foydspr12
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr16,DSPRING_PRI,kavpdspr12
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr13_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr17,DSPRING_PRI,foydspr13
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr17,DSPRING_PRI,kavpdspr13
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr14_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr17,DSPRING_PRI,foydspr14
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr17,DSPRING_PRI,kavpdspr14
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr15_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr16,DSPRING_PRI,foydspr15
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr16,DSPRING_PRI,kavpdspr15
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr16_t	;(script table)
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr15
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdspr15
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 
 dspr21_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr25,DSPRING_PRI,foydspr21
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr25,DSPRING_PRI,kavpdspr21
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr22_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr26,DSPRING_PRI,foydspr22
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr26,DSPRING_PRI,kavpdspr22
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr23_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr27,DSPRING_PRI,foydspr23
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr27,DSPRING_PRI,kavpdspr23
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr24_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr27,DSPRING_PRI,foydspr24
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr27,DSPRING_PRI,kavpdspr24
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr25_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr26,DSPRING_PRI,foydspr25
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr26,DSPRING_PRI,kavpdspr25
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr26_t	;(script table)
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr25
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdspr25
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 
 dspr31_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr35,DSPRING_PRI,foydspr31
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr35,DSPRING_PRI,kavpdspr31
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr32_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr36,DSPRING_PRI,foydspr32
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr36,DSPRING_PRI,kavpdspr32
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr33_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr37,DSPRING_PRI,foydspr33
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr37,DSPRING_PRI,kavpdspr33
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr34_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr37,DSPRING_PRI,foydspr34
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr37,DSPRING_PRI,kavpdspr34
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr35_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr36,DSPRING_PRI,foydspr35
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr36,DSPRING_PRI,kavpdspr35
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr36_t	;(script table)
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr35
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdspr35
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 
 dspr41_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr45,DSPRING_PRI,foydspr41
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr45,DSPRING_PRI,kavpdspr41
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr42_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr46,DSPRING_PRI,foydspr42
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr46,DSPRING_PRI,kavpdspr42
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr43_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr47,DSPRING_PRI,foydspr43
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr47,DSPRING_PRI,kavpdspr43
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr44_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr47,DSPRING_PRI,foydspr44
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr47,DSPRING_PRI,kavpdspr44
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr45_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr46,DSPRING_PRI,foydspr45
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr46,DSPRING_PRI,kavpdspr45
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr46_t	;(script table)
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr45
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdspr45
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 
 dspr51_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr55,DSPRING_PRI,foydspr51
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr55,DSPRING_PRI,kavpdspr51
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr52_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr56,DSPRING_PRI,foydspr52
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr56,DSPRING_PRI,kavpdspr52
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr53_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr57,DSPRING_PRI,foydspr53
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr57,DSPRING_PRI,kavpdspr53
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr54_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr57,DSPRING_PRI,foydspr54
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr57,DSPRING_PRI,kavpdspr54
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr55_t	;(script table)
-	WLWL	DSPRING_PRI,foydspr56,DSPRING_PRI,foydspr55
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdspr56,DSPRING_PRI,kavpdspr55
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 dspr56_t	;(script table)
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydspr55
-	WLWL	DSPRING_PRI,foydsprXX,DSPRING_PRI,foydsprshad
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdspr55
+	WLWL	DSPRING_PRI,kavpdsprXX,DSPRING_PRI,kavpdsprshad
 
 dspr_trans_t	;(script table)
-	WL	DSPRING_PRI,foydspr_trans_R
-	WL	DSPRING_PRI,foydspr_trans_W
-	WL	DSPRING_PRI,foydspr_trans_B
-	WL	DSPRING_PRI,foydsprshad
+	WL	DSPRING_PRI,kavpdspr_trans_R
+	WL	DSPRING_PRI,kavpdspr_trans_W
+	WL	DSPRING_PRI,kavpdspr_trans_B
+	WL	DSPRING_PRI,kavpdsprshad
 
-foydsprshad	;(script)
-	WL	1,foys_dsprshad
-	.word	0
-
-foydsprXX		;(script)
-	WL	1,foys_stop
-	.word	0
-foydspr11		;(script)
-	WL	1,foys_dspr11
-	.word	0
-foydspr12		;(script)
-	WL	1,foys_dspr12
-	.word	0
-foydspr13		;(script)
-	WL	1,foys_dspr13
-	.word	0
-foydspr14		;(script)
-	WL	1,foys_dspr14
-	.word	0
-foydspr15		;(script)
-	WL	1,foys_dspr15
-	.word	0
-foydspr16		;(script)
-	WL	1,foys_dspr16
-	.word	0
-foydspr17		;(script)
-	WL	1,foys_dspr17
-	.word	0
-foydspr21		;(script)
-	WL	1,foys_dspr21
-	.word	0
-foydspr22		;(script)
-	WL	1,foys_dspr22
-	.word	0
-foydspr23		;(script)
-	WL	1,foys_dspr23
-	.word	0
-foydspr24		;(script)
-	WL	1,foys_dspr24
-	.word	0
-foydspr25		;(script)
-	WL	1,foys_dspr25
-	.word	0
-foydspr26		;(script)
-	WL	1,foys_dspr26
-	.word	0
-foydspr27		;(script)
-	WL	1,foys_dspr27
-	.word	0
-foydspr31		;(script)
-	WL	1,foys_dspr31
-	.word	0
-foydspr32		;(script)
-	WL	1,foys_dspr32
-	.word	0
-foydspr33		;(script)
-	WL	1,foys_dspr33
-	.word	0
-foydspr34		;(script)
-	WL	1,foys_dspr34
-	.word	0
-foydspr35		;(script)
-	WL	1,foys_dspr35
-	.word	0
-foydspr36		;(script)
-	WL	1,foys_dspr36
-	.word	0
-foydspr37		;(script)
-	WL	1,foys_dspr37
-	.word	0
-foydspr41		;(script)
-	WL	1,foys_dspr41
-	.word	0
-foydspr42		;(script)
-	WL	1,foys_dspr42
-	.word	0
-foydspr43		;(script)
-	WL	1,foys_dspr43
-	.word	0
-foydspr44		;(script)
-	WL	1,foys_dspr44
-	.word	0
-foydspr45		;(script)
-	WL	1,foys_dspr45
-	.word	0
-foydspr46		;(script)
-	WL	1,foys_dspr46
-	.word	0
-foydspr47		;(script)
-	WL	1,foys_dspr47
-	.word	0
-foydspr51		;(script)
-	WL	1,foys_dspr51
-	.word	0
-foydspr52		;(script)
-	WL	1,foys_dspr52
-	.word	0
-foydspr53		;(script)
-	WL	1,foys_dspr53
-	.word	0
-foydspr54		;(script)
-	WL	1,foys_dspr54
-	.word	0
-foydspr55		;(script)
-	WL	1,foys_dspr55
-	.word	0
-foydspr56		;(script)
-	WL	1,foys_dspr56
-	.word	0
-foydspr57		;(script)
-	WL	1,foys_dspr57
+kavpdsprshad	;(script)
+	WL	1,kavps_dsprshad
 	.word	0
 
-foydspr_trans_R	;(script)
-	WL	1,foys_dspr_trans_R
+kavpdsprXX		;(script)
+	WL	1,kavps_stop
+	.word	0
+kavpdspr11		;(script)
+	WL	1,kavps_dspr11
+	.word	0
+kavpdspr12		;(script)
+	WL	1,kavps_dspr12
+	.word	0
+kavpdspr13		;(script)
+	WL	1,kavps_dspr13
+	.word	0
+kavpdspr14		;(script)
+	WL	1,kavps_dspr14
+	.word	0
+kavpdspr15		;(script)
+	WL	1,kavps_dspr15
+	.word	0
+kavpdspr16		;(script)
+	WL	1,kavps_dspr16
+	.word	0
+kavpdspr17		;(script)
+	WL	1,kavps_dspr17
+	.word	0
+kavpdspr21		;(script)
+	WL	1,kavps_dspr21
+	.word	0
+kavpdspr22		;(script)
+	WL	1,kavps_dspr22
+	.word	0
+kavpdspr23		;(script)
+	WL	1,kavps_dspr23
+	.word	0
+kavpdspr24		;(script)
+	WL	1,kavps_dspr24
+	.word	0
+kavpdspr25		;(script)
+	WL	1,kavps_dspr25
+	.word	0
+kavpdspr26		;(script)
+	WL	1,kavps_dspr26
+	.word	0
+kavpdspr27		;(script)
+	WL	1,kavps_dspr27
+	.word	0
+kavpdspr31		;(script)
+	WL	1,kavps_dspr31
+	.word	0
+kavpdspr32		;(script)
+	WL	1,kavps_dspr32
+	.word	0
+kavpdspr33		;(script)
+	WL	1,kavps_dspr33
+	.word	0
+kavpdspr34		;(script)
+	WL	1,kavps_dspr34
+	.word	0
+kavpdspr35		;(script)
+	WL	1,kavps_dspr35
+	.word	0
+kavpdspr36		;(script)
+	WL	1,kavps_dspr36
+	.word	0
+kavpdspr37		;(script)
+	WL	1,kavps_dspr37
+	.word	0
+kavpdspr41		;(script)
+	WL	1,kavps_dspr41
+	.word	0
+kavpdspr42		;(script)
+	WL	1,kavps_dspr42
+	.word	0
+kavpdspr43		;(script)
+	WL	1,kavps_dspr43
+	.word	0
+kavpdspr44		;(script)
+	WL	1,kavps_dspr44
+	.word	0
+kavpdspr45		;(script)
+	WL	1,kavps_dspr45
+	.word	0
+kavpdspr46		;(script)
+	WL	1,kavps_dspr46
+	.word	0
+kavpdspr47		;(script)
+	WL	1,kavps_dspr47
+	.word	0
+kavpdspr51		;(script)
+	WL	1,kavps_dspr51
+	.word	0
+kavpdspr52		;(script)
+	WL	1,kavps_dspr52
+	.word	0
+kavpdspr53		;(script)
+	WL	1,kavps_dspr53
+	.word	0
+kavpdspr54		;(script)
+	WL	1,kavps_dspr54
+	.word	0
+kavpdspr55		;(script)
+	WL	1,kavps_dspr55
+	.word	0
+kavpdspr56		;(script)
+	WL	1,kavps_dspr56
+	.word	0
+kavpdspr57		;(script)
+	WL	1,kavps_dspr57
+	.word	0
+
+kavpdspr_trans_R	;(script)
+	WL	1,kavps_dspr_trans_R
 	WL	RANI_GOTO,side_bounceud2_R
 
-foydspr_trans_W	;(script)
-	WL	1,foys_dspr_trans_W
+kavpdspr_trans_W	;(script)
+	WL	1,kavps_dspr_trans_W
 	WL	RANI_GOTO,side_bounceud2_W
 
-foydspr_trans_B	;(script)
-	WL	2,foys_bncio4
+kavpdspr_trans_B	;(script)
+	WL	2,kavps_bncio4
 	.word	0
 
-foys_dsprshad	;(seqence)
+kavps_dsprshad	;(seqence)
 	WL	1,ROPSHAD
 	.word	0
 
-foys_dspr11	;(sequence)
+kavps_dspr11	;(sequence)
 	WL	1,RPDS1_01
 	.word	0
-foys_dspr12	;(sequence)
+kavps_dspr12	;(sequence)
 	WL	1,RPDS1_02
 	.word	0
-foys_dspr13	;(sequence)
+kavps_dspr13	;(sequence)
 	WL	1,RPDS1_03
 	.word	0
-foys_dspr14	;(sequence)
+kavps_dspr14	;(sequence)
 	WL	1,RPDS1_04
 	.word	0
-foys_dspr15	;(sequence)
+kavps_dspr15	;(sequence)
 	WL	1,RPDS1_05
 	.word	0
-foys_dspr16	;(sequence)
+kavps_dspr16	;(sequence)
 	WL	1,RPDS1_06
 	.word	0
-foys_dspr17	;(sequence)
+kavps_dspr17	;(sequence)
 	WL	1,RPDS1_07
 	.word	0
-foys_dspr21	;(sequence)
+kavps_dspr21	;(sequence)
 	WL	1,RPDS2_01
 	.word	0
-foys_dspr22	;(sequence)
+kavps_dspr22	;(sequence)
 	WL	1,RPDS2_02
 	.word	0
-foys_dspr23	;(sequence)
+kavps_dspr23	;(sequence)
 	WL	1,RPDS2_03
 	.word	0
-foys_dspr24	;(sequence)
+kavps_dspr24	;(sequence)
 	WL	1,RPDS2_04
 	.word	0
-foys_dspr25	;(sequence)
+kavps_dspr25	;(sequence)
 	WL	1,RPDS2_05
 	.word	0
-foys_dspr26	;(sequence)
+kavps_dspr26	;(sequence)
 	WL	1,RPDS2_06
 	.word	0
-foys_dspr27	;(sequence)
+kavps_dspr27	;(sequence)
 	WL	1,RPDS2_07
 	.word	0
-foys_dspr31	;(sequence)
+kavps_dspr31	;(sequence)
 	WL	1,RPDS3_01
 	.word	0
-foys_dspr32	;(sequence)
+kavps_dspr32	;(sequence)
 	WL	1,RPDS3_02
 	.word	0
-foys_dspr33	;(sequence)
+kavps_dspr33	;(sequence)
 	WL	1,RPDS3_03
 	.word	0
-foys_dspr34	;(sequence)
+kavps_dspr34	;(sequence)
 	WL	1,RPDS3_04
 	.word	0
-foys_dspr35	;(sequence)
+kavps_dspr35	;(sequence)
 	WL	1,RPDS3_05
 	.word	0
-foys_dspr36	;(sequence)
+kavps_dspr36	;(sequence)
 	WL	1,RPDS3_06
 	.word	0
-foys_dspr37	;(sequence)
+kavps_dspr37	;(sequence)
 	WL	1,RPDS3_07
 	.word	0
-foys_dspr41	;(sequence)
+kavps_dspr41	;(sequence)
 	WL	1,RPDS4_01
 	.word	0
-foys_dspr42	;(sequence)
+kavps_dspr42	;(sequence)
 	WL	1,RPDS4_02
 	.word	0
-foys_dspr43	;(sequence)
+kavps_dspr43	;(sequence)
 	WL	1,RPDS4_03
 	.word	0
-foys_dspr44	;(sequence)
+kavps_dspr44	;(sequence)
 	WL	1,RPDS4_04
 	.word	0
-foys_dspr45	;(sequence)
+kavps_dspr45	;(sequence)
 	WL	1,RPDS4_05
 	.word	0
-foys_dspr46	;(sequence)
+kavps_dspr46	;(sequence)
 	WL	1,RPDS4_06
 	.word	0
-foys_dspr47	;(sequence)
+kavps_dspr47	;(sequence)
 	WL	1,RPDS4_07
 	.word	0
-foys_dspr51	;(sequence)
+kavps_dspr51	;(sequence)
 	WL	1,RPDS5_01
 	.word	0
-foys_dspr52	;(sequence)
+kavps_dspr52	;(sequence)
 	WL	1,RPDS5_02
 	.word	0
-foys_dspr53	;(sequence)
+kavps_dspr53	;(sequence)
 	WL	1,RPDS5_03
 	.word	0
-foys_dspr54	;(sequence)
+kavps_dspr54	;(sequence)
 	WL	1,RPDS5_04
 	.word	0
-foys_dspr55	;(sequence)
+kavps_dspr55	;(sequence)
 	WL	1,RPDS5_05
 	.word	0
-foys_dspr56	;(sequence)
+kavps_dspr56	;(sequence)
 	WL	1,RPDS5_06
 	.word	0
-foys_dspr57	;(sequence)
+kavps_dspr57	;(sequence)
 	WL	1,RPDS5_07
 	.word	0
 
-foys_dspr_trans_R	;(sequence)
+kavps_dspr_trans_R	;(sequence)
 	WL	1,RPSBUP05
-foys_dspr_trans_W	;(sequence)
+kavps_dspr_trans_W	;(sequence)
 	WL	1,RPSBUP02
 	WL	1,RPSBDN01
 	WL	1,RPSBDN03
@@ -2239,7 +2148,6 @@ RBSH_05		.long	RBSH_05A,RBSH_05B
 RBSH_06		.long	RBSH_06A,RBSH_06B
 RBSH_07		.long	RBSH_07A,RBSH_07B
 
-******************************************************************************
 
 	.end
 

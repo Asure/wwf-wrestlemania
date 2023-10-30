@@ -1,768 +1,576 @@
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
                                                                      PAGE    1
 
-       1                    **************************************************************
-       2                    *
-       3                    * Software:             Jamie Rivett
-       4                    * Initiated:            5/18/94
-       5                    *
-       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-       7                    *
-       8                    **************************************************************
-       9                    
-      10                            .file   "yokseq1.asm"
-      12                            .width  132
-      13                            .option b,d,l,t
-      14                            .mnolist
-      15                    
+       1                    
+       2                            .file   "yokseq1.asm"
+       4                            .width  132
+       5                            .option b,d,l,t
+       6                            .mnolist
+       7                    
+       8                    
+       9                            .include        "macros.h"
+      10                            .include        "mproc.equ"             ;Mproc equates
+      11                            .include        "sys.equ"
+      12                            .include        "game.equ"
+      13                            .include        "plyr.equ"
+      14                            .include        "anim.equ"
+      15                            .include        "sound.h"
       16                    
-      17                            .include        "macros.h"
-      18                            .include        "mproc.equ"             ;Mproc equates
-      19                            .include        "sys.equ"
-      20                            .include        "game.equ"
-      21                            .include        "plyr.equ"
-      22                            .include        "anim.equ"
-      23                            .include        "sound.h"
+      17                            .include        "doinkimg.h"            ;temp!!!
+      18                            .include        "yokoimg.h"
+      19                    
+      20                    
+      21                    
+      22                            .ref    SMALL_RUN
+      23                            .REF    MAYBE_BOUNCE_ROPE
       24                    
-      25                            .include        "doinkimg.h"            ;temp!!!
-      26                            .include        "yokoimg.h"
+      25                    
+      26                    
       27                    
-      28                    
-      29                    ******************************************************************************
-      30                    * EXTERNAL REFERENCES
-      31                    
-      32                            .ref    SMALL_RUN
-      33                            .REF    MAYBE_BOUNCE_ROPE
-      34                    
-      35                    ******************************************************************************
-      36                    * SYMBOLS DEFINED IN THIS FILE
-      37                    
-      38                    ******************************************************************************
-      39                    * EQUATES FOR THIS FILE
-      40                    
-      41                    *****************************************************************************
-      42                    *
-      43                    * STANDS
-      44                    
-      45 00000000            SUBR   yok_zip_anim
-      46 00000000                   WL      60*60,Y2ST2Z+FR1
-      47 00000030     0000          .word   0       ;<--??????
-      48 00000040     8049          .word   ANI_END
+      28 00000000            SUBR   yok_zip_anim
+      29 00000000                   WL      60*60,Y2ST2Z+FR1
+      30 00000030     0000          .word   0       ;<--??????
+      31 00000040     8049          .word   ANI_END
+      32                    
+      33                    
+      34 00000050            SUBR   yok_stand2_anim
+      35 00000050            SUBR   yok_stand8_anim
+      36 00000050     8002          .word   ANI_SETMODE,MODE_NORMAL
+      37 00000070     8026          .word   ANI_SETSPEED,100h
+      38                    
+      39 00000090                   WL      5,Y2ST2Z+FR4
+      40 000000c0                   WL      5,Y2ST2Z+FR5
+      41 000000f0                   WL      5,Y2ST2Z+FR6
+      42 00000120                   WL      5,Y2ST2Z+FR6
+      43 00000150                   WL      5,Y2ST2Z+FR5
+      44 00000180                   WL      5,Y2ST2Z+FR4
+      45 000001b0                   WL      5,Y2ST2Z+FR3
+      46 000001e0                   WL      5,Y2ST2Z+FR2
+      47 00000210                   WL      5,Y2ST2Z+FR2
+      48 00000240                   WL      5,Y2ST2Z+FR3
       49                    
-      50                    
-      51 00000050            SUBR   yok_stand2_anim
-      52 00000050            SUBR   yok_stand8_anim
-      53 00000050     8002          .word   ANI_SETMODE,MODE_NORMAL
-      54 00000070     8026          .word   ANI_SETSPEED,100h
-      55                    
-      56 00000090                   WL      5,Y2ST2Z+FR4
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+      50 00000270     8001          .word   ANI_REPEAT
+      51                    
+      52                    
+      53 00000280            SUBR   yok_stand4_anim
+      54 00000280            SUBR   yok_stand6_anim
+      55 00000280     8002          .word   ANI_SETMODE,MODE_NORMAL
+      56 000002a0     8026          .word   ANI_SETSPEED,100h
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    2
 
-      57 000000c0                   WL      5,Y2ST2Z+FR5
-      58 000000f0                   WL      5,Y2ST2Z+FR6
-      59 00000120                   WL      5,Y2ST2Z+FR6
-      60 00000150                   WL      5,Y2ST2Z+FR5
-      61 00000180                   WL      5,Y2ST2Z+FR4
-      62 000001b0                   WL      5,Y2ST2Z+FR3
-      63 000001e0                   WL      5,Y2ST2Z+FR2
-      64 00000210                   WL      5,Y2ST2Z+FR2
-      65 00000240                   WL      5,Y2ST2Z+FR3
-      66                    
-      67 00000270     8001          .word   ANI_REPEAT
+      57                    
+      58 000002c0                   WL      5,Y4ST4Y+FR4
+      59 000002f0                   WL      5,Y4ST4Y+FR5
+      60 00000320                   WL      5,Y4ST4Y+FR6
+      61 00000350                   WL      5,Y4ST4Y+FR6
+      62 00000380                   WL      5,Y4ST4Y+FR5
+      63 000003b0                   WL      5,Y4ST4Y+FR4
+      64 000003e0                   WL      5,Y4ST4Y+FR3
+      65 00000410                   WL      5,Y4ST4Y+FR2
+      66 00000440                   WL      5,Y4ST4Y+FR2
+      67 00000470                   WL      5,Y4ST4Y+FR3
       68                    
-      69                    
-      70 00000280            SUBR   yok_stand4_anim
-      71 00000280            SUBR   yok_stand6_anim
-      72 00000280     8002          .word   ANI_SETMODE,MODE_NORMAL
-      73 000002a0     8026          .word   ANI_SETSPEED,100h
-      74                    
-      75 000002c0                   WL      5,Y4ST4Y+FR4
-      76 000002f0                   WL      5,Y4ST4Y+FR5
-      77 00000320                   WL      5,Y4ST4Y+FR6
-      78 00000350                   WL      5,Y4ST4Y+FR6
-      79 00000380                   WL      5,Y4ST4Y+FR5
-      80 000003b0                   WL      5,Y4ST4Y+FR4
-      81 000003e0                   WL      5,Y4ST4Y+FR3
-      82 00000410                   WL      5,Y4ST4Y+FR2
-      83 00000440                   WL      5,Y4ST4Y+FR2
-      84 00000470                   WL      5,Y4ST4Y+FR3
-      85                    
-      86 000004a0     8001          .word   ANI_REPEAT
+      69 000004a0     8001          .word   ANI_REPEAT
+      70                    
+      71                    
+      72                    
+      73 000004b0            SUBR   yok_torso2_anim
+      74 000004b0            SUBR   yok_torso8_anim
+      75                    
+      76 000004b0                   WL      4,Y2TW2X+FR1
+      77 000004e0                   WL      4,Y2TW2X+FR2
+      78 00000510                   WL      4,Y2TW2X+FR3
+      79 00000540                   WL      4,Y2TW2X+FR4
+      80 00000570                   WL      4,Y2TW2X+FR3
+      81 000005a0                   WL      4,Y2TW2X+FR2
+      82 000005d0     8001          .word   ANI_REPEAT
+      83                    
+      84                    
+      85 000005e0            SUBR   yok_torso4_anim
+      86 000005e0            SUBR   yok_torso6_anim
       87                    
-      88                    
-      89                    *****************************************************************************
-      90                    *
-      91                    * WALKING TORSOS
-      92                    
-      93 000004b0            SUBR   yok_torso2_anim
-      94 000004b0            SUBR   yok_torso8_anim
+      88 000005e0                   WL      4,Y4TW4X+FR1
+      89 00000610                   WL      4,Y4TW4X+FR2
+      90 00000640                   WL      4,Y4TW4X+FR3
+      91 00000670                   WL      4,Y4TW4X+FR4
+      92 000006a0                   WL      4,Y4TW4X+FR3
+      93 000006d0                   WL      4,Y4TW4X+FR2
+      94 00000700     8001          .word   ANI_REPEAT
       95                    
-      96 000004b0                   WL      4,Y2TW2X+FR1
-      97 000004e0                   WL      4,Y2TW2X+FR2
-      98 00000510                   WL      4,Y2TW2X+FR3
-      99 00000540                   WL      4,Y2TW2X+FR4
-     100 00000570                   WL      4,Y2TW2X+FR3
-     101 000005a0                   WL      4,Y2TW2X+FR2
-     102 000005d0     8001          .word   ANI_REPEAT
-     103                    
-     104                    
-     105 000005e0            SUBR   yok_torso4_anim
-     106 000005e0            SUBR   yok_torso6_anim
-     107                    
-     108 000005e0                   WL      4,Y4TW4X+FR1
-     109 00000610                   WL      4,Y4TW4X+FR2
-     110 00000640                   WL      4,Y4TW4X+FR3
-     111 00000670                   WL      4,Y4TW4X+FR4
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+      96                    
+      97 00000710            SUBR   yok_holdoh_anim
+      98 00000710                   WL      999,Y4PO4Z+FR1
+      99 00000740     8001          .word   ANI_REPEAT
+     100                    
+     101 00000750            SUBR   yok_stndholdoh_anim
+     102                    
+     103 00000750     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP
+     104 00000770     8003          .word   ANI_ZEROVELS
+     105 00000780     8026          .word   ANI_SETSPEED,100h
+     106                    
+     107 000007a0                   WL      999,Y4PO4X+FR8
+     108 000007d0     8001          .word   ANI_REPEAT
+     109                    
+     110                    
+     111 000007e0            SUBR   yok_walk1_f2_anim
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    3
 
-     112 000006a0                   WL      4,Y4TW4X+FR3
-     113 000006d0                   WL      4,Y4TW4X+FR2
-     114 00000700     8001          .word   ANI_REPEAT
-     115                    
-     116                    *****************************************************************************
-     117                    
-     118 00000710            SUBR   yok_holdoh_anim
-     119 00000710                   WL      999,Y4PO4Z+FR1
-     120 00000740     8001          .word   ANI_REPEAT
-     121                    
-     122 00000750            SUBR   yok_stndholdoh_anim
-     123                    
-     124 00000750     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP
-     125 00000770     8003          .word   ANI_ZEROVELS
-     126 00000780     8026          .word   ANI_SETSPEED,100h
-     127                    
-     128 000007a0                   WL      999,Y4PO4X+FR8
-     129 000007d0     8001          .word   ANI_REPEAT
-     130                    
-     131                    *****************************************************************************
-     132                    *
-     133                    * WALKS FACING bep2
-     134                    
-     135 000007e0            SUBR   yok_walk1_f2_anim
-     136 000007e0                   WL      3,Y2WL1A+FR1
-     137                    ;       WL      2,Y2WL1A+FR2
-     138 00000810                   WL      3,Y2WL1A+FR3
-     139                    ;       WL      2,Y2WL1A+FR4
-     140 00000840                   WL      3,Y2WL1A+FR5
-     141                    ;       WL      2,Y2WL1A+FR6
-     142 00000870                   WL      3,Y2WL1A+FR7
-     143                    ;       WL      2,Y2WL1A+FR8
-     144 000008a0                   WL      3,Y2WL1A+FR9
-     145                    ;       WL      2,Y2WL1A+FR10
-     146 000008d0                   WL      3,Y2WL1A+FR11
-     147                    ;       WL      2,Y2WL1A+FR12
-     148 00000900                   WL      3,Y2WL1A+FR13
-     149                    ;       WL      2,Y2WL1A+FR14
-     150 00000930                   WL      3,Y2WL1A+FR15
-     151                    ;       WL      2,Y2WL1A+FR16
-     152 00000960                   WL      3,Y2WL1A+FR17
-     153                    ;       WL      2,Y2WL1A+FR18
-     154 00000990                   WL      3,Y2WL1A+FR19
-     155                    ;       WL      2,Y2WL1A+FR20
-     156 000009c0                   WL      3,Y2WL1A+FR21
-     157                    ;       WL      2,Y2WL1A+FR22
-     158 000009f0     8001          .word   ANI_REPEAT
-     159                    
-     160 00000a00            SUBR   yok_walk2_f2_anim
-     161 00000a00                   WL      3,Y2WL2Z+FR1
-     162                    ;       WL      2,Y2WL2Z+FR2
-     163 00000a30                   WL      3,Y2WL2Z+FR3
-     164                    ;       WL      2,Y2WL2Z+FR4
-     165 00000a60                   WL      3,Y2WL2Z+FR5
-     166                    ;       WL      2,Y2WL2Z+FR6
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+     112 000007e0                   WL      3,Y2WL1A+FR1
+     113 00000810                   WL      3,Y2WL1A+FR3
+     114 00000840                   WL      3,Y2WL1A+FR5
+     115 00000870                   WL      3,Y2WL1A+FR7
+     116 000008a0                   WL      3,Y2WL1A+FR9
+     117 000008d0                   WL      3,Y2WL1A+FR11
+     118 00000900                   WL      3,Y2WL1A+FR13
+     119 00000930                   WL      3,Y2WL1A+FR15
+     120 00000960                   WL      3,Y2WL1A+FR17
+     121 00000990                   WL      3,Y2WL1A+FR19
+     122 000009c0                   WL      3,Y2WL1A+FR21
+     123 000009f0     8001          .word   ANI_REPEAT
+     124                    
+     125 00000a00            SUBR   yok_walk2_f2_anim
+     126 00000a00                   WL      3,Y2WL2Z+FR1
+     127 00000a30                   WL      3,Y2WL2Z+FR3
+     128 00000a60                   WL      3,Y2WL2Z+FR5
+     129 00000a90                   WL      3,Y2WL2Z+FR7
+     130 00000ac0                   WL      3,Y2WL2Z+FR9
+     131 00000af0                   WL      3,Y2WL2Z+FR11
+     132 00000b20                   WL      3,Y2WL2Z+FR13
+     133 00000b50                   WL      3,Y2WL2Z+FR15
+     134 00000b80                   WL      3,Y2WL2Z+FR17
+     135 00000bb0                   WL      3,Y2WL2Z+FR19
+     136 00000be0     8001          .word   ANI_REPEAT
+     137                    
+     138 00000bf0            SUBR   yok_walk4_f2_anim
+     139 00000bf0                   WL      3,Y2WL8C+FR1
+     140 00000c20                   WL      3,Y2WL8C+FR3
+     141 00000c50                   WL      3,Y2WL8C+FR5
+     142 00000c80                   WL      3,Y2WL8C+FR7
+     143 00000cb0                   WL      3,Y2WL8C+FR9
+     144 00000ce0                   WL      3,Y2WL8C+FR11
+     145 00000d10                   WL      3,Y2WL8C+FR13
+     146 00000d40                   WL      3,Y2WL8C+FR15
+     147 00000d70                   WL      3,Y2WL8C+FR17
+     148 00000da0                   WL      3,Y2WL8C+FR19
+     149 00000dd0                   WL      3,Y2WL8C+FR21
+     150 00000e00     8001          .word   ANI_REPEAT
+     151                    
+     152 00000e10            SUBR   yok_walk5_f2_anim
+     153 00000e10                   WL      3,Y2WL1A+FR21
+     154 00000e40                   WL      3,Y2WL1A+FR19
+     155 00000e70                   WL      3,Y2WL1A+FR17
+     156 00000ea0                   WL      3,Y2WL1A+FR15
+     157 00000ed0                   WL      3,Y2WL1A+FR13
+     158 00000f00                   WL      3,Y2WL1A+FR11
+     159 00000f30                   WL      3,Y2WL1A+FR9
+     160 00000f60                   WL      3,Y2WL1A+FR7
+     161 00000f90                   WL      3,Y2WL1A+FR5
+     162 00000fc0                   WL      3,Y2WL1A+FR3
+     163 00000ff0                   WL      3,Y2WL1A+FR1
+     164 00001020     8001          .word   ANI_REPEAT
+     165                    
+     166 00001030            SUBR   yok_walk6_f2_anim
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    4
 
-     167 00000a90                   WL      3,Y2WL2Z+FR7
-     168                    ;       WL      2,Y2WL2Z+FR8
-     169 00000ac0                   WL      3,Y2WL2Z+FR9
-     170                    ;       WL      2,Y2WL2Z+FR10
-     171 00000af0                   WL      3,Y2WL2Z+FR11
-     172                    ;       WL      2,Y2WL2Z+FR12
-     173 00000b20                   WL      3,Y2WL2Z+FR13
-     174                    ;       WL      2,Y2WL2Z+FR14
-     175 00000b50                   WL      3,Y2WL2Z+FR15
-     176                    ;       WL      2,Y2WL2Z+FR16
-     177 00000b80                   WL      3,Y2WL2Z+FR17
-     178                    ;       WL      2,Y2WL2Z+FR18
-     179 00000bb0                   WL      3,Y2WL2Z+FR19
-     180                    ;       WL      2,Y2WL2Z+FR20
-     181 00000be0     8001          .word   ANI_REPEAT
-     182                    
-     183 00000bf0            SUBR   yok_walk4_f2_anim
-     184 00000bf0                   WL      3,Y2WL8C+FR1
-     185                    ;       WL      2,Y2WL8C+FR2
-     186 00000c20                   WL      3,Y2WL8C+FR3
-     187                    ;       WL      2,Y2WL8C+FR4
-     188 00000c50                   WL      3,Y2WL8C+FR5
-     189                    ;       WL      2,Y2WL8C+FR6
-     190 00000c80                   WL      3,Y2WL8C+FR7
-     191                    ;       WL      2,Y2WL8C+FR8
-     192 00000cb0                   WL      3,Y2WL8C+FR9
-     193                    ;       WL      2,Y2WL8C+FR10
-     194 00000ce0                   WL      3,Y2WL8C+FR11
-     195                    ;       WL      2,Y2WL8C+FR12
-     196 00000d10                   WL      3,Y2WL8C+FR13
-     197                    ;       WL      2,Y2WL8C+FR14
-     198 00000d40                   WL      3,Y2WL8C+FR15
-     199                    ;       WL      2,Y2WL8C+FR16
-     200 00000d70                   WL      3,Y2WL8C+FR17
-     201                    ;       WL      2,Y2WL8C+FR18
-     202 00000da0                   WL      3,Y2WL8C+FR19
-     203                    ;       WL      2,Y2WL8C+FR20
-     204 00000dd0                   WL      3,Y2WL8C+FR21
-     205                    ;       WL      2,Y2WL8C+FR22
-     206 00000e00     8001          .word   ANI_REPEAT
-     207                    
-     208 00000e10            SUBR   yok_walk5_f2_anim
-     209                    ;       WL      2,Y2WL1A+FR22
-     210 00000e10                   WL      3,Y2WL1A+FR21
-     211                    ;       WL      2,Y2WL1A+FR20
-     212 00000e40                   WL      3,Y2WL1A+FR19
-     213                    ;       WL      2,Y2WL1A+FR18
-     214 00000e70                   WL      3,Y2WL1A+FR17
-     215                    ;       WL      2,Y2WL1A+FR16
-     216 00000ea0                   WL      3,Y2WL1A+FR15
-     217                    ;       WL      2,Y2WL1A+FR14
-     218 00000ed0                   WL      3,Y2WL1A+FR13
-     219                    ;       WL      2,Y2WL1A+FR12
-     220 00000f00                   WL      3,Y2WL1A+FR11
-     221                    ;       WL      2,Y2WL1A+FR10
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+     167 00001030                   WL      3,Y2WL2Z+FR19
+     168 00001060                   WL      3,Y2WL2Z+FR17
+     169 00001090                   WL      3,Y2WL2Z+FR15
+     170 000010c0                   WL      3,Y2WL2Z+FR13
+     171 000010f0                   WL      3,Y2WL2Z+FR11
+     172 00001120                   WL      3,Y2WL2Z+FR9
+     173 00001150                   WL      3,Y2WL2Z+FR7
+     174 00001180                   WL      3,Y2WL2Z+FR5
+     175 000011b0                   WL      3,Y2WL2Z+FR3
+     176 000011e0                   WL      3,Y2WL2Z+FR1
+     177 00001210     8001          .word   ANI_REPEAT
+     178                    
+     179                    
+     180 00001220            SUBR   yok_walk8_f2_anim
+     181 00001220                   WL      3,Y2WL8C+FR21
+     182 00001250                   WL      3,Y2WL8C+FR19
+     183 00001280                   WL      3,Y2WL8C+FR17
+     184 000012b0                   WL      3,Y2WL8C+FR15
+     185 000012e0                   WL      3,Y2WL8C+FR13
+     186 00001310                   WL      3,Y2WL8C+FR11
+     187 00001340                   WL      3,Y2WL8C+FR9
+     188 00001370                   WL      3,Y2WL8C+FR7
+     189 000013a0                   WL      3,Y2WL8C+FR5
+     190 000013d0                   WL      3,Y2WL8C+FR3
+     191 00001400                   WL      3,Y2WL8C+FR1
+     192 00001430     8001          .word   ANI_REPEAT
+     193                    
+     194                    
+     195                    
+     196                    
+     197 00001440            SUBR   yok_walk1_f4_anim
+     198 00001440                   WL      3,Y4WL5A+FR23
+     199 00001470                   WL      3,Y4WL5A+FR21
+     200 000014a0                   WL      3,Y4WL5A+FR19
+     201 000014d0                   WL      3,Y4WL5A+FR17
+     202 00001500                   WL      3,Y4WL5A+FR15
+     203 00001530                   WL      3,Y4WL5A+FR13
+     204 00001560                   WL      3,Y4WL5A+FR11
+     205 00001590                   WL      3,Y4WL5A+FR9
+     206 000015c0                   WL      3,Y4WL5A+FR7
+     207 000015f0                   WL      3,Y4WL5A+FR5
+     208 00001620                   WL      3,Y4WL5A+FR3
+     209 00001650                   WL      3,Y4WL5A+FR1
+     210 00001680     8001          .word   ANI_REPEAT
+     211                    
+     212 00001690            SUBR   yok_walk2_f4_anim
+     213 00001690                   WL      3,Y4WL2C+FR1
+     214 000016c0                   WL      3,Y4WL2C+FR3
+     215 000016f0                   WL      3,Y4WL2C+FR5
+     216 00001720                   WL      3,Y4WL2C+FR7
+     217 00001750                   WL      3,Y4WL2C+FR9
+     218 00001780                   WL      3,Y4WL2C+FR11
+     219 000017b0                   WL      3,Y4WL2C+FR13
+     220 000017e0                   WL      3,Y4WL2C+FR15
+     221 00001810                   WL      3,Y4WL2C+FR17
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    5
 
-     222 00000f30                   WL      3,Y2WL1A+FR9
-     223                    ;       WL      2,Y2WL1A+FR8
-     224 00000f60                   WL      3,Y2WL1A+FR7
-     225                    ;       WL      2,Y2WL1A+FR6
-     226 00000f90                   WL      3,Y2WL1A+FR5
-     227                    ;       WL      2,Y2WL1A+FR4
-     228 00000fc0                   WL      3,Y2WL1A+FR3
-     229                    ;       WL      2,Y2WL1A+FR2
-     230 00000ff0                   WL      3,Y2WL1A+FR1
-     231 00001020     8001          .word   ANI_REPEAT
-     232                    
-     233 00001030            SUBR   yok_walk6_f2_anim
-     234                    ;       WL      2,Y2WL2Z+FR20
-     235 00001030                   WL      3,Y2WL2Z+FR19
-     236                    ;       WL      2,Y2WL2Z+FR18
-     237 00001060                   WL      3,Y2WL2Z+FR17
-     238                    ;       WL      2,Y2WL2Z+FR16
-     239 00001090                   WL      3,Y2WL2Z+FR15
-     240                    ;       WL      2,Y2WL2Z+FR14
-     241 000010c0                   WL      3,Y2WL2Z+FR13
-     242                    ;       WL      2,Y2WL2Z+FR12
-     243 000010f0                   WL      3,Y2WL2Z+FR11
-     244                    ;       WL      2,Y2WL2Z+FR10
-     245 00001120                   WL      3,Y2WL2Z+FR9
-     246                    ;       WL      2,Y2WL2Z+FR8
-     247 00001150                   WL      3,Y2WL2Z+FR7
-     248                    ;       WL      2,Y2WL2Z+FR6
-     249 00001180                   WL      3,Y2WL2Z+FR5
-     250                    ;       WL      2,Y2WL2Z+FR4
-     251 000011b0                   WL      3,Y2WL2Z+FR3
-     252                    ;       WL      2,Y2WL2Z+FR2
-     253 000011e0                   WL      3,Y2WL2Z+FR1
-     254 00001210     8001          .word   ANI_REPEAT
-     255                    
-     256                    
-     257 00001220            SUBR   yok_walk8_f2_anim
-     258                    ;       WL      2,Y2WL8C+FR22
-     259 00001220                   WL      3,Y2WL8C+FR21
-     260                    ;       WL      2,Y2WL8C+FR20
-     261 00001250                   WL      3,Y2WL8C+FR19
-     262                    ;       WL      2,Y2WL8C+FR18
-     263 00001280                   WL      3,Y2WL8C+FR17
-     264                    ;       WL      2,Y2WL8C+FR16
-     265 000012b0                   WL      3,Y2WL8C+FR15
-     266                    ;       WL      2,Y2WL8C+FR14
-     267 000012e0                   WL      3,Y2WL8C+FR13
-     268                    ;       WL      2,Y2WL8C+FR12
-     269 00001310                   WL      3,Y2WL8C+FR11
-     270                    ;       WL      2,Y2WL8C+FR10
-     271 00001340                   WL      3,Y2WL8C+FR9
-     272                    ;       WL      2,Y2WL8C+FR8
-     273 00001370                   WL      3,Y2WL8C+FR7
-     274                    ;       WL      2,Y2WL8C+FR6
-     275 000013a0                   WL      3,Y2WL8C+FR5
-     276                    ;       WL      2,Y2WL8C+FR4
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+     222 00001840                   WL      3,Y4WL2C+FR19
+     223 00001870     8001          .word   ANI_REPEAT
+     224                    
+     225 00001880            SUBR   yok_walk4_f4_anim
+     226 00001880                   WL      3,Y4WL4B+FR1
+     227 000018b0                   WL      3,Y4WL4B+FR3
+     228 000018e0                   WL      3,Y4WL4B+FR5
+     229 00001910                   WL      3,Y4WL4B+FR7
+     230 00001940                   WL      3,Y4WL4B+FR9
+     231 00001970                   WL      3,Y4WL4B+FR11
+     232 000019a0                   WL      3,Y4WL4B+FR13
+     233 000019d0                   WL      3,Y4WL4B+FR15
+     234 00001a00                   WL      3,Y4WL4B+FR17
+     235 00001a30                   WL      3,Y4WL4B+FR19
+     236 00001a60                   WL      3,Y4WL4B+FR21
+     237 00001a90                   WL      3,Y4WL4B+FR23
+     238 00001ac0     8001          .word   ANI_REPEAT
+     239                    
+     240 00001ad0            SUBR   yok_walk5_f4_anim
+     241 00001ad0                   WL      3,Y4WL5A+FR1
+     242 00001b00                   WL      3,Y4WL5A+FR3
+     243 00001b30                   WL      3,Y4WL5A+FR5
+     244 00001b60                   WL      3,Y4WL5A+FR7
+     245 00001b90                   WL      3,Y4WL5A+FR9
+     246 00001bc0                   WL      3,Y4WL5A+FR11
+     247 00001bf0                   WL      3,Y4WL5A+FR13
+     248 00001c20                   WL      3,Y4WL5A+FR15
+     249 00001c50                   WL      3,Y4WL5A+FR17
+     250 00001c80                   WL      3,Y4WL5A+FR19
+     251 00001cb0                   WL      3,Y4WL5A+FR21
+     252 00001ce0                   WL      3,Y4WL5A+FR23
+     253 00001d10     8001          .word   ANI_REPEAT
+     254                    
+     255 00001d20            SUBR   yok_walk6_f4_anim
+     256 00001d20                   WL      3,Y4WL2C+FR19
+     257 00001d50                   WL      3,Y4WL2C+FR17
+     258 00001d80                   WL      3,Y4WL2C+FR15
+     259 00001db0                   WL      3,Y4WL2C+FR13
+     260 00001de0                   WL      3,Y4WL2C+FR11
+     261 00001e10                   WL      3,Y4WL2C+FR9
+     262 00001e40                   WL      3,Y4WL2C+FR7
+     263 00001e70                   WL      3,Y4WL2C+FR5
+     264 00001ea0                   WL      3,Y4WL2C+FR3
+     265 00001ed0                   WL      3,Y4WL2C+FR1
+     266 00001f00     8001          .word   ANI_REPEAT
+     267                    
+     268 00001f10            SUBR   yok_walk8_f4_anim
+     269 00001f10                   WL      3,Y4WL4B+FR23
+     270 00001f40                   WL      3,Y4WL4B+FR21
+     271 00001f70                   WL      3,Y4WL4B+FR19
+     272 00001fa0                   WL      3,Y4WL4B+FR17
+     273 00001fd0                   WL      3,Y4WL4B+FR15
+     274 00002000                   WL      3,Y4WL4B+FR13
+     275 00002030                   WL      3,Y4WL4B+FR11
+     276 00002060                   WL      3,Y4WL4B+FR9
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    6
 
-     277 000013d0                   WL      3,Y2WL8C+FR3
-     278                    ;       WL      2,Y2WL8C+FR2
-     279 00001400                   WL      3,Y2WL8C+FR1
-     280 00001430     8001          .word   ANI_REPEAT
-     281                    
+     277 00002090                   WL      3,Y4WL4B+FR7
+     278 000020c0                   WL      3,Y4WL4B+FR5
+     279 000020f0                   WL      3,Y4WL4B+FR3
+     280 00002120                   WL      3,Y4WL4B+FR1
+     281 00002150     8001          .word   ANI_REPEAT
      282                    
      283                    
-     284                    *****************************************************************************
-     285                    *
-     286                    * WALKS FACING bqo4
-     287                    
-     288 00001440            SUBR   yok_walk1_f4_anim
-     289                    ;       WL      2,Y4WL5A+FR24
-     290 00001440                   WL      3,Y4WL5A+FR23
-     291                    ;       WL      2,Y4WL5A+FR22
-     292 00001470                   WL      3,Y4WL5A+FR21
-     293                    ;       WL      2,Y4WL5A+FR20
-     294 000014a0                   WL      3,Y4WL5A+FR19
-     295                    ;       WL      2,Y4WL5A+FR18
-     296 000014d0                   WL      3,Y4WL5A+FR17
-     297                    ;       WL      2,Y4WL5A+FR16
-     298 00001500                   WL      3,Y4WL5A+FR15
-     299                    ;       WL      2,Y4WL5A+FR14
-     300 00001530                   WL      3,Y4WL5A+FR13
-     301                    ;       WL      2,Y4WL5A+FR12
-     302 00001560                   WL      3,Y4WL5A+FR11
-     303                    ;       WL      2,Y4WL5A+FR10
-     304 00001590                   WL      3,Y4WL5A+FR9
-     305                    ;       WL      2,Y4WL5A+FR8
-     306 000015c0                   WL      3,Y4WL5A+FR7
-     307                    ;       WL      2,Y4WL5A+FR6
-     308 000015f0                   WL      3,Y4WL5A+FR5
-     309                    ;       WL      2,Y4WL5A+FR4
-     310 00001620                   WL      3,Y4WL5A+FR3
-     311                    ;       WL      2,Y4WL5A+FR2
-     312 00001650                   WL      3,Y4WL5A+FR1
-     313 00001680     8001          .word   ANI_REPEAT
-     314                    
-     315 00001690            SUBR   yok_walk2_f4_anim
-     316 00001690                   WL      3,Y4WL2C+FR1
-     317                    ;       WL      2,Y4WL2C+FR2
-     318 000016c0                   WL      3,Y4WL2C+FR3
-     319                    ;       WL      2,Y4WL2C+FR4
-     320 000016f0                   WL      3,Y4WL2C+FR5
-     321                    ;       WL      2,Y4WL2C+FR6
-     322 00001720                   WL      3,Y4WL2C+FR7
-     323                    ;       WL      2,Y4WL2C+FR8
-     324 00001750                   WL      3,Y4WL2C+FR9
-     325                    ;       WL      2,Y4WL2C+FR10
-     326 00001780                   WL      3,Y4WL2C+FR11
-     327                    ;       WL      2,Y4WL2C+FR12
-     328 000017b0                   WL      3,Y4WL2C+FR13
-     329                    ;       WL      2,Y4WL2C+FR14
-     330 000017e0                   WL      3,Y4WL2C+FR15
-     331                    ;       WL      2,Y4WL2C+FR16
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+     284 00002160            SUBR   yok_2_to_4_turn_anim
+     285 00002160            SUBR   yok_8_to_6_turn_anim
+     286 00002160     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     287 00002180     8026          .word   ANI_SETSPEED,100h
+     288 000021a0                   WL      3,Y1TT5Z+FR2
+     289 000021d0                   WL      3,Y1TT5Z+FR3
+     290 00002200     8002          .word   ANI_SETMODE,MODE_NORMAL
+     291 00002220     8049          .word   ANI_END
+     292                    
+     293 00002230            SUBR   yok_4_to_2_turn_anim
+     294 00002230            SUBR   yok_6_to_8_turn_anim
+     295 00002230     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     296 00002250     8026          .word   ANI_SETSPEED,100h
+     297 00002270                   WL      3,Y1TT5Z+FR3
+     298 000022a0                   WL      3,Y1TT5Z+FR2
+     299 000022d0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     300 000022f0     8049          .word   ANI_END
+     301                    
+     302 00002300            SUBR   yok_4_to_6_turn_anim
+     303 00002300            SUBR   yok_6_to_4_turn_anim
+     304 00002300     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     305 00002320     8026          .word   ANI_SETSPEED,100h
+     306 00002340                   WL      3,Y1TT5Z+FR4
+     307 00002370     800c          .word   ANI_XFLIP
+     308 00002380                   WL      3,Y1TT5Z+FR4
+     309 000023b0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     310 000023d0     8049          .word   ANI_END
+     311                    
+     312 000023e0            SUBR   yok_2_to_8_turn_anim
+     313 000023e0            SUBR   yok_8_to_2_turn_anim
+     314 000023e0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     315 00002400     8026          .word   ANI_SETSPEED,100h
+     316 00002420                   WL      3,Y1TT5Z+FR1
+     317 00002450     800c          .word   ANI_XFLIP
+     318 00002460                   WL      3,Y1TT5Z+FR1
+     319 00002490     8002          .word   ANI_SETMODE,MODE_NORMAL
+     320 000024b0     8049          .word   ANI_END
+     321                    
+     322 000024c0            SUBR   yok_4_to_8_turn_anim
+     323 000024c0            SUBR   yok_6_to_2_turn_anim
+     324 000024c0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     325 000024e0     8026          .word   ANI_SETSPEED,100h
+     326 00002500                   WL      3,Y1TT5Z+FR3
+     327 00002530                   WL      3,Y1TT5Z+FR2
+     328 00002560                   WL      3,Y1TT5Z+FR1
+     329 00002590     800c          .word   ANI_XFLIP
+     330 000025a0                   WL      3,Y1TT5Z+FR1
+     331 000025d0     8002          .word   ANI_SETMODE,MODE_NORMAL
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    7
 
-     332 00001810                   WL      3,Y4WL2C+FR17
-     333                    ;       WL      2,Y4WL2C+FR18
-     334 00001840                   WL      3,Y4WL2C+FR19
-     335                    ;       WL      2,Y4WL2C+FR20
-     336 00001870     8001          .word   ANI_REPEAT
-     337                    
-     338 00001880            SUBR   yok_walk4_f4_anim
-     339 00001880                   WL      3,Y4WL4B+FR1
-     340                    ;       WL      2,Y4WL4B+FR2
-     341 000018b0                   WL      3,Y4WL4B+FR3
-     342                    ;       WL      2,Y4WL4B+FR4
-     343 000018e0                   WL      3,Y4WL4B+FR5
-     344                    ;       WL      2,Y4WL4B+FR6
-     345 00001910                   WL      3,Y4WL4B+FR7
-     346                    ;       WL      2,Y4WL4B+FR8
-     347 00001940                   WL      3,Y4WL4B+FR9
-     348                    ;       WL      2,Y4WL4B+FR10
-     349 00001970                   WL      3,Y4WL4B+FR11
-     350                    ;       WL      2,Y4WL4B+FR12
-     351 000019a0                   WL      3,Y4WL4B+FR13
-     352                    ;       WL      2,Y4WL4B+FR14
-     353 000019d0                   WL      3,Y4WL4B+FR15
-     354                    ;       WL      2,Y4WL4B+FR16
-     355 00001a00                   WL      3,Y4WL4B+FR17
-     356                    ;       WL      2,Y4WL4B+FR18
-     357 00001a30                   WL      3,Y4WL4B+FR19
-     358                    ;       WL      2,Y4WL4B+FR20
-     359 00001a60                   WL      3,Y4WL4B+FR21
-     360                    ;       WL      2,Y4WL4B+FR22
-     361 00001a90                   WL      3,Y4WL4B+FR23
-     362                    ;       WL      2,Y4WL4B+FR24
-     363 00001ac0     8001          .word   ANI_REPEAT
-     364                    
-     365 00001ad0            SUBR   yok_walk5_f4_anim
-     366 00001ad0                   WL      3,Y4WL5A+FR1
-     367                    ;       WL      2,Y4WL5A+FR2
-     368 00001b00                   WL      3,Y4WL5A+FR3
-     369                    ;       WL      2,Y4WL5A+FR4
-     370 00001b30                   WL      3,Y4WL5A+FR5
-     371                    ;       WL      2,Y4WL5A+FR6
-     372 00001b60                   WL      3,Y4WL5A+FR7
-     373                    ;       WL      2,Y4WL5A+FR8
-     374 00001b90                   WL      3,Y4WL5A+FR9
-     375                    ;       WL      2,Y4WL5A+FR10
-     376 00001bc0                   WL      3,Y4WL5A+FR11
-     377                    ;       WL      2,Y4WL5A+FR12
-     378 00001bf0                   WL      3,Y4WL5A+FR13
-     379                    ;       WL      2,Y4WL5A+FR14
-     380 00001c20                   WL      3,Y4WL5A+FR15
-     381                    ;       WL      2,Y4WL5A+FR16
-     382 00001c50                   WL      3,Y4WL5A+FR17
-     383                    ;       WL      2,Y4WL5A+FR18
-     384 00001c80                   WL      3,Y4WL5A+FR19
-     385                    ;       WL      2,Y4WL5A+FR20
-     386 00001cb0                   WL      3,Y4WL5A+FR21
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+     332 000025f0     8049          .word   ANI_END
+     333                    
+     334 00002600            SUBR   yok_2_to_6_turn_anim
+     335 00002600            SUBR   yok_8_to_4_turn_anim
+     336 00002600     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     337 00002620     8026          .word   ANI_SETSPEED,100h
+     338 00002640                   WL      3,Y1TT5Z+FR2
+     339 00002670                   WL      3,Y1TT5Z+FR3
+     340 000026a0                   WL      3,Y1TT5Z+FR4
+     341 000026d0     800c          .word   ANI_XFLIP
+     342 000026e0                   WL      3,Y1TT5Z+FR4
+     343 00002710     8002          .word   ANI_SETMODE,MODE_NORMAL
+     344 00002730     8049          .word   ANI_END
+     345                    
+     346                    
+     347                    
+     348 00002740            SUBR   yok_2_to_4_turn2_anim
+     349 00002740            SUBR   yok_8_to_6_turn2_anim
+     350 00002740     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     351 00002760     8026          .word   ANI_SETSPEED,100h
+     352 00002780                   WL      3,Y1TR5Z+FR4
+     353 000027b0     801b          .word   ANI_SETFACING
+     354 000027c0                   WL      3,Y1TR5Z+FR5
+     355 000027f0                   WL      3,Y1TR5Z+FR6
+     356 00002820     8002          .word   ANI_SETMODE,MODE_NORMAL
+     357 00002840     8049          .word   ANI_END
+     358                    
+     359 00002850            SUBR   yok_4_to_2_turn2_anim
+     360 00002850            SUBR   yok_6_to_8_turn2_anim
+     361 00002850     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     362 00002870     8026          .word   ANI_SETSPEED,100h
+     363 00002890                   WL      3,Y1TR5Z+FR6
+     364 000028c0     801b          .word   ANI_SETFACING
+     365 000028d0                   WL      3,Y1TR5Z+FR5
+     366 00002900                   WL      3,Y1TR5Z+FR4
+     367 00002930     8002          .word   ANI_SETMODE,MODE_NORMAL
+     368 00002950     8049          .word   ANI_END
+     369                    
+     370 00002960            SUBR   yok_4_to_6_turn2_anim
+     371 00002960            SUBR   yok_6_to_4_turn2_anim
+     372 00002960     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     373 00002980     8026          .word   ANI_SETSPEED,100h
+     374 000029a0                   WL      3,Y1TR5Z+FR9
+     375 000029d0     801b          .word   ANI_SETFACING
+     376 000029e0                   WL      3,Y1TR5Z+FR9
+     377 00002a10     8002          .word   ANI_SETMODE,MODE_NORMAL
+     378 00002a30     8049          .word   ANI_END
+     379                    
+     380 00002a40            SUBR   yok_2_to_8_turn2_anim
+     381 00002a40            SUBR   yok_8_to_2_turn2_anim
+     382 00002a40     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     383 00002a60     8026          .word   ANI_SETSPEED,100h
+     384 00002a80                   WL      3,Y1TR5Z+FR1
+     385 00002ab0     801b          .word   ANI_SETFACING
+     386 00002ac0                   WL      3,Y1TR5Z+FR1
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    8
 
-     387                    ;       WL      2,Y4WL5A+FR22
-     388 00001ce0                   WL      3,Y4WL5A+FR23
-     389                    ;       WL      2,Y4WL5A+FR24
-     390 00001d10     8001          .word   ANI_REPEAT
-     391                    
-     392 00001d20            SUBR   yok_walk6_f4_anim
-     393                    ;       WL      2,Y4WL2C+FR20
-     394 00001d20                   WL      3,Y4WL2C+FR19
-     395                    ;       WL      2,Y4WL2C+FR18
-     396 00001d50                   WL      3,Y4WL2C+FR17
-     397                    ;       WL      2,Y4WL2C+FR16
-     398 00001d80                   WL      3,Y4WL2C+FR15
-     399                    ;       WL      2,Y4WL2C+FR14
-     400 00001db0                   WL      3,Y4WL2C+FR13
-     401                    ;       WL      2,Y4WL2C+FR12
-     402 00001de0                   WL      3,Y4WL2C+FR11
-     403                    ;       WL      2,Y4WL2C+FR10
-     404 00001e10                   WL      3,Y4WL2C+FR9
-     405                    ;       WL      2,Y4WL2C+FR8
-     406 00001e40                   WL      3,Y4WL2C+FR7
-     407                    ;       WL      2,Y4WL2C+FR6
-     408 00001e70                   WL      3,Y4WL2C+FR5
-     409                    ;       WL      2,Y4WL2C+FR4
-     410 00001ea0                   WL      3,Y4WL2C+FR3
-     411                    ;       WL      2,Y4WL2C+FR2
-     412 00001ed0                   WL      3,Y4WL2C+FR1
-     413 00001f00     8001          .word   ANI_REPEAT
-     414                    
-     415 00001f10            SUBR   yok_walk8_f4_anim
-     416                    ;       WL      2,Y4WL4B+FR24
-     417 00001f10                   WL      3,Y4WL4B+FR23
-     418                    ;       WL      2,Y4WL4B+FR22
-     419 00001f40                   WL      3,Y4WL4B+FR21
-     420                    ;       WL      2,Y4WL4B+FR20
-     421 00001f70                   WL      3,Y4WL4B+FR19
-     422                    ;       WL      2,Y4WL4B+FR18
-     423 00001fa0                   WL      3,Y4WL4B+FR17
-     424                    ;       WL      2,Y4WL4B+FR16
-     425 00001fd0                   WL      3,Y4WL4B+FR15
-     426                    ;       WL      2,Y4WL4B+FR14
-     427 00002000                   WL      3,Y4WL4B+FR13
-     428                    ;       WL      2,Y4WL4B+FR12
-     429 00002030                   WL      3,Y4WL4B+FR11
-     430                    ;       WL      2,Y4WL4B+FR10
-     431 00002060                   WL      3,Y4WL4B+FR9
-     432                    ;       WL      2,Y4WL4B+FR8
-     433 00002090                   WL      3,Y4WL4B+FR7
-     434                    ;       WL      2,Y4WL4B+FR6
-     435 000020c0                   WL      3,Y4WL4B+FR5
-     436                    ;       WL      2,Y4WL4B+FR4
-     437 000020f0                   WL      3,Y4WL4B+FR3
-     438                    ;       WL      2,Y4WL4B+FR2
-     439 00002120                   WL      3,Y4WL4B+FR1
-     440 00002150     8001          .word   ANI_REPEAT
-     441                    
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+     387 00002af0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     388 00002b10     8049          .word   ANI_END
+     389                    
+     390 00002b20            SUBR   yok_4_to_8_turn2_anim
+     391 00002b20            SUBR   yok_6_to_2_turn2_anim
+     392 00002b20     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     393 00002b40     8026          .word   ANI_SETSPEED,100h
+     394 00002b60                   WL      3,Y1TR5Z+FR9
+     395 00002b90     801b          .word   ANI_SETFACING
+     396 00002ba0                   WL      3,Y1TR5Z+FR9
+     397 00002bd0                   WL      3,Y1TR5Z+FR8
+     398 00002c00                   WL      3,Y1TR5Z+FR6
+     399 00002c30     801b          .word   ANI_SETFACING
+     400 00002c40                   WL      3,Y1TR5Z+FR5
+     401 00002c70                   WL      3,Y1TR5Z+FR4
+     402 00002ca0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     403 00002cc0     8049          .word   ANI_END
+     404                    
+     405 00002cd0            SUBR   yok_2_to_6_turn2_anim
+     406 00002cd0            SUBR   yok_8_to_4_turn2_anim
+     407 00002cd0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
+     408 00002cf0     8026          .word   ANI_SETSPEED,100h
+     409 00002d10                   WL      3,Y1TR5Z+FR4
+     410 00002d40     801b          .word   ANI_SETFACING
+     411 00002d50                   WL      3,Y1TR5Z+FR5
+     412 00002d80                   WL      3,Y1TR5Z+FR6
+     413 00002db0                   WL      3,Y1TR5Z+FR8
+     414 00002de0                   WL      3,Y1TR5Z+FR9
+     415 00002e10     801b          .word   ANI_SETFACING
+     416 00002e20                   WL      3,Y1TR5Z+FR9
+     417 00002e50     8002          .word   ANI_SETMODE,MODE_NORMAL
+     418 00002e70     8049          .word   ANI_END
+     419                    
+     420                    
+     421                    
+     422                    
+     423 00002e80            SUBR   yok_run2_anim
+     424                      
+     425 00002e80     8002          .word   ANI_SETMODE,MODE_NORMAL
+     426 00002ea0     8026          .word   ANI_SETSPEED,100h
+     427                    
+     428                    
+     429 00002ec0     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,18h,71    ;mode,x,y,w,h
+     430 00002f20                   WL      ANI_GOTO,fbejrun2
+     431                    
+     432 00002f50            SUBR   yok_run_anim
+     433                    
+     434 00002f50     8002          .word   ANI_SETMODE,MODE_UNINT                  ;uninterruptable
+     435 00002f70     8026          .word   ANI_SETSPEED,100h
+     436 00002f90     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,18h,71    ;mode,x,y,w,h
+     437                    
+     438 00002ff0           fbejlp1
+     439 00002ff0                   WL      3,Y3RN3C+FR1
+     440 00003020                   WL      3,Y3RN3C+FR2
+     441 00003050                   WL      3,Y3RN3C+FR3
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE    9
 
-     442                    *****************************************************************************
-     443                    *
-     444                    * TURNS (STANDS)
-     445                    
-     446 00002160            SUBR   yok_2_to_4_turn_anim
-     447 00002160            SUBR   yok_8_to_6_turn_anim
-     448 00002160     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     449 00002180     8026          .word   ANI_SETSPEED,100h
-     450 000021a0                   WL      3,Y1TT5Z+FR2
-     451 000021d0                   WL      3,Y1TT5Z+FR3
-     452 00002200     8002          .word   ANI_SETMODE,MODE_NORMAL
-     453 00002220     8049          .word   ANI_END
-     454                    
-     455 00002230            SUBR   yok_4_to_2_turn_anim
-     456 00002230            SUBR   yok_6_to_8_turn_anim
-     457 00002230     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     458 00002250     8026          .word   ANI_SETSPEED,100h
-     459 00002270                   WL      3,Y1TT5Z+FR3
-     460 000022a0                   WL      3,Y1TT5Z+FR2
-     461 000022d0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     462 000022f0     8049          .word   ANI_END
-     463                    
-     464 00002300            SUBR   yok_4_to_6_turn_anim
-     465 00002300            SUBR   yok_6_to_4_turn_anim
-     466 00002300     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     467 00002320     8026          .word   ANI_SETSPEED,100h
-     468 00002340                   WL      3,Y1TT5Z+FR4
-     469 00002370     800c          .word   ANI_XFLIP
-     470 00002380                   WL      3,Y1TT5Z+FR4
-     471 000023b0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     472 000023d0     8049          .word   ANI_END
-     473                    
-     474 000023e0            SUBR   yok_2_to_8_turn_anim
-     475 000023e0            SUBR   yok_8_to_2_turn_anim
-     476 000023e0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     477 00002400     8026          .word   ANI_SETSPEED,100h
-     478 00002420                   WL      3,Y1TT5Z+FR1
-     479 00002450     800c          .word   ANI_XFLIP
-     480 00002460                   WL      3,Y1TT5Z+FR1
-     481 00002490     8002          .word   ANI_SETMODE,MODE_NORMAL
-     482 000024b0     8049          .word   ANI_END
+     442 00003080                   WL      3,Y3RN3C+FR4
+     443 000030b0                   WL      3,Y3RN3C+FR5
+     444                    
+     445 000030e0                   WL      ANI_CODE,SMALL_RUN
+     446 00003110                   WL      ANI_SET_YVEL,14000h
+     447 00003140     801f          .word   ANI_SHAKER,15
+     448 00003160           fbejrun2
+     449 00003160     8002          .word   ANI_SETMODE,MODE_NORMAL         ;clear UNINT bit
+     450 00003180     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,18h,71    ;mode,x,y,w,h
+     451 000031e0                   WL      3,Y3RN3C+FR6
+     452 00003210                   WL      3,Y3RN3C+FR7
+     453 00003240                   WL      3,Y3RN3C+FR8
+     454 00003270                   WL      3,Y3RN3C+FR9
+     455 000032a0                   WL      3,Y3RN3C+FR10
+     456 000032d0                   WL      3,Y3RN3C+FR11
+     457                    
+     458 00003300                   WL      ANI_CODE,SMALL_RUN
+     459 00003330                   WL      ANI_SET_YVEL,14000h
+     460 00003360     801f          .word   ANI_SHAKER,15
+     461                    
+     462 00003380                   WL      3,Y3RN3C+FR12
+     463 000033b0                   WL      ANI_GOTO,fbejlp1
+     464                    
+     465                    
+     466                    
+     467 000033e0            SUBR   yok_bounce_anim
+     468                    
+     469 000033e0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_OVERLAP|MODE_NOAUTOFLIP| MODE_NOCONFINE     ;uninterruptable
+     470                      
+     471                            .ref    fix_bnc_flip
+     472 00003400                   WL      ANI_CODE,fix_bnc_flip
+     473 00003430                   WL      ANI_CODE,MAYBE_BOUNCE_ROPE
+     474                    
+     475 00003460     8003          .word   ANI_ZEROVELS
+     476 00003470     8026          .word   ANI_SETSPEED,100h
+     477 00003490                   WL      3,Y3BO3C+FR1
+     478                    
+     479 000034c0                   WL      2,Y3BO3C+FR2
+     480 000034f0     8023          .word   ANI_BOUNCEROPE,0
+     481 00003510                   WL      ANI_CODE,SMALL_RUN
+     482 00003540                   WL      1,Y3BO3C+FR2
      483                    
-     484 000024c0            SUBR   yok_4_to_8_turn_anim
-     485 000024c0            SUBR   yok_6_to_2_turn_anim
-     486 000024c0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     487 000024e0     8026          .word   ANI_SETSPEED,100h
-     488 00002500                   WL      3,Y1TT5Z+FR3
-     489 00002530                   WL      3,Y1TT5Z+FR2
-     490 00002560                   WL      3,Y1TT5Z+FR1
-     491 00002590     800c          .word   ANI_XFLIP
-     492 000025a0                   WL      3,Y1TT5Z+FR1
-     493 000025d0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     494 000025f0     8049          .word   ANI_END
+     484 00003570     801f          .word   ANI_SHAKER,10
+     485                    
+     486 00003590                   WL      2,Y3BO3C+FR3
+     487 000035c0     8023          .word   ANI_BOUNCEROPE,1
+     488 000035e0                   WL      1,Y3BO3C+FR3
+     489                    
+     490 00003610                   WL      3,Y3BO3C+FR4
+     491 00003640     8023          .word   ANI_BOUNCEROPE,2
+     492 00003660                   WL      1,Y3BO3C+FR4
+     493                    
+     494 00003690     8003          .word   ANI_ZEROVELS
      495                    
-     496 00002600            SUBR   yok_2_to_6_turn_anim
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
+     496 000036a0                   WL      4,Y3BO3C+FR5
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:21 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Yokozuna animation sequences                                         PAGE   10
 
-     497 00002600            SUBR   yok_8_to_4_turn_anim
-     498 00002600     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     499 00002620     8026          .word   ANI_SETSPEED,100h
-     500 00002640                   WL      3,Y1TT5Z+FR2
-     501 00002670                   WL      3,Y1TT5Z+FR3
-     502 000026a0                   WL      3,Y1TT5Z+FR4
-     503 000026d0     800c          .word   ANI_XFLIP
-     504 000026e0                   WL      3,Y1TT5Z+FR4
-     505 00002710     8002          .word   ANI_SETMODE,MODE_NORMAL
-     506 00002730     8049          .word   ANI_END
-     507                    
-     508                    *****************************************************************************
-     509                    *
-     510                    * TURNS (TORSOS)
-     511                    
-     512                    
-     513 00002740            SUBR   yok_2_to_4_turn2_anim
-     514 00002740            SUBR   yok_8_to_6_turn2_anim
-     515 00002740     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     516 00002760     8026          .word   ANI_SETSPEED,100h
-     517 00002780                   WL      3,Y1TR5Z+FR4
-     518 000027b0     801b          .word   ANI_SETFACING
-     519 000027c0                   WL      3,Y1TR5Z+FR5
-     520 000027f0                   WL      3,Y1TR5Z+FR6
-     521 00002820     8002          .word   ANI_SETMODE,MODE_NORMAL
-     522 00002840     8049          .word   ANI_END
+     497 000036d0     8023          .word   ANI_BOUNCEROPE,3
+     498 000036f0                   WL      1,Y3BO3C+FR5
+     499 00003720                   WL      5,Y3BO3C+FR6
+     500 00003750     8023          .word   ANI_BOUNCEROPE,4
+     501 00003770                   WL      1,Y3BO3C+FR6
+     502 000037a0                   WL      3,Y3BO3C+FR7
+     503 000037d0     8023          .word   ANI_BOUNCEROPE,0
+     504 000037f0                   WL      1,Y3BO3C+FR7
+     505 00003820                   WL      2,Y3BO3C+FR8
+     506 00003850     8023          .word   ANI_BOUNCEROPE,-1
+     507 00003870     801f          .word   ANI_SHAKER,10
+     508                    
+     509 00003890                   WL      ANI_CODE,SMALL_RUN
+     510 000038c0                   WL      1,Y3BO3C+FR8
+     511 000038f0                   WL      3,Y3BO3C+FR9
+     512 00003920                   WL      3,Y3BO3C+FR10
+     513                    
+     514 00003950     8002          .word   ANI_SETMODE,MODE_NORMAL
+     515 00003970     8049          .word   ANI_END
+     516                    
+     517                    
+     518 00003980            SUBR   yok_frnk_recover_anim
+     519 00003980     8002          .word   ANI_SETMODE,MODE_NORMAL
+     520 000039a0     8026          .word   ANI_SETSPEED,100h
+     521 000039c0                   WL      4,Y1TT5Z+FR3
+     522 000039f0                   WL      ANI_CHANGEANIM,yok_stand4_anim
      523                    
-     524 00002850            SUBR   yok_4_to_2_turn2_anim
-     525 00002850            SUBR   yok_6_to_8_turn2_anim
-     526 00002850     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     527 00002870     8026          .word   ANI_SETSPEED,100h
-     528 00002890                   WL      3,Y1TR5Z+FR6
-     529 000028c0     801b          .word   ANI_SETFACING
-     530 000028d0                   WL      3,Y1TR5Z+FR5
-     531 00002900                   WL      3,Y1TR5Z+FR4
-     532 00002930     8002          .word   ANI_SETMODE,MODE_NORMAL
-     533 00002950     8049          .word   ANI_END
-     534                    
-     535 00002960            SUBR   yok_4_to_6_turn2_anim
-     536 00002960            SUBR   yok_6_to_4_turn2_anim
-     537 00002960     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     538 00002980     8026          .word   ANI_SETSPEED,100h
-     539 000029a0                   WL      3,Y1TR5Z+FR9
-     540 000029d0     801b          .word   ANI_SETFACING
-     541 000029e0                   WL      3,Y1TR5Z+FR9
-     542 00002a10     8002          .word   ANI_SETMODE,MODE_NORMAL
-     543 00002a30     8049          .word   ANI_END
-     544                    
-     545 00002a40            SUBR   yok_2_to_8_turn2_anim
-     546 00002a40            SUBR   yok_8_to_2_turn2_anim
-     547 00002a40     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     548 00002a60     8026          .word   ANI_SETSPEED,100h
-     549 00002a80                   WL      3,Y1TR5Z+FR1
-     550 00002ab0     801b          .word   ANI_SETFACING
-     551 00002ac0                   WL      3,Y1TR5Z+FR1
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
- Copyright (c) 1985-1991  Texas Instruments Incorporated 
-
-Yokozuna animation sequences                                         PAGE   11
-
-     552 00002af0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     553 00002b10     8049          .word   ANI_END
-     554                    
-     555 00002b20            SUBR   yok_4_to_8_turn2_anim
-     556 00002b20            SUBR   yok_6_to_2_turn2_anim
-     557 00002b20     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     558 00002b40     8026          .word   ANI_SETSPEED,100h
-     559 00002b60                   WL      3,Y1TR5Z+FR9
-     560 00002b90     801b          .word   ANI_SETFACING
-     561 00002ba0                   WL      3,Y1TR5Z+FR9
-     562 00002bd0                   WL      3,Y1TR5Z+FR8
-     563 00002c00                   WL      3,Y1TR5Z+FR6
-     564 00002c30     801b          .word   ANI_SETFACING
-     565 00002c40                   WL      3,Y1TR5Z+FR5
-     566 00002c70                   WL      3,Y1TR5Z+FR4
-     567 00002ca0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     568 00002cc0     8049          .word   ANI_END
-     569                    
-     570 00002cd0            SUBR   yok_2_to_6_turn2_anim
-     571 00002cd0            SUBR   yok_8_to_4_turn2_anim
-     572 00002cd0     8002          .word   ANI_SETMODE,MODE_INTURN|MODE_NOAUTOFLIP ;uninterruptable
-     573 00002cf0     8026          .word   ANI_SETSPEED,100h
-     574 00002d10                   WL      3,Y1TR5Z+FR4
-     575 00002d40     801b          .word   ANI_SETFACING
-     576 00002d50                   WL      3,Y1TR5Z+FR5
-     577 00002d80                   WL      3,Y1TR5Z+FR6
-     578 00002db0                   WL      3,Y1TR5Z+FR8
-     579 00002de0                   WL      3,Y1TR5Z+FR9
-     580 00002e10     801b          .word   ANI_SETFACING
-     581 00002e20                   WL      3,Y1TR5Z+FR9
-     582 00002e50     8002          .word   ANI_SETMODE,MODE_NORMAL
-     583 00002e70     8049          .word   ANI_END
-     584                    
-     585                    
-     586                    *****************************************************************************
-     587                    *
-     588                    * RUNNING IN uxi3
-     589                    
-     590                    ;Jason, put in the correct (more angled) bounce off of ropes for Yoko.
-     591                    ;Also, make run better!  Longer strides?  Shake screen?  Animate slower?
-     592                    
-     593 00002e80            SUBR   yok_run2_anim
-     594                      
-     595 00002e80     8002          .word   ANI_SETMODE,MODE_NORMAL
-     596 00002ea0     8026          .word   ANI_SETSPEED,100h
-     597                    
-     598                    ;I'm turning on an attack box for the entire run sequence.
-     599                    ;I never turn it off.
-     600                    
-     601 00002ec0     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,18h,71    ;mode,x,y,w,h
-     602 00002f20                   WL      ANI_GOTO,uxirun2
-     603                    
-     604 00002f50            SUBR   yok_run_anim
-     605                    
-     606 00002f50     8002          .word   ANI_SETMODE,MODE_UNINT                  ;uninterruptable
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
- Copyright (c) 1985-1991  Texas Instruments Incorporated 
-
-Yokozuna animation sequences                                         PAGE   12
-
-     607 00002f70     8026          .word   ANI_SETSPEED,100h
-     608 00002f90     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,18h,71    ;mode,x,y,w,h
-     609                    
-     610 00002ff0           uxilp1
-     611 00002ff0                   WL      3,Y3RN3C+FR1
-     612 00003020                   WL      3,Y3RN3C+FR2
-     613 00003050                   WL      3,Y3RN3C+FR3
-     614 00003080                   WL      3,Y3RN3C+FR4
-     615 000030b0                   WL      3,Y3RN3C+FR5
-     616                    
-     617 000030e0                   WL      ANI_CODE,SMALL_RUN
-     618 00003110                   WL      ANI_SET_YVEL,14000h
-     619 00003140     801f          .word   ANI_SHAKER,15
-     620 00003160           uxirun2
-     621 00003160     8002          .word   ANI_SETMODE,MODE_NORMAL         ;clear UNINT bit
-     622 00003180     8006          .word   ANI_ATTACK_ON,AMODE_RUN,-3,29,18h,71    ;mode,x,y,w,h
-     623 000031e0                   WL      3,Y3RN3C+FR6
-     624 00003210                   WL      3,Y3RN3C+FR7
-     625 00003240                   WL      3,Y3RN3C+FR8
-     626 00003270                   WL      3,Y3RN3C+FR9
-     627 000032a0                   WL      3,Y3RN3C+FR10
-     628 000032d0                   WL      3,Y3RN3C+FR11
-     629                    
-     630 00003300                   WL      ANI_CODE,SMALL_RUN
-     631 00003330                   WL      ANI_SET_YVEL,14000h
-     632 00003360     801f          .word   ANI_SHAKER,15
-     633                    
-     634 00003380                   WL      3,Y3RN3C+FR12
-     635 000033b0                   WL      ANI_GOTO,uxilp1
-     636                    
-     637                    
-     638                    *****************************************************************************
-     639                    *
-     640                    * BOUNCE OFF ROPES
-     641                    
-     642 000033e0            SUBR   yok_bounce_anim
-     643                    
-     644 000033e0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_OVERLAP|MODE_NOAUTOFLIP| MODE_NOCONFINE     ;uninterruptable
-     645                      
-     646                            .ref    fix_bnc_flip
-     647 00003400                   WL      ANI_CODE,fix_bnc_flip
-     648 00003430                   WL      ANI_CODE,MAYBE_BOUNCE_ROPE
-     649                    
-     650 00003460     8003          .word   ANI_ZEROVELS
-     651 00003470     8026          .word   ANI_SETSPEED,100h
-     652 00003490                   WL      3,Y3BO3C+FR1
-     653                    
-     654 000034c0                   WL      2,Y3BO3C+FR2
-     655 000034f0     8023          .word   ANI_BOUNCEROPE,0
-     656 00003510                   WL      ANI_CODE,SMALL_RUN
-     657 00003540                   WL      1,Y3BO3C+FR2
-     658                    
-     659 00003570     801f          .word   ANI_SHAKER,10
-     660                    
-     661 00003590                   WL      2,Y3BO3C+FR3
-TMS340 COFF Macro Assembler Version 6.10     Wed Oct 25 09:58:38 2023
- Copyright (c) 1985-1991  Texas Instruments Incorporated 
-
-Yokozuna animation sequences                                         PAGE   13
-
-     662 000035c0     8023          .word   ANI_BOUNCEROPE,1
-     663 000035e0                   WL      1,Y3BO3C+FR3
-     664                    
-     665 00003610                   WL      3,Y3BO3C+FR4
-     666 00003640     8023          .word   ANI_BOUNCEROPE,2
-     667 00003660                   WL      1,Y3BO3C+FR4
-     668                    
-     669 00003690     8003          .word   ANI_ZEROVELS
-     670                    
-     671 000036a0                   WL      4,Y3BO3C+FR5
-     672 000036d0     8023          .word   ANI_BOUNCEROPE,3
-     673 000036f0                   WL      1,Y3BO3C+FR5
-     674 00003720                   WL      5,Y3BO3C+FR6
-     675 00003750     8023          .word   ANI_BOUNCEROPE,4
-     676 00003770                   WL      1,Y3BO3C+FR6
-     677 000037a0                   WL      3,Y3BO3C+FR7
-     678 000037d0     8023          .word   ANI_BOUNCEROPE,0
-     679 000037f0                   WL      1,Y3BO3C+FR7
-     680 00003820                   WL      2,Y3BO3C+FR8
-     681 00003850     8023          .word   ANI_BOUNCEROPE,-1
-     682 00003870     801f          .word   ANI_SHAKER,10
-     683                    
-     684 00003890                   WL      ANI_CODE,SMALL_RUN
-     685 000038c0                   WL      1,Y3BO3C+FR8
-     686 000038f0                   WL      3,Y3BO3C+FR9
-     687 00003920                   WL      3,Y3BO3C+FR10
-     688                    
-     689 00003950     8002          .word   ANI_SETMODE,MODE_NORMAL
-     690 00003970     8049          .word   ANI_END
-     691                    
-     692                    *****************************************************************************
-     693                    
-     694 00003980            SUBR   yok_frnk_recover_anim
-     695 00003980     8002          .word   ANI_SETMODE,MODE_NORMAL
-     696 000039a0     8026          .word   ANI_SETSPEED,100h
-     697 000039c0                   WL      4,Y1TT5Z+FR3
-     698 000039f0                   WL      ANI_CHANGEANIM,yok_stand4_anim
-     699                    
-     700                    ******************************************************************************
-     701                    
-     702                            .end
+     524                    
+     525                            .end
 
  No Errors,  No Warnings

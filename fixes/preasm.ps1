@@ -79,6 +79,7 @@ foreach ($asmFile in $asmFiles) {
             # Display the section name and generate a unique 2-letter section descriptor
             Write-Host "Processing section: $($section['SectionHeader'])"
 	    Write-Host "Section Name: $($section["SectionName"])"
+	    Write-Host "Labels todo: $($section["Labels"])"
             $section["SectionDescriptor"] = Get-UniqueRandomSectionDescriptor
 
             $startLineNumber = $section["SectionStart"]
@@ -105,6 +106,9 @@ foreach ($asmFile in $asmFiles) {
 
     # Replace #* with * in the entire content
     $content = $content -replace "#\*", "*"
+    # Memory optimize, remove lines starting with * and ;
+    $content = $content | Where-Object { -not ($_ -match '^\*') }
+    $content = $content | Where-Object { -not ($_ -match '^\;') }
 
     # Save the modified content to the same file
     # $modifiedFile = Join-Path -Path $folderPath -ChildPath ("modified_" + $asmFile.Name)

@@ -7,6 +7,7 @@
 
 	.include yokoimg.tbl
 	.include yokoimg.h
+	.include yoko.glo
 
 ******************************************************************************
 

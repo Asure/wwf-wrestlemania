@@ -1,13 +1,3 @@
-**************************************************************
-*
-* Software:	Mike Lynch, Jason Skiles, Mark Turmell
-* Initiated:	05/12/95
-*
-* Modified:
-*
-* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-*
-**************************************************************
 
 	.file	"fireword.asm"
 	.title	"wrestling game program"
@@ -70,9 +60,7 @@
 EXP_FW_SND	.equ	1252
 FLR_FW_SND	.equ	1244
 
-**********************************************************************
-*
- SUBRP	rzlfwexa_anim
+ SUBRP	omvzfwexa_anim
 	.long	FWEXPA01
 	.long	FWEXPA02
 	.long	FWEXPA03
@@ -86,7 +74,7 @@ FLR_FW_SND	.equ	1244
 	.long	FWEXPA11
 	.long	0
 
- SUBRP	rzlfwexb_anim
+ SUBRP	omvzfwexb_anim
 	.long	FWEXPB01
 	.long	FWEXPB02
 	.long	FWEXPB03
@@ -100,17 +88,17 @@ FLR_FW_SND	.equ	1244
 	.long	FWEXPB11
 	.long	0
 
- SUBRP	rzlfwexp_tbl
-	.long	rzlfwexa_anim
-	.long	rzlfwexb_anim
+ SUBRP	omvzfwexp_tbl
+	.long	omvzfwexa_anim
+	.long	omvzfwexb_anim
 
- SUBRP	rzlflare_anim
+ SUBRP	omvzflare_anim
 	.long	FWFLAR01
 	.long	FWFLAR02
 	.long	FWFLAR03
 	.long	FWFLAR04
 	.long	FWFLAR05
- SUBRP	rzlflare_anim2
+ SUBRP	omvzflare_anim2
 	.long	FWFLAR06
 	.long	FWFLAR07
 	.long	FWFLAR08
@@ -121,7 +109,7 @@ FLR_FW_SND	.equ	1244
 	.long	FWFLAR13
 	.long	0
 
- SUBRP	rzlfw_pals
+ SUBRP	omvzfw_pals
 	.long	FWWHT_P
 	.long	FWBLV_P
 	.long	FWPNK_P
@@ -130,7 +118,7 @@ FLR_FW_SND	.equ	1244
 
 EXP_FWY	.equ	-260
 
- SUBRP	rzlanimate_fwexp
+ SUBRP	omvzanimate_fwexp
 
 	; First Get a random position to place the explosion
 	movi	96,a0		; Get a random vertical position
@@ -152,7 +140,7 @@ EXP_FWY	.equ	-260
 	movi	1,a0		; Get a random explosion to use
 	calla	RNDRNG0
 	sll	5,a0
-	addi	rzlfwexp_tbl,a0
+	addi	omvzfwexp_tbl,a0
 	move	*a0,a11,L	; Get pointer to image table
 	move	*a11+,a2,L	; Get the first image
 
@@ -167,7 +155,7 @@ EXP_FWY	.equ	-260
 	calla	RNDRNG0
 	move	a0,b0		; Get entry from palette table
 	sll	5,b0
-	addi	rzlfw_pals,b0
+	addi	omvzfw_pals,b0
 	move	*b0,b0,L
 	
 	; Set up the x and y positions for the object
@@ -186,18 +174,18 @@ EXP_FWY	.equ	-260
 	; And animate the whole works
 	move	*a8(OCTRL),a10
 	move	*a8(OYPOS),a9
-rzlanimate_loop
+omvzanimate_loop
 	SLEEPK	1
 	move	*a11+,a0,L	; Get the next image
-	jrz	rzlfwanim_done	; Are we done ? - br = yes
+	jrz	omvzfwanim_done	; Are we done ? - br = yes
 	move	a10,a1
 	calla	obj_aniq	; Change the image
 	addk	4,a9
 	move	a9,*a8(OYPOS)
-	jruc	rzlanimate_loop	; Go do next image
+	jruc	omvzanimate_loop	; Go do next image
 
 	; We all done - soooo get rid of the object and die
-rzlfwanim_done
+omvzfwanim_done
 	calla	DELOBJA8	; Kill off the object
 	DIE			; And die
 
@@ -212,7 +200,7 @@ rzlfwanim_done
 	calla	RNDRNG0
 	move	a0,b0
 	sll	5,b0
-	addi	rzlfw_pals,b0
+	addi	omvzfw_pals,b0
 	move	*b0,b0,L
 
 	move	a9,a0
@@ -222,7 +210,7 @@ rzlfwanim_done
 	move	a9,a1
 	sll	16,a1
 
-	movi	rzlflare_anim,a9
+	movi	omvzflare_anim,a9
 	move	*a9+,a2,L
 
 	movi	810h,a3
@@ -235,42 +223,37 @@ rzlfwanim_done
 
 
 
-;	PUSH	a0,a1,a2,a3,a4,a5,a6,a7
-;	calla	flash_white
-;	movi	FLR_FW_SND,a3
-;	calla	SNDSND
-;	PULL	a0,a1,a2,a3,a4,a5,a6,a7
 
 
 
 	move	*a8(OCTRL),a10
-rzlflare_loop
+omvzflare_loop
 	SLEEPK	2
-rzlfl_loop
+omvzfl_loop
 	move	*a9+,a0,L
-	jrz	rzlreset_flare
+	jrz	omvzreset_flare
 	move	a10,a1
 	calla	obj_aniq
-	jruc	rzlflare_loop
+	jruc	omvzflare_loop
 
-rzlreset_flare
+omvzreset_flare
 	move	@fizzle_flare,a9
-	jrnz	rzlflare_fizzle
-	movi	rzlflare_anim2,a9
-	jruc	rzlfl_loop
+	jrnz	omvzflare_fizzle
+	movi	omvzflare_anim2,a9
+	jruc	omvzfl_loop
 
-rzlflare_fizzle
+omvzflare_fizzle
 
-	movi	rzlflare_anim2,a9
-rzlff_loop
+	movi	omvzflare_anim2,a9
+omvzff_loop
 	SLEEPK	4
-	cmpi	rzlflare_anim,a9
-	jrz	rzlff_exit
+	cmpi	omvzflare_anim,a9
+	jrz	omvzff_exit
 	move	-*a9,a0,L
 	move	a10,a1
 	calla	obj_aniq
-	jruc	rzlff_loop
-rzlff_exit
+	jruc	omvzff_loop
+omvzff_exit
 
 	calla	DELOBJA8
 	DIE
@@ -279,7 +262,6 @@ rzlff_exit
 
  SUBR	do_fireworks
 
-;	RETP
 	PUSHP	a9,a10
 
 	calla	pal_clean	; Get rid of extra palettes
@@ -324,7 +306,6 @@ rzlff_exit
 	calla	KIL1C		; Kill off any combo flashers
 
 
-;Jake adds 1 to FLASH_COMBO_PID to point at plyr 2!
 	movi	FLASH_COMBO_PID+1,a0
 	calla	KIL1C		; Kill off any combo flashers
 
@@ -346,8 +327,6 @@ rzlff_exit
 	calla	KIL1C		; Kill off collision box debug processes
 	.endif
 
-;	movi	ROPE_PID,a0
-;	calla	KIL1C		; Kill off any rope processes
 
 	callr	knockout_drones	; Knock out any wrestler process that are drone wrestlers
 	
@@ -377,7 +356,6 @@ rzlff_exit
 
 	clr	a0			; Turn off bog reduction
 	move	a0,@reduce_bog		; Animate the crowd
-;	CREATE	CROWD_PID,crowd_anim
 
 	;wake up the crowd
 	move	@crowd_process,a0,L
@@ -400,10 +378,10 @@ rzlff_exit
 	; Back of ring flares
 	movk	12,a10		; Make 12 flares
 	movi	[798,128],a9	; [sx,y] of flare positions
-rzldo_flare
+omvzdo_flare
 	CREATE	FIREWRK_PID,firework_flare
 	addi	[50,0],a9	; Increment x position
-	dsjs	a10,rzldo_flare	; go do next flare
+	dsjs	a10,omvzdo_flare	; go do next flare
 
 	; Left Side flares
 	movi	[770,148],a9
@@ -450,8 +428,8 @@ rzldo_flare
 
 	movi	TSEC*6,a8
 
-rzldo_exfw_loop
-	CREATE0	rzlanimate_fwexp	; Create an exploding firework
+omvzdo_exfw_loop
+	CREATE0	omvzanimate_fwexp	; Create an exploding firework
 
 	movk	6,a0		; Sleep a random amount of time
 	calla	RNDRNG0
@@ -459,27 +437,26 @@ rzldo_exfw_loop
 	sub	a0,a8
 	calla	PRCSLP		; Sleep
 	move	a8,a8
-	jrgt	rzldo_exfw_loop
+	jrgt	omvzdo_exfw_loop
 
-;Kill text on scrn
 
 	movk	1,a0
 	move	a0,@pan_down
 	movi	TSEC*2,a9
-	jruc	rzlcheer_lp
-rzlno_exp_fw
+	jruc	omvzcheer_lp
+omvzno_exp_fw
 	movi	TSEC*5,a9
-rzlcheer_lp
+omvzcheer_lp
 	move	a9,a9
-	jrle	rzlclp_done
+	jrle	omvzclp_done
 	PUSH	a0,a1,a2,a3,a4,a5,a6,a7,a8,a9
 	movk	1,a3		; And make 'em do something
 	calla	crowd_cheer
 	PULL	a0,a1,a2,a3,a4,a5,a6,a7,a8,a9
 	SLEEPK	15
 	subk	15,a9
-	jruc	rzlcheer_lp
-rzlclp_done
+	jruc	omvzcheer_lp
+omvzclp_done
 	
 
 	movk	1,a0		; Tell flares to fizzle out
@@ -573,8 +550,6 @@ INIT_PAN_SPEED	.equ	TSEC
 	.bss	p2x,32			; End X point
 	.bss	p2y,32			; End Y point
 
-*************************************************************
-*
  SUBRP	calc_dxdy
 	PUSH	a8,a9,a10,a11
 
@@ -598,8 +573,6 @@ INIT_PAN_SPEED	.equ	TSEC
 	rets
 
 
-*************************************************************
-*
  SUBRP	move_camera
 	PUSH	a0
 
@@ -617,8 +590,6 @@ INIT_PAN_SPEED	.equ	TSEC
 	PULL	a0
 	rets
 
-**************************************************************
-*
  SUBRP	check_camera_position
 	PUSH	a0
 
@@ -628,27 +599,25 @@ INIT_PAN_SPEED	.equ	TSEC
 	sub	a0,a14			; Subtract the two
 	abs	a14			; Make sure it is positive
 	cmpi	3,a14			; Are we within 3 ?
-	jrgt	dzucheck_y		; br = no
+	jrgt	jsjqcheck_y		; br = no
 	clr	a14
 	move	a14,@dx,L		; Stop X movement
 
-dzucheck_y
+jsjqcheck_y
 	move	@WORLDTLY,a14,L		; Get current Y position
 	sra	16,a14			; Get rid of fractional portion
 	move	@targ_y,a0		; Get current target Y position
 	sub	a0,a14			; Subtract the two
 	abs	a14			; Make sure it is positive
 	cmpi	3,a14			; Are we within 3 ?
-	jrgt	dzucheck_done		; br = no
+	jrgt	jsjqcheck_done		; br = no
 	clr	a14
 	move	a14,@dy,L		; Stop Y movement
 
-dzucheck_done
+jsjqcheck_done
 	PULL	a0
 	rets
 
-*******************************************************************
-*
  SUBRP	pan_around
 
 	SLEEP	TSEC/2
@@ -663,10 +632,10 @@ dzucheck_done
 	move	a14,@final_y,L		; Save off for pan back
 	move	a14,@p1y,L		; Set as the starting Y point
 
-zgbpan_again
+vcstpan_again
 	movi	panning_points,a8	; Get pointer to pan points table
 
-zgbp1on8_lp
+vcstp1on8_lp
 	move	*a8+,a14,L		; Get Ticks for the move
 	move	a14,@ticks,L		; Set ticks for this move
 	move	*a8+,a14,L		; Get Target X position
@@ -679,7 +648,7 @@ zgbp1on8_lp
 	move	a14,@targ_y		; Store it as the target Y position
 	movk	15,a10			; Number of ticks for this move
 	callr	calc_dxdy		; Calculate dx and dy
-zgbnext_move
+vcstnext_move
 	callr	move_camera		; Move the camera
 	calla	BGND_UD1		; Update the background
 	SLEEPK	1			; Let it actually move
@@ -692,35 +661,35 @@ zgbnext_move
 	move	@dx,a14,L		; Get current dx
 	move	@dy,a0,L		; Get current dy
 	or	a0,a14			; Or 'em together
-	jrnz	zgbnext_move		; Done with this segment ? - br - no
+	jrnz	vcstnext_move		; Done with this segment ? - br - no
 
 	; This is probably where I want to put up different lines of text
 	move	@pan_status,a14
-	jrnz	zgbtext_is_up
+	jrnz	vcsttext_is_up
 
 	SLEEPK	5
 
 	movk	1,a14
 	move	a14,@pan_status
 	move	@royal_rumble,a14
-	jrnz	zgbdo_8_on_2
+	jrnz	vcstdo_8_on_2
 	calla	is_8_on_1
-	jrc	zgbdo_8_on_1
+	jrc	vcstdo_8_on_1
 
-zgbdo_3_on_1
+vcstdo_3_on_1
 	; Print 1vs3 congrats message - GAWD IS THIS UUUUGGGLY
 	clr	a14
-	jruc	zgbpcx
-zgbdo_8_on_2
+	jruc	vcstpcx
+vcstdo_8_on_2
 	; Print 2vs8 congrats message - GAWD IS THIS UUUUGGGLY
 	movk	2,a14
-	jruc	zgbpcx
-zgbdo_8_on_1
+	jruc	vcstpcx
+vcstdo_8_on_1
 	; Print 1vs8 congrats message - GAWD IS THIS UUUUGGGLY
 	movk	1,a14
-zgbpcx	callr	print_congrats
+vcstpcx	callr	print_congrats
 	SLEEPK	2
-zgbtext_is_up
+vcsttext_is_up
 
 
 	move	@p2x,a14,L		; Get Last End X position
@@ -728,14 +697,14 @@ zgbtext_is_up
 	move	@p2y,a14,L		; Get Last End Y position
 	move	a14,@p1y,L		; Store as new Start Y position
 	move	@pan_down,a14
-	jrnz	zgbpan_done
+	jrnz	vcstpan_done
 	move	*a8,a14,L		; Get next X target
-	jrnz	zgbp1on8_lp		; Done ? - br = no
+	jrnz	vcstp1on8_lp		; Done ? - br = no
 
 	move	@pan_down,a14
-	jrz	zgbpan_again
+	jrz	vcstpan_again
 
-zgbpan_done
+vcstpan_done
 
 	movi	CLSMK3,a0
 	calla	obj_del1c	; Get rid of the text when we pan back down
@@ -753,7 +722,7 @@ zgbpan_done
 	move	a14,@ticks,L		; Store ticks for this move
 
 	callr	calc_dxdy		; Calculate dx and dy
-zgbnpb_move
+vcstnpb_move
 	callr	move_camera		; Move the camera
 	calla	BGND_UD1		; Update the background
 	SLEEPK	1			; Let it actually move
@@ -766,96 +735,89 @@ zgbnpb_move
 	move	@dx,a14,L		; Get current dx
 	move	@dy,a0,L		; Get current dy
 	or	a0,a14			; Or 'em together
-	jrnz	zgbnpb_move		; Done with last segment ? - br = no
+	jrnz	vcstnpb_move		; Done with last segment ? - br = no
 
 	DIE
 
-*****************************************
-*
  SUBRP	knockout_drones
 	movi	process_ptrs,a9
-lyrnext
+zcbknext
 	move	*a9+,a8,L
-	jrz	lyrko_done
+	jrz	zcbkko_done
 	move	*a8(PLYR_TYPE),a14
-	jrz	lyrnext
+	jrz	zcbknext
 	movi	7fffh,a14
 	move	a14,*a8(PTIME)
-	jruc	lyrnext
-lyrko_done
+	jruc	zcbknext
+zcbkko_done
 	rets
 
-***************************************
-*
- SUBRP	seuc1v3s_tbl
-	.long	seucongrat_1v8_1
-	.long	seucongrat_1v8_2
-	.long	seucongrat_1v8_3
-;	.long	seucongrat_1v8_4
-;	.long	seucongrat_1v8_5
-	.long	seucongrat_1v8_5
-	.long	seucongrat_1v8_6
+ SUBRP	muqcc1v3s_tbl
+	.long	muqccongrat_1v8_1
+	.long	muqccongrat_1v8_2
+	.long	muqccongrat_1v8_3
+	.long	muqccongrat_1v8_5
+	.long	muqccongrat_1v8_6
 	.long	0
 
- SUBRP	seuc1v8s_tbl
-	.long	seucongrat_1v8_1
-	.long	seucongrat_1v8_2
-	.long	seucongrat_1v8_3
-	.long	seucongrat_1v8_4
-	.long	seucongrat_1v8_6
+ SUBRP	muqcc1v8s_tbl
+	.long	muqccongrat_1v8_1
+	.long	muqccongrat_1v8_2
+	.long	muqccongrat_1v8_3
+	.long	muqccongrat_1v8_4
+	.long	muqccongrat_1v8_6
 	.long	0
 
- SUBRP	seuc2v8s_tbl
-	.long	seucongrat_1v8_1
-	.long	seucongrat_1v8_2
-	.long	seucongrat_1v8_3
-	.long	seucongrat_1v8_6
+ SUBRP	muqcc2v8s_tbl
+	.long	muqccongrat_1v8_1
+	.long	muqccongrat_1v8_2
+	.long	muqccongrat_1v8_3
+	.long	muqccongrat_1v8_6
 	.long	0
 
- SUBRP	seucongrats_setup_tbl
-	.long	seuc1v3s_tbl
-	.long	seuc1v8s_tbl
-	.long	seuc2v8s_tbl
+ SUBRP	muqccongrats_setup_tbl
+	.long	muqcc1v3s_tbl
+	.long	muqcc1v8s_tbl
+	.long	muqcc2v8s_tbl
 
 
- SUBRP	seuc1v3_tbl
-	.long	seucongrat_1v8_1_str
-	.long	seucongrat_1v3_2_str
-	.long	seucongrat_1v3_3_str
-	.long	seucongrat_1v3_4_str
-	.long	seucongrat_1v8_5_str
+ SUBRP	muqcc1v3_tbl
+	.long	muqccongrat_1v8_1_str
+	.long	muqccongrat_1v3_2_str
+	.long	muqccongrat_1v3_3_str
+	.long	muqccongrat_1v3_4_str
+	.long	muqccongrat_1v8_5_str
 
- SUBRP	seuc1v8_tbl
-	.long	seucongrat_1v8_1_str
-	.long	seucongrat_1v8_2_str
-	.long	seucongrat_1v8_3_str
-	.long	seucongrat_1v8_4_str
-	.long	seucongrat_1v8_5_str
+ SUBRP	muqcc1v8_tbl
+	.long	muqccongrat_1v8_1_str
+	.long	muqccongrat_1v8_2_str
+	.long	muqccongrat_1v8_3_str
+	.long	muqccongrat_1v8_4_str
+	.long	muqccongrat_1v8_5_str
 
- SUBRP	seuc2v8_tbl
-	.long	seucongrat_1v8_1_str
-	.long	seucongrat_2v8_2_str
-	.long	seucongrat_2v8_3_str
-	.long	seucongrat_2v8_4_str
+ SUBRP	muqcc2v8_tbl
+	.long	muqccongrat_1v8_1_str
+	.long	muqccongrat_2v8_2_str
+	.long	muqccongrat_2v8_3_str
+	.long	muqccongrat_2v8_4_str
 
- SUBRP	seucongrats_str_tbl
-	.long	seuc1v3_tbl
-	.long	seuc1v8_tbl
-	.long	seuc2v8_tbl
+ SUBRP	muqccongrats_str_tbl
+	.long	muqcc1v3_tbl
+	.long	muqcc1v8_tbl
+	.long	muqcc2v8_tbl
 
-; a14 = 0 - 1v3, 1 - 1vs8, 2 - 2vs 8
  SUBRP	print_congrats
 	PUSH	a8,a9,a10,a11
 	sll	5,a14
 	move	a14,a9
 	move	a14,a10
-	addi	seucongrats_setup_tbl,a9
-	addi	seucongrats_str_tbl,a10
+	addi	muqccongrats_setup_tbl,a9
+	addi	muqccongrats_str_tbl,a10
 	move	*a9,a9,L
 	move	*a10,a10,L
-seuprint_clp
+muqcprint_clp
 	move	*a9+,a8,L
-	jrz	seuc_done
+	jrz	muqcc_done
 	move	*a10+,a11,L
 	move	a8,a2
 	calla	setup_message
@@ -863,71 +825,70 @@ seuprint_clp
 	move	a4,@mess_objid
 	move	a11,a4
 	calla	print_string_C2
-	jruc	seuprint_clp
-seuc_done
+	jruc	muqcprint_clp
+muqcc_done
 	PULL	a8,a9,a10,a11
 	rets
 
-seucongrat_1v3_2_str
+muqccongrat_1v3_2_str
 	.string	"YOU ARE THE INTERCONTINENTAL CHAMPION!",0
 	.even
-seucongrat_1v3_3_str
+muqccongrat_1v3_3_str
 	.string	"IT'S TIME TO SEEK A BIGGER CHALLENGE:",0
 	.even
-seucongrat_1v3_4_str
+muqccongrat_1v3_4_str
 	.string	"COMPETE FOR THE WORLD CHAMPIONSHIP!",0
 	.even
 
 
-seucongrat_1v8_1_str
+muqccongrat_1v8_1_str
 	.string	"CONGRATULATIONS!!!",0
 	.even
-seucongrat_1v8_2_str
+muqccongrat_1v8_2_str
 	.string	"YOU ARE THE NEW WWF WORLD CHAMPION!",0
 	.even
-seucongrat_1v8_3_str
+muqccongrat_1v8_3_str
 	.string	"YOUR NAME WILL LIVE FOREVER AMONG THE",0
 	.even
-seucongrat_1v8_4_str
+muqccongrat_1v8_4_str
 	.string	"GREATEST WRESTLERS OF ALL TIME!!!",0
 	.even
-seucongrat_1v8_5_str
+muqccongrat_1v8_5_str
 	.string	"...THANK YOU FOR PLAYING...",0
 	.even
 
 
-seucongrat_2v8_2_str
+muqccongrat_2v8_2_str
 	.string	"YOU ARE THE NEW WORLD WRESTLING",0
 	.even
-seucongrat_2v8_3_str
+muqccongrat_2v8_3_str
 	.string	"FEDERATION TAG TEAM CHAMPIONS!!!",0
 	.even
-seucongrat_2v8_4_str
+muqccongrat_2v8_4_str
 	.string	"PREPARE TO BATTLE EACH OTHER!!!",0
 	.even
 
 
-seucongrat_1v8_1
+muqccongrat_1v8_1
 	JAM_STR	wsf14_ascii,10,0,200,60,WSF_R_P,print_string_C2
 	.even
-seucongrat_1v8_2
+muqccongrat_1v8_2
 	JAM_STR	ogmd10_ascii,10,0,200,100,SGMD8YEL,print_string_C2
 	.even
-seucongrat_1v8_3
+muqccongrat_1v8_3
 	JAM_STR	ogmd10_ascii,10,0,200,113,SGMD8YEL,print_string_C2
 	.even
-seucongrat_1v8_4
+muqccongrat_1v8_4
 	JAM_STR	ogmd10_ascii,10,0,200,126,SGMD8YEL,print_string_C2
 	.even
-seucongrat_1v8_5
+muqccongrat_1v8_5
 	JAM_STR	ogmd10_ascii,10,0,200,152,SGMD8WHT,print_string_C2
 	.even
-seucongrat_1v8_6
+muqccongrat_1v8_6
 	JAM_STR	ogmd10_ascii,10,0,200,178,SGMD8BLU,print_string_C2
 	.even
 
 
-******************************************************************************
 
 	.end
 

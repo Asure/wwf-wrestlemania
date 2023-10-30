@@ -16,7 +16,14 @@
 	.global	Y2KB3A
 	.global	Y4KB3A
 	.global	Y4GF3B
-	.global	Y4TI4C
+	.global	Y4TI4C01
+	.global	Y4TI4C02
+	.global	Y4TI4C03
+	.global	Y4TI4C04
+	.global	Y4TI4C05
+	.global	Y4TI4C06
+	.global	Y4TI4C07
+	.global	Y4TI4C08
 	.global	Y3BF3A
 	.global	Y3RL1A
 	.global	Y3MF3B

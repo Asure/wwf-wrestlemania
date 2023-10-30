@@ -1,11 +1,3 @@
-**************************************************************
-*
-* Software:		Jamie Rivett
-* Initiated:		8/8/94
-*
-* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-*
-**************************************************************
 
 	.file	"react2.asm"
 	.title	"wrester reactions to hits"
@@ -28,12 +20,9 @@
 	.include	"lifebar.h"
 
 
-******************************************************************************
-* EXTERNAL REFERENCES
 
 	.ref	change_anim1a
 	.ref	wres_collis_off
-;	.ref	inc_burnout
 	.ref	block_hit
 	.ref	face_each_other
 	.ref	set_getup_time
@@ -42,88 +31,60 @@
 	.ref	CALL_NASTY_MOVE
 	.ref	block_hit_flail
 
-******************************************************************************
-* EXTERNAL ANIM SEQUENCES
 
 
-;BAM BAM
 	.ref	bam_heldoh_anim
-;	.ref	bam_ocrun_anim
 	.ref	bam_4_losebal_anim
 
-;DOINK
 	.ref	dnk_heldoh_anim
-;	.ref	dnk_ocrun_anim
 	.ref	dnk_fall_back_anim
 	.ref	dnk_4_losebal_anim
 	.ref	dnk_knockdwn_anim
 
-;BRET
 	.ref	hrt_4_losebal_anim,hrt_fall_back_anim
 
-;LEX
 	.ref	lex_4_losebal_anim
 	.ref	lex_heldoh_anim
-;	.ref	lex_ocrun_anim
 
-;RAZOR
 	.ref	rzr_4_losebal_anim
-;	.ref	rzr_ocrun_anim
 	.ref	rzr_heldoh_anim
 	.ref	rzr_fall_back_anim
 
-;SHAWN
 	.ref	shn_4_losebal_anim
 	.ref	shn_heldoh_anim
-;	.ref	shn_ocrun_anim
 
-;TAKER
 	.ref	und_heldoh_anim
-;	.ref	und_ocrun_anim
 	.ref	und_4_losebal_anim
 
-;YOKO
 	.ref	yok_4_losebal_anim
 
-;MISC
 	.ref	hit_damage_pending,hitonground_tbl
 	.ref	ck_live_teammates
 
 
-******************************************************************************
-* SYMBOLS DEFINED IN THIS FILE
 
-******************************************************************************
-* EQUATES FOR THIS FILE
 
-*****************************************************************************
 
-*****************************************************************************
-;AMODE_UPRCUT	5
  SUBR	hit_uprcut
 
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	nzenoblock
+	jrnz	gtxfnoblock
 
 	calla	block_hit_flail
 	rets
 
-nzenoblock
+gtxfnoblock
 
 	GETLIFE
-	jrz	nzeskip
+	jrz	gtxfskip
 
-;Any hit mode which does a fall back sequence onto the ground
-;will not check dizzy at the start.
-;The check dizzy happens in the sequence.
 
 
 	SETMODE	NORMAL
 
-nzeskip
-;	calla	inc_burnout
+gtxfskip
 
 	WRSNDX	UPRCUT_L1,UPRCUT_L2
 
@@ -142,64 +103,55 @@ nzeskip
 	movi	[15,0],a0
 	move	*a10(WRESTLERNUM),a14
 	cmpi	3,a14
-	jrz	nzenorm
+	jrz	gtxfnorm
 	movi	[13,0],a0
 	cmpi	2,a14
-	jrnz	nzenorm
+	jrnz	gtxfnorm
 	
 	move	a13,a0
 	calla	ck_live_teammates
 	movi	[11,0],a0
-	jrc	nzenorm
+	jrc	gtxfnorm
 
 	;no live teammates -- send them up into the air
-;	.ref	reduce_bog
-;	move	@reduce_bog,a14
-;	jrnz	nzenorm
 
 	movi	[18,0],a0
-nzenorm
+gtxfnorm
 	move	a0,*a13(OBJ_YVEL),L
 
 	movi	[2,0],a2
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	nzefall_right		;attacker on left
+	jrgt	gtxffall_right		;attacker on left
 	movi	[-2,0],a2
-nzefall_right
+gtxffall_right
 	move	a2,*a13(OBJ_XVEL),L
 
-nzeisdead
+gtxfisdead
 	calla	wres_collis_off
 	rets
 
 
-*****************************************************************************
-;AMODE_UPRCUT2	39
  SUBR	hit_combo_uprcut
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	nblnoblock
+	jrnz	jybynoblock
 
 	calla	block_hit
 	rets
 
-nblnoblock
+jybynoblock
 
 	GETLIFE
-	jrz	nblskip
+	jrz	jybyskip
 
-;Any hit mode which does a fall back sequence onto the ground
-;will not check dizzy at the start.
-;The check dizzy happens in the sequence.
 
 
 	SETMODE	NORMAL
 
-nblskip
-;	calla	inc_burnout
+jybyskip
 
 	WRSNDX	UPRCUT_L1,UPRCUT_L2
 
@@ -230,27 +182,25 @@ SET_YVEL
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	nblfall_right		;attacker on left
+	jrgt	jybyfall_right		;attacker on left
 	NEG	A2
-nblfall_right
+jybyfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
-nblisdead
+jybyisdead
 	calla	wres_collis_off
 	rets
 
 
-*****************************************************************************
-;AMODE_LBOWDROP	6
 
  SUBR	hit_lbowdrop
 
 	;if we're standing, ignore this
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_NORMAL,a0
-	jrz	rxfignore
+	jrz	ywwhignore
 	cmpi	MODE_BLOCK,a0
-	jrz	rxfignore
+	jrz	ywwhignore
 
 	WRSNDX	LBOWDROP_L1,LBOWDROP_L2
 	movi	33h,a0
@@ -263,14 +213,12 @@ nblisdead
 	calla	wres_collis_off
 	rets
 
-rxfignore	clr	a14
+ywwhignore	clr	a14
 	move	a14,@hit_damage_pending
 	calla	wres_collis_off
 	rets
 
 
-*****************************************************************************
-;AMODE_BLBOWDROP	25
  SUBR	hit_blbowdrop
 
 	.ref	DO_SCREAM
@@ -279,36 +227,30 @@ rxfignore	clr	a14
 	WRSNDX	FLYKICK_L1,FLYKICK_L2
 	WRSNDX	LBOWDROP_L1,LBOWDROP_L2
 
-;	movi	500,a0
-;	.ref	RNDPER
-;	calla	RNDPER
-;	jrls	irhisdead
-;	calla	inc_burnout
 
 	calla	wres_collis_off
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_ONGROUND,a0
-	jrz	irhon_grnd
+	jrz	hqwlon_grnd
 	cmpi	MODE_DEAD,a0
-	jrz	irhon_grnd
-;Knock standing opponent onto ground
+	jrz	hqwlon_grnd
 
 	SETMODE	NORMAL
 	move	*a13(OBJ_YPOSINT),a14
 	move	*a13(GROUND_Y),a0
 	sub	a0,a14
 	cmpi	20,a14
-	jrge	irhfall_back
+	jrge	hqwlfall_back
 
 	calla	set_getup_time
 
-	FACETBL irhknockdwn
+	FACETBL hqwlknockdwn
 	calla	change_anim1a
 	calla	wres_collis_off
 	rets
 
-irhfall_back
+hqwlfall_back
 	movi	43h,a0
 	calla	triple_sound
 	FACETBL	fall_back_tbl
@@ -320,23 +262,23 @@ irhfall_back
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	irhfall_right		;attacker on left
+	jrgt	hqwlfall_right		;attacker on left
 	neg	a2
-irhfall_right
+hqwlfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 	movi	-30000h,a0
 	move	a0,*a13(OBJ_YVEL),L
 	rets
 
-irhon_grnd
+hqwlon_grnd
 	FACETBL hitonground_tbl
 	calla	change_anim1a
-irhisdead
+hqwlisdead
 	calla	wres_collis_off
 	rets
 
-irhknockdwn
+hqwlknockdwn
 	.ref	hrt_knockdwn_anim
 	.ref	rzr_knockdwn_anim
 	.ref	und_knockdwn_anim
@@ -358,51 +300,16 @@ irhknockdwn
 	.long	0				;9 Referee
 
 
-*****************************************************************************
-;AMODE_GRABHOLD	7
  SUBR	hit_grabhold
-; 
-;	GETLIFE
-;	jrz	zplisdead
-;
-;	WRSNDX	GRABHOLD_L1,GRABHOLD_L2
-;
-;	SETMODE	ATTACHED
-;
-;	move	a10,*a13(ATTACH_PROC),L		;proc attached to
-;	move	a13,*a10(ATTACH_PROC),L
-;
-;	FACETBL	zplheldoh
-;	calla	change_anim1a
-;
-;zplisdead
-;	calla	wres_collis_off
-;	rets
-;
-;zplheldoh
-;	.long	dnk_heldoh_anim			;0 Bret Hart
-;	.long	rzr_heldoh_anim			;1 Razor Ramon
-;	.long	und_heldoh_anim			;2 Undertaker
-;	.long	dnk_heldoh_anim			;3 Yokozuna
-;	.long	shn_heldoh_anim			;4 Shawn Michaels
-;	.long	bam_heldoh_anim			;5 Bam Bam
-;	.long	dnk_heldoh_anim			;6 Doink
-;	.long	dnk_heldoh_anim			;7 spare
-;	.long	lex_heldoh_anim			;8 Lex Luger
-;	.long	dnk_heldoh_anim			;9 Referee
-;
 
-;Blank amode here....
  SUBR	hit_grabfling
 	rets
 
-*****************************************************************************
-;AMODE_GUTPUSH	47
  SUBR	hit_gutpush
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	njhhit_push2
+	jrnz	cidhhit_push2
 
 	clr	a0
 	move	a0,*a13(OBJ_XVEL),L
@@ -410,26 +317,21 @@ irhknockdwn
 	calla	block_hit_flail
 	rets
 
-njhhit_push2
+cidhhit_push2
 
 	SETMODE	NORMAL
 
 	clr	a0
 	move	a0,*a10(OBJ_XVEL),L	;clr attacker's x-vel
 
-	FACETBL njhlosebal
+	FACETBL cidhlosebal
 	calla	change_anim1a
 
 	movi	[8,0],a2
-	jruc	njhtag
+	jruc	cidhtag
 
-;AMODE_PUSH	9
  SUBR	hit_push
 
-;Lessen power of a push
-;	move	*a10(PLYRMODE),a0
-;	cmpi	MODE_INAIR,a0
-;	jrz	njhnorm
 
 
 	SETMODE	NORMAL
@@ -437,18 +339,18 @@ njhhit_push2
 	clr	a0
 	move	a0,*a10(OBJ_XVEL),L	;clr attacker's x-vel
 
-	FACETBL njhlosebal
+	FACETBL cidhlosebal
 	calla	change_anim1a
 
 	movi	[8,0],a2
 
-njhtag
+cidhtag
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	njhfall_right		;attacker on left
+	jrgt	cidhfall_right		;attacker on left
 	neg	a2
-njhfall_right
+cidhfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 	WRSNDX	PUSH_L1,PUSH_L2
@@ -457,14 +359,14 @@ njhfall_right
 	.ref	get_health
 	calla	get_health
 	subk	1,a0
-	jrnz	njhnorm
+	jrnz	cidhnorm
 	clr	a0
 	move	a0,@hit_damage_pending
-njhnorm
+cidhnorm
 	calla	wres_collis_off
 	rets
 
-njhlosebal
+cidhlosebal
 	.long	hrt_4_losebal_anim	;0 Bret Hart
 	.long	rzr_4_losebal_anim	;1 Razor Ramon
 	.long	und_4_losebal_anim	;2 Undertaker
@@ -476,7 +378,6 @@ njhlosebal
 	.long	lex_4_losebal_anim	;8 Lex Luger
 	.long	dnk_4_losebal_anim	;9 Referee
 
-******************************************************************************
 
 	.end
 

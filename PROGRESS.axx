@@ -636,9 +636,9 @@ SPKR1_ANIM
 	;Whoa!  If this is the first battle, arrange the table such that
 	; the human's wrestler is last.
 	cmpi	LADDER,a10
-	jrne	aptklad_ok
+	jrne	fwvvlad_ok
 ;	callr	put_human_last
-aptklad_ok	MOVE	*A10,A1,L
+fwvvlad_ok	MOVE	*A10,A1,L
 	MOVE	A1,A2
 	SRL	24,A2
 	SLL	24,A2
@@ -710,7 +710,7 @@ WE_HAVE_COMPANY
 
 *****************************************************
 *
- SUBRP	klxjdo_rr_vs
+ SUBRP	rjrkdo_rr_vs
 	move	@index1,a1
 	movi	-200,a6
 	callr	FIND_LOGO_IMAGE
@@ -749,11 +749,11 @@ WE_HAVE_COMPANY
 
 SETUP_LOGOS
 	move	@royal_rumble,a1
-	jrz	klxjhead_to_head
+	jrz	rjrkhead_to_head
 	move	@PSTATUS2,a1
 	cmpi	3,a1
-	jrz	klxjdo_rr_vs
-klxjhead_to_head
+	jrz	rjrkdo_rr_vs
+rjrkhead_to_head
 
 
 	MOVE	@index1,a1
@@ -1169,9 +1169,9 @@ NO_SOUNDS
 	MOVI	FLASH_TYPE_1,A1
 	move	@HCOUNT,a0
 	btst	0,a0
-	jrz	klxj1
+	jrz	rjrk1
 	MOVI	FLASH_TYPE_2,A1
-klxj1	callr	setup_back_anim
+rjrk1	callr	setup_back_anim
 	JSRP	ANIM_CROWD
 	CALLA	DELOBJA8
 dont_bother
@@ -1210,7 +1210,7 @@ setup_back_anim
 
 DO_FLASH
 	move	@reduce_bog,a14
-	jrnz	klxjrets
+	jrnz	rjrkrets
 	MMTM	SP,A0,A1,A7,A8
 	MOVE	@GAMSTATE,A8
 	CMPI	INPREGAME2,A8
@@ -1219,7 +1219,7 @@ DO_FLASH
 	CREATE0	DO_CROWD_FLASH
 NO_DO_THIS
 	MMFM	SP,A0,A1,A7,A8
-klxjrets	RETS
+rjrkrets	RETS
 
 **********************************
 
@@ -1268,7 +1268,7 @@ ANIBOBJ_B
 	PUSH	a2,a3,a4,a5
 
 	cmpi	ROM,a0
-	jrlo	klxjanierr
+	jrlo	rjrkanierr
 
 	move	*a0(IANIOFFX),a4,W
 	move	A4,*a8(ODXOFF),W
@@ -1289,17 +1289,17 @@ ANIBOBJ_B
 	move	a3,*a8(OCTRL)		;Write 6 low bits
 	setf	16,1,0
 
-klxjx	PULL	a2,a3,a4,a5
+rjrkx	PULL	a2,a3,a4,a5
 	rets
 
-klxjanierr 
+rjrkanierr 
 	.if	DEBUG
 	LOCKUP
 	eint
 	.else
 	CALLERR	2,2
 	.endif
-	jruc	klxjx
+	jruc	rjrkx
 
 
 CROWD_FLASH_ANIM
@@ -1502,11 +1502,11 @@ FINAL_BATTLE	equ	7	;14th battle is last one. (keep up-to-date)
 
 	move	@CURRENT_LADDER,a14,L
 	cmpi	LADDER+((FINAL_BATTLE-1)*20h),a14
-	jrne	jinwno
+	jrne	ltzqno
 	setc
 	rets
 
-jinwno	clrc
+ltzqno	clrc
 	rets
 
 *********
@@ -1517,15 +1517,15 @@ jinwno	clrc
 
 	;no 8-on-1 in intercontinental belt table.
 	move	@belt_type,a14
-	jrz	xapyno
+	jrz	mbntno
 
 	move	@CURRENT_LADDER,a14,L
 	cmpi	LADDER+((FINAL_BATTLE-1)*20h),a14
-	jrne	xapyno
+	jrne	mbntno
 	setc
 	rets
 
-xapyno	clrc
+mbntno	clrc
 	rets
 
 *********
@@ -1552,16 +1552,16 @@ xapyno	clrc
 	srl	8,a6
 
 	cmp	a1,a5
-	jreq	ykquswap
+	jreq	zdybswap
 	cmp	a2,a5
-	jreq	ykquswap
+	jreq	zdybswap
 	cmp	a1,a6
-	jreq	ykquswap
+	jreq	zdybswap
 	cmp	a2,a6
-	jreq	ykquswap
-	jruc	ykquok
+	jreq	zdybswap
+	jruc	zdybok
 
-ykquswap	SWAP	a3,a4
+zdybswap	SWAP	a3,a4
 
 	move	a3,a5
 	andi	000FFH,a5
@@ -1570,18 +1570,18 @@ ykquswap	SWAP	a3,a4
 	srl	8,a6
 
 	cmp	a1,a5
-	jreq	ykqurot
+	jreq	zdybrot
 	cmp	a2,a5
-	jreq	ykqurot
+	jreq	zdybrot
 	cmp	a1,a6
-	jreq	ykqurot
+	jreq	zdybrot
 	cmp	a2,a6
-	jreq	ykqurot
-	jruc	ykquok
+	jreq	zdybrot
+	jruc	zdybok
 
-ykqurot	rl	16,a3
+zdybrot	rl	16,a3
 
-ykquok	move	a3,@FINAL_BATTLE_LINEUP,L
+zdybok	move	a3,@FINAL_BATTLE_LINEUP,L
 	move	a4,@FINAL_BATTLE_LINEUP+20h,L
 
 	rets
@@ -1631,9 +1631,9 @@ INIT_LADDER_TABLE
 
 	MOVI	LADDER_TABLE_ICONT,A7
 	move	@belt_type,a14
-	jrz	wczqldset
+	jrz	qvalldset
 	movi	LADDER_TABLE_WCHAMP,a7
-wczqldset
+qvalldset
 
 NEXT_BIT_OF_TABLE
 	MOVE	*A7+,A8
@@ -1786,17 +1786,17 @@ sel_obj_tbl_b2
 ; SUBRP	scrn_rel_off
  SUBR	scrn_rel_off
 	movi	OBJLST,a14
-wczqsro_loop
+qvalsro_loop
 	move	*a14,a14,L
-	jrz	wczqsro_exit
+	jrz	qvalsro_exit
 	move	*a14(OID),a3
 	cmpi	CREDITID|CLSDEAD,a3
-	jrz	wczqsro_loop
+	jrz	qvalsro_loop
 	move	*a14(OFLAGS),a3,W
 	andni	M_SCRNREL,a3
 	move	a3,*a14(OFLAGS),W
-	jruc	wczqsro_loop
-wczqsro_exit
+	jruc	qvalsro_loop
+qvalsro_exit
 	rets
 	
  SUBRP	hilight
@@ -1806,132 +1806,132 @@ wczqsro_exit
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrnz	wczqtha_off
+	jrnz	qvaltha_off
 	ori	2,a14
-	jruc	wczqtha_set
-wczqtha_off
+	jruc	qvaltha_set
+qvaltha_off
 	andni	2,a14
-wczqtha_set
+qvaltha_set
 	move	a14,*a11(OCTRL)
 
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrnz	wczqthb_off
+	jrnz	qvalthb_off
 	ori	2,a14
-	jruc	wczqthb_set
-wczqthb_off
+	jruc	qvalthb_set
+qvalthb_off
 	andni	2,a14
-wczqthb_set
+qvalthb_set
 	move	a14,*a11(OCTRL)
 
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrz	wczqtsa_on
+	jrz	qvaltsa_on
 	ori	2,a14
-	jruc	wczqtsa_set
-wczqtsa_on
+	jruc	qvaltsa_set
+qvaltsa_on
 	andni	2,a14
-wczqtsa_set
+qvaltsa_set
 	move	a14,*a11(OCTRL)
 
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrz	wczqtsb_on
+	jrz	qvaltsb_on
 	ori	2,a14
-	jruc	wczqtsb_set
-wczqtsb_on
+	jruc	qvaltsb_set
+qvaltsb_on
 	andni	2,a14
-wczqtsb_set
+qvaltsb_set
 	move	a14,*a11(OCTRL)
 
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrz	wczqbha_off
+	jrz	qvalbha_off
 	ori	2,a14
-	jruc	wczqbha_set
-wczqbha_off
+	jruc	qvalbha_set
+qvalbha_off
 	andni	2,a14
-wczqbha_set
+qvalbha_set
 	move	a14,*a11(OCTRL)
 
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrz	wczqbhb_off
+	jrz	qvalbhb_off
 	ori	2,a14
-	jruc	wczqbhb_set
-wczqbhb_off
+	jruc	qvalbhb_set
+qvalbhb_off
 	andni	2,a14
-wczqbhb_set
+qvalbhb_set
 	move	a14,*a11(OCTRL)
 
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrnz	wczqbsa_on
+	jrnz	qvalbsa_on
 	ori	2,a14
-	jruc	wczqbsa_set
-wczqbsa_on
+	jruc	qvalbsa_set
+qvalbsa_on
 	andni	2,a14
-wczqbsa_set
+qvalbsa_set
 	move	a14,*a11(OCTRL)
 
 	move	*a10+,a11,L
 	move	*a11(OCTRL),a14
 	move	a9,a9
-	jrnz	wczqbsb_on
+	jrnz	qvalbsb_on
 	ori	2,a14
-	jruc	wczqbsb_set
-wczqbsb_on
+	jruc	qvalbsb_set
+qvalbsb_on
 	andni	2,a14
-wczqbsb_set
+qvalbsb_set
 	move	a14,*a11(OCTRL)
 
 	move	a9,a9
-	jrz	wczqtp_on
+	jrz	qvaltp_on
 	movi	DPLT_W_P,a0
-	jruc	wczqtp_set
-wczqtp_on
+	jruc	qvaltp_set
+qvaltp_on
 	movi	DPLT_P2P,a0
-wczqtp_set
+qvaltp_set
 	calla	pal_getf
 	move	*a10+,a11,L
 	move	a0,*a11(OPAL)
 
 	move	a9,a9
-	jrz	wczqtpt_on
+	jrz	qvaltpt_on
 	movi	WSF_W_P,a0
-	jruc	wczqtpt_set
-wczqtpt_on
+	jruc	qvaltpt_set
+qvaltpt_on
 	movi	WSF_Y_P,a0
-wczqtpt_set
+qvaltpt_set
 	calla	pal_getf
 	move	*a10+,a11,L
 	move	a0,*a11(OPAL)
 
 
 	move	a9,a9
-	jrnz	wczqbp_on
+	jrnz	qvalbp_on
 	movi	DPLT_W_P,a0
-	jruc	wczqbp_set
-wczqbp_on
+	jruc	qvalbp_set
+qvalbp_on
 	movi	DPLT_P2P,a0
-wczqbp_set
+qvalbp_set
 	calla	pal_getf
 	move	*a10+,a11,L
 	move	a0,*a11(OPAL)
 
 	move	a9,a9
-	jrnz	wczqbpt_on
+	jrnz	qvalbpt_on
 	movi	WSF_W_P,a0
-	jruc	wczqbpt_set
-wczqbpt_on
+	jruc	qvalbpt_set
+qvalbpt_on
 	movi	WSF_Y_P,a0
-wczqbpt_set
+qvalbpt_set
 	calla	pal_getf
 	move	*a10+,a11,L
 	move	a0,*a11(OPAL)
@@ -1942,18 +1942,18 @@ wczqbpt_set
  SUBRP	flash_it
 	movi	sel_objects,a10
 	move	a9,a9
-	jrz	wczqflash_p1
+	jrz	qvalflash_p1
 	addi	(10*32),a10
-	jruc	wczqdo_flash_it
-wczqflash_p1
+	jruc	qvaldo_flash_it
+qvalflash_p1
 	addi	(8*32),a10
-wczqdo_flash_it
+qvaldo_flash_it
 	PUSHP	a9
 	move	*a10,a8,L
 	movi	1f1fh,a9
 	move	a9,*a8(OCONST)
 	movk	3,a11
-wczqflash_it_loop
+qvalflash_it_loop
 	move	*a8(OCTRL),a9
 	ori	8,a9
 	andni	2,a9
@@ -1964,7 +1964,7 @@ wczqflash_it_loop
 	ori	2,a9
 	move	a9,*a8(OCTRL)
 	SLEEPK	3
-	dsjs	a11,wczqflash_it_loop
+	dsjs	a11,qvalflash_it_loop
 	PULLP	a9
 	RETP
 
@@ -2011,7 +2011,7 @@ BottomPalette
  SUBRP	palette_cycle
 	move	a8,a10
 	move	a9,a11
-wczqpc_loop
+qvalpc_loop
 	move	*a10+,a0,L
 	jrz	palette_cycle
 	calla	pal_getf
@@ -2020,7 +2020,7 @@ wczqpc_loop
 	move	*a11(32),a14,L
 	move	a0,*a14(OPAL)
 	SLEEPK	4
-	jruc	wczqpc_loop
+	jruc	qvalpc_loop
 	DIE
 
 
@@ -2030,9 +2030,9 @@ wczqpc_loop
 	clr	a9
 	movi	belt_type,a2
 	move	@question_type,a3
-	jrz	wczqrst_type
+	jrz	qvalrst_type
 	movi	royal_rumble,a2
-wczqrst_type
+qvalrst_type
 	move	a9,*a2
 
 	movi	[10,0],a0
@@ -2067,24 +2067,24 @@ wczqrst_type
 	move	a0,@mess_objid
 	movi	belt_prompt_string,a4
 	move	@question_type,a0
-	jrz	wczqbp1
+	jrz	qvalbp1
 	movi	rr_prompt_string,a4
-wczqbp1
+qvalbp1
 	calla	print_string_C2
 
 	movi	sel_objects,a10
 	movi	8,a11
 	movi	sel_obj_tbl_t,a9
 	movi	1800h,a3
-wczqdo_next_obj
+qvaldo_next_obj
 	PUSH	a3
 	movi	[93+256,0],a1
 	movi	[200,0],a0
 	cmpi	5,a11
-	jrge	wczqtop
+	jrge	qvaltop
 	movi	[184+256,0],a1
 	movi	[201,0],a0
-wczqtop
+qvaltop
 	move	*a9+,a2,L
 	movi	DMAWNZ|M_3D,a4
 	clr	a5
@@ -2094,23 +2094,23 @@ wczqtop
 	move	a8,*a10+,L
 	PULL	a3
 	addi	10h,a3
-	dsjs	a11,wczqdo_next_obj
+	dsjs	a11,qvaldo_next_obj
 	
 	movi	sel_obj_tbl_t1,a9
 	move	@question_type,a11
-	jrz	wczqbelt_obj
+	jrz	qvalbelt_obj
 	movi	sel_obj_tbl_t2,a9
-wczqbelt_obj
+qvalbelt_obj
 	movi	4,a11
-wczqdo_next_obj1
+qvaldo_next_obj1
 	PUSH	a3
 	movi	[256+93,0],a1
 	movi	[200,0],a0
 	cmpi	3,a11
-	jrge	wczqtop1
+	jrge	qvaltop1
 	movi	[184+256,0],a1
 	movi	[201,0],a0
-wczqtop1
+qvaltop1
 	move	*a9+,a2,L
 	movi	DMAWNZ|M_3D,a4
 	clr	a5
@@ -2121,7 +2121,7 @@ wczqtop1
 	move	a8,*a10+,L
 	PULL	a3
 	addi	10h,a3
-	dsj	a11,wczqdo_next_obj1
+	dsj	a11,qvaldo_next_obj1
 
 	movi	sel_objects,a10
 
@@ -2174,9 +2174,9 @@ wczqtop1
 	SLEEPK	2
 
 	move	@question_type,a9
-	jrz	wczqno_pcurs
+	jrz	qvalno_pcurs
 	callr	mk_pcurs
-wczqno_pcurs
+qvalno_pcurs
 
 	clr	a9	;cusor pos
 	move	a9,a10
@@ -2187,99 +2187,99 @@ wczqno_pcurs
 	calla	triple_sound
 
 ;	PUSHP	a8,a9,a10,a11
-wczqmove_on_loop
+qvalmove_on_loop
 	move	@WORLDTLY,a0,L
 	addi	[18h,0],a0
 	move	a0,@WORLDTLY,L
 	cmpi	[252,0],a0
-	jrge	wczqmove_done
+	jrge	qvalmove_done
 	calla	BGND_UD1
 	SLEEPK	1
-	jruc	wczqmove_on_loop
-wczqmove_done
+	jruc	qvalmove_on_loop
+qvalmove_done
 	movi	[255,0],a0
 	move	a0,@WORLDTLY,L
 	calla	BGND_UD1
 	SLEEPK	1
 
 	move	@question_type,a14
-	jrz	wczqnorm
+	jrz	qvalnorm
 	JSRP	ind_select
-	jruc	wczqsel_done
-wczqnorm
+	jruc	qvalsel_done
+qvalnorm
 
 	movi	TSEC*4,a11
-wczqsel_box_wait
+qvalsel_box_wait
 	cmp	a9,a10
-	jrz	wczqno_change
+	jrz	qvalno_change
 	movi	0c7h,a0
 	calla	triple_sound
 	move	a9,a10
 	callr	hilight
-wczqno_change
+qvalno_change
 	SLEEPK	1
 	calla	get_all_buttons_cur
-	jrnz	wczqsel_done
+	jrnz	qvalsel_done
 	calla	get_all_sticks_cur
-	jrnz	wczqdo_stick
-	dsj	a11,wczqsel_box_wait
-	jruc	wczqsel_done
-wczqdo_stick
+	jrnz	qvaldo_stick
+	dsj	a11,qvalsel_box_wait
+	jruc	qvalsel_done
+qvaldo_stick
 	btst	0,a0
-	jrz	wczqno_sel_up
+	jrz	qvalno_sel_up
 	andni	1,a9
-	jruc	wczqsel_box_wait
-wczqno_sel_up
+	jruc	qvalsel_box_wait
+qvalno_sel_up
 	btst	1,a0
-	jrz	wczqsel_box_wait
+	jrz	qvalsel_box_wait
 	ori	1,a9
-	jruc	wczqsel_box_wait
-wczqsel_done
+	jruc	qvalsel_box_wait
+qvalsel_done
 	.if INTER_DEFAULT
 	.else
 	xori	1,a9
 	.endif
 
 	move	@question_type,a0
-	jrz	wczqset_belt
+	jrz	qvalset_belt
 	move	a9,@royal_rumble
-	jruc	wczqis_set
-wczqset_belt
+	jruc	qvalis_set
+qvalset_belt
 	move	a9,@belt_type
 
 
 	move	a9,a9
-	jrnz	wczqsel_medium
+	jrnz	qvalsel_medium
 	movi	AUD_INTERCON,a0
 	calla	AUD1
 	movi	0cbh,a0
 	calla	triple_sound
-	jruc	wczqsel_exit
-wczqsel_medium
+	jruc	qvalsel_exit
+qvalsel_medium
 	movi	AUD_WWF,a0
 	calla	AUD1
 	movi	0cbh,a0
 	calla	triple_sound
-wczqsel_exit
+qvalsel_exit
 	.if INTER_DEFAULT
 	.else
 	xori	1,a9
 	.endif
-	jruc	wczqrr_aud_bypass
-wczqis_set
+	jruc	qvalrr_aud_bypass
+qvalis_set
 	move	a9,a9
-	jrz	wczqaud_hdhd
+	jrz	qvalaud_hdhd
 	movi	AUD_ROYALRUM,a0
 	calla	AUD1
 	movi	0cbh,a0
 	calla	triple_sound
-	jruc	wczqrr_aud_bypass
-wczqaud_hdhd
+	jruc	qvalrr_aud_bypass
+qvalaud_hdhd
 	movi	AUD_HEADTOHEAD,a0
 	calla	AUD1
 	movi	0cbh,a0
 	calla	triple_sound
-wczqrr_aud_bypass
+qvalrr_aud_bypass
 	JSRP	flash_it
 
 	movi	sel_objects,a9
@@ -2346,13 +2346,13 @@ pcurs_tbl
 	PUSH	a8,a9,a10,a11
 	movi	pcurs_obj,a9
 	movi	pcurs_tbl,a10
-wczqcpc_loop
+qvalcpc_loop
 	move	*a10+,a0,L
-	jrz	wczqcpc_done
+	jrz	qvalcpc_done
 	calla	BEGINOBJ_TBL
 	move	a8,*a9+,L
-	jruc	wczqcpc_loop
-wczqcpc_done
+	jruc	qvalcpc_loop
+qvalcpc_done
 	movi	pcurs_obj,a9
 
 	movi	DPLT_B_P,a0
@@ -2386,7 +2386,7 @@ wczqcpc_done
 	move	a9,@p2sel
 
 	movi	TSEC*5,a11		; Max time before selection timeout
-kloesel_wait
+nwgrsel_wait
 
 	; First check to see which players have made their selections
 	move	@p1sel,a0		; Get p1 select flag
@@ -2395,49 +2395,49 @@ kloesel_wait
 	or	a1,a0
 
 	; If nobody has made a selection just set cursor positions
-	jrz	kloeset_curs		; No selections - just set cursors
+	jrz	nwgrset_curs		; No selections - just set cursors
 
 	; If both have selected then we are done
 	cmpi	3,a0			; Have both selected ?
-	jrz	kloeboth_selected		; br = yes
+	jrz	nwgrboth_selected		; br = yes
 
 	; If player 1 has selected "HEAD TO HEAD" then we are done
 	btst	0,a0			; Has player 1 made a selection
-	jrz	kloeno_p1_sel		; br = no
+	jrz	nwgrno_p1_sel		; br = no
 	btst	0,a9			; Has player 1 selected "HEAD TO HEAD" ?
-	jrz	kloeboth_selected		; br = yes
+	jrz	nwgrboth_selected		; br = yes
 
 	; If player 2 has selected "HEAD TO HEAD" then we are done
-kloeno_p1_sel
+nwgrno_p1_sel
 	btst	1,a0			; Has player 2 made a selection
-	jrz	kloeset_curs		; br = no
+	jrz	nwgrset_curs		; br = no
 	btst	1,a9			; Has player 1 selected "HEAD TO HEAD" ?
-	jrz	kloeboth_selected		; br = yes
+	jrz	nwgrboth_selected		; br = yes
 
-kloeset_curs
+nwgrset_curs
 	
 	callr	set_pcurs_pos		; set player cursor positions
 	move	a9,a10			; Save a9
 	cmpi	3,a9			; Are both on "COOP" ?
-	jrz	kloecoop			; br = yes
+	jrz	nwgrcoop			; br = yes
 	clr	a9			; Set "HEAD"
-	jruc	kloedo_hi			; Go hilight "Head to Head"
-kloecoop
+	jruc	nwgrdo_hi			; Go hilight "Head to Head"
+nwgrcoop
 	movk	1,a9			; Set "COOP"
-kloedo_hi
+nwgrdo_hi
 	callr	hilight			; hilight the right one
 	move	a10,a9			; Restore a9
 
 	SLEEPK	1			; Wait a bit
 
 	move	@p1sel,a0		; Has p1 selected ?
-	jrnz	kloeck_p2			; br = yes
+	jrnz	nwgrck_p2			; br = yes
 	clr	a0			; get p1 buttons
 	calla	get_but_val_cur
 	move	a0,a0
-	jrz	kloeno_p1
+	jrz	nwgrno_p1
 	movk	1,a0
-kloeno_p1
+nwgrno_p1
 	move	a0,@p1sel		; save p1 buttons
 	PUSH	a10,a11			; Flash p1 cursor
 	clr	a11
@@ -2447,16 +2447,16 @@ kloeno_p1
 	clr	a0
 	calla	get_stick_val_cur	; get p1 stick
 	move	a0,a0			; any on ?
-	jrnz	kloedop1_stick		; br = yes
-kloeck_p2
+	jrnz	nwgrdop1_stick		; br = yes
+nwgrck_p2
 	move	@p2sel,a0		; Has p2 selected ?
-	jrnz	kloep2_done		; br = yes
+	jrnz	nwgrp2_done		; br = yes
 	movk	1,a0			; Get p2 buttons
 	calla	get_but_val_cur
 	move	a0,a0
-	jrz	kloeno_p2
+	jrz	nwgrno_p2
 	movk	1,a0
-kloeno_p2
+nwgrno_p2
 	move	a0,@p2sel		; Save p2 buttons
 	PUSH	a10,a11			; Flash p2 cursor
 	movk	1,a11
@@ -2466,41 +2466,41 @@ kloeno_p2
 	movk	1,a0			; Get p2 stick
 	calla	get_stick_val_cur
 	move	a0,a0			; Any Set ?
-	jrnz	kloedop2_stick		; br = yes
-kloep2_done
-	dsj	a11,kloesel_wait		; Timeout ?
-	jruc	kloeboth_selected		; br = yes
+	jrnz	nwgrdop2_stick		; br = yes
+nwgrp2_done
+	dsj	a11,nwgrsel_wait		; Timeout ?
+	jruc	nwgrboth_selected		; br = yes
 
-kloedop1_stick
+nwgrdop1_stick
 	btst	0,a0			; p1 up on?
-	jrz	kloeno_p1_up		; br = no
+	jrz	nwgrno_p1_up		; br = no
 	andni	1,a9			; set p1 curs pos top
-	jruc	kloeck_p2			; go check on p2
-kloeno_p1_up
+	jruc	nwgrck_p2			; go check on p2
+nwgrno_p1_up
 	btst	1,a0			; p2 down on?
-	jrz	kloeck_p2			; br = no
+	jrz	nwgrck_p2			; br = no
 	ori	1,a9			; set p1 curs pos bottom
-	jruc	kloeck_p2			; go check on p2
+	jruc	nwgrck_p2			; go check on p2
 
-kloedop2_stick
+nwgrdop2_stick
 	btst	0,a0			; p2 up on?
-	jrz	kloeno_p2_up		; br = no
+	jrz	nwgrno_p2_up		; br = no
 	andni	2,a9			; set p2 curs pos top
-	jruc	kloesel_wait		; go update
-kloeno_p2_up
+	jruc	nwgrsel_wait		; go update
+nwgrno_p2_up
 	btst	1,a0			; p2 down on?
-	jrz	kloesel_wait		; br = no
+	jrz	nwgrsel_wait		; br = no
 	ori	2,a9			; set p2 curs pos bottom
-	jruc	kloesel_wait		; go update
+	jruc	nwgrsel_wait		; go update
 
-kloeboth_selected
+nwgrboth_selected
 	cmpi	3,a9			; have both selected "COOP" ?
-	jrnz	kloeret_hd			; br = no
+	jrnz	nwgrret_hd			; br = no
 	movk	1,a9			; set "COOP" mode
-	jruc	kloemode_selected
-kloeret_hd
+	jruc	nwgrmode_selected
+nwgrret_hd
 	clr	a9			; set "HEAD TO HEAD" mode
-kloemode_selected
+nwgrmode_selected
 	PULLP	a8,a10
 	RETP
 
@@ -2509,12 +2509,12 @@ kloemode_selected
 ;a11 - pnum
  SUBRP	flash_pcurs
 	move	a10,a10		; Should I flash it ?
-	jrz	kloefp_exit	; br = no
+	jrz	nwgrfp_exit	; br = no
 	movi	pcurs_obj,a10	; Object array
 	move	a11,a11		; Is this player 1 ?
-	jrz	kloenot_p2		; br = yes
+	jrz	nwgrnot_p2		; br = yes
 	addi	64,a10		; Adjust pointer for p2 objects
-kloenot_p2
+nwgrnot_p2
 	movi	0cbh,a0		; Make a sound
 	calla	triple_sound
 
@@ -2522,7 +2522,7 @@ kloenot_p2
 	movi	0101h,a14
 	move	a14,*a9(OCONST)
 	movk	3,a11		; Number of times to flash it
-kloefp_loop
+nwgrfp_loop
 	move	*a9(OCTRL),a8	; Turn it white
 	ori	8,a8		; Turn on Write const on non-zero
 	andni	2,a8		; Turn off write non-zeros bit
@@ -2532,8 +2532,8 @@ kloefp_loop
 	ori	2,a8		; Turn on non-zeros bit
 	move	a8,*a9(OCTRL)	; Write back to control
 	SLEEPK	3
-	dsjs	a11,kloefp_loop	; Done ? - br = no
-kloefp_exit
+	dsjs	a11,nwgrfp_loop	; Done ? - br = no
+nwgrfp_exit
 	DIE
 
 
@@ -2544,17 +2544,17 @@ kloefp_exit
 
 	movi	93+256,a1	; Set top ypos
 	btst	0,a9		; p1 curs position bottom ?
-	jrz	kloep1c_set	; br = no
+	jrz	nwgrp1c_set	; br = no
 	movi	184+256,a1	; bottom ypos
-kloep1c_set
+nwgrp1c_set
 	move	*a0(OYPOS),a2	; Get current position
 	cmp	a1,a2		; Same as requested ?
-	jrz	kloeno_p1_change	; br = yes
+	jrz	nwgrno_p1_change	; br = yes
 	PUSH	a0,a1		; make a sound
 	movi	0c7h,a0
 	calla	triple_sound
 	PULL	a0,a1
-kloeno_p1_change
+nwgrno_p1_change
 	move	a1,*a0(OYPOS)	; Set p1 cursor ypos
 	move	*a8+,a0,L	; Get p1 digit object pointer
 	subi	8,a1		; adjust ypos
@@ -2563,18 +2563,18 @@ kloeno_p1_change
 
 	movi	93+256,a1	; Set top ypos
 	btst	1,a9		; p2 curs position bottom ?
-	jrz	kloep2c_set	; br = no
+	jrz	nwgrp2c_set	; br = no
 	movi	184+256,a1	; Set bottom ypos
-kloep2c_set
+nwgrp2c_set
 	move	*a8+,a0,L	; Get pointer to p2 cursor object
 	move	*a0(OYPOS),a2	; Get current position
 	cmp	a1,a2		; Same as requested position ?
-	jrz	kloeno_p2_change	; br = yes
+	jrz	nwgrno_p2_change	; br = yes
 	PUSH	a0,a1		; Make a sound
 	movi	0c7h,a0
 	calla	triple_sound
 	PULL	a0,a1
-kloeno_p2_change
+nwgrno_p2_change
 	move	a1,*a0(OYPOS)	; Set p2 cursor ypos
 	move	*a8+,a0,L	; Get p2 digit object pointer
 	subi	8,a1		; adjust ypos
@@ -2617,7 +2617,7 @@ DO_SET_IMAGE_AND_FLASH
 	movi	SCRNEND,a0		;[256,405]
 	move	a0,@SCRNLR,L
 
-	movi	kloePROGRESS_BMOD,a0
+	movi	nwgrPROGRESS_BMOD,a0
 	move	a0,@BAKMODS,L
 	calla	BGND_UD1		;create objects for background
 
@@ -2645,9 +2645,9 @@ DO_SET_IMAGE_AND_FLASH
 	move	a0,@mess_objid
 	movi	wwf_belt_str,a4
 	move	@belt_type,a14
-	jrnz	kloewwf_belt
+	jrnz	nwgrwwf_belt
 	movi	inter_belt_str,a4
-kloewwf_belt
+nwgrwwf_belt
 	calla	print_string_C2
 
 	calla	start_credbox
@@ -2874,7 +2874,7 @@ CREATE_OTHER_BODIES
 wnum_ok
 	SLL	5,A3
 	move	a3,b0
-	addi	kloewrestler_pal,b0
+	addi	nwgrwrestler_pal,b0
 	move	*b0,b0,L
 	ADDI	WHICH_WRESTLER_IMAGE,A3
 	MOVE	*A3+,A4,L
@@ -2987,7 +2987,7 @@ NO_BUTTONS2
 	move	a4,@WORLDTLX,L
 	RETS
 
-kloePROGRESS_BMOD
+nwgrPROGRESS_BMOD
 	.long	LADDERBMOD
 	.word	-60,-45
 	.long	0
@@ -3028,17 +3028,17 @@ CREATE_TEMP_WRESTLER
 
 	movk	MAX_PIECES,a9
 
-kloenopal_chng
+nwgrnopal_chng
 
-	addi	kloewrestler_pal,b0
+	addi	nwgrwrestler_pal,b0
 	move	*b0,b0,L		;* palette
 
-kloenxt_obj
+nwgrnxt_obj
 	PUSH	b0
 	calla	BEGINOBJP
 	PULL	b0
 	move	a8,-*a10,L
-	dsj	a9,kloenxt_obj
+	dsj	a9,nwgrnxt_obj
 
 	calla	BEGINOBJP
 	move	a8,*a13(ATTIMG_IMG),L
@@ -3098,12 +3098,12 @@ kloenxt_obj
 	move	@PCNT,a14
 	move	a14,*a13(FOOT_PCNT),W	;init foot timer
 
-kloeloop1
+nwgrloop1
 	calla	wrestler_veladd		
 
 	calla	animate_wrestler	
 
-	SLOOP	1,kloeloop1
+	SLOOP	1,nwgrloop1
 
 WHICH_ZPOS_TABLE
 	.LONG	ONLY_ONE_OPP
@@ -3164,10 +3164,10 @@ DEAD_BODIES
 
 	move	@PCNT,a14
 	move	a14,*a13(FOOT_PCNT),W	;init foot timer
-kloeloop2
+nwgrloop2
 	calla	animate_wrestler	
 
-	SLOOP	1,kloeloop2
+	SLOOP	1,nwgrloop2
 
 RUNNING_MAN
 	MOVI	4,A0
@@ -3189,21 +3189,21 @@ RUNNING_MAN
 	CLR	A0
 	MOVE	A0,@TEMP_SPEED,L
 
-kloeloop
+nwgrloop
 	MOVE	@TEMP_SPEED,A3,L
 	CALLA	get_all_buttons_cur2
-	JRZ	kloeNO_BUTTONS
+	JRZ	nwgrNO_BUTTONS
 	SLL	1,A3
-kloeNO_BUTTONS
+nwgrNO_BUTTONS
 	move	a3,*a13(OBJ_XVEL),L
 
 	calla	wrestler_veladd		
 
 	calla	animate_wrestler	
 
-	SLOOP	1,kloeloop
+	SLOOP	1,nwgrloop
 
-kloewrestler_pal
+nwgrwrestler_pal
 	.long	HRTPNK_P	;0	(Bret)
 	.long	RZRGRN_P	;1	(Razor)
 	.long	UNDBLK_P	;2	(Taker)
@@ -3493,10 +3493,10 @@ start_smoke
 	movi	100,a0
 	.ref	RNDPER
 	calla	RNDPER
-	jrls	kloeout
+	jrls	nwgrout
 	move	a13,a10
 	CREATE0	body_smoke
-kloeout
+nwgrout
 	rets
 
 *******************************
@@ -3507,12 +3507,12 @@ body_smoke
 
 	clr	a11
 	movk	3,a11
-tsltlp	CREATE0	smokepuff
+rbdwlp	CREATE0	smokepuff
 ;Need an explosion sound
 	SLEEPK	3
 	inc	a11
 	cmpi	17,a11
-	jrlt	tsltlp
+	jrlt	rbdwlp
 
 	DIE
 
@@ -3552,7 +3552,7 @@ smokepuff
 
 	move	a11,a14
 ;	sll	4,a14
-;	addi	ynwsx_tbl,a14
+;	addi	pfrwx_tbl,a14
 ;	move	*a14,a1
 
 
@@ -3565,17 +3565,17 @@ smokepuff
 
 	move	*a10(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	ynwsno_flip
+	jrz	pfrwno_flip
 ;	neg	a6
 	neg	a1
-ynwsno_flip
+pfrwno_flip
 
 	add	a1,a0
 	sll	16,a0			;X
 
 	move	a11,a14
 	sll	4,a14
-	addi	ynwsy_tbl,a14
+	addi	pfrwy_tbl,a14
 	move	*a14,a14
 
 	movi	Y_SCALE_MULTIPLIER,a2
@@ -3598,8 +3598,8 @@ ynwsno_flip
 
 	.ref	smoke_t
 
-;ynwsx_tbl	.word	-14,-3,10,25,30,31,30,39,26,-3,17,32,53,54,41,32,45
-ynwsy_tbl	.word	-82,-85,-88,-91,-94,-97,-100,-83,-85,-87,-89,-91,-93,-95
+;pfrwx_tbl	.word	-14,-3,10,25,30,31,30,39,26,-3,17,32,53,54,41,32,45
+pfrwy_tbl	.word	-82,-85,-88,-91,-94,-97,-100,-83,-85,-87,-89,-91,-93,-95
 	.word	-97,-99,-99
 
 dnk_clever_anim
@@ -4140,36 +4140,36 @@ WHICH_SKIRT_PALLETE
 	move	@PSTATUS2,a14
 	move	@index2,a6
 	btst	1,a14
-	jrnz	pdqfpset
+	jrnz	xzeopset
 	move	@index1,a6
-pdqfpset
+xzeopset
 
 	;put the count in a2
 	move	a1,a2
 	srl	24,a2
 	cmpi	3,a2
-	jrne	pdqfbegin
+	jrne	xzeobegin
 
 	;it's three guys.  is it the final match?
 	; (we can't use is_final_match because CURRENT_LADDER
 	; hasn't been incremented yet.)
 	move	@belt_type,a14
-	jrz	pdqfnotfin
+	jrz	xzeonotfin
 
 	move	@CURRENT_LADDER,a14,L
 	cmpi	LADDER+((FINAL_BATTLE-2)*20h),a14
-	jreq	pdqffinal_match
+	jreq	xzeofinal_match
 
-pdqfnotfin	;no.  one time in 32, make it three doinks.
+xzeonotfin	;no.  one time in 32, make it three doinks.
 	move	@PCNT,a14
 	sll	32-5,a14
 	srl	32-5,a14
-	jrnz	pdqfbegin
+	jrnz	xzeobegin
 
 	movi	03060606h,a1
-	jruc	pdqfdone
+	jruc	xzeodone
 
-pdqfbegin	;first, figure out which wrestlers are excluded.  Use the low byte
+xzeobegin	;first, figure out which wrestlers are excluded.  Use the low byte
 	;of a7 for this.  Set the bits corresponding to excluded wrestlers.
 	clr	a7
 
@@ -4181,26 +4181,26 @@ pdqfbegin	;first, figure out which wrestlers are excluded.  Use the low byte
 	;now exclude the guys from the last match
 	; but not if this is the first match!
 	cmpi	LADDER,a10
-	jreq	pdqfcount
+	jreq	xzeocount
 	move	*a10(-20h),a0,L	;previous lineup
 	move	a0,a1
 	srl	24,a1		;wrestler count
-pdqflp0	movk	1,a14
+xzeolp0	movk	1,a14
 	rl	a0,a14		;note that rl only looks at low 5 bits...
 	or	a14,a7
 	srl	8,a0
-	dsj	a1,pdqflp0
+	dsj	a1,xzeolp0
 
 	;now count excluded wrestlers.  We couldn't do this before because
 	; we weren't checking for redundant exclusions.  now just count
 	; set bits in a7.  Store the count in a8
-pdqfcount	move	a7,a14
+xzeocount	move	a7,a14
 	clr	a8
 	movk	8,a0
-pdqflp1	srl	1,a14
-	jrnc	pdqfnxt1
+xzeolp1	srl	1,a14
+	jrnc	xzeonxt1
 	inc	a8
-pdqfnxt1	dsj	a0,pdqflp1
+xzeonxt1	dsj	a0,xzeolp1
 
 	;commence scramble - begin by getting three random guys
 	; Since a8 wrestlers are excluded, we're choosing from a field of
@@ -4217,20 +4217,20 @@ pdqfnxt1	dsj	a0,pdqflp1
 	callr	get_rnd_wrestler
 	move	a0,a4
 	cmp	a4,a3
-	jrne	pdqfok2
+	jrne	xzeook2
 	callr	get_rnd_wrestler
 	move	a0,a4
 
-pdqfok2	;third
+xzeook2	;third
 	callr	get_rnd_wrestler
 	move	a0,a5
 	cmp	a3,a5
-	jreq	pdqfrepick
+	jreq	xzeorepick
 	cmp	a4,a5
-	jrne	pdqfok3
-pdqfrepick	callr	get_rnd_wrestler
+	jrne	xzeook3
+xzeorepick	callr	get_rnd_wrestler
 	move	a0,a5
-pdqfok3
+xzeook3
 
 	;lump it all together
 
@@ -4246,10 +4246,10 @@ pdqfok3
 	;leave the third guy in there even if there's only supposed to be
 	; two.  It can't matter since 0 is a valid WRESTLERNUM anyway.
 
-pdqfdone	PULL	a0,a2,a3,a4,a5,a6,a7,a8
+xzeodone	PULL	a0,a2,a3,a4,a5,a6,a7,a8
 	rets
 
-pdqffinal_match
+xzeofinal_match
 	;first, generate a new lineup
 	callr	get_final_lineup
 
@@ -4263,7 +4263,7 @@ pdqffinal_match
 	addi	3*8,a0
 	move	a0,@FINAL_PTR,L
 
-	jruc	pdqfdone
+	jruc	xzeodone
 
 **********
 * Get a random wrestler among those available.
@@ -4281,10 +4281,10 @@ pdqffinal_match
 	;'3' means 'fourth available wrestler,' and so forth.
 	inc	a0
 	movi	-1,a14
-pdqflp2	inc	a14
+xzeolp2	inc	a14
 	btst	a14,a7
-	jrnz	pdqflp2	;not available.  keep looking
-	dsj	a0,pdqflp2
+	jrnz	xzeolp2	;not available.  keep looking
+	dsj	a0,xzeolp2
 
 	;found the n'th open spot, and a14 is the correct wrestlernum.
 	move	a14,a0
@@ -4321,9 +4321,9 @@ NEXT_FLASH_BIT
 
 	move	@match_cnt,a0
 	cmpi	999,a0
-	jrls	wuyjmaxok
+	jrls	akttmaxok
 	movi	999,a0
-wuyjmaxok
+akttmaxok
 	movi	9999999,a1
 	calla	dec_to_asc		;convert to ASCII
 	movk	2,a0
@@ -4366,11 +4366,11 @@ CORRECT_TABLE
 	movi	message_buffer,a1
 	addi	HS_INITS,a7
 	movi	5,a2
-wuyjinitloop
+akttinitloop
 	calla	RC_BYTEI
 	movb	a0,*a1
 	addk	8,a1
-	dsj	a2,wuyjinitloop
+	dsj	a2,akttinitloop
 	clr	a0			;null-terminate it
 	movb	a0,*a1
 

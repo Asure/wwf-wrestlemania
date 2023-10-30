@@ -1,18 +1,3 @@
-**************************************************************
-*
-* Software:	JAMIE BEGELMAN, KURT MAHAN, EUGENE P. JARVIS
-* Initiated:	?
-*
-* Modified:	Shawn Liptak, 11/14/91	-Total carnage clean up
-* 		Shawn Liptak, 1/20/92	-DIP switch test
-* 		Shawn Liptak, 1/24/92	-Added line_draw
-* 		Shawn Liptak, 2/20/92	-Basketball cleanup
-* 		GEORGE PETRO, 1/17/93	-NBA JAM
-*
-* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
-*
-*.Last mod - 3/24/93 16:48
-**************************************************************
 	.width	132
 	.option	b,d,l,t
 	.mnolist
@@ -68,11 +53,6 @@
 
 
 SCRXFUDGE	equ	56
-**************************************************************************
-*									 *
-*	DEFS AND REFS							 *
-*									 *
-**************************************************************************
 	.ref	fudge_switches, fudge_switches_diag, CPU_RET
 	.REF	SNDSND,INTIO,WARMSET,GET_AUD,STORE_AUDIT,WDOGDIS
 	.ref	AUD1, GAMSTATE, KILL_AUD, PCMOSRET
@@ -87,7 +67,6 @@ SCRXFUDGE	equ	56
 
 	.REF	SNDTST
 	.REF	SYSCOPY
-*SYMBOLS IN MENU.ASM
 	.REF	USA_1, USA_2, USA_3, USA_4, USA_ELECTITLE
 	.REF	GERMAN_1, GERMAN_2, GERMAN_3, GERMAN_4, GERMAN_ELECTITLE
 	.REF	FRENCH_1, FRENCH_2, FRENCH_3, FRENCH_4, FRENCH_ELECTITLE
@@ -98,9 +77,6 @@ SCRXFUDGE	equ	56
 	.REF	PUT_ADJ, CRED_P, HEXTOASC, F_ADC_S, SET_COIN_ADJ
 	.REF	init_all, mainlp, DIAG_COLORS
 
-*
-*DIAGNOSTIC SOUND EQUATES
-*
 CMOS_ERROR_SND	.EQU	0203h
 CPU_ERROR_SND	.EQU	0203h
 DIP_SND		.EQU	0c8h
@@ -124,23 +100,12 @@ SWITCH_SND	.EQU	0c8h
 	.bss	_pic_raw,128		; Stuff fer the PIC
 	.bss	_pic_temp,64
 
-**************************************************************************
-*									 *
-*	USEFUL MACROS							 *
-*									 *
-**************************************************************************
-*
-*	TIMED PAUSE
-*
 PAUSE	.macro TIME, REG
 	MOVI	:TIME:,:REG:,L
 LABEL?	NOP
 	DSJS	:REG:,LABEL?
 	.endm
 
-*BIT SET
-*	BSET	BIT# 0-31(KONSTANT OR REGISTER),REGISTER TO SET BIT IN
-* NOTE: A14 IS DESTROYED, 'A' FILE REGISTERS ONLY
 
 BSET	.macro	P1,R1
 	MOVK	1,A14
@@ -149,10 +114,6 @@ BSET	.macro	P1,R1
 	.endm
 
 
-*
-*RJST - RIGHT JUSTIFIES BITS IN A LONG WORD, I.E. RIGHTMOST BIT
-*	TO BIT POSITION 0
-*	RJST	REG
 RJST	.macro	REG
 	MOVE	:REG:,:REG:
 	JRZ	MX?
@@ -235,17 +196,6 @@ CMSTUFFED	EQU	CMPINLOC+32
 CMEND		EQU	CMSTUFFED+16
 	
 
-**************************************************************************
-*									 *
-* RAM_CHIP: MACRO DEFINES A RAM CHIP RECORD.				 *
-*									 *
-*	CHIP_NO    -- CHIP NUMBER					 *
-*	WIDTH	   -- CHIP CELL SIZE IN BITS (MUST BE > 0)		 *
-*	INTERLEAVE -- DISTANCE BETWEEN ADJACENT CELLS ON CHIP (IN BITS)	 *
-*	START_ADDR -- ADDRESS OF FIRST CELL ON CHIP			 *
-*	END_ADDR   -- ADDRESS OF LAST CELL ON CHIP			 *
-*									 *
-**************************************************************************
 
 RAM_CHIP .macro TAB_LINK,CHIP_NO, WIDTH, INTERLEAVE, START_ADDR, END_ADDR
 
@@ -274,16 +224,6 @@ ROM_EADR	EQU	060H
 ROM_LINK	EQU	080H
 ROM_SIZE	EQU	0A0H
 
-****************************************************************************
-* ROM_CHIP: MACRO DEFINES A ROM CHIP RECORD.				    *
-*									    *
-*	 CHIP_NO    -- CHIP NUMBER					    *
-*	 WIDTH	    -- CHIP CELL SIZE IN BITS (MUST BE > 0)		    *
-*	 INTERLEAVE -- DISTANCE BETWEEN ADJACENT CELLS ON CHIP (IN BITS)    *
-*	 START_ADDR -- ADDRESS OF FIRST CELL ON CHIP			    *
-*	 END_ADDR   -- ADDRESS OF LAST CELL ON CHIP			    *
-*	 CHECK_SUM  -- DATAIO CHECK SUM FOR CHIP			    *
-****************************************************************************
 
 ROM_CHIP .macro TAB_LINK,CHIP_NO, WIDTH, INTERLEAVE, START_ADDR, END_ADDR, CHECK_SUM
 
@@ -308,19 +248,6 @@ PAL_SELECT  EQU 0FFDCH		       ; ENABLE VIDEO PALETTE MAP ACCESS
 	.even
 
 
-**************************************************************************
-*									 *
-*	POWERTST							 *
-*									 *
-*	POWERUP SELF TEST ROUTINES					 *
-*									 *
-*	ENTRY								 *
-*		NOTHING							 *
-*									 *
-*	EXIT								 *
-*		NOTHING							 *
-*									 *
-**************************************************************************
 POWERTST
 	dint
 	setf	16,1,0
@@ -329,7 +256,6 @@ POWERTST
 	move	@_watchdog_addr,a0,L
 	move	a0,*a0
 
-;	HALT DMA AND ENABLE CACHE
 
 	clr	a14
 	move	a14,@DMACTRL
@@ -337,7 +263,6 @@ POWERTST
 
 	FCALL	INTIO,B6
 
-;	DISABLE VIDEO PALETTE RAMS, AUTOERASE AND ERROR LED
 
 	MOVI	SYSCINIT,A13
 	MOVE	A13,@SYSCTRL
@@ -347,37 +272,7 @@ POWERTST
 
 
 
-****************************************************************************
-*                                                                          *
-*  PIC SECURITY STUFF                                                      *
-*                                                                          *
-*  Security source for WWF-UNIT's PIC                                      *
-*                                                                          *
-*  Version 1.00                                                            *
-*  Written by:   Michael J. Lynch                                          *
-*  Copyright (c) 1995 by Williams Electronics Games Inc.                   *
-*  All rights reserved                                                     *
-*                                                                          *
-*     TTTTT   OOO  PPPP         SSS   EEEEE   CCC   RRRR  EEEEE TTTTT      *
-*       T    O   O P   P       S   S  E      C   C  R   R E       T        *
-*       T    O   O P   P       S      E      C      R   R E       T        *
-*       T    O   O PPPP         SSS   EEEE   C      RRRR  EEEE    T        *
-*       T    O   O P               S  E      C      R R   E       T        *
-*       T    O   O P           S   S  E      C   C  R  R  E       T        *
-*       T     OOO  P            SSS   EEEEE   CCC   R   R EEEEE   T        *
-*                                                                          *
-*                                                                          *
-*                    Company Confidential Information                      *
-*                        NEED TO KNOW BASIS ONLY                           *
-*                                                                          *
-* USE OR DISCLOSURE STRICTLY PROHIBITED UNLESS APPROVED IN WRITING FROM    *
-* WILLIAMS ELECTRONICS GAMES INC.                                          *
-*                                                                          *
-* Unapproved use or disclosure will result in severe torture!!!!!          *
-*                                                                          *
-****************************************************************************
 
-; _pic_bin2bcd Converts a hex number in a7 to BCD and puts it in A3
 _pic_bin2bcd:
 	clr	a3
 	movi	100000,a0
@@ -395,25 +290,6 @@ _bin2bcd_loop:
 	jrnz	_bin2bcd_loop
 	FRET	b6
 
-******************************************************************************
-*                                                                            *
-* _bcd2hex - Converts a 32 bit (8 digit) BCD Number to Hexidecimal           *
-*                                                                            *
-* ENTRY                                                                      *
-*         A0 - BCD Number to be converted                                    *
-*         B6 - Return Address                                                *
-*                                                                            *
-* EXIT                                                                       *
-*         A2 - Converted Number (hex)                                        *
-*                                                                            *
-* USES                                                                       *
-*         A1 - Multiplier                                                    *
-*         A3 - Temporary                                                     *
-*         A4 - Digit Counter                                                 *
-*                                                                            *
-* Written by:  Michael J. Lynch                                              *
-*                                                                            *
-******************************************************************************
 _bcd2hex:
 	clr	a2		; Start with 0
 	movk	1,a1		; Starting Multiplier
@@ -642,17 +518,6 @@ _stomp_temp1:
 	rets
 
 
-**************************************************************************
-*											     *
-* 	POWERCMOS									     *
-* 											     *
-* 	CHECK THE CMOS AND DO A LOT OF OTHER STUFF -- SHOW THE	     *
-* 	POWER UP MESSAGES								     *
-* 											     *
-* 	ENTRY	NOTHING									     *
-* 	EXIT	NOTHING									     *
-*											     *
-**************************************************************************
 POWERCMOS:	
 	DINT
 	MOVI	SYSCINIT,A1
@@ -783,10 +648,6 @@ _sndrev_done
 
 	CALLA	CMOS_VAL		; CHECKSUM AUDITS/ADJUSTMENTS
 	JREQ	CMOSOK
-*
-* BAD CHECKSUM ON POWERUP ----> FACTORY SET
-*
-;	CALLA	RES_ALL			;ALL TIME TABLE
 	clr	a0			;Full
 	CALLA	FAC_SET
 	CALLA	CLR_AUD
@@ -843,9 +704,6 @@ CMOS1
 	JRUC	CMOS4
 
 CMOS3
-;
-;        USING CMOS HERE
-;
 	MOVI	CMOS_CMOS,A0
 	FCALL	STRINGCENTER,B6
 	ADDI	[75,0],A1
@@ -900,14 +758,9 @@ CTMP_WAIT
 	move	a1,*a1
 
 
-;FIX - Temp!!!!! 
-;FIX - Speed up warm reset - Replace when we ship!
-;	.if DEBUG
-;	.else
 	PAUSE	1000H,B6
 	PAUSE	2000h,B6		;Go fast
 	DSJS	A0,CTMP_WAIT
-;	.endif
 
 CTMP2
 	move	@_serial_number,b5,L
@@ -963,22 +816,6 @@ CMOS_OK
 	.STRING	"CMOS OK",0
 	.EVEN
 
-**************************************************************************
-*								         *
-* 	BURNIN								 *
-* 									 *
-* 	FACTORY BURNIN TEST -- EXITS BY RESETING THE GAME		 *
-* 									 *
-* 	ENTRY								 *
-* 		NOTHING							 *
-* 									 *
-* 	EXIT								 *
-* 		NOTHING 						 *
-* 									 *
-* 	CALL								 *
-* 		JAUC							 *
-*								         *
-**************************************************************************
 
 BURN_IN:
 	DINT
@@ -998,22 +835,6 @@ BURNSP:
 	CALLA	AUD1			;ANOTHER ONE WORKED
 	JRUC	BURNLOOP
 
-**************************************************************************
-*								         *
-* 	DIAGCPUTEST							 *
-* 									 *
-* 	DIAGNOSTIC CALL FOR THE CPU TEST				 *
-* 									 *
-* 	ENTRY								 *
-* 		NOTHING							 *
-* 									 *
-* 	EXIT								 *
-* 		JUMPS TO *EXEC_LP* AFTER SETTING EVERYTHING UP		 *
-* 									 *
-* 	CALL								 *
-* 		JAUC							 *
-*								         *
-**************************************************************************
 
 DIAGCPUTEST:
 	CALLA	WDOGDIS
@@ -1038,10 +859,6 @@ DIAGSP:
 	calla	InitAddresses
 	JAUC	mainlp
 
-****************************************
-* bin2bcd - Converts binary number pointed to by a0 to bcd and stores it back
-*           into area pointed to by a0.
-*
  SUBR bin2bcd
 	mmtm	sp,a0,a1,a2,a3
 	move	*a0,a2,W
@@ -1056,16 +873,6 @@ DIAGSP:
 	mmfm	sp,a0,a1,a2,a3
 	rets
 
-*********************************************************
-* _set_time - Sets the real time clock based on values in
-*             _rtc_seconds
-*             _rtc_minutes
-*             _rtc_hours
-*             _rtc_day
-*             _rtc_date
-*             _rtc_month
-*             _rtc_year
-* Time is set through the PIC.
  SUBR _set_time
 	mmtm	sp,a0,a1,a2,a3,a4
 	movi	_rtc_seconds,a0,L
@@ -1123,9 +930,6 @@ _st_done
 	mmfm	sp,a0,a1,a2,a3,a4
 	rets
 
-********************************************
-* bcd2hex - Converts 2 digit BCD number in a1 to hex and stores back in a1
-*
  SUBR bcd2hex
 	mmtm	sp,a0,a3
 	move	a1,a2
@@ -1138,19 +942,6 @@ _st_done
 	mmfm	sp,a0,a3
 	rets
 
-***********************************************
-* _aquire_time - Time aquisition trigger function called in the DIRQ
-*                Starts the acquisition of time information from the
-*                Real Time Clock (RTC).  The time information is transfered
-*                from the RTC to the PIC by the PIC.  This is done this way
-*                because the RTC to PIC interface is an I2C bus interface
-*                and requires approximately 3 ms to transfer the data from
-*                the RTC to the PIC.  This function is called by the DIRQ
-*                every 27 ticks (495ms) and then on the next DIRQ the function
-*                to transfer the time information from the PIC to this
-*                application is called.  This prevents this application from
-*                being bogged down while the time information is being
-*                moved from the RTC to the PIC.
  SUBR _aquire_time
 	mmtm	sp,a0,a1
 	movi	011h,a0			;Command code 0x1
@@ -1175,19 +966,6 @@ _at_done
 	mmfm	sp,a0,a1
 	rets
 
-*************************************************
-* _get_time - This function transfers the time information that was extracted
-*             from the RTC by the PIC from the PIC to some global memory
-*             area for use by this application.  The time information is
-*             stored in hexidecimal word sized global values as follows
-*
-*             _tseconds	(0-59) Current seconds
-*             _tminutes (0-59) Current minutes
-*             _thours   (0-23) Current hours
-*             _tday     (1-7)  Current Day (1=Sunday, 7=Saturday)
-*             _tdate    (1-31) Current Date
-*             _tmonth   (1-12) Current Month (1=January, 12=December)
-*             _tyear    (0-99) Current Last 2 Digits of year
  SUBR _get_time
 	mmtm	sp,a0,a1,a2,a3
 	movk	8,a3			;Number of bytes of data to get
@@ -1325,10 +1103,6 @@ _get_time_done
 	mmfm	sp,a0,a1,a2,a3
 	rets
 
-***********************************************
-* PICCHECK - Power up test for the PIC MicroController
-* Checks basic communications with the PIC chip
-*
 PICCHECK
 	movi	1fh,a0			;Command code 0xf
 	move	a0,@PIC_COMMAND,W
@@ -1371,9 +1145,6 @@ _pic_ok
 _piccheck_done
 	FRET	b5
 
-***************************************************
-* SNDCHECK - Sound Subsystem Check during CPUTEST
-*
 SNDCHECK
 	move	b6,@_b6_save,L
 	move	@_coin_counter_addr,a0,L
@@ -1502,22 +1273,6 @@ dspcheck_wait_exit_loop
 	move	@_b6_save,b6,L
 	FRET	b6
 
-**************************************************************************
-*								         *
-* 	CPUTEST								 *
-* 									 *
-* 	THE ACTUAL CPU TEST STUFF					 *
-* 									 *
-* 	ENTRY								 *
-* 		SP	RETURN ADDRESS					 *
-* 									 *
-* 	EXIT								 *
-* 		WHO KNOWS						 *
-* 									 *
-* 	CALL								 *
-* 		FCALL	CPUTEST,SP					 *
-*								         *
-**************************************************************************
 
 CPUT_X	.EQU	180	;TEXT X POSITION
 CPUT_Y1	.EQU	118	;TEXT ROW 1 Y POSITION
@@ -1549,7 +1304,6 @@ CPUTEST:
 	MOVI	VRAMCHIPS,A14		;VERIFY BIT MAP
 	FCALL	RAMCHECK,B5
 
-;	ENABLE VIDEO PALETTE MAP ACCESS
 
 
 	.if	WWFUNIT
@@ -1566,7 +1320,6 @@ CPUTEST:
 	FCALL	RAMCHECK,B5
 	MOVE	B0,A12
 	
-;	DISABLE VIDEO PALETTE MAP ACCESS
 
 
 	.if	WWFUNIT
@@ -1675,7 +1428,6 @@ PROMABORT
 
 	MOVE	A12,A12
 
-*WE CHECK ON THE DMA HERE
 PDMACK
 	MOVI	DMACMESS,A0
 	MOVI	[CPUT_Y1,CPUT_X],A1
@@ -1864,19 +1616,6 @@ CPUEXIT2_MESS
 	.EVEN
 
 
-**************************************************************************
-*								         *
-* 	CPUDRAW								 *
-* 									 *
-* 	PLOT THE CPU BOARD AND DRAW ALL THE CHIPS			 *
-* 									 *
-* 	ENTRY								 *
-* 		B5	RETURN ADDRESS					 *
-* 									 *
-* 	EXIT								 *
-* 		NOTHING							 *
-*								         *
-**************************************************************************
 
 CPUDRAW:
 	MOVI	CPU_VECS,A9		; POINT AT VECTOR TABLE
@@ -1916,21 +1655,6 @@ BOARDSTRING2
 	.STRING	"WRESTLEMANIA",0
 	.EVEN
 
-**************************************************************************
-*								         *
-* 	CHIPTABLE							 *
-* 									 *
-* 	UPDATE A LIST OF CHIPS, BASED ON THEIR VALUES IN A12		 *
-* 									 *
-* 	ENTRY								 *
-* 		A9	POINTER TO TABLE				 *
-* 		A12	LIST OF ON/OFF BITS				 *
-* 		B5	RETURN ADDRESS					 *
-* 									 *
-* 	EXIT								 *
-* 		NOTHING							 *
-*								         *
-**************************************************************************
 
 CHIPTABLE:
 	MOVE	B5,A14
@@ -1950,18 +1674,6 @@ CTABDONE
 	MOVE	A14,B5
 	FRET	B5
 	
-**************************************************************************
-*								         *
-* 	CHIPPLOT							 *
-* 									 *
-* 	PLOT OUT THE CHIP LIST						 *
-* 									 *
-* 	ENTRY								 *
-* 		B5	RET VALUE					 *
-* 									 *
-* 	EXIT								 *
-* 		NOTHING							 *
-**************************************************************************
 
 CHIPPLOT:
 	MOVE	B5,A14
@@ -1978,24 +1690,6 @@ CPPLOTDONE
 	MOVE	A14,B5
 	FRET	B5
 	
-**************************************************************************
-*								         *
-* 	CHIPOUT								 *
-* 									 *
-* 	ACTUALLY PLOT THE CHIP						 *
-* 									 *
-* 	ENTRY								 *
-* 		A10	POINTS TO CHIP TO PLOT				 *
-* 		A11	COLOR OF CHIP					 *
-* 				00 = OUTLINE				 *
-* 				01 = GREEN				 *
-* 				02 = RED				 *
-* 				03 = GREY				 *
-* 									 *
-* 	EXIT								 *
-* 		A10	IS INTACT					 *
-*								         *
-**************************************************************************
 		
 CHIPOUT:
 	MOVE	*A10(CMLOC),A5,L	; CHIP OUTLINE
@@ -2026,7 +1720,6 @@ CHIPOUT:
 	MOVE	A8,A1
 	MOVI	COLOR_WHITE,A2
 	FCALL	HVLINE,B6
-;
 	MOVE	*A10(CMSTUFFED),A0,W	; CHECK FOR STUFFED
 	JRNZ	CONOSTUF
 	MOVK	3,A11			; WANT IT GREY, DUDE
@@ -2069,21 +1762,6 @@ CHIPCOLORS:
 	.WORD	COLOR_RED
 	.WORD	COLOR_GREY
 
-**************************************************************************
-*								         *
-* 	DMACHECK							 *
-* 									 *
-* 	CHECK THE DMA OUT						 *
-* 									 *
-* 	ENTRY								 *
-* 		B5	RETURN ADDRESS					 *
-* 									 *
-* 	EXIT								 *
-* 		A0	DMA STATUS					 *
-* 				0 = GOOD				 *
-* 				1 = BAD					 *
-*								         *
-**************************************************************************
 DMACHECK
 	setf	16,1,0
 	move	@_watchdog_addr,a0,L
@@ -2146,9 +1824,6 @@ DMACLOOP
 	CMP	A3,A4
 	JRNZ	DMACBAD			;BR = DATA ERROR
 	DSJS	A2,DMACLOOP
-*
-*CHECK DATA IN OBJECT PALETTE
-*
 
 	.if	WWFUNIT
 	movi	SYSCINIT,a13
@@ -2192,20 +1867,6 @@ DMACRET
 
 DOG_COUNT	.EQU	8000H	;EVERY 32K
 	.align
-**************************************************************************
-*								         *
-* 	RAMCHECK							 *
-* 									 *
-* 	CHECK A BANK OF RAM, GIVEN A STARTING TABLE ADDRESS		 *
-* 									 *
-* 	ENTRY								 *
-* 		A14	POINTER TO RAM TABLE				 *
-* 		B5	RETURN ADDRESS					 *
-* 									 *
-* 	EXIT								 *
-* 		B0	LIST OF ERRORS					 *
-*								         *
-**************************************************************************
 
 RAMCHECK:
  	movb	a0,@WATCHDOG		; We have to do this because
@@ -2214,7 +1875,6 @@ RAMCHECK:
 	SETF	16,0,0
 	SETF	32,0,1
 
-;	SNAG NEXT CHIP RECORD
 
 RAMLOOP:
 	CLR	B2
@@ -2223,13 +1883,11 @@ RAMLOOP:
 	MOVE	*A14(RAM_ITLV),A11,W	; INTERLEAVE
 	MOVE	*A14(RAM_WDTH),A10,W	; WIDTH
 
-;	CELL COUNT
 
 	SUB	A12,A13                   ; (END-START)/INTERLEAVE+1
 	DIVU	A11,A13
 	INC	A13
 
-;	SET FIELD SIZES
 
 	MOVE	A11,A9			; FS1 = INTERLEAVE
 	ANDI	ZERO_EXTEND,A9
@@ -2239,7 +1897,6 @@ RAMLOOP:
 	ANDI	ZERO_EXTEND,A9
 	EXGF	A9,0
 
-;	FILL IN ASCENDING ORDER
 
 	MOVE	A13,A9                    ; XEROX COUNT
 	MOVE	A12,A8                    ; XEROX START
@@ -2315,7 +1972,6 @@ showstat
 					; the data at _watchdog address
 
 
-;	B1 SHOULD BE ZERO IF THE CHIP IS COOL HERE
 
 	MOVE	*A14(RAM_LINK),A10,L
 	JRZ	RAMNOPLOT
@@ -2337,15 +1993,6 @@ RAMNOPLOT
 	FRET	B5
 
 
-**************************************************************************
-*								         *
-* ROMCHECK - ROUTINE TO CHECKSUM THE PROGRAM AND IMAGE ROMS.		 *
-* RETURNS								 *
-* 	B0  = BITS SET FOR BAD ROMS.					 *
-* 	 Z = TEST FINISHED.						 *
-* 	NZ = TEST ABORTED BY USER.					 *
-*								         *
-**************************************************************************
 	.align
 
 ROMCHECK:
@@ -2362,9 +2009,6 @@ ROMLOOP
 	MOVE	*A14(ROM_SADR),A12,L	; STARTING ADDRESS
 	MOVE	*A14(ROM_EADR),A13,L	; ENDING ADDRESS
 	MOVE	*A14(ROM_ITLV),A11,W	; INTERLEAVE
-;
-;	SUM UP A GIVEN IMAGE ROM -- THE TUNIT WAY
-;
 	SUB	A12,A13			; (( EADDR - SADDR ) / INTERLEAVE) + 1
 	DIVU	A11,A13
 	INC	A13
@@ -2384,8 +2028,6 @@ rcilp_nodog
 
 	setf	32,0,1
 
-*LAND HERE FROM IMAGE CHECKSUM TO DETERMINE IF WE HIT IT
-;ROMCKCK
 	MOVE	*A14(ROM_CKSM),A7,W
 ROM_COMPARE
 	ZEXT	A7
@@ -2415,7 +2057,6 @@ ROMPLOT
 
 ROMNOPLOT
 	ADDI	ROM_SIZE,A14
-*CHECKING FOR EARLY EXIT BY OPERATOR
 	move	@_coin_addr,a13,L
 	move	*a13,a13,W
 	sll	16,a13
@@ -2423,7 +2064,6 @@ ROMNOPLOT
 	CMPI	START_BITS,A13
 	JRNE	ROMABORT
 	JRUC	ROMLOOP			;BACK FOR THE NEXT
-*HERE ON OPERATOR ABORT
 ROMABORT
 	CLRZ
 	FRET	B5
@@ -2433,11 +2073,6 @@ ROMEMPTY
 	FRET	B5
 
 
-**************************************************************************
-*									 *
-*	MONITOR STUFF							 *
-*									 *
-**************************************************************************
 CROSS_H
 CONV_PLOT
 	MOVI	MON_RECS,A9
@@ -2467,11 +2102,6 @@ CPDLP1
 	JRUC	CPDLP1
 CPDDONE
 	RETS
-**************************************************************************
-*									 *
-*	MONITOR TEST DATA AREA						 *
-*									 *
-**************************************************************************
 
 MON_VECS:
 	VECMAC	ROBO_WHITE,004,004,390,004
@@ -2563,11 +2193,6 @@ COLOR_BARS:
 
 
 
-**************************************************************************
-*									 *
-*	COLORBAR							 *
-*									 *
-**************************************************************************
 COL_BARS
 COLORBAR
 
@@ -2588,9 +2213,6 @@ CB4	MOVE	A3,*A1+
 	DSJS	A5,CB4
 	DSJS	A6,CB3
 
-;	=========================
-;	| DISPLAY COLOR BARS	|
-;	=========================
 
 	CLR	A14
 	MOVE	A14,@DMACTRL,W		; HALT THE DMA
@@ -2653,9 +2275,6 @@ INTENSITIES_START
 
 	.LONG	0
 
-**************************************************************************
-* SWITCHTEST - Test regular or DIP switches
-* A0=Mode (0=Switches, 1=DIPs)
 
 DONEMASK	EQU	00240000H		; P1 + P2 START
 	.BSS	DONECNT,32		; FOR SWITCH TEST
@@ -2758,11 +2377,6 @@ SDPROC
 
 
 
-**************************************************************************
-*											     *
-* SET_DIP_COINAGE - SETUP COINAGE ACCORDING TO THE DIPSWITCHES		     *
-*											     *
-**************************************************************************
 SET_DIP_COINAGE
 	MMTM	SP,A0,A1,A2,A6
 
@@ -2824,13 +2438,6 @@ SDC_X
 	MMFM	SP,A0,A1,A2,A6
 	RETS
 
-**************************************************************************
-*								         *
-* 	DIPTEST								 *
-* 									 *
-* 	DIP SWITCH TESTING						 *
-*								         *
-**************************************************************************
 
 DIPTEST:
 	movk	3,a14
@@ -2876,7 +2483,6 @@ DTLOOP
 	SLEEPK	1
 	PUSH	a12,a13
 
-;	CALLA	CKTEST			; EMERGENCY EXIT
 	CALLA	fudge_switches		;get fudged switches in a0
 	MOVE	@SWSET1,A1,L
 	andi	BUTTONS|START_BITS,a0
@@ -2894,19 +2500,6 @@ DT_X
 	JRUC	switchx
 
 
-**************************************************************************
-*								         *
-* 	DIPSTATE							 *
-* 									 *
-* 	PLOT OUT THE STATES OF ALL THE DIP SWITCHES			 *
-* 									 *
-* 	ENTRY								 *
-* 		NOTHING							 *
-* 									 *
-* 	EXIT								 *
-* 		NOTHING							 *
-*								         *
-**************************************************************************
 DIPSTATE
 	MOVI	[82,74],A0
 	MOVI	[104,140],A1
@@ -2934,7 +2527,6 @@ DS1
 	MOVI	[89,75],A1
 	FCALL	STRING,B6
 
-*PLOT CURRENT COINAGE
 	MOVE	A7,A7			;ARE WE CMOS OR DIPSWITCH
 	JRZ	DS_PC			;BR = DIPSWITCH
 
@@ -2964,7 +2556,6 @@ DS_PC
 	MOVI	[101,132],A1
 	FCALL	STRING,B6
 
-*PLOT CREDITS TO START, CREDITS TO CONTINUE
 	MOVI	DTOSTART,A0
 	MOVI	[113,90],A1
 	FCALL	STRING,B6
@@ -2999,7 +2590,6 @@ DSTC_1
 
 
 DS_SC
-*PLOT COUNTRY SELECTION
 	MOVE	A10,A0
 	ANDI	DPCOUNTRY,A0
 	SRL	DPCOUNTRY_SRL,A0
@@ -3009,7 +2599,6 @@ DS_SC
 	MOVI	[143,75],A1
 	FCALL	STRING,B6
 
-*PLOT COIN COUNTER MODE
 	MOVE	A10,A7
 	ANDI	DPCOUNTER,A7
 	SRL	DPCOUNTER_SRL,A7
@@ -3023,7 +2612,6 @@ DS_SC
 	FCALL	STRING,B6
 
 
-*PLOT NUMBER OF PLAYERS ALLOWED
 
 
 
@@ -3033,9 +2621,7 @@ DS_SC
 
 	MOVI	[89,285],A1
 	FCALL	STRING,B6
-;;;
 
-*PLOT DOLLAR BILL VALIDATOR STATUS
 	MOVI	DNOVALIDATOR,A0		;ASSUME NO VALIDATOR
 	MOVE	A10,A1
 	ANDI	DPVALIDATOR,A1		;DO WE HAVE ONE?
@@ -3047,7 +2633,6 @@ DSTS_NOV
 	FCALL	STRING,B6
 
 
-*PLOT video clips off/on message
 	MOVI	DCLIPS,A0		;Assume clips on
 	MOVE	A10,A1
 	ANDI	DPNOVIDCLIPS,A1
@@ -3079,7 +2664,6 @@ dtd_off
 
 
 
-*PLOT skip over powerup test message
 	MOVI	DPOWER,A0
 	MOVE	A10,A1
 	ANDI	DPPOWER,A1
@@ -3098,19 +2682,6 @@ DSTS_NOP
 	RETS
 
 
-**************************************************************************
-*								         *
-* 	DIPPLOT								 *
-* 									 *
-* 	PLOT OUT THE DIP SWITCHES					 *
-* 									 *
-* 	ENTRY								 *
-* 		NOTHING							 *
-* 									 *
-* 	EXIT								 *
-* 		NOTHING							 *
-*								         *
-**************************************************************************
 DIPPLOT:
 	MOVI	[83,21],A0
 	MOVI	[104,38],A1
@@ -3171,19 +2742,6 @@ DIPYTAB
 	.LONG	89,101,113,125,137,149,161,173
 
 
-**************************************************************************
-*								         *
-* 	READ_DIP							 *
-* 									 *
-* 	READ IN BOTH DIP SWITCHES					 *
-* 									 *
-* 	ENTRY								 *
-* 		NOTHING							 *
-* 									 *
-* 	EXIT								 *
-* 		A0	DIP SWITCH					 *
-*								         *
-**************************************************************************
 
 READ_DIP:
 	MMTM	SP,A1,A2,A3
@@ -3217,21 +2775,6 @@ RD2
 	RETS
 
 
-**************************************************************************
-*									 *
-*	JOY_MESS							 *
-*									 *
-*	PLOT THE STATUS OF A JOYSTICK AROUND A CIRCLE			 *
-*									 *
-*	ENTRY								 *
-*		A9	CENTER OF STICK CIRCLE				 *
-*		A10	BUTTON MASK					 *
-*		A11	COLOR						 *
-*									 *
-*	EXIT								 *
-*		NOTHING							 *
-*									 *
-**************************************************************************
 	
 JOY_MESS
 	MOVI	JJJTAB,A8
@@ -3257,9 +2800,6 @@ JM1
 	CALLR	STRNEW
 	DSJS	A7,JML
 	RETS
-*
-*JOYSTICK MESSAGE TABLE
-*
 JJJTAB
 	.LONG	UPMESS
 	.BYTE	-7,-25
@@ -3275,20 +2815,6 @@ JJJTAB
 
 
 
-**************************************************************************
-*									 *
-*	BUT_PLOT							 *
-*									 *
-*	PLOT A BUTTON TABLE ON THE SCREEN				 *
-*									 *
-*	ENTRY								 *
-*		A9	POINTS TO BUTTON TABLE LIST			 *
-*		A10	SETTINGS OF THE SWITCH REGISTER			 *
-*									 *
-*	EXIT								 *
-*		NOTHING							 *
-*									 *
-**************************************************************************
 
 BUT_PLOT:
 	clr	b4			;OFFSET
@@ -3328,16 +2854,6 @@ BPCIRC2
 BPDONE
 	RETS
 
-**************************************************************************
-*									 *
-*	JOY_PLOT							 *
-*									 *
-*	PLOT A BUTTON TABLE ON THE SCREEN				 *
-*									 *
-*	ENTRY								 *
-*		A9	POINTS TO BUTTON TABLE LIST			 *
-*									 *
-**************************************************************************
 
 JOY_PLOT:
 	MOVE	*A9,A1,L		; XY LOC
@@ -3351,20 +2867,6 @@ JOY_PLOT:
 JPDONE
 	RETS
 
-**************************************************************************
-*									 *
-*	JOY_UPDATE							 *
-*									 *
-*	UPDATE ALL THE STICK INFORMATION				 *
-*									 *
-*	ENTRY								 *
-*		A9	JOYSTICK TABLE POINTER				 *
-*		A10	SWITCH INFORMATION				 *
-*									 *
-*	EXIT								 *
-*		NOTHING							 *
-*									 *
-**************************************************************************
 
 JOY_UPDATE:
 	MOVE	*A9,A1,L		; XY LOC
@@ -3396,16 +2898,6 @@ JUDONE
 	RETS
 
 
-**************************************************************************
-*									 *
-*	STR_PLOT							 *
-*									 *
-*	PLOT A STRING TABLE ON THE SCREEN				 *
-*									 *
-*	ENTRY								 *
-*		A9	POINTS TO STRING TABLE LIST			 *
-*									 *
-**************************************************************************
 
 STR_PLOT
 	MOVE	*A9,A1,L		;XY LOC
@@ -3422,9 +2914,6 @@ STDONE
 CFILL	EQU	0FFFF0000H
 
 
-;	FORMAT
-;
-;	X,Y,RADIUS,COLOR,MASK,SHIFT COUNT ( FOR JOYSTICK STUFF ), EXTENDBIT
 
 P1BC	.equ	80
 P2BC	.equ	160
@@ -3505,11 +2994,6 @@ BUT_STRS
 
 	.LONG	0
 
-**************************************************************************
-*								         *
-* 	DIP SWITCH DISPLAY STUFF					 *
-*								         *
-**************************************************************************
 DIP_VECS:
 	VECMAC	COLOR_RED,20,82,60,82		; DS1
 	VECMAC	COLOR_RED,20,82,20,188
@@ -3976,10 +3460,6 @@ P2MOVE
 	.EVEN
 
 
-****************************************************************************
-* INITCOLR: INITIALIZE COLORS; ROUTINE LOADS PALETTE 0 WITH THE COLOR	    *
-*	     PALETTE USED BY DIAGNOSTIC TESTS.				    *
-****************************************************************************
 
 INITCOLR
 
@@ -3994,15 +3474,6 @@ LPLP1
 	MOVE A14, @CMAPSEL
 
 	FRET B5
-****************************************************************************
-* POINT: FUNCTION DISPLAYS A POINT OF ANY COLOR.			    *
-*									    *
-*	      ENTRY: A0 = XY SCREEN ADDRESS OF THE POINT		    *
-*		     A1 = COLOR VALUE					    *
-*		     B6 = RETURN ADDRESS				    *
-*									    *
-*	      USES:  A0, A1, B2, B3, B4, B6, B10			    *
-****************************************************************************
 
 POINT:
 	ADDI	SCRXFUDGE,A0
@@ -4017,17 +3488,6 @@ POINT:
 
 	FRET B6
 
-****************************************************************************
-* RECTANGLE: FUNCTION DISPLAYS A RECTANGLE OF ANY COLOR.		    *
-*									    *
-*	      ENTRY: A0 = XY SCREEN ADDRESS OF UPPER LEFT CORNER	    *
-*		     A1 = XY RECTANGLE DIMENSIONS			    *
-*		     A2 = COLOR VALUE					    *
-*									    *
-*		     B6 = RETURN ADDRESS				    *
-*									    *
-*	      USES:  A0, A1, A2, B2, B3, B4, B6, B7, B9, B10		    *
-****************************************************************************
 
 RECTANGLE:
 	ADDI	SCRXFUDGE,A0
@@ -4059,17 +3519,6 @@ RECTANGLE:
 
 	FRET B6
 
-****************************************************************************
-* LINE: FUNCTION DRAWS HORIZONTAL OR VERTICAL LINES OF ANY COLOR.
-*
-*	      ENTRY: A0 = BEGINNING XY SCREEN ADDRESS
-*		     A1 = ENDING XY SCREEN ADDRESS
-*		     A2 = COLOR VALUE
-*
-*		     B6 = RETURN ADDRESS
-*
-*	USES: A0-A4, B3,B4,B6,B9,B10
-****************************************************************************
 
 HVLINE
 	MOVI	SCRXFUDGE,A3
@@ -4110,13 +3559,6 @@ $110	DRAV	A2,A0			; DRAW LINE
 	FRET B6
 
 
-********************************
-* Draw a line
-* A0=YX Start
-* A1=YX End
-* A2=Color
-* B6=Return addr
-* Trashes B0-B5,B7-B13
 
  SUBRP	line_draw
 
@@ -4183,19 +3625,6 @@ line1	line	1
 ldx	FRET B6
 
 
-****************************************************************************
-* STRING: FUNCTION DISPLAYS AN ASCII STRING OF ANY COLOR EITHER VERTICALLY
-*	   OR HORIZONTALLY.
-*
-*	      ENTRY: A0 = STARTING STRING ADDRESS
-*		     A1 = Y:X SCREEN ADDRESS
-*		     A2 = DIRECTION
-*		     A3 = COLOR
-*
-*		     B6 = RETURN ADDRESS
-*
-*	      USES: A0 - A6, B0 - B4, B6 - B14
-****************************************************************************
 STRNEW1
 	MMTM	SP,A1,A2,A3,A4,A5,A6
 	FCALL	STRING,B6
@@ -4309,16 +3738,6 @@ SPLEND
 	MOVE	A2,A1
         FRET 	B6
 
-;****************************************************************************
-;* CIRCLE: FUNCTION DRAWS OUTLINE OR FILLED CIRCLES.			    *
-;*									    *
-;*	 ENTRY: A0 = radius						    *
-;*		A1 = center  (Y:X)					    *
-;*		A6 = <00:15> = color					    *
-;*		A6 = <15:31> = fill: 0=no fill, 1=fill			    *
-;*									    *
-;*	 USES:	A0 - A8, B0, B10					    *
-;****************************************************************************
 
 CIRCLE
 	ADDI	SCRXFUDGE,A1
@@ -4431,9 +3850,6 @@ put2:
 
 	FRET B0
 
-********************************
-*SCRCLR - CLEAR ENTIRE BIT MAP
-*	USES:B2,B3,B4	CALL WITH B6
 DSCRCLR
 	CLR	B2
 DSWRITE
@@ -4447,11 +3863,6 @@ SCRLP	MOVE	B2,*B3+,L
 
 
 
-**************************************************************************
-*								         *
-* 	CPU BOARD INFORMATION						 *
-*								         *
-**************************************************************************
 
 CPU_VECS:
 	VECMAC	COLOR_WHITE,5,5,5,243		; BOARD OUTLINE
@@ -4572,7 +3983,6 @@ IROMTAB	.LONG	IROM1,IROM2,IROM3,IROM4
 	.long	IROM25,IROM26,IROM27,IROM28
 	.long	IROM29,IROM30,IROM31,IROM32
 	.LONG	0
-;SRAMTAB	.LONG	SRAM1,SRAM2,SRAM3,SRAM4
 SRAMTAB	.LONG	SRAM1
 	.LONG	0
 SROMTAB	.long	SROM1, SROM2, SROM3, SROM4
@@ -4763,23 +4173,13 @@ CNAMEU102
 	.even
 
 
-**************************************************************************
-*								         *
-* 	RAM CHIP DATA							 *
-*								         *
-**************************************************************************
 
-;
-;	MAKE SURE THESE TABLES CORRESPOND WITH THE STUFF ABOVE
-;
 
 VRAMCHIPS:
-;	COLOR RAMS
 	RAM_CHIP 0,1, 8, 16, 1880000H, 18FFFF0H		; U37  (  0 - 7  )
 	RAM_CHIP 0,0, 7, 16, 1880008H, 18FFFF8H		; U36  (  8 - 14 )
 
 
-;	VIDEO RAMS
 	RAM_CHIP 0, 8, 8, 32, 0000018H, 03FFFF8H	; U12
 	RAM_CHIP 0, 4, 8, 32, 0000010H, 03FFFF0H	; U16
 	RAM_CHIP 0, 9, 8, 32, 0000008H, 03FFFE8H	; U13
@@ -4788,14 +4188,12 @@ VRAMCHIPS:
 	.LONG	0
 
 PALCHIPS:
-;	VIDEO PALETTE RAMS
 	RAM_CHIP 0,6, 8, 32, 0000018H, 03FFFF8H		; U10
 	RAM_CHIP 0,2, 8, 32, 0000010H, 03FFFF0H		; U14
 	RAM_CHIP 0,7, 8, 32, 0000008H, 03FFFE8H		; U11
 	RAM_CHIP 0,3, 8, 32, 0000000H, 03FFFE0H		; U15
 	.LONG	0
 
-;	SCRATCH RAMS
 
 SRAMCHECK
 	.STRING	"CHECKING SCRATCH RAMS",0
@@ -4806,15 +4204,7 @@ SRAMCHIPS
 
 	.LONG	0
 
-****************************************************************************
-* SYSFONT: SYSTEM FONT; MODULE DEFINES THE FONT USED WITH SYSTEM	    *
-*	    DIAGNOSTICS.						    *
-****************************************************************************
 
-; ===========================
-; | DYDX CHAR DIMENSIONS    |
-; | POINTER TO XY CHAR DATA |
-; ===========================
 
 T2_SP	.WORD	048h
 	.word	I2_SP-CBASE
@@ -4972,9 +4362,6 @@ T2_ZZ:
    .WORD    068h
    .WORD    I2_ZZ-CBASE
 
-; ===========================
-; | CHARACTER DIRECTORY     |
-; ===========================
 
 SYSFONT
 
@@ -5038,9 +4425,6 @@ SYSFONT
 	.BYTE	(T2_YY-T2_SP)/32	;Y
 	.BYTE	(T2_ZZ-T2_SP)/32	;Z
 
-; ===========================
-; | CHARACTER DEFINITIONS   |
-; ===========================
 CBASE
 I2_SP
    .byte    00h
@@ -5446,9 +4830,6 @@ I2_ZZ:
 
 
    .EVEN
-*
-*		ROM chip definitions and checksums
-*
 CKSUM1	.equ	08a5dH	;9bd5
 CKSUM2	.equ	09efeH	;3bf0
 
@@ -5457,20 +4838,10 @@ PROMCHIPS
 	ROM_CHIP PROM1,0,0,16, 0FF800008H, 0FFFFFFF8H, CKSUM2	; U63
 	.LONG	0
 
-* CHECKSUM PATCHES
 	.WORD	0ffffH-CKSUM1	;1'S COMPLEMENT OF THE UJ12 CHECKSUM
 	.WORD	0ffffH-CKSUM2	;1'S COMPLEMENT OF THE UG12 CHECKSUM
 
 
-**************************************************************************
-*								         *
-* 		     IMAGE ROM CHECKSUM TABLES				 *
-* 									 *
-* 		NOTE: COMMENT OUT ANY UNSTUFFED PARTS THAT		 *
-* 			EXIST BEFORE THE .LONG 0 TERMINATOR!		 *
-*								         *
-**************************************************************************
-;	ROM_CHIP $MACRO TAB_LINK,CHIP_NO, WIDTH, INTERLEAVE, START_ADDR, END_ADDR, CHECK_SUM
 IROMCHIPS
 
 IROMCHIPS_8MEG
@@ -5497,7 +4868,6 @@ IROMCHIPS1_8MEG
 	ROM_CHIP IROM16,15, 8,32,  4000018H, 5FFFFF8H,0E4F1H 	; U118
 	.LONG	0
 
-******************************************************************************
 
 	.end
 

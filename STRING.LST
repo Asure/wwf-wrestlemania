@@ -1,0 +1,1052 @@
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .file   "string.asm"
+       3                            .width  132
+       4                            .option b,d,l,t
+       5                            .mnolist
+       6                    
+       7                    
+       8                            .include        "mproc.equ"
+       9                            .include        "display.equ"
+      10                            .include        "sys.equ"
+      11                            .include        "gsp.equ"
+      12                            .include        "macros.h"
+      13                            .include        "game.equ"
+      14                            .include        "audit.equ"
+      15                            .include        "imgtbl.glo"
+      16                    
+      17                            .include        "fontsimg.glo"
+      18                            .include        "bgndtbl.glo"
+      19                    
+      20                            .include        "miscimg.glo"
+      21                            .include        "fonts2.tbl"
+      22                            .include        "fontsimg.tbl"
+      23                    
+      24                    
+      25                    
+      26                            .ref    BINBCD
+      27                    
+      28                    
+      29                    
+      30                            .def    message_palette
+      31                            .def    mess_space_width
+      32                            .def    print_string,print_string2,print_string_C,print_string_C2
+      33                            .def    print_string_R,print_string_R2
+      34                            .def    message_ascii
+      35                            .def    mess_spacing
+      36                            .def    mess_objid
+      37                            .def    mess_cursx
+      38                            .def    mess_cursy
+      39                            .def    osgemd_ascii,osgmd8_ascii
+      40                            .def    wgsf24_ascii,ogmd10_ascii
+      41                            .def    font9_ascii
+      42                            .def    font9A_ascii,font18_ascii
+      43                            .def    wsf14_ascii,wsf10_ascii
+      44                            .def    print_string_with_z,mess_z
+      45                    
+      46                            .def    win_ascii
+      47                            .def    message_buffer
+      48                            .def    message_buffer2
+      49                            .def    dec_to_asc,dec_to_pct
+      50                            .def    copy_string,copy_rom_string
+      51                            .def    concat_string,concat_rom_string
+      52                    
+      53                            .def    print_message,setup_message
+      54                            .def    mess_line_spacing
+      55                            .def    get_string_len2
+      56                            .def    dec_to_asc_new_entry
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    2
+
+      57                    
+      58              0028  MBUFF_SIZE      equ     40
+      59                    
+      60 00000000                   .bss    message_ascii,  32      ;* ascii lookup table
+      61 00000020                   .bss    message_palette,32      ;* palette
+      62 00000040                   .bss    message_buffer, 16*MBUFF_SIZE ;null terminated string
+      63 000002c0                   .bss    message_buffer2, 16*MBUFF_SIZE
+      64 00000540                   .bss    mess_cursx,     16      ;message cursor pos X original
+      65 00000000                   BSSX    mess_cursx2,    16      ;message cursor pos X temp
+      66 00000560                   .bss    mess_cursy,     16      ;message cursor pos Y
+      67 00000570                   .bss    mess_space_width, 16    ;width in pixels of space char
+      68 00000580                   .bss    mess_spacing,16         ;spacing between chars
+      69 00000590                   .bss    mess_line_spacing,16    ;spacing between lines
+      70 000005a0                   .bss    mess_objid,16           ;OBJECT ID for string
+      71 000005b0                   .bss    mess_justify,32         ;justification method
+      72 000005d0                   .bss    ptr_player_data,32      ;start address of player data
+      73 000005f0                   .bss    mess_z,32
+      74 00000000                   BSSX    IGNORE_CHAR_WIDTH,16
+      75 00000000                   .text
+      76                    
+      77                    
+      78 00000000            SUBRP  clear_buffers
+      79                    
+      80 00000000     0d3f          callr   clear_buffer
+         00000010     0003  
+      81 00000020     0d3f          callr   clear_buffer2
+         00000030     000a  
+      82 00000040     0960          rets
+      83                    
+      84 00000050           clear_buffer
+      85 00000050     09c2          movi    MBUFF_SIZE,a2
+         00000060     0028  
+      86 00000070     5600          clr     a0
+      87 00000080     09e1          movi    message_buffer,a1
+         00000090 00000040- 
+      88 000000b0           vdrlclear_loop1
+      89 000000b0     9001          move    a0,*a1+
+      90 000000c0     3c42          dsj     a2,vdrlclear_loop1
+      91 000000d0     0960          rets
+      92                    
+      93 000000e0           clear_buffer2
+      94 000000e0     09c2          movi    MBUFF_SIZE,a2
+         000000f0     0028  
+      95 00000100     5600          clr     a0
+      96 00000110     09e1          movi    message_buffer2,a1
+         00000120 000002c0- 
+      97 00000140           vdrlclear_loop2
+      98 00000140     9001          move    a0,*a1+
+      99 00000150     3c42          dsj     a2,vdrlclear_loop2
+     100 00000160     0960          rets
+     101                    
+     102                    
+     103                    
+     104 00000170            SUBRP  dec_to_asc
+     105                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    3
+
+     106 00000170     4801          cmp     a0,a1                   ;a1-a0
+     107 00000180     c301          jrhi    ebhunot_max
+     108 00000190     4c20          move    a1,a0                   ;set num to max
+     109 000001a0           ebhunot_max
+     110                    
+     111 000001a0     0d5f          calla   BINBCD                  ;dec number in A0
+         000001b0 00000000! 
+     112 000001d0     4c01          move    a0,a1
+     113 000001e0     09e2          movi    message_buffer2,a2
+         000001f0 000002c0- 
+     114                    
+     115 00000210           dec_to_asc_new_entry
+     116                    
+     117 00000210     5663          clr     a3                      ;leading zero flag
+     118                    
+     119 00000220     0b80          andi    0f000000h,a0
+         00000230 f0ffffff  
+     120 00000250     2d00          srl     6*4,a0
+     121 00000260     cb02          jrnz    ebhuno_zero_n3
+     122 00000270     4c63          move    a3,a3                   ;leading zero
+     123 00000280     ca05          jrz     ebhuskip_zero_n3
+     124 00000290           ebhuno_zero_n3
+     125 00000290     1023          inc     a3
+     126 000002a0     0b00          addi    '0',a0
+         000002b0     0030  
+     127 000002c0     8c02          movb    a0,*a2
+     128 000002d0     1102          addk    8,a2
+     129 000002e0           ebhuskip_zero_n3
+     130                    
+     131 000002e0     4c20          move    a1,a0
+     132 000002f0     0b80          andi    0f00000h,a0
+         00000300 ff0fffff  
+     133 00000320     2d80          srl     5*4,a0
+     134 00000330     cb02          jrnz    ebhuno_zero_n2
+     135 00000340     4c63          move    a3,a3                   ;leading zero
+     136 00000350     ca05          jrz     ebhuskip_zero_n2
+     137 00000360           ebhuno_zero_n2
+     138 00000360     1023          inc     a3
+     139 00000370     0b00          addi    '0',a0
+         00000380     0030  
+     140 00000390     8c02          movb    a0,*a2
+     141 000003a0     1102          addk    8,a2
+     142 000003b0           ebhuskip_zero_n2
+     143                    
+     144 000003b0     4c20          move    a1,a0
+     145 000003c0     0b80          andi    0f0000h,a0
+         000003d0 fff0ffff  
+     146 000003f0     2e00          srl     4*4,a0
+     147 00000400     cb02          jrnz    ebhuno_zero_n1
+     148 00000410     4c63          move    a3,a3                   ;leading zero
+     149 00000420     ca05          jrz     ebhuskip_zero_n1
+     150 00000430           ebhuno_zero_n1
+     151 00000430     1023          inc     a3
+     152 00000440     0b00          addi    '0',a0
+         00000450     0030  
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    4
+
+     153 00000460     8c02          movb    a0,*a2
+     154 00000470     1102          addk    8,a2
+     155 00000480           ebhuskip_zero_n1
+     156                    
+     157 00000480     4c20          move    a1,a0
+     158                    
+     159                    
+     160 00000490     0b80          andi    0f000h,a0
+         000004a0 ffff0fff  
+     161 000004c0     2e80          srl     3*4,a0
+     162 000004d0     cb02          jrnz    ebhuno_zero0
+     163 000004e0     4c63          move    a3,a3                   ;leading zero
+     164 000004f0     ca05          jrz     ebhuskip_zero0
+     165 00000500           ebhuno_zero0
+     166 00000500     1023          inc     a3
+     167 00000510     0b00          addi    '0',a0
+         00000520     0030  
+     168 00000530     8c02          movb    a0,*a2
+     169 00000540     1102          addk    8,a2
+     170 00000550           ebhuskip_zero0
+     171                    
+     172 00000550     4c20          move    a1,a0
+     173 00000560     0b80          andi    0f00h,a0
+         00000570 fffff0ff  
+     174 00000590     2f00          srl     2*4,a0
+     175 000005a0     cb02          jrnz    ebhuno_zero1
+     176 000005b0     4c63          move    a3,a3                   ;leading zero
+     177 000005c0     ca05          jrz     ebhuskip_zero1
+     178 000005d0           ebhuno_zero1
+     179 000005d0     1023          inc     a3
+     180 000005e0     0b00          addi    '0',a0
+         000005f0     0030  
+     181 00000600     8c02          movb    a0,*a2
+     182 00000610     1102          addk    8,a2
+     183 00000620           ebhuskip_zero1
+     184                    
+     185 00000620     4c20          move    a1,a0
+     186 00000630     0b80          andi    0f0h,a0
+         00000640 ffffff0f  
+     187 00000660     2f80          srl     1*4,a0
+     188 00000670     cb02          jrnz    ebhuno_zero2
+     189 00000680     4c63          move    a3,a3                   ;leading zero
+     190 00000690     ca05          jrz     ebhuskip_zero2
+     191 000006a0           ebhuno_zero2
+     192 000006a0     1023          inc     a3
+     193 000006b0     0b00          addi    '0',a0
+         000006c0     0030  
+     194 000006d0     8c02          movb    a0,*a2
+     195 000006e0     1102          addk    8,a2
+     196 000006f0           ebhuskip_zero2
+     197                    
+     198 000006f0     4c20          move    a1,a0
+     199 00000700     0b80          andi    0fh,a0
+         00000710 fffffff0  
+     200 00000730     0b00          addi    '0',a0
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    5
+
+         00000740     0030  
+     201 00000750     8c02          movb    a0,*a2
+     202 00000760     1102          addk    8,a2
+     203 00000770     5600          clr     a0
+     204 00000780     8c02          movb    a0,*a2                  ;null terminate string
+     205                    
+     206 00000790     0960          rets
+     207                    
+     208                    
+     209                    
+     210 000007a0            SUBRP  dec_to_pct
+     211                    
+     212 000007a0     0d5f          calla   BINBCD                  ;dec number in A0
+         000007b0 00000000! 
+     213 000007d0     4c01          move    a0,a1
+     214 000007e0     09e2          movi    message_buffer2,a2
+         000007f0 000002c0- 
+     215                    
+     216 00000810     0b80          andi    0f00h,a0
+         00000820 fffff0ff  
+     217 00000840     2f00          srl     2*4,a0
+     218 00000850     0b00          addi    '0',a0
+         00000860     0030  
+     219 00000870     8c02          movb    a0,*a2
+     220 00000880     1102          addk    8,a2
+     221                    
+     222 00000890     4c20          move    a1,a0
+     223 000008a0     0b80          andi    0f0h,a0
+         000008b0 ffffff0f  
+     224 000008d0     2f80          srl     1*4,a0
+     225 000008e0     0b00          addi    '0',a0
+         000008f0     0030  
+     226 00000900     8c02          movb    a0,*a2
+     227 00000910     1102          addk    8,a2
+     228                    
+     229 00000920     4c20          move    a1,a0
+     230 00000930     0b80          andi    0fh,a0
+         00000940 fffffff0  
+     231 00000960     0b00          addi    '0',a0
+         00000970     0030  
+     232 00000980     8c02          movb    a0,*a2
+     233 00000990     1102          addk    8,a2
+     234 000009a0     5600          clr     a0
+     235 000009b0     8c02          movb    a0,*a2                  ;null terminate string
+     236                    
+     237 000009c0     0960          rets
+     238                    
+     239                    
+     240                    
+     241 000009d0            SUBRP  copy_string
+     242                    
+     243 000009d0     09e2          movi    message_buffer-8,a2
+         000009e0 00000038- 
+     244 00000a00     09e3          movi    message_buffer2-8,a3
+         00000a10 000002b8- 
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    6
+
+     245                    
+     246 00000a30           hswfnext_char
+     247 00000a30     1102          addk    8,a2
+     248 00000a40     1103          addk    8,a3
+     249 00000a50     9c62          movb    *a3,*a2
+     250 00000a60     8e60          movb    *a3,a0                          ;NULL?
+     251 00000a70     cbfb          jrnz    hswfnext_char
+     252                    
+     253 00000a80     0960          rets
+     254                    
+     255                    
+     256 00000a90            SUBRP  concat_string
+     257                    
+     258 00000a90     09e2          movi    message_buffer-8,a2
+         00000aa0 00000038- 
+     259 00000ac0     09e3          movi    message_buffer2-8,a3
+         00000ad0 000002b8- 
+     260 00000af0           ztohnext_char
+     261 00000af0     1102          addk    8,a2
+     262 00000b00     8e40          movb    *a2,a0
+     263 00000b10     cbfd          jrnz    ztohnext_char
+     264 00000b20     1502          subk    8,a2
+     265                    
+     266 00000b30           ztohnext_char2
+     267 00000b30     1102          addk    8,a2
+     268 00000b40     1103          addk    8,a3
+     269 00000b50     9c62          movb    *a3,*a2
+     270 00000b60     8e60          movb    *a3,a0                          ;NULL?
+     271 00000b70     cbfb          jrnz    ztohnext_char2
+     272                    
+     273 00000b80     0960          rets
+     274                    
+     275                    
+     276 00000b90            SUBRP  copy_rom_string
+     277                    
+     278 00000b90     09e1          movi    message_buffer-8,a1
+         00000ba0 00000038- 
+     279                    
+     280 00000bc0     1504          subk    8,a4
+     281                    
+     282 00000bd0           cudinext_char
+     283 00000bd0     1101          addk    8,a1
+     284 00000be0     1104          addk    8,a4
+     285 00000bf0     9c81          movb    *a4,*a1
+     286 00000c00     8e80          movb    *a4,a0                          ;NULL ?
+     287 00000c10     cbfb          jrnz    cudinext_char
+     288                    
+     289 00000c20     0960          rets
+     290                    
+     291                    
+     292 00000c30            SUBRP  concat_rom_string
+     293                    
+     294 00000c30     09e1          movi    message_buffer-8,a1
+         00000c40 00000038- 
+     295 00000c60           vghqnext_char
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    7
+
+     296 00000c60     1101          addk    8,a1
+     297 00000c70     8e20          movb    *a1,a0
+     298 00000c80     cbfd          jrnz    vghqnext_char
+     299                    
+     300 00000c90     1501          subk    8,a1
+     301 00000ca0     1504          subk    8,a4
+     302                    
+     303 00000cb0           vghqnext_char2
+     304 00000cb0     1101          addk    8,a1
+     305 00000cc0     1104          addk    8,a4
+     306 00000cd0     9c81          movb    *a4,*a1
+     307 00000ce0     8e80          movb    *a4,a0                          ;NULL ?
+     308 00000cf0     cbfb          jrnz    vghqnext_char2
+     309                    
+     310 00000d00     0960          rets
+     311                    
+     312                    
+     313 00000d10            SUBRP  get_string_len
+     314                    
+     315 00000d10     09e4          movi    message_buffer,a4
+         00000d20 00000040- 
+     316 00000d40           get_string_len2
+     317 00000d40     5642          clr     a2
+     318 00000d50     1504          subk    8,a4
+     319 00000d60           sjmdnext_char
+     320 00000d60     1104          addk    8,a4
+     321 00000d70     8e80          movb    *a4,a0
+     322 00000d80     0b80          andi    0ffh,a0
+         00000d90 ffffff00  
+     323 00000db0     ca1d          jrz     sjmddone
+     324 00000dc0     0b40          cmpi    1,a0
+         00000dd0     fffe  
+     325 00000de0     ca1a          jreq    sjmddone
+     326 00000df0     0b40          cmpi    32,a0
+         00000e00     ffdf  
+     327 00000e10     cb05          jrne    sjmdno_space
+     328 00000e20     05a0          move    @mess_space_width,a0
+         00000e30 00000570- 
+     329 00000e50     4002          add     a0,a2
+     330 00000e60     c0ef          jruc    sjmdnext_char
+     331 00000e70           sjmdno_space
+     332 00000e70     24a0          sll     5,a0                    ;x 32 bits
+     333 00000e80     07a1          move    @message_ascii,a1,L
+         00000e90 00000000- 
+     334 00000eb0     4020          add     a1,a0
+     335 00000ec0     8601          move    *a0,a1,L                ;* image
+     336 00000ed0     cae8          jrz     sjmdnext_char
+     337 00000ee0     05a0          MOVE    @IGNORE_CHAR_WIDTH,A0
+         00000ef0 00000610- 
+     338 00000f10     cb02          JRNZ    sjmdIGNORE_IT
+     339 00000f20     8420          move    *a1,a0                  ;image width
+     340 00000f30     4002          add     a0,a2
+     341 00000f40           sjmdIGNORE_IT
+     342 00000f40     05a0          move    @mess_spacing,a0
+         00000f50 00000580- 
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    8
+
+     343 00000f70     4002          add     a0,a2
+     344 00000f80     c0dd          jruc    sjmdnext_char
+     345                    
+     346 00000f90           sjmddone
+     347 00000f90     05a0          move    @mess_spacing,a0
+         00000fa0 00000580- 
+     348 00000fc0     4402          sub     a0,a2
+     349 00000fd0     0960          rets
+     350                    
+     351                    
+     352 00000fe0            SUBRP  print_string_C
+     353                    
+     354 00000fe0     09e4          movi    message_buffer,a4
+         00000ff0 00000040- 
+     355 00001010     09e0          movi    lzjicenter_justify,a0
+         00001020 00001250' 
+     356 00001040     0780          move    a0,@mess_justify,L      ;justification method
+         00001050 000005b0- 
+     357 00001070     0d3f          callr   lzjicenter_justify
+         00001080     001c  
+     358 00001090     0d3f          callr   print_string2b
+         000010a0     0066  
+     359 000010b0     0960          rets
+     360                    
+     361 000010c0           print_string_C2
+     362 000010c0     09e0          movi    lzjicenter_justify,a0
+         000010d0 00001250' 
+     363 000010f0     0780          move    a0,@mess_justify,L      ;justification method
+         00001100 000005b0- 
+     364 00001120     0d3f          callr   lzjicenter_justify
+         00001130     0011  
+     365 00001140     0d3f          callr   print_string2b
+         00001150     005b  
+     366 00001160     0960          rets
+     367                    
+     368 00001170            SUBR    print_string_Z2
+     369 00001170     09e4          movi    message_buffer,a4
+         00001180 00000040- 
+     370 000011a0     09e0          movi    lzjicenter_justify,a0
+         000011b0 00001250' 
+     371 000011d0     0780          move    a0,@mess_justify,L      ;justification method
+         000011e0 000005b0- 
+     372 00001200     0d3f          callr   lzjicenter_justify
+         00001210     0003  
+     373 00001220     0d3f          callr   print_string_with_zb
+         00001230     00c4  
+     374 00001240     0960          rets
+     375                    
+     376 00001250           lzjicenter_justify
+     377 00001250                   PUSH    a2,a4
+     378 00001270     0d3f          callr   get_string_len2
+         00001280     ffab  
+     379 00001290     2fe2          srl     1,a2                    ;/2
+     380 000012a0     05a0          move    @mess_cursx,a0
+         000012b0 00000540- 
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE    9
+
+     381 000012d0     4440          sub     a2,a0                   ;- string_width/2
+     382 000012e0     0580          move    a0,@mess_cursx2         ;message cursor pos X
+         000012f0 00000550- 
+     383 00001310                   PULL    a2,a4
+     384 00001330     0960          rets
+     385                    
+     386                    
+     387 00001340            SUBRP  print_string_R
+     388                    
+     389 00001340     09e4          movi    message_buffer,a4
+         00001350 00000040- 
+     390 00001370     09e0          movi    hjrkright_justify,a0
+         00001380 000014d0' 
+     391 000013a0     0780          move    a0,@mess_justify,L      ;justification method
+         000013b0 000005b0- 
+     392 000013d0     0d3f          callr   hjrkright_justify
+         000013e0     000e  
+     393 000013f0     0d3f          callr   print_string2b
+         00001400     0030  
+     394 00001410     0960          rets
+     395                    
+     396 00001420           print_string_R2
+     397 00001420     09e0          movi    hjrkright_justify,a0
+         00001430 000014d0' 
+     398 00001450     0780          move    a0,@mess_justify,L      ;justification method
+         00001460 000005b0- 
+     399 00001480     0d3f          callr   hjrkright_justify
+         00001490     0003  
+     400 000014a0     0d3f          callr   print_string2b
+         000014b0     0025  
+     401 000014c0     0960          rets
+     402                    
+     403 000014d0           hjrkright_justify
+     404 000014d0                   PUSH    a2,a4
+     405 000014f0     0d3f          callr   get_string_len2
+         00001500     ff83  
+     406 00001510     05a0          move    @mess_cursx,a0
+         00001520 00000540- 
+     407 00001540     4440          sub     a2,a0                   ;- string_width/2
+     408 00001550     0580          move    a0,@mess_cursx2         ;message cursor pos X
+         00001560 00000550- 
+     409 00001580                   PULL    a2,a4
+     410 000015a0     0960          rets
+     411                    
+     412                    
+     413 000015b0           ffygleft_justify
+     414 000015b0     05a0          move    @mess_cursx,a0
+         000015c0 00000540- 
+     415 000015e0     0580          move    a0,@mess_cursx2
+         000015f0 00000550- 
+     416 00001610     0960          rets
+     417                    
+     418 00001620            SUBRP  print_string
+     419                    
+     420 00001620     09e4          movi    message_buffer,a4
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   10
+
+         00001630 00000040- 
+     421                    
+     422 00001650           print_string2
+     423 00001650     09e0          movi    ffygleft_justify,a0
+         00001660 000015b0' 
+     424 00001680     0780          move    a0,@mess_justify,L      ;justification method
+         00001690 000005b0- 
+     425 000016b0     05a0          move    @mess_cursx,a0
+         000016c0 00000540- 
+     426 000016e0     0580          move    a0,@mess_cursx2
+         000016f0 00000550- 
+     427 00001710           print_string2b
+     428                    
+     429 00001710     1504          subk    8,a4
+     430 00001720           ffygnext_char
+     431 00001720     1104          addk    8,a4
+     432 00001730     8e80          movb    *a4,a0
+     433 00001740     0b80          andi    0ffh,a0
+         00001750 ffffff00  
+     434 00001770     ca59          jrz     ffygdone
+     435 00001780     0b40          cmpi    1,a0
+         00001790     fffe  
+     436 000017a0     cb13          jrne    ffygno_newline
+     437 000017b0     05a0          move    @mess_line_spacing,a0
+         000017c0 00000590- 
+     438 000017e0     05a1          move    @mess_cursy,a1
+         000017f0 00000560- 
+     439 00001810     4001          add     a0,a1
+     440 00001820     0581          move    a1,@mess_cursy
+         00001830 00000560- 
+     441                    
+     442 00001850     07a0          move    @mess_justify,a0,L      ;justification method
+         00001860 000005b0- 
+     443 00001880     0b04          addi    8,a4                    ;skip newline char
+         00001890     0008  
+     444 000018a0     0920          call    a0
+     445 000018b0     0be4          subi    8,a4
+         000018c0     fff7  
+     446 000018d0     c0e4          jruc    ffygnext_char
+     447 000018e0           ffygno_newline
+     448 000018e0     0b40          cmpi    32,a0
+         000018f0     ffdf  
+     449 00001900     cb0b          jrne    ffygno_space
+     450 00001910     05a0          move    @mess_space_width,a0
+         00001920 00000570- 
+     451 00001940     05a1          move    @mess_cursx2,a1
+         00001950 00000550- 
+     452 00001970     4001          add     a0,a1
+     453 00001980     0581          move    a1,@mess_cursx2
+         00001990 00000550- 
+     454 000019b0     c0d6          jruc    ffygnext_char
+     455 000019c0           ffygno_space
+     456 000019c0     24a0          sll     5,a0                    ;x 32 bits
+     457 000019d0     07a1          move    @message_ascii,a1,L
+         000019e0 00000000- 
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   11
+
+     458 00001a00     4020          add     a1,a0
+     459 00001a10     8602          move    *a0,a2,L                ;* image
+     460 00001a20     cacf          jrz     ffygnext_char
+     461                    
+     462 00001a30                   PUSH    a4,a8
+     463 00001a50     07b0          move    @message_palette,b0,L   ;* palette
+         00001a60 00000020- 
+     464 00001a80     05a0          move    @mess_cursx2,a0
+         00001a90 00000550- 
+     465 00001ab0     2600          sll     16,a0                   ;x val
+     466 00001ac0     05a1          move    @mess_cursy,a1
+         00001ad0 00000560- 
+     467 00001af0     2601          sll     16,a1                   ;y val
+     468 00001b00     09c3          movi    20000,a3                ;Z
+         00001b10     4e20  
+     469 00001b20     09e4          movi    DMAWNZ|M_SCRNREL,a4     ;DMA flags
+         00001b30 0000a002  
+     470 00001b50     05a5          move    @mess_objid,a5          ;object ID
+         00001b60 000005a0- 
+     471 00001b80     56c6          clr     a6                      ;x vel
+     472 00001b90     56e7          clr     a7                      ;y vel
+     473 00001ba0     0d5f          calla   BEGINOBJP
+         00001bb0 00000000! 
+     474 00001bd0     05a1          move    @mess_cursx2,a1
+         00001be0 00000550- 
+     475 00001c00     05a0          MOVE    @IGNORE_CHAR_WIDTH,A0
+         00001c10 00000610- 
+     476 00001c30     cb03          JRNZ    ffygIGNORE_IT
+     477 00001c40     b500          move    *a8(OSIZEX),a0
+         00001c50     0130  
+     478 00001c60     4001          add     a0,a1
+     479 00001c70           ffygIGNORE_IT
+     480 00001c70     05a0          move    @mess_spacing,a0
+         00001c80 00000580- 
+     481 00001ca0     4001          add     a0,a1
+     482 00001cb0     0581          move    a1,@mess_cursx2
+         00001cc0 00000550- 
+     483 00001ce0                   PULL    a4,a8
+     484 00001d00     c0a1          jruc    ffygnext_char
+     485                    
+     486 00001d10           ffygdone
+     487 00001d10     0960          rets
+     488 00001d20           smudleft_justify
+     489 00001d20     05a0          move    @mess_cursx,a0
+         00001d30 00000540- 
+     490 00001d50     0580          move    a0,@mess_cursx2
+         00001d60 00000550- 
+     491 00001d80     0960          rets
+     492                    
+     493 00001d90            SUBRP  print_string_with_z
+     494                    
+     495 00001d90     09e4          movi    message_buffer,a4
+         00001da0 00000040- 
+     496                    
+     497 00001dc0     09e0          movi    smudleft_justify,a0
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   12
+
+         00001dd0 00001d20' 
+     498 00001df0     0780          move    a0,@mess_justify,L      ;justification method
+         00001e00 000005b0- 
+     499 00001e20     05a0          move    @mess_cursx,a0
+         00001e30 00000540- 
+     500 00001e50     0580          move    a0,@mess_cursx2
+         00001e60 00000550- 
+     501 00001e80            SUBRP  print_string_with_zb
+     502                    
+     503 00001e80     1504          subk    8,a4
+     504 00001e90           smudnext_char
+     505 00001e90     1104          addk    8,a4
+     506 00001ea0     8e80          movb    *a4,a0
+     507 00001eb0     0b80          andi    0ffh,a0
+         00001ec0 ffffff00  
+     508 00001ee0     ca5a          jrz     smuddone
+     509 00001ef0     0b40          cmpi    1,a0
+         00001f00     fffe  
+     510 00001f10     cb13          jrne    smudno_newline
+     511 00001f20     05a0          move    @mess_line_spacing,a0
+         00001f30 00000590- 
+     512 00001f50     05a1          move    @mess_cursy,a1
+         00001f60 00000560- 
+     513 00001f80     4001          add     a0,a1
+     514 00001f90     0581          move    a1,@mess_cursy
+         00001fa0 00000560- 
+     515                    
+     516 00001fc0     07a0          move    @mess_justify,a0,L      ;justification method
+         00001fd0 000005b0- 
+     517 00001ff0     0b04          addi    8,a4                    ;skip newline char
+         00002000     0008  
+     518 00002010     0920          call    a0
+     519 00002020     0be4          subi    8,a4
+         00002030     fff7  
+     520 00002040     c0e4          jruc    smudnext_char
+     521 00002050           smudno_newline
+     522 00002050     0b40          cmpi    32,a0
+         00002060     ffdf  
+     523 00002070     cb0b          jrne    smudno_space
+     524 00002080     05a0          move    @mess_space_width,a0
+         00002090 00000570- 
+     525 000020b0     05a1          move    @mess_cursx2,a1
+         000020c0 00000550- 
+     526 000020e0     4001          add     a0,a1
+     527 000020f0     0581          move    a1,@mess_cursx2
+         00002100 00000550- 
+     528 00002120     c0d6          jruc    smudnext_char
+     529 00002130           smudno_space
+     530 00002130     24a0          sll     5,a0                    ;x 32 bits
+     531 00002140     07a1          move    @message_ascii,a1,L
+         00002150 00000000- 
+     532 00002170     4020          add     a1,a0
+     533 00002180     8602          move    *a0,a2,L                ;* image
+     534 00002190     cacf          jrz     smudnext_char
+     535                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   13
+
+     536 000021a0                   PUSH    a4,a8
+     537 000021c0     07b0          move    @message_palette,b0,L   ;* palette
+         000021d0 00000020- 
+     538 000021f0     05a0          move    @mess_cursx2,a0
+         00002200 00000550- 
+     539 00002220     2600          sll     16,a0                   ;x val
+     540 00002230     05a1          move    @mess_cursy,a1
+         00002240 00000560- 
+     541 00002260     2601          sll     16,a1                   ;y val
+     542 00002270     07a3          move    @mess_z,a3,L
+         00002280 000005f0- 
+     543 000022a0     09e4          movi    DMAWNZ|M_SCRNREL,a4     ;DMA flags
+         000022b0 0000a002  
+     544 000022d0     05a5          move    @mess_objid,a5          ;object ID
+         000022e0 000005a0- 
+     545 00002300     56c6          clr     a6                      ;x vel
+     546 00002310     56e7          clr     a7                      ;y vel
+     547 00002320     0d5f          calla   BEGINOBJP
+         00002330 00000000! 
+     548 00002350     05a1          move    @mess_cursx2,a1
+         00002360 00000550- 
+     549 00002380     05a0          MOVE    @IGNORE_CHAR_WIDTH,A0
+         00002390 00000610- 
+     550 000023b0     cb03          JRNZ    smudIGNORE_IT
+     551 000023c0     b500          move    *a8(OSIZEX),a0
+         000023d0     0130  
+     552 000023e0     4001          add     a0,a1
+     553 000023f0           smudIGNORE_IT
+     554 000023f0     05a0          move    @mess_spacing,a0
+         00002400 00000580- 
+     555 00002420     4001          add     a0,a1
+     556 00002430     0581          move    a1,@mess_cursx2
+         00002440 00000550- 
+     557 00002460                   PULL    a4,a8
+     558 00002480     c0a0          jruc    smudnext_char
+     559                    
+     560 00002490           smuddone
+     561 00002490     0960          rets
+     562                    
+     563                    
+     564 000024a0            SUBRP  setup_message
+     565                    
+     566 000024a0     09c0          movi    TYPTEXT,a0
+         000024b0     0700  
+     567 000024c0     0580          move    a0,@mess_objid          ;OBJ ID's for text
+         000024d0 000005a0- 
+     568                    
+     569 000024f0     9640          move    *a2+,a0,L               ;* ascii lookup table
+     570 00002500     0780          move    a0,@message_ascii,L     ;
+         00002510 00000000- 
+     571 00002530     9440          move    *a2+,a0                 ;space char width
+     572 00002540     0580          move    a0,@mess_space_width    ;
+         00002550 00000570- 
+     573 00002570     9440          move    *a2+,a0                 ;spacing between chars
+     574 00002580     0580          move    a0,@mess_spacing        ;
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   14
+
+         00002590 00000580- 
+     575 000025b0     9440          move    *a2+,a0                 ;message cursor pos X
+     576 000025c0     0580          move    a0,@mess_cursx          ;
+         000025d0 00000540- 
+     577 000025f0     9440          move    *a2+,a0                 ;message cursor pos Y
+     578 00002600     0580          move    a0,@mess_cursy          ;
+         00002610 00000560- 
+     579 00002630     9640          move    *a2+,a0,L
+     580 00002640     0780          move    a0,@message_palette,L
+         00002650 00000020- 
+     581 00002670     09e0          movi    iksqrets,a0
+         00002680 000026d0' 
+     582 000026a0     0780          move    a0,@mess_justify,L      ;justification method
+         000026b0 000005b0- 
+     583 000026d0           iksqrets
+     584 000026d0     0960          rets
+     585                    
+     586                    
+     587 000026e0            SUBRP  print_message
+     588                    
+     589                    
+     590 000026e0                   PUSH    a4,a5,a6,a7,a8,a9,a10,a11
+     591                    
+     592 00002700     09c0          movi    TYPTEXT,a0
+         00002710     0700  
+     593 00002720     0580          move    a0,@mess_objid          ;OBJ ID's for text
+         00002730 000005a0- 
+     594                    
+     595 00002750     9640          move    *a2+,a0,L               ;* ascii lookup table
+     596 00002760     0780          move    a0,@message_ascii,L     ;
+         00002770 00000000- 
+     597 00002790     9440          move    *a2+,a0                 ;space char width
+     598 000027a0     0580          move    a0,@mess_space_width    ;
+         000027b0 00000570- 
+     599 000027d0     9440          move    *a2+,a0                 ;spacing between chars
+     600 000027e0     0580          move    a0,@mess_spacing        ;
+         000027f0 00000580- 
+     601 00002810     9440          move    *a2+,a0                 ;message cursor pos X
+     602 00002820     0580          move    a0,@mess_cursx          ;
+         00002830 00000540- 
+     603 00002850     9440          move    *a2+,a0                 ;message cursor pos Y
+     604 00002860     0580          move    a0,@mess_cursy          ;
+         00002870 00000560- 
+     605 00002890     9640          move    *a2+,a0,L
+     606 000028a0     0780          move    a0,@message_palette,L
+         000028b0 00000020- 
+     607 000028d0     9640          move    *a2+,a0,L               ;print method
+     608                    
+     609 000028e0     4c44          move    a2,a4                   ;* text string
+     610 000028f0     0920          call    a0
+     611                    
+     612 00002900                   PULL    a4,a5,a6,a7,a8,a9,a10,a11
+     613 00002920     0960          rets
+     614                    
+     615                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   15
+
+     616 00002930           init_convert_table
+     617 00002930     0041          .word   'A','B','C','D','E','F','G','H'
+     618 000029b0     0049          .word   'I','J','K','L','M','N','O','P'
+     619 00002a30     0051          .word   'Q','R','S','T','U','V','W','X'
+     620 00002ab0     0059          .word   'Y','Z',' '
+     621                    
+     622 00002ae0           font9_ascii
+     623 00002ae0 00000000   .long 0,0,0,0,0,0,0,0                                                  ;$00
+     624 00002be0 00000000   .long 0,0,0,0,0,0,0,0                                                  ;$08
+     625 00002ce0 00007420"  .long FNT9_SPC,FNT9_DEL,FNT9_END,0,0,0,0,0                     ;$10    SPC,BAK,END
+     626 00002de0 00000000   .long 0,0,0,0,0,0,0,0                                                  ;$18
+     627 00002ee0 00000000   .long 0,FNT9_EXP,0,0,0,0,0,FNT9_APO                                            ;$20    SP! " # $ % & '
+     628 00002fe0 00000000   .long 0,0,0,0,0,0,FNT9_PER,0                                                   ;$28    ( ) * + , - . /
+     629 000030e0 00007960"  .long FNT9_0,FNT9_1,FNT9_2,FNT9_3,FNT9_4,FNT9_5,FNT9_6,FNT9_7          ;$30    0 1 2 3 4 5 6 7
+     630 000031e0 00007880"  .long FNT9_8,FNT9_9,FNT9_COL,0,0,0,0,0                                 ;$38    8 9 : ; < - > ?
+     631 000032e0 00000000   .long 0,FNT9_A,FNT9_B,FNT9_C,FNT9_D,FNT9_E,FNT9_F,FNT9_G               ;$40    @ A B C D E F G
+     632 000033e0 000069f0"  .long FNT9_H,FNT9_I,FNT9_J,FNT9_K,FNT9_L,FNT9_M,FNT9_N,FNT9_O          ;$48    H I J K L M N O
+     633 000034e0 00006d70"  .long FNT9_P,FNT9_Q,FNT9_R,FNT9_S,FNT9_T,FNT9_U,FNT9_V,FNT9_W          ;$50    P Q R S T U V W
+     634 000035e0 000070f0"  .long FNT9_X,FNT9_Y,FNT9_Z,0,0,0,0,0                                   ;$58    X Y Z [ \ ] ^ _
+     635 000036e0 00000000   .long 0,FNT9_A,FNT9_B,FNT9_C,FNT9_D,FNT9_E,FNT9_F,FNT9_G               ;$60    ` a b c d e f g
+     636 000037e0 000069f0"  .long FNT9_H,FNT9_I,FNT9_J,FNT9_K,FNT9_L,FNT9_M,FNT9_N,FNT9_O          ;$68    h i j k l m n o
+     637 000038e0 00006d70"  .long FNT9_P,FNT9_Q,FNT9_R,FNT9_S,FNT9_T,FNT9_U,FNT9_V,FNT9_W          ;$70    p q r s t u v w
+     638 000039e0 000070f0"  .long FNT9_X,FNT9_Y,FNT9_Z,0,0,0,0,0                                   ;$78    x y z { | } ~
+     639                    
+     640 00003ae0           font9A_ascii
+     641 00003ae0 00000000   .long 0,0,0,0,0,0,0,0                                                  ;$00
+     642 00003be0 00000000   .long 0,0,0,0,0,0,0,0                                                  ;$08
+     643 00003ce0 00007420"  .long FNT9_SPC,FNT9_DEL,FNT9_END,0,0,0,0,0                     ;$10    SPC,BAK,END
+     644 00003de0 00000000   .long 0,0,0,0,0,0,0,0                                                  ;$18
+     645 00003ee0 00000000   .long 0,FNT9_EXP,0,0,0,0,0,FNT9_APO                                            ;$20    SP! " # $ % & '
+     646 00003fe0 00000000   .long 0,0,0,0,0,0,FNT9_PER,0                                                   ;$28    ( ) * + , - . /
+     647 000040e0 00007dc0"  .long FNT9_0A,FNT9_1A,FNT9_2A,FNT9_3A,FNT9_4A,FNT9_5A,FNT9_6A,FNT9_7A          ;$30    0 1 2 3 4 5 6 7
+     648 000041e0 00007ce0"  .long FNT9_8A,FNT9_9A,FNT9_COL,0,0,0,0,0                                       ;$38    8 9 : ; < - > ?
+     649 000042e0 00000000   .long 0,FNT9_A,FNT9_B,FNT9_C,FNT9_D,FNT9_E,FNT9_F,FNT9_G               ;$40    @ A B C D E F G
+     650 000043e0 000069f0"  .long FNT9_H,FNT9_I,FNT9_J,FNT9_K,FNT9_L,FNT9_M,FNT9_N,FNT9_O          ;$48    H I J K L M N O
+     651 000044e0 00006d70"  .long FNT9_P,FNT9_Q,FNT9_R,FNT9_S,FNT9_T,FNT9_U,FNT9_V,FNT9_W          ;$50    P Q R S T U V W
+     652 000045e0 000070f0"  .long FNT9_X,FNT9_Y,FNT9_Z,0,0,0,0,0                                   ;$58    X Y Z [ \ ] ^ _
+     653 000046e0 00000000   .long 0,FNT9_A,FNT9_B,FNT9_C,FNT9_D,FNT9_E,FNT9_F,FNT9_G               ;$60    ` a b c d e f g
+     654 000047e0 000069f0"  .long FNT9_H,FNT9_I,FNT9_J,FNT9_K,FNT9_L,FNT9_M,FNT9_N,FNT9_O          ;$68    h i j k l m n o
+     655 000048e0 00006d70"  .long FNT9_P,FNT9_Q,FNT9_R,FNT9_S,FNT9_T,FNT9_U,FNT9_V,FNT9_W          ;$70    p q r s t u v w
+     656 000049e0 000070f0"  .long FNT9_X,FNT9_Y,FNT9_Z,0,0,0,0,0                                   ;$78    x y z { | } ~
+     657                    
+     658 00004ae0           font18_ascii
+     659 00004ae0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$00
+     660 00004be0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$08
+     661 00004ce0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$10
+     662 00004de0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$18
+     663 00004ee0 00000000   .long 0,WGSF18EXC,0,0,0,0,0,0                                          ;$20    SP! " # $ % & '
+     664 00004fe0 00000000   .long 0,0,0,0,WGSF18COM,0,WGSF18PER,0                                                  ;$28    ( ) * + 
+     665 000050e0 00000c00"  .long WGSF18_0,WGSF18_1,WGSF18_2,WGSF18_3,WGSF18_4,WGSF18_5,WGSF18_6,WGSF18_7                  ;$30    
+     666 000051e0 00000f80"  .long WGSF18_8,WGSF18_9,0,0,0,0,0,0                                            ;$38    8 9 : ; < - > ?
+     667 000052e0 00000000   .long 0,WGSF18_A,WGSF18_B,WGSF18_C,WGSF18_D,WGSF18_E,WGSF18_F,WGSF18_G                 ;$40    @ A B C 
+     668 000053e0 000003b0"  .long WGSF18_H,WGSF18_I,WGSF18_J,WGSF18_K,WGSF18_L,WGSF18_M,WGSF18_N,WGSF18_O                  ;$48    
+     669 000054e0 00000730"  .long WGSF18_P,WGSF18_Q,WGSF18_R,WGSF18_S,WGSF18_T,WGSF18_U,WGSF18_V,WGSF18_W                  ;$50    
+     670 000055e0 00000ab0"  .long WGSF18_X,WGSF18_Y,WGSF18_Z,0,0,0,0,0                                             ;$58    X Y Z [ 
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   16
+
+     671 000056e0 00000000   .long 0,WGSF18_A,WGSF18_B,WGSF18_C,WGSF18_D,WGSF18_E,WGSF18_F,WGSF18_G                 ;$60    ` a b c 
+     672 000057e0 000003b0"  .long WGSF18_H,WGSF18_I,WGSF18_J,WGSF18_K,WGSF18_L,WGSF18_M,WGSF18_N,WGSF18_O                  ;$68    
+     673 000058e0 00000730"  .long WGSF18_P,WGSF18_Q,WGSF18_R,WGSF18_S,WGSF18_T,WGSF18_U,WGSF18_V,WGSF18_W                  ;$70    
+     674 000059e0 00000ab0"  .long WGSF18_X,WGSF18_Y,WGSF18_Z,0,0,0,0,0                                             ;$78    x y z { 
+     675                    
+     676                    
+     677 00005ae0           osgemd_ascii
+     678 00005ae0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$00
+     679 00005be0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$08
+     680 00005ce0 000057c0"  .long OSGEMD_SPC,OSGEMD_DEL,OSGEMD_END,0,0,0,0,0                               ;$10    SPC,BAK,END
+     681 00005de0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$18
+     682 00005ee0 00000000   .long 0,OSGEMD_EXP,0,OSGEMD_NUM,OSGEMD_DOL,OSGEMD_PCT,OSGEMD_AND,OSGEMD_APO            ;$20    SP! " # 
+     683 00005fe0 00005970"  .long OSGEMD_OBR,OSGEMD_CBR,0,0,0,OSGEMD_DAS,OSGEMD_DOT,OSGEMD_SLS             ;$28    ( ) * + , - . /
+     684 000060e0 00005b20"  .long OSGEMD_0,OSGEMD_1,OSGEMD_2,OSGEMD_3,OSGEMD_4,OSGEMD_5,OSGEMD_6,OSGEMD_7  ;$30    0 1 2 3 4 5 6 7
+     685 000061e0 00005fa0"  .long OSGEMD_8,OSGEMD_9,OSGEMD_COL,0,0,0,0,OSGEMD_QUE                          ;$38    8 9 : ; < - > ?
+     686 000062e0 00000000   .long 0,OSGEMD_A,OSGEMD_B,OSGEMD_C,OSGEMD_D,OSGEMD_E,OSGEMD_F,OSGEMD_G         ;$40    @ A B C D E F G
+     687 000063e0 00004800"  .long OSGEMD_H,OSGEMD_I,OSGEMD_J,OSGEMD_K,OSGEMD_L,OSGEMD_M,OSGEMD_N,OSGEMD_O  ;$48    H I J K L M N O
+     688 000064e0 00004c80"  .long OSGEMD_P,OSGEMD_Q,OSGEMD_R,OSGEMD_S,OSGEMD_T,OSGEMD_U,OSGEMD_V,OSGEMD_W  ;$50    P Q R S T U V W
+     689 000065e0 00005100"  .long OSGEMD_X,OSGEMD_Y,OSGEMD_Z,0,0,0,0,0                                     ;$58    X Y Z [ \ ] ^ _
+     690 000066e0 00000000   .long 0,OSGEMD_A,OSGEMD_B,OSGEMD_C,OSGEMD_D,OSGEMD_E,OSGEMD_F,OSGEMD_G         ;$60    ` a b c d e f g
+     691 000067e0 00004800"  .long OSGEMD_H,OSGEMD_I,OSGEMD_J,OSGEMD_K,OSGEMD_L,OSGEMD_M,OSGEMD_N,OSGEMD_O  ;$68    h i j k l m n o
+     692 000068e0 00004c80"  .long OSGEMD_P,OSGEMD_Q,OSGEMD_R,OSGEMD_S,OSGEMD_T,OSGEMD_U,OSGEMD_V,OSGEMD_W  ;$70    p q r s t u v w
+     693 000069e0 00005100"  .long OSGEMD_X,OSGEMD_Y,OSGEMD_Z,0,0,0,0,0                                     ;$78    x y z { | } ~
+     694                    
+     695                    
+     696 00006ae0           osgmd8_ascii
+     697 00006ae0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$00
+     698 00006be0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$08
+     699 00006ce0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$10
+     700 00006de0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$18
+     701 00006ee0 00000000   .long 0,osgmd8_EXP,0,osgmd8_NUM,0,osgmd8_PCT,osgmd8_AND,osgmd8_APO             ;$20    SP! " # $ % & '
+     702 00006fe0 00002970"  .long osgmd8_OBR,osgmd8_CBR,0,0,osgmd8_COM,osgmd8_DAS,osgmd8_DOT,osgmd8_SLS    ;$28    ( ) * + , - . /
+     703 000070e0 000022e0"  .long osgmd8_0,osgmd8_1,osgmd8_2,osgmd8_3,osgmd8_4,osgmd8_5,osgmd8_6,osgmd8_7  ;$30    0 1 2 3 4 5 6 7
+     704 000071e0 00002660"  .long osgmd8_8,osgmd8_9,osgmd8_COL,0,osgmd8_OPQ,0,osgmd8_CLQ,0                 ;$38    8 9 : ; < - > ?
+     705 000072e0 00000000   .long 0,osgmd8_A,osgmd8_B,osgmd8_C,osgmd8_D,osgmd8_E,osgmd8_F,osgmd8_G         ;$40    @ A B C D E F G
+     706 000073e0 00001a90"  .long osgmd8_H,osgmd8_I,osgmd8_J,osgmd8_K,osgmd8_L,osgmd8_M,osgmd8_N,osgmd8_O  ;$48    H I J K L M N O
+     707 000074e0 00001e10"  .long osgmd8_P,osgmd8_Q,osgmd8_R,osgmd8_S,osgmd8_T,osgmd8_U,osgmd8_V,osgmd8_W  ;$50    P Q R S T U V W
+     708 000075e0 00002190"  .long osgmd8_X,osgmd8_Y,osgmd8_Z,0,0,0,0,0                                     ;$58    X Y Z [ \ ] ^ _
+     709 000076e0 00000000   .long 0,osgmd8_A,osgmd8_B,osgmd8_C,osgmd8_D,osgmd8_E,osgmd8_F,osgmd8_G         ;$60    ` a b c d e f g
+     710 000077e0 00001a90"  .long osgmd8_H,osgmd8_I,osgmd8_J,osgmd8_K,osgmd8_L,osgmd8_M,osgmd8_N,osgmd8_O  ;$68    h i j k l m n o
+     711 000078e0 00001e10"  .long osgmd8_P,osgmd8_Q,osgmd8_R,osgmd8_S,osgmd8_T,osgmd8_U,osgmd8_V,osgmd8_W  ;$70    p q r s t u v w
+     712 000079e0 00002190"  .long osgmd8_X,osgmd8_Y,osgmd8_Z,osgmd8_OPQ,0,osgmd8_CLQ,0,0                   ;$78    x y z { | } ~
+     713                    
+     714 00007ae0           wgsf24_ascii
+     715 00007ae0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$00
+     716 00007be0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$08
+     717 00007ce0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$10
+     718 00007de0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$18
+     719 00007ee0 00000000   .long 0,WGSF24EXC,0,0,0,0,0,0                                                  ;$20    SP! " # $ % & '
+     720 00007fe0 00000000   .long 0,0,0,0,WGSF24COM,0,WGSF24PER,0                                          ;$28    ( ) * + , - . /
+     721 000080e0 00000000!  .long WGSF24_0,WGSF24_1,WGSF24_2,WGSF24_3,WGSF24_4,WGSF24_5,WGSF24_6,WGSF24_7  ;$30    0 1 2 3 4 5 6 7
+     722 000081e0 00000000!  .long WGSF24_8,WGSF24_9,0,0,0,0,0,0                                            ;$38    8 9 : ; < - > ?
+     723 000082e0 00000000   .long 0,WGSF24_A,WGSF24_B,WGSF24_C,WGSF24_D,WGSF24_E,WGSF24_F,WGSF24_G         ;$40    @ A B C D E F G
+     724 000083e0 00000000!  .long WGSF24_H,WGSF24_I,WGSF24_J,WGSF24_K,WGSF24_L,WGSF24_M,WGSF24_N,WGSF24_O  ;$48    H I J K L M N O
+     725 000084e0 00000000!  .long WGSF24_P,WGSF24_Q,WGSF24_R,WGSF24_S,WGSF24_T,WGSF24_U,WGSF24_V,WGSF24_W  ;$50    P Q R S T U V W
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   17
+
+     726 000085e0 00000000!  .long WGSF24_X,WGSF24_Y,WGSF24_Z,0,0,0,0,0                                     ;$58    X Y Z [ \ ] ^ _
+     727 000086e0 00000000   .long 0,WGSF24_A,WGSF24_B,WGSF24_C,WGSF24_D,WGSF24_E,WGSF24_F,WGSF24_G         ;$60    ` a b c d e f g
+     728 000087e0 00000000!  .long WGSF24_H,WGSF24_I,WGSF24_J,WGSF24_K,WGSF24_L,WGSF24_M,WGSF24_N,WGSF24_O  ;$68    h i j k l m n o
+     729 000088e0 00000000!  .long WGSF24_P,WGSF24_Q,WGSF24_R,WGSF24_S,WGSF24_T,WGSF24_U,WGSF24_V,WGSF24_W  ;$70    p q r s t u v w
+     730 000089e0 00000000!  .long WGSF24_X,WGSF24_Y,WGSF24_Z,0,0,0,0,0                                     ;$78    x y z { | } ~
+     731                    
+     732 00008ae0           wsf10_ascii
+     733 00008ae0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$00
+     734 00008be0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$08
+     735 00008ce0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$10
+     736 00008de0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$18
+     737 00008ee0 00000000   .long 0,WSF10EXC,0,WSF10NUM,0,0,0,WSF10APO                                     ;$20    SP! " # $ % & '
+     738 00008fe0 00000000   .long 0,0,0,0,WSF10COM,0,WSF10PER,0                                            ;$28    ( ) * + , - . /
+     739 000090e0 00009f30"  .long WSF10_0,WSF10_1,WSF10_2,WSF10_3,WSF10_4,WSF10_5,WSF10_6,WSF10_7          ;$30    0 1 2 3 4 5 6 7
+     740 000091e0 0000a2b0"  .long WSF10_8,WSF10_9,0,0,0,0,0,0                                              ;$38    8 9 : ; < - > ?
+     741 000092e0 00000000   .long 0,WSF10_A,WSF10_B,WSF10_C,WSF10_D,WSF10_E,WSF10_F,WSF10_G                ;$40    @ A B C D E F G
+     742 000093e0 000096e0"  .long WSF10_H,WSF10_I,WSF10_J,WSF10_K,WSF10_L,WSF10_M,WSF10_N,WSF10_O          ;$48    H I J K L M N O
+     743 000094e0 00009a60"  .long WSF10_P,WSF10_Q,WSF10_R,WSF10_S,WSF10_T,WSF10_U,WSF10_V,WSF10_W          ;$50    P Q R S T U V W
+     744 000095e0 00009de0"  .long WSF10_X,WSF10_Y,WSF10_Z,0,0,0,0,0                                        ;$58    X Y Z [ \ ] ^ _
+     745 000096e0 00000000   .long 0,WSF10_A,WSF10_B,WSF10_C,WSF10_D,WSF10_E,WSF10_F,WSF10_G                ;$60    ` a b c d e f g
+     746 000097e0 000096e0"  .long WSF10_H,WSF10_I,WSF10_J,WSF10_K,WSF10_L,WSF10_M,WSF10_N,WSF10_O          ;$68    h i j k l m n o
+     747 000098e0 00009a60"  .long WSF10_P,WSF10_Q,WSF10_R,WSF10_S,WSF10_T,WSF10_U,WSF10_V,WSF10_W          ;$70    p q r s t u v w
+     748 000099e0 00009de0"  .long WSF10_X,WSF10_Y,WSF10_Z,0,0,0,0,0                                        ;$78    x y z { | } ~
+     749                    
+     750 00009ae0           wsf14_ascii
+     751 00009ae0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$00
+     752 00009be0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$08
+     753 00009ce0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$10
+     754 00009de0 00000000   .long 0,0,0,0,0,0,0,0                                                          ;$18
+     755 00009ee0 00000000   .long 0,WSF14EXC,0,WSF14NUM,0,0,0,WSF14APO                                     ;$20    SP! " # $ % & '
+     756 00009fe0 00000000   .long 0,0,0,0,WSF14COM,0,WSF14PER,0                                            ;$28    ( ) * + , - . /
+     757 0000a0e0 00008b20"  .long WSF14_0,WSF14_1,WSF14_2,WSF14_3,WSF14_4,WSF14_5,WSF14_6,WSF14_7          ;$30    0 1 2 3 4 5 6 7
+     758 0000a1e0 00008dc0"  .long WSF14_8,WSF14_9,WSF14COL,0,0,0,0,0                                       ;$38    8 9 : ; < - > ?
+     759 0000a2e0 00000000   .long 0,WSF14_A,WSF14_B,WSF14_C,WSF14_D,WSF14_E,WSF14_F,WSF14_G                ;$40    @ A B C D E F G
+     760 0000a3e0 000082d0"  .long WSF14_H,WSF14_I,WSF14_J,WSF14_K,WSF14_L,WSF14_M,WSF14_N,WSF14_O          ;$48    H I J K L M N O
+     761 0000a4e0 00008650"  .long WSF14_P,WSF14_Q,WSF14_R,WSF14_S,WSF14_T,WSF14_U,WSF14_V,WSF14_W          ;$50    P Q R S T U V W
+     762 0000a5e0 000089d0"  .long WSF14_X,WSF14_Y,WSF14_Z,0,0,0,0,0                                        ;$58    X Y Z [ \ ] ^ _
+     763 0000a6e0 00000000   .long 0,WSF14_A,WSF14_B,WSF14_C,WSF14_D,WSF14_E,WSF14_F,WSF14_G                ;$60    ` a b c d e f g
+     764 0000a7e0 000082d0"  .long WSF14_H,WSF14_I,WSF14_J,WSF14_K,WSF14_L,WSF14_M,WSF14_N,WSF14_O          ;$68    h i j k l m n o
+     765 0000a8e0 00008650"  .long WSF14_P,WSF14_Q,WSF14_R,WSF14_S,WSF14_T,WSF14_U,WSF14_V,WSF14_W          ;$70    p q r s t u v w
+     766 0000a9e0 000089d0"  .long WSF14_X,WSF14_Y,WSF14_Z,0,0,0,0,0                                        ;$78    x y z { | } ~
+     767                    
+     768 0000aae0           ogmd10_ascii
+     769 0000aae0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$00
+     770 0000abe0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$08
+     771 0000ace0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$10
+     772 0000ade0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$18
+     773 0000aee0 00000000   .long 0,osgmd10_EXP,0,osgmd10_NUM,osgmd10_DOL,osgmd10_PCT,osgmd10_AND,osgmd10_APO      ;$20    SP! " # 
+     774 0000afe0 00003e20"  .long osgmd10_OBR,osgmd10_CBR,0,0,osgmd10_COM,osgmd10_DAS,osgmd10_DOT,osgmd10_SLS      ;$28    ( ) * + 
+     775 0000b0e0 000038e0"  .long osgmd10_0,osgmd10_1,osgmd10_2,osgmd10_3,osgmd10_4,osgmd10_5,osgmd10_6,osgmd10_7  ;$30    0 1 2 3 
+     776 0000b1e0 00003c60"  .long osgmd10_8,osgmd10_9,osgmd10_COL,0,0,0,0,0                                        ;$38    8 9 : ; 
+     777 0000b2e0 00000000   .long 0,osgmd10_A,osgmd10_B,osgmd10_C,osgmd10_D,osgmd10_E,osgmd10_F,osgmd10_G          ;$40    @ A B C 
+     778 0000b3e0 00003090"  .long osgmd10_H,osgmd10_I,osgmd10_J,osgmd10_K,osgmd10_L,osgmd10_M,osgmd10_N,osgmd10_O  ;$48    H I J K 
+     779 0000b4e0 00003410"  .long osgmd10_P,osgmd10_Q,osgmd10_R,osgmd10_S,osgmd10_T,osgmd10_U,osgmd10_V,osgmd10_W  ;$50    P Q R S 
+     780 0000b5e0 00003790"  .long osgmd10_X,osgmd10_Y,osgmd10_Z,0,0,0,0,0                                          ;$58    X Y Z [ 
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:40 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+string printing stuff                                                PAGE   18
+
+     781 0000b6e0 00000000   .long 0,osgmd10_A,osgmd10_B,osgmd10_C,osgmd10_D,osgmd10_E,osgmd10_F,osgmd10_G          ;$60    ` a b c 
+     782 0000b7e0 00003090"  .long osgmd10_H,osgmd10_I,osgmd10_J,osgmd10_K,osgmd10_L,osgmd10_M,osgmd10_N,osgmd10_O  ;$68    h i j k 
+     783 0000b8e0 00003410"  .long osgmd10_P,osgmd10_Q,osgmd10_R,osgmd10_S,osgmd10_T,osgmd10_U,osgmd10_V,osgmd10_W  ;$70    p q r s 
+     784 0000b9e0 00003790"  .long osgmd10_X,osgmd10_Y,osgmd10_Z,0,0,0,0,0                                          ;$78    x y z { 
+     785                    
+     786 0000bae0           win_ascii
+     787 0000bae0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$00
+     788 0000bbe0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$08
+     789 0000bce0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$10
+     790 0000bde0 00000000   .long 0,0,0,0,0,0,0,0                                                                  ;$18
+     791 0000bee0 00000000   .long 0,osgmd10_EXP,0,osgmd10_NUM,osgmd10_DOL,osgmd10_PCT,osgmd10_AND,osgmd10_APO      ;$20    SP! " # 
+     792 0000bfe0 00003e20"  .long osgmd10_OBR,osgmd10_CBR,0,0,osgmd10_COM,osgmd10_DAS,osgmd10_DOT,osgmd10_SLS      ;$28    ( ) * + 
+     793 0000c0e0 000060c0"  .long WFONT_0,WFONT_1,WFONT_2,WFONT_3,WFONT_4,WFONT_5,WFONT_6,WFONT_7                  ;$30    0 1 2 3 
+     794 0000c1e0 00006540"  .long WFONT_8,WFONT_9,osgmd10_COL,0,0,0,0,0                                            ;$38    8 9 : ; 
+     795 0000c2e0 00000000   .long 0,osgmd10_A,osgmd10_B,osgmd10_C,osgmd10_D,osgmd10_E,osgmd10_F,osgmd10_G          ;$40    @ A B C 
+     796 0000c3e0 00003090"  .long osgmd10_H,osgmd10_I,osgmd10_J,osgmd10_K,osgmd10_L,osgmd10_M,osgmd10_N,osgmd10_O  ;$48    H I J K 
+     797 0000c4e0 00003410"  .long osgmd10_P,osgmd10_Q,osgmd10_R,osgmd10_S,osgmd10_T,osgmd10_U,osgmd10_V,osgmd10_W  ;$50    P Q R S 
+     798 0000c5e0 00003790"  .long osgmd10_X,osgmd10_Y,osgmd10_Z,0,0,0,0,0                                          ;$58    X Y Z [ 
+     799 0000c6e0 00000000   .long 0,osgmd10_A,osgmd10_B,osgmd10_C,osgmd10_D,osgmd10_E,osgmd10_F,osgmd10_G          ;$60    ` a b c 
+     800 0000c7e0 00003090"  .long osgmd10_H,osgmd10_I,osgmd10_J,osgmd10_K,osgmd10_L,osgmd10_M,osgmd10_N,osgmd10_O  ;$68    h i j k 
+     801 0000c8e0 00003410"  .long osgmd10_P,osgmd10_Q,osgmd10_R,osgmd10_S,osgmd10_T,osgmd10_U,osgmd10_V,osgmd10_W  ;$70    p q r s 
+     802 0000c9e0 00003790"  .long osgmd10_X,osgmd10_Y,osgmd10_Z,0,0,0,0,0                                          ;$78    x y z { 
+     803                    
+     804                    
+     805                            .end
+
+ No Errors,  No Warnings

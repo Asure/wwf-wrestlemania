@@ -1,14 +1,3 @@
-***************************************************************
-*
-* Software:	LARRY DeMAR, EUGENE JARVIS
-* Modified:	Shawn Liptak 8/6/91 	- Multi color fonts
-*		Jason Skiles 12/14/93	- Use STRING.ASM calls
-*		Jason Skiles 1/17/94	- Hold most recent index in CMOS
-*
-* COPYRIGHT (C) 1991 WILLIAMS ELECTRONICS GAMES, INC.
-*
-*.Last mod - 1/17/94 11:59
-****************************************************************
 
 	.file	"hstd.asm"
 	.title	"robo high-score-to-date management"
@@ -35,9 +24,7 @@
 
 	.TEXT
 
-; - confine cursor to end and del once all inits are in
 
-*	IN THIS MODULE
  
 
 	.DEF	GET_HSCR
@@ -68,14 +55,10 @@
 	.DEF	STREAK_TAB
 	.DEF	BEATEN_TAB
 	.DEF	DO_BEATEN_GAME
-;	.DEF	ISHSTD,GETINIT,GETINIT1,GETINIT2,INITTIM
 	.DEF	SET_PAGE
-;	.DEF	A2_CHECK
 	.DEF	DEC_HSR,INIT_HSR,GET_HSC
 	.def	not_blank
 
-******************************************************************************
-* EXTERNAL REFERENCES
 
 	.ref	ADD_VOICE,message_palette,get_but_val_down,dec_to_asc
 	.ref	dec_to_asc_new_entry,MATCH_TIMERS,civanic,GET_ADJ
@@ -98,28 +81,20 @@
 	.endif
 
 
-******************************************************************************
 
 	 .TEXT
 
-;Sound headers
 
 BEEPSND	 .WORD	0F3FEH,010H,080A2H,0		;LOW BEEP
 
 
 	BSSX	starting_num,16
 	BSSX	entered_inits,		(8*6)*2
-;	.bss	entered_message,	(16*4)*2
 	.bss	last_hscore_ndx,	16
 	.bss	last_streak_ndx,	16
 	.bss	not_blank,16
 	BSSX	auto_init,16
 
-**************************************************************************
-*
-*	HIGH SCORE TABLE DEFINITIONS
-*
-**************************************************************************
 
 STREAK_TABLE_VISIBLE	equ	18
 PIN_SPEED_TAB_VISIBLE	equ	9
@@ -176,19 +151,6 @@ P_FORK
 	MMFM	SP,A1
 	RETS
 
-**************************************************************************
-*
-*	AUTO HIGH SCORE TABLE RESET HANDLING
-*
-**************************************************************************
-*
-*	DEC_HSR
-*
-*	THIS IS CALLED WITH EACH START OR CONTINUE FOR
-*	A PLAYER.  IT REMOVES 1 FROM THE HSTD COUNTER UNLESS
-*	ITS ALREADY SITTING AT ZERO.
-*
-**************************************************************************
 DEC_HSR
 	MMTM	SP,A0
 	CALLR	GET_HSC 	;THIS IS EASY...GET THE COUNTER
@@ -198,18 +160,7 @@ DEC_HSR
 DECHX	MMFM	SP,A0
 	RETS
 
-**************************************************************************
-*
-*	DELAY_HSRESET
-*
-*	THIS IS CALLED WHEN A NEW ENTRY IS MADE IN THE ALL TIME
-*	HIGH SCORE TABLE. IF WE'RE CLOSE TO A HIGH SCORE
-*	RESET, WE PUT IT OFF AWHILE SO HE CAN SHOW HIS FRIENDS
-*	FOR A FEW DAYS.
-*
-**************************************************************************
 HS_MIN	 EQU	 750		 ;ALWAYS 750 PLAYS BEFORE REMOVING A FRESH
-*				 ;NAME.
 DELAY_HSRESET:
 	MMTM	SP,A0
 	CALLR	GET_HSC 	;THIS IS EASY...GET THE COUNTER
@@ -222,14 +173,6 @@ DHX:
 	MMFM	SP,A0
 	RETS
 	
-**************************************************************************
-*
-*	INIT_HSR
-*
-*	THIS IS CALLED TO INITIALIZE THE HIGH SCORE RESET
-*	COUNTER TO ITS ADJUSTED VALUE.
-*
-**************************************************************************
 INIT_HSR
 	MMTM	SP,A0
 	MOVI	ADJHSRES,A0
@@ -238,14 +181,6 @@ INIT_HSR
 	MMFM	SP,A0
 	RETS
 
-**************************************************************************
-*
-*	PUT_HSC
-*
-*	THIS IS CALLED TO SET THE HIGH SCORE RESET COUNTER
-*	TO THE VALUE IN A0.
-*
-**************************************************************************
 PUT_HSC
 	MMTM	SP,A7,A0
 	CALLR	HSR_PAGE		;HIGH SCORE PAGE
@@ -258,16 +193,6 @@ PUT_HSC
 	MMFM	SP,A7,A0		;AND RETURN
 	RETS
 
-**************************************************************************
-*
-*	GET_HSC
-*
-*	THIS IS CALLED TO FETCH THE HIGH SCORE COUNTER IN A0.
-*	IF IT IS INVALID, IT WILL IMMEDIATELY BE RESET TO THE
-*	ADJUSTED VALUE AND THIS IS WHAT WILL BE RETURNED
-*	IN A0. Z set if 0
-*
-**************************************************************************
 GET_HSC
 	MMTM	SP,A7,A1
 	CALLR	HSR_PAGE		;POINT PAGE AT HSR
@@ -281,9 +206,6 @@ GET_HSC
 	JRZ	GET_HSCX		;IT IS....RETURN IT.
 
 	CALLR	INIT_HSR		;REFRESH IT WITH FACTORY VALUE
-*
-*	NOW RETURN THE FACTORY VALUE IN CASE IT DIDN'T TAKE
-*
 	MOVI	ADJHSRES,A0
 	CALLA	GET_ADJ 		;GET THE ADJUSTED VALUE
 
@@ -300,9 +222,6 @@ HSR_PAGE
 	MMFM	SP,A1
 	RETS
 
-*********************************************************************
-* Check validity of high score and win streak tables.
-*
 
  SUBR	table_cmos_check
 
@@ -321,14 +240,11 @@ HSR_PAGE
 	callr	VAL_TAB
 	rets
 
-*********************************************************************
-* Display high score table
-*
 
  SUBR	print_inter
 
 	push	a5
-	movi	fohhscore_mes2,a2
+	movi	ijykhscore_mes2,a2
 	calla	print_message
 
 	MOVI	[10,0],A0
@@ -366,15 +282,15 @@ HSR_PAGE
 	movi	[51-9,8],a9
 	movi	[58+5,10],a10
 
-fohloop
+ijykloop
 	movi	GOLD,a11
 	movi	AUD_INTER,A0
 	calla	GET_AUD
 	MOVE	@starting_num,A5
 	cmp	a1,a5
-	jrne	fohgold
+	jrne	ijykgold
 	movi	BLUE,a11
-fohgold
+ijykgold
 	PUSH	a3,a7,a8,a9,a10,a11
 	movi	INTER_TAB_SELECT,a1	;set the read page
 	callr	SET_PAGE
@@ -387,29 +303,28 @@ fohgold
 	move	a5,@starting_num
 
 	dec	a7
-	jrz	fohdone
+	jrz	ijykdone
 
 	addi	HS_SIZE,a8
 	addi	[46h,0],a9
 	addi	[46h,0],a10
-	jruc	fohloop
-fohdone
+	jruc	ijykloop
+ijykdone
 	callr	hscore_colcyc
 	callr	hscore_colcyc2
 	RETP
 
-fohhscore_mes2
+ijykhscore_mes2
 	JAM_STR	osgemd_ascii,10,0,200,10,BLUE,print_string_C2
 	.byte	"INTERCONTINENTAL CHAMPS",0,0
 	.even
 
 
-**********************
 
  SUBR	print_beaten
 
 	push	a5
-	movi	qdahscore_mes,a2
+	movi	kizlhscore_mes,a2
 	calla	print_message
 
 	MOVI	[10,0],A0
@@ -447,15 +362,15 @@ fohhscore_mes2
 	movi	[51-9,8],a9
 	movi	[58+5,10],a10
 
-qdaloop
+kizlloop
 	movi	GOLD,a11
 	movi	AUD_BEATEN,A0
 	calla	GET_AUD
 	MOVE	@starting_num,A5
 	cmp	a1,a5
-	jrne	qdagold
+	jrne	kizlgold
 	movi	BLUE,a11
-qdagold
+kizlgold
 	PUSH	a3,a7,a8,a9,a10,a11
 	movi	BEATEN_TAB_SELECT,a1	;set the read page
 	callr	SET_PAGE
@@ -468,15 +383,13 @@ qdagold
 	move	a5,@starting_num
 
 	dec	a7
-	jrz	qdadone
+	jrz	kizldone
 
 	addi	HS_SIZE,a8
 	addi	[46h,0],a9
 	addi	[46h,0],a10
-	jruc	qdaloop
-qdadone
-;	callr	hscore_colcyc
-;	callr	hscore_colcyc2
+	jruc	kizlloop
+kizldone
 	RETP
 
  SUBR	JUDDER_SHADOW
@@ -492,7 +405,7 @@ SHADOW_ANIM
 	WL	1,SHADOW01
 	WL	CANI_GOTO,SHADOW_ANIM
 
-qdahscore_mes
+kizlhscore_mes
 	JAM_STR	osgemd_ascii,10,0,200,10,BLUE,print_string_C2
 	.byte	"WORLD CHAMPIONS",0,0
 	.even
@@ -547,9 +460,6 @@ DO_EACH_OBJ_NEXT
 	RETS
 
 
-*********************************************************************
-* Display high score table
-*
 
  SUBR	print_tag
 
@@ -592,16 +502,16 @@ DO_EACH_OBJ_NEXT
 	movi	[40,8],a9
 	movi	[38,64+8],a10
 
-btkloop
+zdreloop
 	movi	GOLD,a11
 	movi	AUD_TAG,A0
 	calla	GET_AUD
 	addk	1,a1
 	srl	1,a1
 	CMP	a1,A3
-	jrne	btknotblue
+	jrne	zdrenotblue
 	movi	BLUE,a11
-btknotblue
+zdrenotblue
 	PUSH	A3,a7,a8,a9,a10,a11
 	movi	TAG_TAB_SELECT,a1	;set the read page
 	callr	SET_PAGE
@@ -614,14 +524,14 @@ btknotblue
 
 	INC	A3
 	dec	a7
-	jrz	btkdone
+	jrz	zdredone
 
 	addi	HS_SIZE*2,a8
 	addi	[23,0],a9
 	addi	[23,0],a10
-	jruc	btkloop
+	jruc	zdreloop
 
-btkdone
+zdredone
 	RETP
 
 tag_mes
@@ -629,13 +539,10 @@ tag_mes
 	.byte	"TAG TEAM CHAMPIONS",0,0
 	.even
 
-*********************************************************************
-* Display high score table
-*
 
  SUBR	print_hscores
 
-	movi	yzkhscore_mes,a2
+	movi	lhtohscore_mes,a2
 	calla	print_message
 
 
@@ -676,14 +583,14 @@ tag_mes
 	movi	[40,8],a9
 	movi	[38,64+8],a10
 
-yzkloop
+lhtoloop
 	movi	GOLD,a11
 	movi	AUD_PINSPEED,A0
 	calla	GET_AUD
 	CMP	a1,A3
-	jrne	yzknotblue
+	jrne	lhtonotblue
 	movi	BLUE,a11
-yzknotblue
+lhtonotblue
 	PUSH	A3,a7,a8,a9,a10,a11
 	movi	PIN_SPEED_TAB_SELECT,a1	;set the read page
 	callr	SET_PAGE
@@ -696,29 +603,26 @@ yzknotblue
 
 	INC	A3
 	dec	a7
-	jrz	yzkdone
+	jrz	lhtodone
 
 	addi	HS_SIZE,a8
 	addi	[23,0],a9
 	addi	[23,0],a10
-	jruc	yzkloop
+	jruc	lhtoloop
 
-yzkdone
+lhtodone
 	RETP
 
-yzkhscore_mes
+lhtohscore_mes
 	JAM_STR	osgemd_ascii,10,0,200,10,BLUE,print_string_C2
 	.byte	"FASTEST PINDOWN TIMES",0,0
 	.even
 
 
-*********************************************************************
-* Display win streaks table
-*
 
  SUBR	print_winstreaks
 
-	movi	cmzstreak_mes,a2
+	movi	uipzstreak_mes,a2
 	calla	print_message
 
 	MOVI	[10,0],A0
@@ -752,20 +656,19 @@ yzkhscore_mes
 
 	movi	18,a7			;draw 18
 	MOVK	1,A3
-;	clr	a3
 
 	movi	STREAK_TABLE_ORIGIN+HS_SIZE,a8
 	movi	[40,8],a9
 	movi	[38,44],a10
 
-cmzloop
+uipzloop
 	movi	GOLD,a11
 	movi	AUD_WINSTREAK,A0
 	calla	GET_AUD
 	cmp	a1,a3
-	jrne	cmzgold
+	jrne	uipzgold
 	movi	BLUE,a11
-cmzgold
+uipzgold
 	PUSH	A3,a7,a8,a9,a10,a11
 	movi	STREAK_TABLE_SELECT,a1
 	callr	SET_PAGE
@@ -777,26 +680,26 @@ cmzgold
 	PULL	A3,a7,a8,a9,a10,a11
 	INC	A3
 	dec	a7
-	jrz	cmzdone
+	jrz	uipzdone
 	cmpi	9,a7
 	jreq	reset_position
 
 	addi	HS_SIZE,a8
 	addi	[23,0],a9
 	addi	[23,0],a10
-	jruc	cmzloop
+	jruc	uipzloop
 
 reset_position
 	addi	HS_SIZE,a8
 	movi	[40,208+5],a9
 	movi	[38,244+5],a10
-	jruc	cmzloop
+	jruc	uipzloop
 
-cmzdone
+uipzdone
 	RETP
 
 
-cmzstreak_mes
+uipzstreak_mes
 	JAM_STR	osgemd_ascii,10,0,200,10,BLUE,print_string_C2
 	.byte	"LONGEST WINNING STREAKS",0,0
 	.even
@@ -821,8 +724,6 @@ special_copy
 
 	.bss	work_buffer,8*10
 
-*********************************************
-*
  SUBRP	strip_white
 	PUSH	a0,a1,a2
 	movi	work_buffer,a0		; Pointer to work buffer
@@ -830,46 +731,46 @@ special_copy
 	sll	3,a3			; Set pointer to end of buffer
 	move	a3,a1
 	addi	work_buffer,a1
-jshff_loop
+roziff_loop
 	movb	*a0,a2			; Get char
 	cmpi	20h,a2			; Is it a space ?
-	jrnz	jshfirst_found		; br = no
+	jrnz	rozifirst_found		; br = no
 	move	a2,a2			; Is it 0 ?
-	jrz	jshfirst_found		; br = yes
+	jrz	rozifirst_found		; br = yes
 	addk	8,a0			; Increment front pointer
-	jruc	jshff_loop		; Go check next char
+	jruc	roziff_loop		; Go check next char
 
-jshfirst_found
-jshfl_loop
+rozifirst_found
+rozifl_loop
 	movb	*a1,a2			; Get char
 	move	a2,a2			; Is it 0 ?
-	jrz	jshget_prev
+	jrz	roziget_prev
 	cmpi	20h,a2			; Is it a space ?
-	jrnz	jshlast_found		; br = yes
-jshget_prev
+	jrnz	rozilast_found		; br = yes
+roziget_prev
 	cmpi	work_buffer,a1		; Are we at beginning ?
-	jrz	jshlast_found		; br = yes
+	jrz	rozilast_found		; br = yes
 	subk	8,a1			; Decrement pointer
-	jruc	jshfl_loop		; Go check previous char
+	jruc	rozifl_loop		; Go check previous char
 
-jshlast_found
+rozilast_found
 	addk	8,a1
 	movi	message_buffer,a2	; Where we are gonna put it
 	cmp	a0,a1			; back pointer > front pointer ?
-	jrgt	jshcopy_loop		; br = yes
+	jrgt	rozicopy_loop		; br = yes
 	movi	work_buffer,a0		; reset front pointer
 	move	a3,a1
 	addi	work_buffer,a1
-jshcopy_loop
+rozicopy_loop
 	movb	*a0,a14			; Get char
 	movb	a14,*a2			; Write to message buffer
 	addk	8,a0			; Increment front pointer
 	cmp	a0,a1			; front = back ?
-	jrz	jshcopy_done		; br = yes
+	jrz	rozicopy_done		; br = yes
 	addk	8,a2			; Increment dest pointer
-	jruc	jshcopy_loop		; Go do next char
+	jruc	rozicopy_loop		; Go do next char
 
-jshcopy_done
+rozicopy_done
 	addk	8,a2			; Increment dest pointer
 	clr	a1			; NULL terminate the string
 	move	a1,*a2
@@ -877,10 +778,6 @@ jshcopy_done
 	PULL	a0,a1,a2
 	rets
 
-*******************************
-* Display a table entry (initials and score)
-* 0a8H=*entry, a9=[Y,Xleft] of initials, a10=[Y,Xright] of score, a11=pal
-* 0a0H=draw high score message? (0|1)
 
  SUBRP   draw_tag_table_entry
 	PUSH	A7
@@ -936,11 +833,11 @@ jshcopy_done
 	addi	HS_INITS,a7
 	movi	5,a2
 
-cgxinitloop
+vymjinitloop
 	callr	RC_BYTEI
 	movb	a0,*a1
 	addk	8,a1
-	dsj	a2,cgxinitloop
+	dsj	a2,vymjinitloop
 
 	movk	5,a3
 	callr	strip_white
@@ -992,11 +889,11 @@ cgxinitloop
 	addi	HS_INITS+HS_SIZE,a7
 	movi	5,a2
 
-cgxinitloop2
+vymjinitloop2
 	callr	RC_BYTEI
 	movb	a0,*a1
 	addk	8,a1
-	dsj	a2,cgxinitloop2
+	dsj	a2,vymjinitloop2
 
 	movk	5,a3
 	callr	strip_white
@@ -1098,7 +995,6 @@ zero
 	.string	"0",0
 	.even
 
-; A0 = binary value
 	.ref	concat_string
 	.ref	concat_rom_string
 
@@ -1127,24 +1023,20 @@ zero
 	calla	concat_rom_string
 	PULL	a3
 	move	a3,a0
-	jrz	cgxis_zero
+	jrz	vymjis_zero
 	movi	10,a1
 	calla	dec_to_asc
 	calla	concat_string
-	jruc	cgxconv_done
-cgxis_zero
+	jruc	vymjconv_done
+vymjis_zero
 	movi	zero,a4
 	calla	concat_rom_string
-cgxconv_done
+vymjconv_done
 
 	PULL	a1,a2,a3,a4,a5,a6
 	rets
 
 
-*******************************
-* Display a table entry (initials and score)
-* 0a8H=*entry, a9=[Y,Xleft] of initials, a10=[Y,Xright] of score, a11=pal
-* 0a0H=draw high score message? (0|1)
 
  SUBRP   draw_pinspeed_table_entry
 
@@ -1201,11 +1093,11 @@ cgxconv_done
 	addi	HS_INITS,a7
 	movi	3,a2
 
-kxwinitloop
+vvqtinitloop
 	callr	RC_BYTEI
 	movb	a0,*a1
 	addk	8,a1
-	dsj	a2,kxwinitloop
+	dsj	a2,vvqtinitloop
 
 	callr	RC_BYTEI
 	push	a0
@@ -1320,7 +1212,6 @@ kxwinitloop
 
 	rets
 
-*******************************
  SUBRP	draw_winstreak_table_entry
 
 	PUSH	A7
@@ -1373,17 +1264,16 @@ kxwinitloop
 	calla	print_string_C
 
 	;initials
-;	movi	message_buffer,a1
 	movi	work_buffer,a1
 	move	a8,a7
 	addi	HS_INITS,a7
 	movi	3,a2
 
-ovzinitloop
+olbxinitloop
 	callr	RC_BYTEI
 	movb	a0,*a1
 	addk	8,a1
-	dsj	a2,ovzinitloop
+	dsj	a2,olbxinitloop
 
 	movk	3,a3
 	callr	strip_white
@@ -1441,15 +1331,11 @@ ovzinitloop
 	calla	BEGINOBJWP
 	PULL	A7
 
-;	movi	"#",a0
-;	movb	a0,@message_buffer
-;	addk	8,a1
 
 	MOVK	19,A0
 	SUB	A7,A0
 	calla	BINBCD			;dec number in A0
 	move	a0,a1
-;	movi	message_buffer+8,a2
 	movi	message_buffer,a2
 	calla	dec_to_asc_new_entry
 
@@ -1515,9 +1401,9 @@ which_crouton
 	calla	GET_AUD
 	MOVE	@starting_num,A5
 	cmp	a1,a5
-	jrne	ovzgold2
+	jrne	olbxgold2
 	movi	BLUE,a11
-ovzgold2
+olbxgold2
 	movi	INTER_TAB_SELECT,a1	;set the read page
 	callr	SET_PAGE
 	movi	special_copy,a5
@@ -1538,17 +1424,13 @@ ovzgold2
 	calla	GET_AUD
 	MOVE	@starting_num,A5
 	cmp	a1,a5
-	jrne	ovzgold
+	jrne	olbxgold
 	movi	BLUE,a11
-ovzgold
+olbxgold
 	movi	BEATEN_TAB_SELECT,a1	;set the read page
 	callr	SET_PAGE
 	movi	special_copy,a5
 
-*******************************
-* Display a table entry (initials and score)
-* 0a8H=*entry, a9=[Y,Xleft] of initials, a10=[Y,Xright] of score, a11=pal
-* 0a0H=draw high score message? (0|1)
 
  SUBR	draw_beaten_table_entry
 
@@ -1599,13 +1481,10 @@ no_icon
 	mmtm	sp,a0,a1,a3,a8,a11
 	movi	8,b5
 	sub	b4,b5
-;loop will attempt to create 2^32 number of dots!!!!!
-;Soooooo - don't do it!!!!
-	jrz	kwyno_dots
+	jrz	rkssno_dots
 	move	b5,a10
 	addi	[10,0],a0
 next_dot
-;	movi	CRUTPLT_G,a2
 	movi	OSGEMD_DOT,a2
 	movi	1000H,a3
 	movi	DMAWNZ,a4
@@ -1618,7 +1497,7 @@ next_dot
 	addi	[30h,0],a0
 	dec	a10
 	jrnz	next_dot
-kwyno_dots
+rkssno_dots
 	mmfm	sp,a0,a1,a3,a8,a11
 
 	pull	a9,a10
@@ -1630,11 +1509,11 @@ do_just_init
 	addi	HS_INITS,a7
 	movi	5,a2
 
-kwyinitloop
+rkssinitloop
 	callr	RC_BYTEI
 	movb	a0,*a1
 	addk	8,a1
-	dsj	a2,kwyinitloop
+	dsj	a2,rkssinitloop
 
 	clr	a0			;null-terminate it
 	movb	a0,*a1
@@ -1729,9 +1608,6 @@ kwyinitloop
 	rets
 
 
-*******************************
-* high score page color cyclers
-*
 
  SUBR	hscore_colcyc
 
@@ -1781,19 +1657,15 @@ COLTAB3
    .word   07e94h,07e10h,07d6bh,07ce7h,07c42h,07421h,06c00h,06400h
 
 
-*****************************************************************************
-* Checks to see if the expired player made the table, and takes care of all
-* the details if he did.
-*
 
 	STRUCTPD
-	LONG	chhcursorimg		;UHL cursor *img
-	LONG	chhhiliteimg		;UHL hilite letter *img
-	WORD	chhstick			;UHW stick to read
-	LONG	chhwhich_tab
-	LONG	chhwhich_entry
-	LONG	chhwhich_level
-	WORD	chhwhich_aud
+	LONG	oagscursorimg		;UHL cursor *img
+	LONG	oagshiliteimg		;UHL hilite letter *img
+	WORD	oagsstick			;UHW stick to read
+	LONG	oagswhich_tab
+	LONG	oagswhich_entry
+	LONG	oagswhich_level
+	WORD	oagswhich_aud
 
 
 
@@ -1867,17 +1739,17 @@ found_right_table
 	;skip this check if I'm a drone.
 	move	a8,A0
 	CMPI	2,A0
-	JRGE	chhretp
+	JRGE	oagsretp
 
 	;skip this check if the match took three rounds
 	move	@current_round,a14
 	cmpi	3,a14
-	jreq	chhretp
+	jreq	oagsretp
 
 	SLL	5,A0
 	ADDI	MATCH_TIMERS,A0
 	MOVE	*A0,A9,L
-	jrle	chhretp
+	jrle	oagsretp
 
 	movi	FIND_LOW_TABLE_LEVEL,a11
 	movi	PIN_SPEED_TAB,a5
@@ -1902,13 +1774,13 @@ create_initial_input
 	move	a8,a1
 	addi	HI_INPUT_PID,a1
 	calla	GETPRC
-	move	a5,*a0(chhwhich_tab),L
-	move	a8,*a0(chhstick)
-	move	a10,*a0(chhwhich_entry),L
-	move	a11,*a0(chhwhich_level),L
-	move	a3,*a0(chhwhich_aud)
+	move	a5,*a0(oagswhich_tab),L
+	move	a8,*a0(oagsstick)
+	move	a10,*a0(oagswhich_entry),L
+	move	a11,*a0(oagswhich_level),L
+	move	a3,*a0(oagswhich_aud)
 
-chhretp	RETP
+oagsretp	RETP
 
  SUBR	do_that_cycle
 	movi	[02h,1],a8		;cycle color A
@@ -1935,22 +1807,22 @@ do_entry_time
 	move	a9,a0
 
 	clr	a3
-	move	*a13(chhwhich_tab),a8,L
+	move	*a13(oagswhich_tab),a8,L
 	callr	CHECK_SCORE
 
-	jrz	chhdone_jake_hack
+	jrz	oagsdone_jake_hack
 
 no_we_can_come_back
 	;they made one of the tables.  first update AUD_LSCORE
 	move	a0,a1
-	move	*a13(chhwhich_aud),a0
+	move	*a13(oagswhich_aud),a0
 	calla	KILL_AUD
 	calla	AUD
 
 SPECIAL_ENTRY
 	movk	1,a14
 	move	a14,@auto_init
-	MOVE	*A13(chhstick),a1
+	MOVE	*A13(oagsstick),a1
 	MOVE	a1,a2
 	sll	5,a1
 	sll	4,a2
@@ -1966,7 +1838,7 @@ SPECIAL_ENTRY
 
 	PUSHP	a9
 
-	MOVE	*A13(chhwhich_entry),A1,L
+	MOVE	*A13(oagswhich_entry),A1,L
 	GETPC	A7
 	ADDI	040h,A7
 	MOVE	A7,-*A12,L	;PUSH RET ADDR
@@ -1977,7 +1849,7 @@ SPECIAL_ENTRY
 	MOVI	0B8H,A0
 	CALLA	triple_sound
 
-	MOVE	*A13(chhstick),a1
+	MOVE	*A13(oagsstick),a1
 	MOVE	a1,a2
 	sll	5,a1
 	sll	4,a2
@@ -1985,7 +1857,7 @@ SPECIAL_ENTRY
 	addi	entered_inits,a1
 NO_NEED_TO_ENTER
 	move	a9,a0
-	move	*a13(chhwhich_tab),a8,L
+	move	*a13(oagswhich_tab),a8,L
 	cmpi	BEATEN_TAB,a8
 	JREQ	SPECIAL_ADDITION
 	CMPI	INTER_TAB,A8
@@ -1993,24 +1865,24 @@ NO_NEED_TO_ENTER
 	CMPI	TAG_TAB,A8
 	JRNE	normal_addition
 	CALLR	TAG_ENTRY
-	jruc	chhdone
+	jruc	oagsdone
 SPECIAL_ADDITION
 	callr	SPECIAL_ADD_ENTRY
 	CALLR	SORT_BEATEN_TABLE
-	jruc	chhdone
+	jruc	oagsdone
 
 normal_addition
 	callr	ADD_ENTRY
-chhdone
+oagsdone
 
 	movi	CYCPID,a0
 	movi	-1,a1
 	calla	KILALL
 	DIE
 
-chhdone_jake_hack
+oagsdone_jake_hack
 	movi	17,a0
-	move	*a13(chhwhich_tab),a8,L
+	move	*a13(oagswhich_tab),a8,L
 	cmpi	TAG_TAB,a8
 	jreq	no_we_can_come_back	
 
@@ -2027,38 +1899,24 @@ fnt9_red_white
 	.word	07C00H,07FFFH
 	.word	-1
 
-*****************************************************************************
-* proc pointer + chhstick = stick (0:1)
 
-; SUBR	enter_message
-;	clr	a0
-;	movb	a0,@entered_message
-;	movb	a0,@entered_message+40h
-;	movi	entered_message,a4
-;	move	a4,a5
-;	movi	entered_message+(15*8),a6
-;	PUSHP	a4,a5,a6
-;
-;	movi	chhentermess_mes,a2
-;	PUSHP	a2
-;	jruc	chhgo
 
  SUBR	enter_initials_beaten
 
 	movi	entered_inits,a4
 	move	a4,a5
 	movi	entered_inits+(5*8),a6
-	movi	chhenterinita_mess,a3
-	movi	chhenterinit5_mes,a2
-	move	*a13(chhstick),a0
+	movi	oagsenterinita_mess,a3
+	movi	oagsenterinit5_mes,a2
+	move	*a13(oagsstick),a0
 	move	a0,a0
-	jrz	chhenter_mess_set_3
+	jrz	oagsenter_mess_set_3
 	movi	entered_inits+030h,a4
 	move	a4,a5
 	movi	entered_inits+(5*8)+030h,a6
-	movi	chhenterinitb_mess,a3
-	movi	chhenterinit6_mes,a2
-chhenter_mess_set_3
+	movi	oagsenterinitb_mess,a3
+	movi	oagsenterinit6_mes,a2
+oagsenter_mess_set_3
 	clr	a14
 	move	a14,*a4,L	;clear out initials
 	move	a14,*a4(018h)	;clear out initials
@@ -2067,24 +1925,24 @@ chhenter_mess_set_3
 	move	a3,a2
 	calla	setup_message
 
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A3h,a0
 	move	a0,@mess_objid
 
 	move	*a2+,a0,L		;print method
 	move	a2,a4			;* text string
 	call	a0
-	jruc	chhgo
+	jruc	oagsgo
 
  SUBR	enter_initials_streak
 
 	CLR	A2
 	MOVE	A2,@IGNORE_CHAR_WIDTH
 
-	movi	chhenterinit7_mes,a2
-	move	*a13(chhstick),a0
+	movi	oagsenterinit7_mes,a2
+	move	*a13(oagsstick),a0
 	jrz	just_add_to_id
-	movi	chhenterinit8_mes,a2
+	movi	oagsenterinit8_mes,a2
 just_add_to_id
 	PUSH	A0
 	calla	setup_message
@@ -2104,7 +1962,7 @@ just_add_to_id
 	move	a0,@mess_spacing
 
 	move	@p1oldwinstreak,a0
-	move	*a13(chhstick),a2
+	move	*a13(oagsstick),a2
 	jrz	got_right_streak
 	move	@p2oldwinstreak,a0
 got_right_streak
@@ -2116,17 +1974,17 @@ got_right_streak
 	movi	entered_inits,a4
 	move	a4,a5
 	movi	entered_inits+(3*8),a6
-	movi	chhenterinita_mess,a3
-	movi	chhenterinit1_mes,a2
-	move	*a13(chhstick),a0
+	movi	oagsenterinita_mess,a3
+	movi	oagsenterinit1_mes,a2
+	move	*a13(oagsstick),a0
 	move	a0,a0
-	jrz	chhenter_mess_set_1
+	jrz	oagsenter_mess_set_1
 	movi	entered_inits+030h,a4
 	move	a4,a5
 	movi	entered_inits+(3*8)+030h,a6
-	movi	chhenterinitb_mess,a3
-	movi	chhenterinit2_mes,a2
-chhenter_mess_set_1
+	movi	oagsenterinitb_mess,a3
+	movi	oagsenterinit2_mes,a2
+oagsenter_mess_set_1
 	clr	a14
 	move	a14,*a4,L	;clear out initials
 	move	a14,*a4(018h)	;clear out initials
@@ -2135,16 +1993,15 @@ chhenter_mess_set_1
 	move	a3,a2
 	calla	setup_message
 
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A3h,a0
 	move	a0,@mess_objid
 
 	move	*a2+,a0,L		;print method
 	move	a2,a4			;* text string
 	call	a0
-	jruc	chhgo
+	jruc	oagsgo
 
-*********************************
  SUBR	enter_initials_top_20
 
 	movi	font9A_ascii,a0
@@ -2153,7 +2010,7 @@ chhenter_mess_set_1
 	move	@MATCH_TIMERS,a0,L
 	movi	35,a3
 	movi	FNT9WHT2P,a11
-	move	*a13(chhstick),a2
+	move	*a13(oagsstick),a2
 	jrz	got_right_time
 	move	@MATCH_TIMERS+32,a0,L
 	movi	FNT9RED_P,a11
@@ -2176,23 +2033,23 @@ got_right_time
 	addi	6,a0
 	move	a0,@mess_cursx
 
-	movi	chhenterinit9_mes,a4
+	movi	oagsenterinit9_mes,a4
 	calla	print_string2
 
 	movi	entered_inits,a4
 	move	a4,a5
 	movi	entered_inits+(3*8),a6
-	movi	chhenterinita_mess,a3
-	movi	chhenterinit3_mes,a2
-	move	*a13(chhstick),a0
+	movi	oagsenterinita_mess,a3
+	movi	oagsenterinit3_mes,a2
+	move	*a13(oagsstick),a0
 	move	a0,a0
-	jrz	chhenter_mess_set
+	jrz	oagsenter_mess_set
 	movi	entered_inits+030h,a4
 	move	a4,a5
 	movi	entered_inits+(3*8)+030h,a6
-	movi	chhenterinitb_mess,a3
-	movi	chhenterinit4_mes,a2
-chhenter_mess_set
+	movi	oagsenterinitb_mess,a3
+	movi	oagsenterinit4_mes,a2
+oagsenter_mess_set
 	clr	a14
 	move	a14,*a4,L	;clear out initials
 	move	a14,*a4(018h)	;clear out initials
@@ -2202,14 +2059,14 @@ chhenter_mess_set
 
 	calla	setup_message
 
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A3h,a0
 	move	a0,@mess_objid
 
 	move	*a2+,a0,L		;print method
 	move	a2,a4			;* text string
 	call	a0
-chhgo
+oagsgo
 
 	PULLP	a2
 	movk	13,a0
@@ -2217,7 +2074,7 @@ chhgo
 
 	calla	setup_message
 
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A3h,a0
 	move	a0,@mess_objid
 
@@ -2227,31 +2084,31 @@ chhgo
 
 	callr	draw_letter_grid	;draw the letter grid
 
-	move	*a13(chhstick),a1
-	jrnz	chhright_type
-	TBL_OBJ	chhcursor			;create cursor
-	jruc	chhcursor_type_set
-chhright_type
-	TBL_OBJ	chhcursor2			;create cursor
-chhcursor_type_set
+	move	*a13(oagsstick),a1
+	jrnz	oagsright_type
+	TBL_OBJ	oagscursor			;create cursor
+	jruc	oagscursor_type_set
+oagsright_type
+	TBL_OBJ	oagscursor2			;create cursor
+oagscursor_type_set
 	clr	a0
 	move	a0,*a8(ODOFF),L
 	movi	0101h,a0
 	move	a0,*a8(OCONST)
-	movi	chhblock_size,a0
+	movi	oagsblock_size,a0
 	move	a0,*a8(OSIZEX)
 	move	a0,*a8(OSIZEY)
-	move	a8,*a13(chhcursorimg),L
+	move	a8,*a13(oagscursorimg),L
 
-	move	*a13(chhstick),a1
-	jrnz	chhright_hilite
-	TBL_OBJ	chhhilite1			;create hilite letter
-	jruc	chhhilite_set
-chhright_hilite
-	TBL_OBJ	chhhilite2			;create hilite letter
-chhhilite_set
+	move	*a13(oagsstick),a1
+	jrnz	oagsright_hilite
+	TBL_OBJ	oagshilite1			;create hilite letter
+	jruc	oagshilite_set
+oagsright_hilite
+	TBL_OBJ	oagshilite2			;create hilite letter
+oagshilite_set
 
-	move	a8,*a13(chhhiliteimg),L
+	move	a8,*a13(oagshiliteimg),L
 
 	clr	a9
 	callr	new_cursor_pos		;place them & set char img/pal
@@ -2277,9 +2134,7 @@ chhhilite_set
 	MOVI	700H,B5
 	clr	b3
 
-chhloop
-;this timer is done the hard way cos its 1:30 in the morning and I dont
-;have the energy to be clever
+oagsloop
 	movk	1,b1
 	cmpi	150*5,b5
 	jrgt	no_need_for_timer
@@ -2290,7 +2145,7 @@ chhloop
 	move	b3,b3
 	jrnz	we_already_have_it
 	movi	[83+40,0],a0
-	move	*a13(chhstick),a1
+	move	*a13(oagsstick),a1
 	jrz	which_edge_set
 	movi	[322+40,0],a0
 which_edge_set
@@ -2298,7 +2153,7 @@ which_edge_set
 	movi	FNT9_5,a2
 	movi	104+200,a3			;z pos
 	movi	DMAWNZ|M_SCRNREL,a4		;DMA flags
-	move	*a13(chhstick),a5
+	move	*a13(oagsstick),a5
 	addi	CLSNEUT|TYPTEXT|00A3h,a5	;object ID
 	clr	a6				;x vel
 	clr	a7				;y vel
@@ -2307,8 +2162,6 @@ which_edge_set
 	move	a8,b3
 
 	push	b3,b5
-;	CREATE0	do_next_tick
-;	movi	0B7H,a0
 	MOVI	0AH,A0
 	calla	triple_sound
 	pull	b3,b5
@@ -2324,8 +2177,6 @@ we_already_have_it
 	move	*a8(OCTRL),a1
 	calla	change_image
 	push	b3,b5
-;	create0	do_next_tick
-;	movi	0B7H,a0
 	MOVI	0AH,A0
 	calla	triple_sound
 	pull	b3,b5
@@ -2335,7 +2186,7 @@ no_change
 no_need_for_timer
 
 	DEC	B5		;have a limit we'll wait
-	JRZ	chhdone2
+	JRZ	oagsdone2
 	move	b3,a2
 	MOVE	B5,A0
 	PUSHP	A0,a2,a4,a5,a6
@@ -2345,40 +2196,40 @@ no_need_for_timer
 	move	a2,b3
 
 	;button check
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	calla	get_but_val_down
 	move	a0,a0
-	jrz	chhstick_check
+	jrz	oagsstick_check
 
 	;new press.  add a letter.
 	move	a9,a0
 	cmpi	28,a0
-	jreq	chhdeletechar		;backspace?
+	jreq	oagsdeletechar		;backspace?
 
 	cmpi	29,a0
-	jreq	chhdone2			;EOL?
+	jreq	oagsdone2			;EOL?
 
 	cmp	a5,a6
-	jreq	chhstick_check		;room for another char?
+	jreq	oagsstick_check		;room for another char?
 
 	sla	3,a0			;x8
-	addi	chhinit_table2,a0
+	addi	oagsinit_table2,a0
 	movb	*a0,*a5
 	addk	8,a5
 	clr	a0
 	movb	a0,*a5			;always keep a terminator in there.
-	jruc	chhadded
+	jruc	oagsadded
 
-chhdeletechar
+oagsdeletechar
 	cmp	a4,a5
-	jreq	chhstick_check		;no chars to delete!
+	jreq	oagsstick_check		;no chars to delete!
 	subk	8,a5
 	clr	a0
 	movb	a0,*a5
 	callr	print_init_string
-	jruc	chhstick_check
+	jruc	oagsstick_check
 
-chhadded
+oagsadded
 	movi	0b1h,a0
 	push	b3,b5
 	calla	triple_sound
@@ -2389,56 +2240,56 @@ chhadded
 
 	;if that was the last character, move the cursor to the END char.
 	cmp	a5,a6
-	jrne	chhstick_check
+	jrne	oagsstick_check
 
 	movi	29,a9
 	callr	new_cursor_pos
 
-chhstick_check
+oagsstick_check
 	dec	a11			;debounce check
-	jrp	chhloop			;too soon?
+	jrp	oagsloop			;too soon?
 
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	calla	get_stick_val_down
 	move	a0,a0
-	jrz	chhno_new_stick
+	jrz	oagsno_new_stick
 
-	movi	chhtstatic-chhdebounce_time,a10
-	movi	chhdebounce_time,a11
-	jruc	chhadjust
+	movi	oagststatic-oagsdebounce_time,a10
+	movi	oagsdebounce_time,a11
+	jruc	oagsadjust
 
-chhno_new_stick
+oagsno_new_stick
 	dec	a10
-	jrnz	chhloop			;holding and waiting
+	jrnz	oagsloop			;holding and waiting
 
 	;whee!  time to repeat-move
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	calla	get_stick_val_cur
-	movi	chhtmoving,a10
-chhadjust
+	movi	oagstmoving,a10
+oagsadjust
 	X16	a0
-	addi	chhjoytab,a0
+	addi	oagsjoytab,a0
 	move	*a0,a0
 
 	add	a0,a9
-	jrn	chhtoo_low
+	jrn	oagstoo_low
 	cmpi	30,a9
-	jrge	chhtoo_high
-	jruc	chhjust_right
+	jrge	oagstoo_high
+	jruc	oagsjust_right
 
-chhtoo_low
+oagstoo_low
 	addi	30,a9
-	jruc	chhjust_right
-chhtoo_high
+	jruc	oagsjust_right
+oagstoo_high
 	subi	30,a9
-	jruc	chhjust_right
+	jruc	oagsjust_right
 
-chhjust_right
+oagsjust_right
 	;adjust cursor and character position
 	move	a0,a0
 	jrz	no_motion_sound
 	movi	0c7h,a0
-	move	*a13(chhstick),a1
+	move	*a13(oagsstick),a1
 	jrz	motion_sound_set
 	inc	a0
 motion_sound_set
@@ -2450,25 +2301,25 @@ no_motion_sound
 	move	a9,a0
 
 	cmpi	28,a0
-	jreq	chhspace_it
+	jreq	oagsspace_it
 
 	cmpi	29,a0
-	jreq	chhspace_it
+	jreq	oagsspace_it
 
 	cmp	a6,a5
-	jreq	chhloop
+	jreq	oagsloop
 
 	sla	3,a0 
-	addi	chhinit_table2,a0
+	addi	oagsinit_table2,a0
 	movb	*a0,*a5
 	clr	a0
 	movb	a0,*a5(8)			;always keep a terminator in there.
 	callr	print_init_string
-	jruc	chhloop
+	jruc	oagsloop
 
-chhbackspace_it
+oagsbackspace_it
 	sla	3,a0 
-	addi	chhinit_table2,a0
+	addi	oagsinit_table2,a0
 	subk	8,a5
 	movb	*a0,*a5
 	addk	8,a5
@@ -2476,35 +2327,26 @@ chhbackspace_it
 	clr	a0
 	movb	a0,*a5  			;always keep a terminator in there.
 	callr	print_init_string
-	jruc	chhloop
+	jruc	oagsloop
 
-chhspace_it
+oagsspace_it
 	clr	a0
 	movb	a0,*a5  			;always keep a terminator in there.
 	callr	print_init_string
-	jruc	chhloop
+	jruc	oagsloop
 
-chhdone2
+oagsdone2
 	callr	are_inits_dirty
 	jrnz	replace_dirty_inits
-;	jrz	chhnot_dirty
-;	move	a4,a5
-;	clr	a0
-;	movb	a0,*a5
-;	callr	print_init_string
-;	movi	28,a9
-;	callr	new_cursor_pos
-;	jruc	chhstick_check
-;chhnot_dirty
 	.if 0
 	calla	are_special_inits
-	jrnz	chhnot_special_inits
+	jrnz	oagsnot_special_inits
 	JSRP	prog_specials
-chhnot_special_inits
+oagsnot_special_inits
 	.endif
 
 	MOVI	0cbh,A0
-	MOVE	*A13(chhstick),a1
+	MOVE	*A13(oagsstick),a1
 	jrz	select_set
 	inc	a0
 select_set
@@ -2518,33 +2360,26 @@ select_set
 	PULLP	A6
 	pullp	a4
 
-;;	move	*a13(chhstick),a0
-;	addi	CLSNEUT|TYPTEXT|00A5h,a0
-;	calla	obj_del1c
-;
-;	move	*a13(chhstick),a0
-;	addi	CLSNEUT|TYPTEXT|00A3h,a0
-;	calla	obj_del1c
 
 	move	*a4,a0,L
-	jrnz	chhinitials_have_content
+	jrnz	oagsinitials_have_content
 replace_dirty_inits
 	movk	6,a0
 	calla	RNDRNG0
 	sll	5,a0
-	addi	chhrandom_initials,a0
+	addi	oagsrandom_initials,a0
 	move	*a0,A0,L
 	move	a0,*a4,L
 	CLR	A1
 	MOVB	A1,*A4(020H)
 
-chhinitials_have_content
+oagsinitials_have_content
 	PUSH	a0
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A5h,a0
 	calla	obj_del1c
 
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A3h,a0
 	calla	obj_del1c
 	PULL	a0
@@ -2576,7 +2411,7 @@ no_worry_about_yes_indeedly
 	CMPI	18H,A6
 	JRNE	A_FIVE_INITIALER
 
-	MOVE	*A13(chhstick),a1
+	MOVE	*A13(oagsstick),a1
 	sll	4,a1
 	addi	which_player,a1
 	move	*a1,a9
@@ -2588,13 +2423,8 @@ A_FIVE_INITIALER
 
 	RETP
 
-;do_next_tick
-;	SLEEP	12
-;	MOVI	0B8H,A0
-;	CALLA	triple_sound
-;	DIE
 
-chhrandom_initials
+oagsrandom_initials
 	.byte	"MJT",0
 	.byte	"JYT",0
 	.byte	"SAL",0
@@ -2603,7 +2433,7 @@ chhrandom_initials
 	.byte	"RJR",0
 	.byte	"MJL",0
 
-chhdw_table
+oagsdw_table
 	.long	00001ab1h		; FUQ
 	.long	00001aa3h		; FUC
 	.long	00001aabh		; FUK
@@ -2621,154 +2451,141 @@ chhdw_table
 	.long	000994e1h		; SEGA
 	.long	0
 
-; A4 = *beginning of string
-; A0 = character to add
-;
-; Returns
-;   Z  - Not dirty word
-;   NZ - Dirty word
-;
  SUBR	are_inits_dirty
 	PUSH	a0,a1,a2,a4,a5,a6
 	move	a4,a6
 	subk	8,a6
-chhrecheck
+oagsrecheck
 	addk	8,a6
 	move	a6,a4
 	movb	*a6,a2
-	jrz	chhnot_dirty_word
+	jrz	oagsnot_dirty_word
 	clr	a1
-chhget_inits_loop
+oagsget_inits_loop
 	movb	*a4,a2
-;	jrz	chhgi_done
-	jrz	chhrecheck
+	jrz	oagsrecheck
 	cmpi	20h,a2
-	jrz	chhnot_alpha
+	jrz	oagsnot_alpha
 	cmpi	21h,a2
-	jrz	chhnot_alpha
+	jrz	oagsnot_alpha
 	cmpi	19h,a2
-	jrz	chhnot_alpha
+	jrz	oagsnot_alpha
 	sll	5,a1
 	subi	40h,a2
 	andi	1fh,a2
 	or	a2,a1
-	callr	chhcheck_it
-chhnot_alpha
+	callr	oagscheck_it
+oagsnot_alpha
 	addk	8,a4
-	jruc	chhget_inits_loop
-chhgi_done
+	jruc	oagsget_inits_loop
+oagsgi_done
 
-chhcheck_it
+oagscheck_it
 	PUSH	a4
-	movi	chhdw_table,a4
+	movi	oagsdw_table,a4
 	clr	a0
-chhcheck_dw_loop
+oagscheck_dw_loop
 	move	*a4+,a5,L
-;	jrz	chhnot_dirty_word
-	jrz	chhcheck_done
+	jrz	oagscheck_done
 	cmp	a1,a5
-	jrz	chhis_dirty
-	jruc	chhcheck_dw_loop
-chhcheck_done
+	jrz	oagsis_dirty
+	jruc	oagscheck_dw_loop
+oagscheck_done
 	PULL	a4
 	rets
 
-chhis_dirty
+oagsis_dirty
 	PULL	a4,a14			; This sucks don't change this
 	movk	1,a0			; or it will break
-	jruc	chhaid_exit
-chhnot_dirty_word
+	jruc	oagsaid_exit
+oagsnot_dirty_word
 	clr	a0
-chhaid_exit
+oagsaid_exit
 	move	a0,a0
 	PULL	a0,a1,a2,a4,a5,a6
 	rets
 
 
 
-****************************************
-* moves the cursor and hilite char to their new positions.
 
  SUBRP	new_cursor_pos
 
-	;x pos = chhgrid_x + chhblock_size * (index mod 6)
+	;x pos = oagsgrid_x + oagsblock_size * (index mod 6)
 	move	a9,a1
 	movk	5,a0
 	modu	a0,a1
-	movi	chhblock_size,a0
+	movi	oagsblock_size,a0
 	mpyu	a0,a1
-	move	*a13(chhstick),a3
+	move	*a13(oagsstick),a3
 	SLL	6,A3
 	ADDI	WHERE_BLOCK,A3
 	MOVE	*A3(010h),A14
 	add	a14,a1
-	move	*a13(chhcursorimg),a8,L
+	move	*a13(oagscursorimg),a8,L
 	move	a1,*a8(OXPOS)
-	move	*a13(chhhiliteimg),a8,L
+	move	*a13(oagshiliteimg),a8,L
 	move	a1,*a8(OXPOS)
 
-	;y pos = chhgrid_y + chhblock_size * (index / 6)
+	;y pos = oagsgrid_y + oagsblock_size * (index / 6)
 	move	a9,a1
 	movk	5,a2
 	divu	a2,a1
-	movi	chhblock_size,a0
+	movi	oagsblock_size,a0
 	mpyu	a0,a1
 	move	*a3(030h),a14
 	add	a14,a1
-	move	*a13(chhcursorimg),a8,L
+	move	*a13(oagscursorimg),a8,L
 	move	a1,*a8(OYPOS)
-	move	*a13(chhhiliteimg),a8,L
+	move	*a13(oagshiliteimg),a8,L
 	move	a1,*a8(OYPOS)
 
 	;adjust the character image
 	move	a9,a0
 	sla	3,a0		;x8
-	addi	chhinit_table1,a0
+	addi	oagsinit_table1,a0
 	movb	*a0,a0
 	X32	a0
 	addi	font9_ascii,a0
 	move	*a0,a0,L
-	jrnz	chhgood_image
+	jrnz	oagsgood_image
 	movi	OSGEMD_DOT,a0
-chhgood_image
-	move	*a13(chhhiliteimg),a8,L
+oagsgood_image
+	move	*a13(oagshiliteimg),a8,L
 	calla	civanic
 	movi	FNT9YEL_P,a0
 	calla	pal_getf
 	move	a0,*a8(OPAL)
 	move	*a8(OSIZEX),a14		;center it
-	subi	chhblock_size,a14
+	subi	oagsblock_size,a14
 	sra	1,a14
 	move	a14,*a8(ODXOFF)
 	move	*a8(OSIZEY),a14
-	subi	chhblock_size,a14
+	subi	oagsblock_size,a14
 	sra	1,a14
 	move	a14,*a8(ODYOFF)
 
 	rets
 
 
-****************************************
-* deletes the old displayed init string (if any) and makes a new one.
 
  SUBRP	print_init_string
 
 	push	b5,b3
 	PUSH	a0,a1,a2,a3,a4,a5,a6,a7,a8
 	PUSH	a4
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A5h,a0
 	calla	obj_del1c
 
-	movi	chhcurrentinit1_mes,a2
-	move	*a13(chhstick),a3
-	jrz	chhcurrent_mess_set
-	movi	chhcurrentinit2_mes,a2
-chhcurrent_mess_set
+	movi	oagscurrentinit1_mes,a2
+	move	*a13(oagsstick),a3
+	jrz	oagscurrent_mess_set
+	movi	oagscurrentinit2_mes,a2
+oagscurrent_mess_set
 
 	calla	setup_message
 
-	move	*a13(chhstick),a0
+	move	*a13(oagsstick),a0
 	addi	CLSNEUT|TYPTEXT|00A5h,a0
 	move	a0,@mess_objid
 
@@ -2780,8 +2597,6 @@ chhcurrent_mess_set
 	
 	rets
 
-****************************************
-* draw the letter grid
 
  SUBRP	draw_letter_grid
 
@@ -2789,39 +2604,39 @@ chhcurrent_mess_set
 	calla	pal_getf
 	move	a0,a11
 
-	move	*a13(chhstick),A1
+	move	*a13(oagsstick),A1
 	SLL	6,A1
 	ADDI	WHERE_BLOCK,A1
 	MOVE	*A1+,A0,L
 	MOVE	*A1,A1,L
 	MOVE	A0,B2
-	SUBI	[chhblock_size,0],B2
+	SUBI	[oagsblock_size,0],B2
 
-	movi	chhinit_table1,a9
+	movi	oagsinit_table1,a9
 	movi	30,a10
-	jruc	chhdraw_loop
+	jruc	oagsdraw_loop
 
-chhdraw_incy
+oagsdraw_incy
 	MOVE	B2,A0
-	addi	[chhblock_size,0],a1
-chhdraw_incx
-	addi	[chhblock_size,0],a0
+	addi	[oagsblock_size,0],a1
+oagsdraw_incx
+	addi	[oagsblock_size,0],a0
 
-chhdraw_loop
+oagsdraw_loop
 	movb	*a9,a2
 	addk	8,a9
 	X32	a2
 	addi	font9_ascii,a2
 	move	*a2,a2,L
-	jrnz	chhdraw_okimg
+	jrnz	oagsdraw_okimg
 
 	;bad image
 	movi	OSGEMD_DOT,a2
 
-chhdraw_okimg
+oagsdraw_okimg
 	clr	a3
 	movi	DMAWNZ,a4
-	move	*a13(chhstick),a5
+	move	*a13(oagsstick),a5
 	addi	CLSNEUT|TYPTEXT|00A3h,a5
 	clr	a6
 	clr	a7
@@ -2833,29 +2648,27 @@ chhdraw_okimg
 
 	;center the image in its' box
 	move	*a8(OSIZEX),a14
-	subi	chhblock_size,a14
+	subi	oagsblock_size,a14
 	sra	1,a14
 	move	a14,*a8(ODXOFF)
 
 	move	*a8(OSIZEY),a14
-	subi	chhblock_size,a14
+	subi	oagsblock_size,a14
 	sra	1,a14
 	move	a14,*a8(ODYOFF)
 
 	dec	a10
-	jrz	chhdraw_done
+	jrz	oagsdraw_done
 
 	move	a10,a6
 	movi	5,a7
 	modu	a7,a6
-	jrz	chhdraw_incy
-	jruc	chhdraw_incx
+	jrz	oagsdraw_incy
+	jruc	oagsdraw_incx
 
-chhdraw_done
+oagsdraw_done
 	rets
 
-****************************************
-* enter inits config stuff
 crap_off		.equ	5
 WHERE_BLOCK
 	.LONG	[32+crap_off,0]	;X
@@ -2864,130 +2677,130 @@ WHERE_BLOCK
 	.LONG	[273+crap_off,0]	;X
 	.LONG	[59,0]	;Y
 
-chhinit_table1	.STRING	"ABCDEFGHIJKLMNOPQRSTUVWXYZ!",010H,011H,012H
-chhinit_table2	.STRING	"ABCDEFGHIJKLMNOPQRSTUVWXYZ!",020H,011H,012H
+oagsinit_table1	.STRING	"ABCDEFGHIJKLMNOPQRSTUVWXYZ!",010H,011H,012H
+oagsinit_table2	.STRING	"ABCDEFGHIJKLMNOPQRSTUVWXYZ!",020H,011H,012H
 
-chhgrid_x		equ	200		;x position of letter grid
-chhgrid_y		equ	100		;y position of letter grid
-chhblock_size	equ	18		;x & y spacing of letter grid
+oagsgrid_x		equ	200		;x position of letter grid
+oagsgrid_y		equ	100		;y position of letter grid
+oagsblock_size	equ	18		;x & y spacing of letter grid
 
-chhtstatic	equ	30		;ticks before repeat motion begins
-chhtmoving	equ	10		;ticks between repeat motions
-chhdebounce_time	equ	8		;min ticks between stick changes
+oagststatic	equ	30		;ticks before repeat motion begins
+oagstmoving	equ	10		;ticks between repeat motions
+oagsdebounce_time	equ	8		;min ticks between stick changes
 
-chhenterinit_mod
+oagsenterinit_mod
 	.long	wwfselbkBMOD		;wrestler select map
 	.word	-44,0
 	.long	0
 
-chhcurrentinit1_mes
+oagscurrentinit1_mes
 	JAM_STR	osgemd_ascii,10,1,77+crap_off,204,BLUE,print_string_C2
 	.byte	"A",0
 	.even
 
-chhcurrentinit2_mes
+oagscurrentinit2_mes
 	JAM_STR	osgemd_ascii,10,1,315+crap_off,204,RUBYPAL,print_string_C2
 	.byte	"A",0
 	.even
 
-chhenterinita_mess
+oagsenterinita_mess
 	JAM_STR	font9_ascii,8,0,76+crap_off,179,FNT9WHT2P,print_string_C2
 	.byte	"ENTER INITIALS",0,0
 	.even
 
-chhenterinitb_mess
+oagsenterinitb_mess
 	JAM_STR	font9_ascii,8,0,286+crap_off+29,179,FNT9RED_P,print_string_C2
 	.byte	"ENTER INITIALS",0,0
 	.even
 
-chhenterinit1_mes
+oagsenterinit1_mes
 	JAM_STR	font9_ascii,4,0,77+crap_off,38,FNT9WHT2P,print_string_C2
 	.byte	"WIN STREAK !",0,0
 	.even	   
 
-chhenterinit2_mes
+oagsenterinit2_mes
 	JAM_STR	font9_ascii,4,0,317+crap_off,38,FNT9RED_P,print_string_C2
 	.byte	"WIN STREAK !",0,0
 	.even
 
-chhenterinit3_mes
+oagsenterinit3_mes
 	JAM_STR	font9_ascii,4,0,77+crap_off,38,FNT9WHT2P,print_string_C2
 	.byte	"FAST VICTORY",0,0
 	.even
 
-chhenterinit4_mes
+oagsenterinit4_mes
 	JAM_STR	font9_ascii,4,0,317+crap_off,38,FNT9RED_P,print_string_C2
 	.byte	"FAST VICTORY",0,0
 	.even
 
-chhenterinit5_mes
+oagsenterinit5_mes
 	JAM_STR	font9_ascii,4,0,77+crap_off,38,FNT9WHT2P,print_string_C2
 	.byte	"BEATEN GAME",0,0
 	.even
 
-chhenterinit6_mes
+oagsenterinit6_mes
 	JAM_STR	font9_ascii,4,0,317+crap_off,38,FNT9RED_P,print_string_C2
 	.byte	"BEATEN GAME",0,0
 	.even
 
-chhenterinit7_mes
+oagsenterinit7_mes
 	JAM_STR	font9_ascii,4,0,45+crap_off,16,FNT9WHT2P,print_string_C2
 	.byte	"WINS : ",0,0
 	.even
 
-chhenterinit8_mes
+oagsenterinit8_mes
 	JAM_STR	font9_ascii,4,0,285+crap_off,16,FNT9RED_P,print_string_C2
 	.byte	"WINS : ",0,0
 	.even
 
-chhenterinit9_mes
+oagsenterinit9_mes
 	.byte	"SEC.",0,0
 	.even
 
-chhentermess_mes
+oagsentermess_mes
 	JAM_STR	osgemd_ascii,10,0,200+crap_off,10,BLUE,print_string_C2
 	.byte	"ENTER A MESSAGE",0,0
 	.even
 
-chhcursor	.word	0,0,10					;X, Y, Z
+oagscursor	.word	0,0,10					;X, Y, Z
 	.long	jmeter					;IMG
 	.word	DMACAL					;CTRL
 	.word	CLSNEUT|TYPTEXT|00A3h
 	.long	0,0					;XVEL, YVEL
 	.even
 
-chhcursor2	.word	0,0,10					;X, Y, Z
-	.long	chhjmeter2					;IMG
+oagscursor2	.word	0,0,10					;X, Y, Z
+	.long	oagsjmeter2					;IMG
 	.word	DMACAL					;CTRL
 	.word	CLSNEUT|TYPTEXT|00A4h
 	.long	0,0					;XVEL, YVEL
 	.even
 
-chhjmeter2
+oagsjmeter2
 	.word   175,13,2,2
 	.long   040427fcH
 	.word   02000H
-	.long   chhjmeter2_p
+	.long   oagsjmeter2_p
 
-chhjmeter2_p
+oagsjmeter2_p
 	.word	  5
 	.word	00H,7d00H,07F60H,01E0H,00H
 
-chhhilite1	.word	0,0,20					;X, Y, Z
+oagshilite1	.word	0,0,20					;X, Y, Z
 	.long	FNT9_A
 	.word	DMAWNZ					;CTRL
 	.word	CLSNEUT|TYPTEXT|00A3h
 	.long	0,0					;XVEL, YVEL
 	.even
 
-chhhilite2	.word	0,0,20					;X, Y, Z
+oagshilite2	.word	0,0,20					;X, Y, Z
 	.long	FNT9_A
 	.word	DMAWNZ					;CTRL
 	.word	CLSNEUT|TYPTEXT|00A4h
 	.long	0,0					;XVEL, YVEL
 	.even
 
-chhjoytab				;RLDU
+oagsjoytab				;RLDU
 	.word	0		;0000
 	.word	-5		;0001
 	.word	5		;0010
@@ -3005,20 +2818,9 @@ chhjoytab				;RLDU
 	.word	5		;1110
 	.word	0		;1111
 
-********************************
-*INITIAL ENTRY JOYSTICK TABLE
 	
-*INITIAL MATRIX
 
 
-**************************************************************************
-*
-*	CHECK_INITS
-*
-*	A1 POINTS AT A SET OF INITIALS ENTERED. RETURN .EQ.
-*	IF THEY'RE ALL SPACES (OR ZERO).
-*
-**************************************************************************
 CHECK_INITS:
 	MMTM	SP,A0,A1,A2
 	MOVI	NUM_INITS,A2
@@ -3036,54 +2838,18 @@ LET_FOUND:
 	MMFM	SP,A0,A1,A2
 	RETS
 
-**************************************************************************
-*
-*	CHECK_SCORE
-*
-*	THIS IS CALLED WITH A SCORE IN A0 TO SEE IF IT
-*	IS HIGH ENOUGH TO MAKE THE TABLE.
-*
-*	THE OTHER PLAYER'S SCORE IS PASSED IN A2. IF
-*	THE PLAYER MAKES THE LAST POSITION OF THE TABLE,
-*	THEN HIS SCORE IS COMPARED AGAINST THE OTHER SCORE
-*	IT MUST BE HIGHER THAN THE OTHER SCORE, OTHERWISE
-*	HE WILL ENTER HIS INITIALS, BUT THERE WILL BE NO
-*	PLACE TO PUT THEM WHEN HIS BUDDY IS DONE ENTERING HIS!
-*
-*	THIS ROUTINE CALLS FIND_TABLE_LEVEL WHICH RETURNS
-*	THE POINT IN THE TABLE THAT THE PASSED SCORE WOULD
-*	LAND.   THIS VALUE MUST BE LESS THAN OR EQUAL TO
-*	THE "TB_VISIBLE" VALUE FOR THE TABLE.  THIS WOULD
-*	MEAN THAT WE WANT TO GET THE PLAYER'S INITIALS.
-*
-*	A8 CONTAINS ROM POINTER FOR TABLE TO CHECK.
-*	RETURN A0 = 0 (AND .EQ.) IF SCORE ISN'T HIGH ENOUGH
-*	AND A0 = POSITION IN TABLE IF SCORE MAKES IT.
-*
-**************************************************************************
  SUBR	CHECK_SCORE
 	MMTM	SP,A1,A3,A9,A10
 	MOVE	A0,A3			;STASH SCORE IN A3
-	move	*a13(chhwhich_level),a10,L
+	move	*a13(oagswhich_level),a10,L
 	call	a10
 
-;	CALLR	FIND_TABLE_LEVEL	;SEE WHERE WE LAND IN THIS TABLE
 
 	JRZ	ANSWER_IN_A0		;ZERO.....GUY DIDN'T MAKE IT
 	MOVE	*A8(TB_VISIBLE),A1,W	;GET THE NUMBER "ENTERED"
 	CMP	A1,A0			;A0 MUST BE LESS OR EQUAL
 	JRLO	ANSWER_IN_A0		;NOT LAST ENTRY...RETURN SUCCESS
 
-;	JRHI	DIDNT_MAKE_HSTD
-*
-*	GUY IS GOING FOR LAST POSITION.....SEE IF HIS BUDDY IS
-*	GOING TO NOSE HIM OUT:
-*
-*	^^^^^^^^^^ not anymore !! ^^^^^^^
-;	CMP	A2,A3			;HI MUST BE HIGHER THAN BUDDY
-;	JRHI	ANSWER_IN_A0
-;
-;DIDNT_MAKE_HSTD:
 	CLR	A0			;RETURN FAILURE
 ANSWER_IN_A0:
 	MOVE	A0,A0			;SET EQ BIT ACCORDINGLY
@@ -3092,11 +2858,9 @@ ANSWER_IN_A0:
 
 SORT_BEATEN_TABLE
 	PUSH	A1
-	MOVE	*A13(chhwhich_tab),A8,L
-;	MOVI	BEATEN_TAB,A8
+	MOVE	*A13(oagswhich_tab),A8,L
 	CALLR	ROM_PTRS
-	MOVE	*A13(chhwhich_aud),A0
-;	MOVI	AUD_BEATEN,A0
+	MOVE	*A13(oagswhich_aud),A0
 	CALLA	GET_AUD
 	MOVE	A1,A0
 	PULL	A1
@@ -3121,10 +2885,10 @@ THIS_IS_IT
 	MOVE	A6,A10
 	MOVE	A10,A3
 
-	MOVE	*A13(chhwhich_tab),A8,L
+	MOVE	*A13(oagswhich_tab),A8,L
 	CALLR	ROM_PTRS
 	PUSH	A0,A1
-	MOVE	*A13(chhwhich_aud),A0
+	MOVE	*A13(oagswhich_aud),A0
 	CALLA	GET_AUD
 	MOVE	A1,A0
 	CALLR	GET_HSCR
@@ -3132,7 +2896,7 @@ THIS_IS_IT
 	PULL	A0,A1
 	PUSH	A0,A1
 	MOVE	A0,A1
-	MOVE	*A13(chhwhich_aud),A0
+	MOVE	*A13(oagswhich_aud),A0
 	calla	KILL_AUD
 	calla	AUD
 	PULL	A0,A1
@@ -3157,7 +2921,7 @@ NO_IN_A3
 COMPARE_INITIALS
 	MOVK	1,A0			;START AT 1 AND WORK UP.
 	CALLR	VAL_TAB 		;FIX THE TABLE IN CASE ITS BROKEN.
-	JRC	chhNOT_MATCHED
+	JRC	oagsNOT_MATCHED
 COMPARE_NEXT
 	CALLR	COMPARE_INITS
 	JRNC	MATCHED
@@ -3168,7 +2932,7 @@ COMPARE_NEXT
 MATCHED
 	MOVE	A0,A0
 	RETS
-chhNOT_MATCHED
+oagsNOT_MATCHED
 	MOVI	-1,A0
 	RETS
 
@@ -3178,21 +2942,21 @@ COMPARE_INITS
 	CALLA	PT_ENTRY
 	ADDI	HS_INITS,A7		;POINT AT FIRST INITIAL
 	MOVI	NUM_INITS,A2		;THIS IS NUMBER OF INITIALS
-chhINIT_COPY_LOOP
+oagsINIT_COPY_LOOP
 	CALLR	RC_BYTEI
 	MOVE	A0,A5
-	JRNZ	chhNOT_BLANK
+	JRNZ	oagsNOT_BLANK
 	MOVI	SPACE,A5		;REPLACE BLANKS WITH SPACES
-chhNOT_BLANK:
+oagsNOT_BLANK:
 	MOVB	*A6,A11
-	JRNZ	chhNOT_A_SPACE
+	JRNZ	oagsNOT_A_SPACE
 	MOVI	SPACE,A11		;REPLACE BLANKS WITH SPACES
 	MOVB	A11,*A6
-chhNOT_A_SPACE
+oagsNOT_A_SPACE
 	CMP	A5,A11
 	JRNE	NOT_MATCHED
 	ADDK	8,A6
-	DSJ	A2,chhINIT_COPY_LOOP
+	DSJ	A2,oagsINIT_COPY_LOOP
 	PULL	A0
 	CALLR	GET_HSCR
 	OR	A1,A4
@@ -3216,7 +2980,7 @@ SPECIAL_ADD_ENTRY
 INSERT_HERE
 	PUSH	A0
 	MOVE	A0,A1
-	MOVE	*A13(chhwhich_aud),A0
+	MOVE	*A13(oagswhich_aud),A0
 	calla	KILL_AUD
 	calla	AUD
 	PULL	A0
@@ -3240,22 +3004,6 @@ SPECIAL_DIDNT_MAKE_IT
 	MOVE	A10,A3			;LAST GUY IN TABLE IS DESTINATION
    	JRUC	COPY_DOWN_LOOP
 
-**************************************************************************
-*
-*	ADD_ENTRY
-*
-*	THIS IS CALLED AFTER "ENTER YOUR INITIALS" TO
-*	ADD AN ENTRY TO THE TABLE. A0 CONTAINS THE
-*	SCORE OF THE PLAYER. A1 CONTAINS A POINTER
-*	TO THE FETCHED INITIALS. THE INITIALS ARE
-*	STORED AS CONSECUTIVE BYTES IN CONVENTIONAL
-*	(1 BYTE TAKES 1 BYTE SPACE) RAM.
-*
-*	A8 contains a the table to store the entry in.
-*
-*	RETURN CARRY SET IF IT DIDN'T MAKE IT INTO REQUESTED TABLE
-*
-**************************************************************************
 ADD_ENTRY:
 	MMTM	SP,A0,A1,A2,A3,A4,A7,A9,A10
 	CALLR	ROM_PTRS		;SETUP FOR THIS TABLE
@@ -3264,10 +3012,6 @@ ADD_ENTRY:
 	CALLR	CHECK_SCORE		;DOES THE REQUEST MAKE IT?
 	SETC				;ANTICIPATE FAILURE
 	JRZ	DIDNT_MAKE_IT		;DON'T KNOW WHY I GOT THESE INITS.
-*
-*	A0 NOW HAS THE PLACE FOR THE NEW GUY.
-*	MOVE THE ENTIRE TABLE DOWN 1 UNIT.
-*
 	MOVE	A10,A3			;LAST GUY IN TABLE IS DESTINATION
 
 COPY_DOWN_LOOP:
@@ -3282,10 +3026,6 @@ COPY_DOWN_LOOP:
 
 COPY_DONE:
 	CALLR	PUT_SCORE_FOR_ENTRY	;SCORE IN A4 WRITTEN TO ENTRY A0
-*
-*	INITAIAL POINTER IS IN A1
-*	TABLE OFFSET IN A0
-*
 	CALLR	PT_ENTRY		;GET ENTRY POINTER IN A7
 	ADDI	HS_INITS,A7		;POINT AT FIRST INITIAL
 	MOVI	NUM_INITS,A2		;THIS IS NUMBER OF INITIALS
@@ -3308,91 +3048,57 @@ DIDNT_MAKE_IT
 	MMFM	SP,A0,A1,A2,A3,A4,A7,A9,A10
 	RETS
 
-**************************************************************************
-*
-*	FIND_TABLE_LEVEL
-*
-*	THIS IS CALLED TO COMPARE THE SCORE IN A0 TO
-*	THE TABLE POINTED TO BY A8.
-*
-*	RETURN PHYSICALLY WHERE IT FITS IN A0, AND
-*	SET THE Z FLAG ACCORDINGLY
-*
-**************************************************************************
 FIND_HIGH_TABLE_LEVEL
 	MMTM	SP,A1,A2,A3
 	CALLR	ROM_PTRS		;SETUP FOR THIS TABLE
 	CALLR	VAL_TAB 		;FIX THE TABLE IN CASE ITS BROKEN.
-	JRC	fhqFTL_FAIL		;CAN'T VALIDATE..SAY SCORE DIDN'T MAKE IT
+	JRC	jqlhFTL_FAIL		;CAN'T VALIDATE..SAY SCORE DIDN'T MAKE IT
 
 	MOVE	A0,A2			;KEEP SCORE IN A2
 	MOVK	1,A0			;START AT 1 AND WORK UP.
 
-fhqCHECK_NEXT_SCORE:
+jqlhCHECK_NEXT_SCORE:
 	CALLR	GET_HSCR		;FETCH A0 ENTRY'S SCORE IN A1
 	CMP	A1,A2			;HOW DO WE FARE AGAINST A1?
-	JRGE	fhqFOUND_THE_SPOT		;WE FOUND THE SPOT
+	JRGE	jqlhFOUND_THE_SPOT		;WE FOUND THE SPOT
 	INC	A0			;KEEP MOVING DOWN TILL WE FIT
 	CMP	A10,A0			;ARE WE LOOKING AT THE LAST ONE?
-	JRLS	fhqCHECK_NEXT_SCORE
+	JRLS	jqlhCHECK_NEXT_SCORE
 
-fhqFTL_FAIL:
+jqlhFTL_FAIL:
 	CLR	A0			;WE'RE NOT HIGH ENOUGH RETURN FAILURE
 
-fhqFOUND_THE_SPOT:
+jqlhFOUND_THE_SPOT:
 	MOVE	A0,A0			;MAKE SURE YOU SET THE FLAGS
 	MMFM	SP,A1,A2,A3
 	RETS
 
-**************************************************************************
-*
-*	FIND_TABLE_LEVEL
-*
-*	THIS IS CALLED TO COMPARE THE SCORE IN A0 TO
-*	THE TABLE POINTED TO BY A8.
-*
-*	RETURN PHYSICALLY WHERE IT FITS IN A0, AND
-*	SET THE Z FLAG ACCORDINGLY
-*
-**************************************************************************
  SUBR	FIND_LOW_TABLE_LEVEL
 	MMTM	SP,A1,A2,A3
 	CALLR	ROM_PTRS		;SETUP FOR THIS TABLE
 	CALLR	VAL_TAB 		;FIX THE TABLE IN CASE ITS BROKEN.
-	JRC	hzrFTL_FAIL		;CAN'T VALIDATE..SAY SCORE DIDN'T MAKE IT
+	JRC	tibbFTL_FAIL		;CAN'T VALIDATE..SAY SCORE DIDN'T MAKE IT
 
 	MOVE	A0,A2			;KEEP SCORE IN A2
 	MOVK	1,A0			;START AT 1 AND WORK UP.
 
-hzrCHECK_NEXT_SCORE:
+tibbCHECK_NEXT_SCORE:
 	CALLR	GET_HSCR		;FETCH A0 ENTRY'S SCORE IN A1
 	CMP	A1,A2			;HOW DO WE FARE AGAINST A1?
-	JRLO	hzrFOUND_THE_SPOT
-;	JRHI	hzrFOUND_THE_SPOT		;WE FOUND THE SPOT
+	JRLO	tibbFOUND_THE_SPOT
 	INC	A0			;KEEP MOVING DOWN TILL WE FIT
 	CMP	A10,A0			;ARE WE LOOKING AT THE LAST ONE?
-	JRLS	hzrCHECK_NEXT_SCORE
+	JRLS	tibbCHECK_NEXT_SCORE
 
-hzrFTL_FAIL:
+tibbFTL_FAIL:
 	CLR	A0			;WE'RE NOT HIGH ENOUGH RETURN FAILURE
 
-hzrFOUND_THE_SPOT:
+tibbFOUND_THE_SPOT:
 	MOVE	A0,A0			;MAKE SURE YOU SET THE FLAGS
 	MMFM	SP,A1,A2,A3
 	RETS
 
 
-**************************************************************************
-*
-*	GET_HSCR
-*
-*	THIS IS CALLED TO FETCH THE SCORE FROM CMOS FOR
-*	A GIVEN ENTRY.
-*
-*	ENTRY NUMBER PASSED IN A0.
-*	SCORE RETURNED IN A1.
-*
-**************************************************************************
 GET_HSCR
 	MMTM	SP,A7,A0
 	CALLR	PT_ENTRY		;POINT A7 AT ENTRY
@@ -3402,15 +3108,6 @@ GET_HSCR
 	MMFM	SP,A7,A0
 	RETS
 
-**************************************************************************
-*
-*	PUT_SCORE_FOR_ENTRY
-*
-*	THIS IS CALLED TO WRITE OUT THE SCORE FOR A GIVEN ENTRY.
-*	ENTRY SPECIFIED BY A0.
-*	SCORE PASSED IN A4.
-*
-**************************************************************************
 PUT_SCORE_FOR_ENTRY
 	MMTM	SP,A7,A0
 	CALLR	PT_ENTRY		;POINT A7 AT ENTRY
@@ -3420,44 +3117,6 @@ PUT_SCORE_FOR_ENTRY
 	MMFM	SP,A7,A0
 	RETS
 
-**************************************************************************
-*
-*	LOW LEVEL HSTD PROCESSING
-*
-**************************************************************************
-*
-*	 FOR HIGH SCORE ROUTINES
-*
-*	 A8  = ROM POINTER FOR A GIVEN TABLE STATS
-*	 A9  = RAM POINTER FOR CMOS DATA
-*	 A10 = NUMBER OF ENTRIES IN THE TABLE
-*
-*	 A0  = PARTICULAR ENTRY TO DEAL WITH
-*		 0 = FILL ENTRY (POINTER ROUTINES POINT HERE IF ERROR)
-*		 1 = HIGHEST SCORE IN TABLE
-*		 N = NTH SCORE
-*
-*	 A1  = OUTPUT OF CHECKSUM ROUTINE (BYTE)
-*
-*	 A7  = POINTER TO CURRENT ENTRY
-*
-*	 A4,A5,A6 SCRATCH
-*
-**************************************************************************
-*
-*	FORM_HS_CKSUM
-*
-*	THIS IS CALLED TO FORM THE CHECKSUM FOR THE SCORE
-*	NUMBER IN A0. (RAM POINTER ASSUMED IN A9).
-*	CHECKSUM IS RETURNED IN A1.	 THIS IS A *BYTE*.
-*
-*	CHECKSUM IS COMPUTED AS THE COMPLEMENT OF THE SIMPLE SUM
-*	OF THE BYTES IN THE ENTRY.
-*
-*	THIS ROUTINE RETURNS WITH THE Z BIT SET (.EQ.) IF THE
-*	CHECKSUM FOR THIS ENTRY MATCHES.
-*
-**************************************************************************
 FORM_HS_CKSUM:
 	MMTM	SP,A0,A4,A6,A7
 	CALLR	PT_ENTRY		;A7 = POINTER TO CURRENT ENTRY
@@ -3477,14 +3136,6 @@ ADD_A_BYTE:
 	MMFM	SP,A0,A4,A6,A7		;Z BIT RETURNS COMPARE
 	RETS				;A1 RETURNS CKSUM
 
-**************************************************************************
-*
-*	FORM_HS_CKSUM_AND_STORE
-*
-*	THIS IS USED TO SET THE CHECKSUM FOR THE CURRENT
-*	ENTRY (A0) TO THE CORRECT VALUE.
-*
-**************************************************************************
 FORM_HS_CKSUM_AND_STORE:
 	MMTM	SP,A0,A7
 	CALLR	FORM_HS_CKSUM		;GET THE CKSUM IN A1, POINTER IN A7
@@ -3495,22 +3146,6 @@ FORM_HS_CKSUM_AND_STORE:
 	MMFM	SP,A0,A7
 	RETS
 
-**************************************************************************
-*
-*	PT_ENTRY
-*
-*	THIS IS CALLED TO POINT AT A GIVEN ENTRY OF
-*	THE HIGH SCORE TABLE.  THIS ROUTINE BASES
-*	ACTIVITY ON ROM POINTER IN A8.  IT FETCHES
-*	FRESH COPIES OF THE A9 RAM POINTER AND THE
-*	A10 ENTRY COUNTER.  IT RETURNS THE ENTRY
-*	POINTER IN A7.
-*
-*	A0 SPECIFIES WHICH ENTRY TO POINT AT
-*	A8,A9,A10 AND SYSCTRL ASSUMED SET PROPERLY
-*	A7 RETURNED POINTING TO THAT ENTRY
-*
-**************************************************************************
 PT_ENTRY:
 	CMP	A10,A0			;A10 IS MAX VALUE
 	JRLS	POINTER_IN_RANGE
@@ -3528,24 +3163,6 @@ POINTER_IN_RANGE:
 	ADD	A9,A7			;ADD IN THE BASE
 	RETS
 
-**************************************************************************
-*
-*	ROM_PTRS
-*
-*	THIS IS CALLED TO LOAD UP THE ROM STRUCTURE
-*	DATA INTO REGISTERS.
-*
-*	THIS ALSO SETS UP STATUS WORD TO SELECT THE CMOS
-*	BANK SELECT FOR WHERE THE PARTICULAR TABLE RESIDES.
-*
-*	INPUT A8=HSTD STRUCTURE ROM POINTER.
-*
-*	OUTPUT A9 = CMOS RAM POINTER TO BASE OF TABLE
-*	OUTPUT A10= LAST ENTRY IN TABLE. TABLE WILL
-*			HAVE A10+1 ENTRIES SINCE ENTRY
-*			0 IS A FILLER.
-*
-**************************************************************************
 ROM_PTRS:
 	MMTM	SP,A0,A1		;SCRATCH REGGIES
 	MOVE	*A8(TB_POINTER),A9,L	;GET CMOS POINTER
@@ -3557,47 +3174,12 @@ ROM_PTRS:
 	MMFM	SP,A0,A1		;SCRATCH REGGIES
 	RETS
 
-**************************************************************************
-*
-*	SET_PAGE
-*
-*	This is called to set the CMOS page to the bits
-*	contained in A1.
-*
-**************************************************************************
 SET_PAGE
-;	MMTM	SP,A0,A1
-;	ANDI	CMOS_PAGE_SELECT_BITS,A1	;KILL SIGN EXTEND..SAVE BITS
-;	PUSHST					;SAVE INTERRUPT STATUS
-;	DINT					;STOP INTERRUPTS
-;	MOVE	@SYSCOPY,A0,W			;GET THE RAM COPY
-;	ANDNI	CMOS_PAGE_SELECT_BITS,A0	;REMOVE THE CURRENT PAGE SELECT
-;	OR	A1,A0				;ADD IN OUR BITS
-;	MOVE	A0,@SYSCOPY,W			;PUT THEM BACK IN THE RAM COPY
-;;	MOVE	A0,@SYSCTRL,W			;NOW THE HARDWARE
-;	POPST					;OK TO RE-START INTS
-;	MMFM	SP,A0,A1
 	RETS
 
-**************************************************************************
-*
-*	INIT_TAB
-*
-*	This entrypoint is called at power up to
-*	clear out "today's" high score table. We do
-*	this job, and then we do the job on the
-*	all time table for high score reset if
-*	necessary.
-*
-**************************************************************************
 INIT_TAB
 	RETS
 
-*************************************************************************
-*
-*	INIT_HSTRING
-*
-*	Initializes the special name of the top scorer on the table.
 
  SUBR	INIT_HSTRING
 	MOVI	AUD_WINSTREAK,A0
@@ -3611,16 +3193,6 @@ INIT_TAB
 	rets
 
 
-*************************************************************************
-*
-*	INIT_TB
-*
-*	THIS IS CALLED TO SETUP A HIGH SCORE TABLE WITH
-*	FACTORY ENTRIES.
-*
-*	A8 = ROM TABLE POINTER
-*
-**************************************************************************
  SUBR	INIT_TB
 
 	MMTM	SP,A5,A6,A7,A0
@@ -3647,18 +3219,6 @@ INIT_TB_2
 
 	RETS
 
-*************************************************************************
-*
-*	COPY_ENTRY
-*
-*	THIS IS CALLED TO COPY 1 ENTRY OF THE TABLE TO A
-*	DIFFERENT LOCATION IN THE TABLE.
-*
-*	A8,A9,A10,SYSCTRL ASSUMED TO BE SETUP ALREADY
-*	A2 = SOURCE ENTRY (NUMBER)
-*	A3 = DESTINATION ENTRY (NUMBER)
-*
-**************************************************************************
 COPY_ENTRY:
 	MMTM	SP,A0,A4,A5,A6,A7
 	MOVI	HS_SIZE_IN_BYTES,A4	;ENTRY SIZE IN BYTES
@@ -3669,12 +3229,6 @@ COPY_ENTRY:
 	CALLR	PT_ENTRY		;A5 = DESTINATION
 	MOVE	A7,A5
 COPY_LOOP:
-*
-*	 IN THIS LOOP WE MOVE A BYTE AT A TIME.
-*	 SINCE THE WORD AND LONG DO THE SHIFTING AND
-*	 MASKING AND CALL MULTIPLE ROUTINES, THIS IS
-*	 THE MOST EFFICIENT MODE OF OPERATION.
-*
 	MOVE	A6,A7			;SOURCE IN CMOS REGGIE
 	CALLR	RC_BYTEI		;FETCH A WORD
 	MOVE	A7,A6
@@ -3685,33 +3239,6 @@ COPY_LOOP:
 	MMFM	SP,A0,A4,A5,A6,A7
 	RETS
 
-**************************************************************************
-*
-*	VAL_TAB
-*
-*	THIS ROUTINE IS CALLED WHEN WE ARE INTERESTED IN
-*	THE HSTD TABLE DATA. A8 CONTAINS THE ROM POINTER
-*	FOR THE TABLE. FOR ANY ENTRIES THAT WE THROW
-*	OUT, WE MOVE THE REST OF THE TABLE UP, AND CREATE
-*	A NEW ENTRY AT THE END OF THE TABLE.
-*
-*	A2 = 0 ON OUTSIDE CALL.
-*	A2 = 1 ON RECURSIVE CALL (THE CHECK AFTER RE-INIT)
-*
-*	THERE ARE 3 CHECKS MADE FOR EACH ENTRY:
-*
-*	1)	IS CHECKSUM CORRECT.
-*	2)	IS SCORE ALL NUMERIC
-*	3)	ARE INITIALS ALL VALID ENTRIES.
-*
-*	 OUTPUT CC = TABLE OK
-*		CS = PROBLEM THAT CAN'T BE RECTIFIED
-*			(PROBABLY BAD RAM)
-*
-*		A2 = 0 ...table ok, or cleaned up
-*		A2 otherwise meanes table initialized
-*
-**************************************************************************
 VAL_TAB
 	CLR	A2		;indicate first call in
 	CALLR	DO_VALIDATE	;validate
@@ -3732,9 +3259,6 @@ CHECK_A0_ENTRY:
 	MOVE	*A8(TB_ERROR_COUNT),A3	;GET THRESHOLD
 	CMP	A3,A1			;ARE WE THERE?
 	JRLO	CHECK_A0_ENTRY		;NOPE...CHECK MOVE UP ENTRY AT A0
-*
-*	TABLE IS MESSED UP....RE-INITIALIZE IT PLEASE
-*
 	MOVE	A2,A2			;IS THIS RECURSIVE CHECK AFTER INIT?
 	JRNZ	CANT_VALIDATE		;THEN RETURN FAILURE
 
@@ -3744,9 +3268,6 @@ CHECK_A0_ENTRY:
 	CALLR	DO_VALIDATE		;IS IT ALRIGHT NOW?
 	MMFM	SP,A0,A1,A3,A4,A5,A6,A7
 	RETS
-*
-*	 LAST ENTRY WAS VALID...MOVE TO NEXT
-*
 VT_1:	
 	INC	A0			;KICK IT
 	CMP	A10,A0			;STILL IN TABLE?
@@ -3761,23 +3282,10 @@ CANT_VALIDATE:
 	MMFM	SP,A0,A1,A3,A4,A5,A6,A7
 	RETS
 
-**************************************************************************
-*
-*	CHECK_ENTRY
-*
-*	THIS IS CALLED TO CHECK THE ENTRY INDICATED BY A0.
-*
-*	CC = OK
-*	CS = ENTRY BAD
-*
-**************************************************************************
 CHECK_ENTRY
 	MMTM	SP,A0,A1,A2,A3,A7
 	CALLR	FORM_HS_CKSUM		;CHECK OUT CKSUM FIRST
 	JRNZ	CHECK_FAIL		;BAD CHECKSUM....ITS BAD
-*
-*	CHECKSUM OK...CHECK SCORE
-*
 	CALLR	GET_HSCR		;SCORE IN A1
 	MOVE	A1,A3			;SAVE COPY OF SCORE
 
@@ -3793,14 +3301,9 @@ CHECK_DIGIT:
 	JREQ	FIRST_ENT		;WE'RE THE 1ST IN THE TABLE
 
 	CALLR	GET_HSCR		;GET THE SCORE FOR THE GUY BEFORE US
-;	CMP	A1,A3			;OURS MUST BE LOWER OR SAME
-;	JRHI	CHECK_FAIL		;OURS IS BIGGER....REMOVE US
 
 FIRST_ENT:
 	INC	A0			;RESTORE THE ENTRY NUMBER
-*
-*	SCORE OK...CHECK INITIALS
-*
 	CALLR	PT_ENTRY		;POINT A7 AT ENTRY
 	ADDI	HS_INITS,A7		;POINT AT FIRST INITIAL
 	MOVI	NUM_INITS,A2		;THIS IS NUMBER OF INITIALS
@@ -3823,17 +3326,6 @@ CHECK_FAIL:
 	RETS
 
 
-**************************************************************************
-*
-*	VERIFY_LETTER
-*
-*	THIS IS CALLED FOR EACH INITIAL LETTER TO SEE
-*	IF ITS VALID.
-*
-*	CC = VALID
-*	CS = NOT VALID
-*
-**************************************************************************
 
 VERIFY_LETTER:
 	ANDI	BYTE_MASK,A0		;KEEP JUST THE BYTE
@@ -3867,19 +3359,6 @@ VERIFY_FAIL:
 	SETC
 	RETS
 
-**************************************************************************
-*
-*	REMOVE_ENTRY
-*
-*	THIS IS CALLED TO REMOVE A BAD ENTRY FROM THE TABLE.
-*	IT DELETES THE ENTRY INDICATED BY A0.
-*
-*	IT BUBBLES THE REST OF THE TABLE UP 1 UNIT.
-*
-*	IT THEN PUTS THE LOWEST SCORE FROM THE ROM TABLE
-*	WITH INITIALS IN THAT ENTRY.
-*
-**************************************************************************
 REMOVE_ENTRY:
 	MMTM	SP,A0,A1,A2,A6,A7
 	MOVE	A0,A3			;THIS IS DEST
@@ -3916,81 +3395,22 @@ REPLACE_LOOP:
 	MMFM	SP,A0,A1,A2,A6,A7	;AND RETURN
 	RETS
 
-**************************************************************************
-*
-*	CMOS UTILITIES
-*
-**************************************************************************
 
-**************************************************************************
-*
-*	FOR ALL OF THESE CMOS ROUTINES.
-*
-*		A7 = POINTER TO MEMORY
-*		A0 = DATA TO/FROM MEMORY
-*
-**************************************************************************
-*
-*	**** IMPORTANT NOTE ON WORD AND LONG WORD PACKING ****
-*
-*	NOTE THAT REQUESTS FOR WORDS RETURN THE 2 BYTES PACKED
-*	INTO A WORD AS <1ST BYTE><2ND BYTE>.	THIS IS NOT
-*	THE SAME WAY THAT THE GSP HANDLES A WORD POINTED AT
-*	WITH A POINTER.
-*
-*	LONG WORDS WORK SIMILARLY:
-*
-*	MSB 					LSB
-*	<1ST BYTE> <2ND BYTE> <3RD BYTE> <4TH BYTE>
-*
-*	TOUGH LUCK INTEL HACKERS!
-*
-*
-*	RC_BYTE
-*	WC_BYTE
-*
-*	These 2 routines are the only routines that ever touch
-*	CMOS ram. This is done to localize the effect of
-*	changes in the architecture. All efforts to deal with
-*	CMOS should come through these routines. Locking
-*	hardware will be easily added in the future (as well
-*	as different memory mapping).
 
 
 
 RC_BYTE
-;	move	@SYSCOPY,a0
-;	sll	32-2,a0
-;	srl	32-2,a0
-;	sll	15,a0		;Page offset
-;	add	a7,a0
 	movb	*a7,a0
 	sll	32-8,a0
 	srl	32-8,a0
 	rets
 
 WC_BYTE
-;	MOVE	A1,-*SP,L
-;	move	@SYSCOPY,a1
-;	sll	32-2,a1
-;	srl	32-2,a1
-;	sll	15,a1		;Page offset
-;	add	a7,a1
-;	move	a7,a1
 	move	a0,@CMOSWE
 	movb	a0,*a7
-;	MMFM	SP,A1
 	rets
 
 
-**************************************************************************
-*
-*	RC_BYTEI
-*
-*	READ BYTE POINTED TO BY A7...INCREMENT POINTER TO
-*	"NEXT" BYTE.
-*
-**************************************************************************
 RC_BYTEI:
 	CALLR	RC_BYTE
 	ADDI	C_BYTE_SIZE,A7	;WORDS SEPARATE CMOS BYTES.
@@ -4068,13 +3488,6 @@ WC_LONGI:
 	ADDI	C_LONG_SIZE,A7
 	RETS
 
-*****************************************************************************
-*****************************************************************************
-*****
-*****	 DEFAULT ROM HSTD TABLES AND TABLE DEFINITIONS
-*****
-*****************************************************************************
-*****************************************************************************
 
 TB_POINTER	 EQU	 0			;LONG-POINTER TO BEGINNING OF TABLE
 TB_COUNT	 EQU	 TB_POINTER+LONG_SIZE	;WORD....# IN THE TABLE.
@@ -4084,10 +3497,8 @@ TB_FACTORY	 EQU	 TB_PAGE_BITS+WORD_SIZE	;LONG....ROM STARTUP TABLE
 TB_ERROR_COUNT	 EQU	 TB_FACTORY+LONG_SIZE	;WORD....NUM ERRORS TO RE-INIT
 
 
-;SCRM	.MACRO	a,b
 SCRM	.MACRO	a
 	.byte	:a:/01000000H,:a:/010000H&0ffH,:a:/0100H&0ffH,:a:&0ffH
-;	.byte	":b:",0
 	.ENDM
 
 STREAK_ROM_TABLE
@@ -4333,7 +3744,6 @@ T_ROM_ENTRY_SIZE	EQU	$-TAG_ROM_TABLE
 TAG_TAB_ENTRIES	EQU	($-TAG_ROM_TABLE)/T_ROM_ENTRY_SIZE
 
 
-******************************************************************************
 
 	.end
 

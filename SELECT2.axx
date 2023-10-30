@@ -1,12 +1,3 @@
-**************************************************************
-*
-* Software:	Jason Skiles
-* Initiated:	1066, shortly after the Battle of Hastings
-*
-* COPYRIGHT (C) 1993 WILLIAMS ELECTRONICS GAMES, INC.
-*
-*.Last mod - 11/22/93 14:24
-**************************************************************
 
 	.file	"select.asm"
 	.title	"wrestling selection screens"
@@ -30,7 +21,6 @@
 	.include	"bgndtbl.glo"
 	.include	"imgtbl.glo"
 
-*****************************************************************************
 
 	;from AUDIT.ASM
 	.ref	GET_ADJ,CR_STRTP
@@ -73,14 +63,12 @@
 	.def	wrestler_audits
 
 
-*****************************************************************************
 
 	BSSX	index1,		16 	;player 1 cursor position
 	BSSX	index2,		16 	;player 2 cursor position
 	.bss	time_out,	16	;time out flag
 	.bss	active_flag,	16	;0:player 1 active, 1:player 2 active
 
-*****************************************************************************
 
 num_wrestlers	EQU	9
 
@@ -99,22 +87,11 @@ wrestler_auditsX
 
 SKIP_SELECT	equ	0
 
-*****************************************************************************
 
  SUBR	select_screen
 
-;Temp, stuff @index1,2 for testing wrestlers.
 
  .if SKIP_SELECT
-;0	(Bret) 
-;1	(Razor)
-;2	(Taker)
-;3	(Yoko)
-;4	(Shawn)
-;5	(Bam Bam)
-;6	(Doink)
-;7	(Adam)
-;8	(Lex)
 
 	movk	6,a0
 	move	a0,@index1
@@ -124,12 +101,11 @@ SKIP_SELECT	equ	0
 	RETP
  .endif
 
-;MJT - Start
 
 	movk	1,a0			;page flipping on
 	move	a0,@dpageflip
 
-	movi	lkoplyrsel_mod,a0
+	movi	jnbyplyrsel_mod,a0
 	move	a0,@BAKMODS,L
 	calla	BGND_UD1		;create objects for background
 
@@ -140,14 +116,14 @@ SKIP_SELECT	equ	0
 
 	;draw the croutons and their associated pix
 	movi	crouton_pos_table,a9
-	movi	lkocrouton_pic_table,a10
+	movi	jnbycrouton_pic_table,a10
 	move	*a9+,a0
-lkocrouton_loop
+jnbycrouton_loop
 	move	*a9+,a1
 
 
 	movi	CRUTPLT_G,a2
-	movi	lkocrutplt_z,a3
+	movi	jnbycrutplt_z,a3
 	movi	DMAWNZ,a4
 	movi	CLSNEUT,a5
 	clr	a6
@@ -164,13 +140,13 @@ lkocrouton_loop
 
 	PULL	a0,a1,a6,a7
 	move	*a10+,a2,L
-	movi	lkocrutpic_z,a3
+	movi	jnbycrutpic_z,a3
 	movi	DMAWNZ,a4
 	movi	CLSNEUT,a5
 	calla	BEGINOBJW
 
 	move	*a9+,a0
-	jrnz	lkocrouton_loop
+	jrnz	jnbycrouton_loop
 
 	calla	start_credbox
 
@@ -201,49 +177,48 @@ lkocrouton_loop
 	move	a0,@DISPLAYON
 	calla	display_unblank
 
-;MJT - End
 
-lkowaitloop
+jnbywaitloop
 	SLEEPK	1
 	move	@active_flag,a14
-	jrnz	lkowaitloop
+	jrnz	jnbywaitloop
 
 	;players have chosen their guys.  wait a sec, then bail
 	movi	TSEC,a8
-lkofinal_waitloop
+jnbyfinal_waitloop
 	SLEEPK	1
 
 	move	@active_flag,a14	;don't quit if someone jumps in here
-	jrnz	lkowaitloop
+	jrnz	jnbywaitloop
 
-	dsj	a8,lkofinal_waitloop
+	dsj	a8,jnbyfinal_waitloop
 
 	RETP
 
 
-lkoplyrsel_mod
+jnbyplyrsel_mod
 	.long	wwfselbkBMOD
 	.word	-40,0
 	.long	0
 
-lkocrutplt_z	equ	1
+jnbycrutplt_z	equ	1
 hiplate_z	equ	2	;oscillates from 2 to 3
-lkocrutpic_z	equ	4
+jnbycrutpic_z	equ	4
 hilite_z	equ	5
 
-lkobaseshad_z	equ	1
-lkohishad_z	equ	2
-lkoattplt_z	equ	3
-lkosidebar_z	equ	3
-lkonameshad_z	equ	5
-lkonamebar_z	equ	7
+jnbybaseshad_z	equ	1
+jnbyhishad_z	equ	2
+jnbyattplt_z	equ	3
+jnbysidebar_z	equ	3
+jnbynameshad_z	equ	5
+jnbynamebar_z	equ	7
 atttxt_z	equ	8
 
 name_z		equ	9
 
 mugshot_z	equ	1
 
-lkocrouton_pic_table
+jnbycrouton_pic_table
 	.long	CRUT_DK
 	.long	CRUT_RR
 	.long	CRUT_UN
@@ -269,51 +244,46 @@ crouton_pos_table
 	.word	0
 
 
-*****************************************************************************
-* Process that handles player selection for one player.
-* 0a10H = player (0 or 1)
 
 	STRUCTPD
-	LONG		tijHILITE			;UHL *hilite ring
+	LONG		nijcHILITE			;UHL *hilite ring
 
-	LONG		tijHIPLATE		;UHL *color crouton
+	LONG		nijcHIPLATE		;UHL *color crouton
 
-	LONG		tijNAME			;UHL *name obj (message *obj)
-	WORD		tijRND_DEST		;UHW target if in random mode
+	LONG		nijcNAME			;UHL *name obj (message *obj)
+	WORD		nijcRND_DEST		;UHW target if in random mode
 
-	LONG		tijMUG1
-	LONG		tijMUG2
-	LONG		tijMUG3
-	LONG		tijMUG4
-	LONG		tijMUG5
-	LONG		tijMUG6
-	LONG		tijMUG7
-	LONG		tijMUG8
+	LONG		nijcMUG1
+	LONG		nijcMUG2
+	LONG		nijcMUG3
+	LONG		nijcMUG4
+	LONG		nijcMUG5
+	LONG		nijcMUG6
+	LONG		nijcMUG7
+	LONG		nijcMUG8
 
-	LONG		tijATT1
-	LONG		tijATT2
-	LONG		tijATT3
-	LONG		tijATT4
-;MJT
-	WORD		tijCNTR			;Flashing cursor delay
+	LONG		nijcATT1
+	LONG		nijcATT2
+	LONG		nijcATT3
+	LONG		nijcATT4
+	WORD		nijcCNTR			;Flashing cursor delay
 
 
-;player info struct
-tijPI_HILITE	equ	0		;UHL hilite box TBL_ hdr
-tijPI_HIPLATE	equ	20h		;UHL hilite plate TBL_ hdr
-tijPI_STARTPOS	equ	40h		;UHW starting pos (index)
-tijPI_MUGPOS	equ	50h		;UHL mugshot [y,x]
-tijPI_MUGXPOS	equ	50h		;UHW mugshot x
-tijPI_MUGYPOS	equ	60h		;UHW mugshot y
-tijPI_MUGCTRL	equ	70h		;UHW mugshot OCTRL
-tijPI_STARTNAME	equ	80h		;UHL starting name TBL_ hdr
-tijPI_ATTTXT	equ	0A0h		;UHL atttribute text TBL_ hdr
-tijPI_INDEX	equ	0C0h		;UHL write selection word here
-tijPI_MOVESOUND	equ	0E0h		;UHW cursor move triple_sound
-tijPI_SELSOUND	equ	0F0h		;UHW select sound
+nijcPI_HILITE	equ	0		;UHL hilite box TBL_ hdr
+nijcPI_HIPLATE	equ	20h		;UHL hilite plate TBL_ hdr
+nijcPI_STARTPOS	equ	40h		;UHW starting pos (index)
+nijcPI_MUGPOS	equ	50h		;UHL mugshot [y,x]
+nijcPI_MUGXPOS	equ	50h		;UHW mugshot x
+nijcPI_MUGYPOS	equ	60h		;UHW mugshot y
+nijcPI_MUGCTRL	equ	70h		;UHW mugshot OCTRL
+nijcPI_STARTNAME	equ	80h		;UHL starting name TBL_ hdr
+nijcPI_ATTTXT	equ	0A0h		;UHL atttribute text TBL_ hdr
+nijcPI_INDEX	equ	0C0h		;UHL write selection word here
+nijcPI_MOVESOUND	equ	0E0h		;UHW cursor move triple_sound
+nijcPI_SELSOUND	equ	0F0h		;UHW select sound
 
-tijrnd_movespeed	equ	5		;ticks between rndsel moves
-tijrnd_wander	equ	18		;rnd moves before home-in begins
+nijcrnd_movespeed	equ	5		;ticks between rndsel moves
+nijcrnd_wander	equ	18		;rnd moves before home-in begins
 
  SUBRP	player_cursor
 
@@ -325,72 +295,71 @@ tijrnd_wander	equ	18		;rnd moves before home-in begins
 	; a10 = player number
 	; a11 = position index (0-9)
 
-	;aim a9 at tijp?info
+	;aim a9 at nijcp?info
 	move	a10,a9
 	X32	a9
-	addi	tijinfo,a9
+	addi	nijcinfo,a9
 	move	*a9,a9,L
 
 	;initialize the index word to -1
 	movi	-1,a14
-	move	*a9(tijPI_INDEX),a0,L
+	move	*a9(nijcPI_INDEX),a0,L
 	move	a14,*a0,W
 
 	;initialize random dest to -1
 	movi	-1,a14
-	move	a14,*a13(tijRND_DEST)
+	move	a14,*a13(nijcRND_DEST)
 
-;MJT - start
 	clr	a0
-	move	a0,*a13(tijCNTR)
+	move	a0,*a13(nijcCNTR)
 
 	;create the name text
-	move	*a9(tijPI_STARTNAME),a0,L
+	move	*a9(nijcPI_STARTNAME),a0,L
 	calla	BEGINOBJ_TBL
-	move	a8,*a13(tijNAME),L
+	move	a8,*a13(nijcNAME),L
 
 	;active?
 	move	@PSTATUS2,a14
 	btst	a10,a14
-	jrnz	tijbegin_select
+	jrnz	nijcbegin_select
 
 	;inactive.  wait for buyin
 	;create the insert coin/press start message
 	calla	CR_STRTP
-	jrhs	tijenough_money
+	jrhs	nijcenough_money
 
-tijno_money
+nijcno_money
 	;no creds.  flash 'insert coin' message while waiting for cash
-tijcred_waitloop
+nijccred_waitloop
 	SLEEPK	1
 
-	callr	tijblink
+	callr	nijcblink
 
 	calla	CR_STRTP
-	jrhs	tijenough_money
-	jruc	tijcred_waitloop
+	jrhs	nijcenough_money
+	jruc	nijccred_waitloop
 
-tijenough_money
+nijcenough_money
 
 	;there's enough money.  flash 'press start' message and wait
-	move	*a13(tijNAME),a8,L
+	move	*a13(nijcNAME),a8,L
 	movi	WF_START,a0
 	calla	civanic
 
-tijstart_waitloop
+nijcstart_waitloop
 	SLEEPK	1
 
-	callr	tijblink
+	callr	nijcblink
 
 	move	@PSTATUS2,a14
 	btst	a10,a14
-	jrz	tijstart_waitloop
+	jrz	nijcstart_waitloop
 
 	move	*a8(OXPOS),a0
 	andi	1ffh,a0
 	move	a0,*a8(OXPOS)
 
-tijbegin_select
+nijcbegin_select
 	;set our active bit if it's not already set
 	move	@active_flag,a14
 	move	a10,a0
@@ -399,102 +368,67 @@ tijbegin_select
 	move	a14,@active_flag
 
 	;initialize index
-	move	*a9(tijPI_STARTPOS),a11
+	move	*a9(nijcPI_STARTPOS),a11
 
-	;initialize tijMUG?
+	;initialize nijcMUG?
 	movk	8,a0
 	clr	a1
 	move	a13,a2
-	addi	tijMUG1,a2
-tijinitloop
+	addi	nijcMUG1,a2
+nijcinitloop
 	move	a1,*a2+,L
-	dsj	a0,tijinitloop
+	dsj	a0,nijcinitloop
 
-;MJT Start
-;	;create our attrib text
-;	move	*a9(tijPI_ATTTXT),a0,L
-;	calla	BEGINOBJ_TBL
-;	move	*a8(OXVAL),a0,L
-;	move	*a8(OYVAL),a1,L
-;
-;	;create the att bars
-;	addi	[63,0],a0
-;	addi	[12,0],a1
-;	movi	ATTMTR_0,a2
-;	movi	atttxt_z,a3
-;	movi	DMAWNZ,a4
-;	movi	CLSNEUT,a5
-;	clr	a6
-;	clr	a7
-;
-;	PUSH	a10,a11
-;
-;	movi	4,a10			;bar count
-;	move	a13,a11
-;	addi	tijATT1,a11
-;
-;tijabc_loop
-;	PUSH	a0,a1,a2,a3,a4,a5,a6,a7
-;	calla	BEGINOBJ
-;	PULL	a0,a1,a2,a3,a4,a5,a6,a7
-;	move	a8,*a11+,L
-;	addi	[8,0],a1
-;	dsj	a10,tijabc_loop
-;
-;	PULL	a10,a11
-;MJT End
 
 	;create our cursors
-	move	*a9(tijPI_HILITE),a0,L
+	move	*a9(nijcPI_HILITE),a0,L
 	calla	BEGINOBJ_TBL
-	move	a8,*a13(tijHILITE),L
+	move	a8,*a13(nijcHILITE),L
 
-	move	*a9(tijPI_HIPLATE),a0,L
+	move	*a9(nijcPI_HIPLATE),a0,L
 	calla	BEGINOBJ_TBL
-	move	a8,*a13(tijHIPLATE),L
+	move	a8,*a13(nijcHIPLATE),L
 
-	jruc	tijfirst_adjust
+	jruc	nijcfirst_adjust
 
-tijblink
-	move	*a13(tijCNTR),a0
+nijcblink
+	move	*a13(nijcCNTR),a0
 	dec	a0
-	move	a0,*a13(tijCNTR)
-	jrp	tijcont
+	move	a0,*a13(nijcCNTR)
+	jrp	nijccont
 	movk	22,a0
-	move	a0,*a13(tijCNTR)
+	move	a0,*a13(nijcCNTR)
 	move	*a8(OXPOS),a0
 	xori	1000h,a0
 	move	a0,*a8(OXPOS)
-tijcont
+nijccont
 	rets
 
 	.if	0
 
-;Color cycle cursors...
-;Good example for future cycles....
 
 	PUSH	a8,a9,a10,a11
 
 	move	a10,a10
-	jrz	tijblue
+	jrz	nijcblue
 
 	movi	[1,1],a8
 	movi	CRHI_R_P,a9
 	movi	redcyc_tbl,a10
 	movk	4,a11
 	CREATE	CYCPID,CYCLE_TABLE
-	jruc	tijout
+	jruc	nijcout
 
-tijblue
+nijcblue
 	movi	[1,1],a8
 	movi	CRHI_B_P,a9
 	movi	blucyc_tbl,a10
 	movk	4,a11
 	CREATE	CYCPID,CYCLE_TABLE
 
-tijout	PULL	a8,a9,a10,a11
+nijcout	PULL	a8,a9,a10,a11
 
-	jruc	tijfirst_adjust
+	jruc	nijcfirst_adjust
 
 
 blucyc_tbl
@@ -608,33 +542,33 @@ redcyc_tbl
 	.endif
 
 
-tijadjust
-	move	*a9(tijPI_MOVESOUND),a0
+nijcadjust
+	move	*a9(nijcPI_MOVESOUND),a0
 	calla	triple_sound
-	callr	tijerase_mugshot
-tijfirst_adjust
-	callr	tijplace_cursor
-	callr	tijdraw_mugshot
-	callr	tijupdate_name
-	callr	tijupdate_attbars
+	callr	nijcerase_mugshot
+nijcfirst_adjust
+	callr	nijcplace_cursor
+	callr	nijcdraw_mugshot
+	callr	nijcupdate_name
+	callr	nijcupdate_attbars
 
 	;set a6 to debounce value if not rndsel, or to move time if rndsel
-	move	*a13(tijRND_DEST),a14
-	jrnn	tijwaitloop
+	move	*a13(nijcRND_DEST),a14
+	jrnn	nijcwaitloop
 	movk	3,a6
 
 	clr	a0
 	move	a0,*a8(OCONST)		;Clr color
-	move	a0,*a13(tijCNTR)
+	move	a0,*a13(nijcCNTR)
 
-tijwaitloop
+nijcwaitloop
 	;flash the hilightes
-	move	*a13(tijHIPLATE),a8,L
+	move	*a13(nijcHIPLATE),a8,L
 	move	*a8(OZPOS),a14
 	xori	1,a14
 	move	a14,*a8(OZPOS)
 
-	move	*a13(tijHILITE),a8,L
+	move	*a13(nijcHILITE),a8,L
 	move	*a8(OZPOS),a14
 	xori	1,a14
 	move	a14,*a8(OZPOS)
@@ -643,179 +577,177 @@ tijwaitloop
 	SLEEPK	1
 	PULLP	a6,a7
 
-;Flash cursors white
 
-	move	*a13(tijCNTR),a14
+	move	*a13(nijcCNTR),a14
 	dec	a14
-	move	a14,*a13(tijCNTR)
-	jrp	tijnorm
+	move	a14,*a13(nijcCNTR)
+	jrp	nijcnorm
 	movk	8,a14
-	move	a14,*a13(tijCNTR)
+	move	a14,*a13(nijcCNTR)
 
 	PUSH	a6,a7,a9
 	movi	0202h,a9
 	CREATE0	FLASHME
 	.ref	FLASHME
 	PULL	a6,a7,a9
-tijnorm
+nijcnorm
 
-;MJT - End
 	;are we in random mode?
-	move	*a13(tijRND_DEST),a14
-	jrn	tijnot_rndsel
+	move	*a13(nijcRND_DEST),a14
+	jrn	nijcnot_rndsel
 
 	;we're in random select
-	dsj	a6,tijwaitloop
+	dsj	a6,nijcwaitloop
 
 	;time to move again
-	movi	tijrnd_movespeed,a6	;set time to next move
+	movi	nijcrnd_movespeed,a6	;set time to next move
 	dec	a7
-	jrp	tijmove_at_random
+	jrp	nijcmove_at_random
 
 	;move toward final destination
 	;if we're there, take it
-	move	*a13(tijRND_DEST),a14
+	move	*a13(nijcRND_DEST),a14
 	cmp	a14,a11
-	jreq	tijbut_hit
+	jreq	nijcbut_hit
 
 	;not there.  one time in three, move at random anyway
 	movk	3,a0
 	calla	RNDRNG0
 	TEST	a0
-	jrz	tijmove_at_random
+	jrz	nijcmove_at_random
 
 	;if we're in the correct row, move sideways
-	move	*a13(tijRND_DEST),a14
+	move	*a13(nijcRND_DEST),a14
 	xor	a11,a14
 	srl	1,a14
-	jrz	tijrnd_move_sideways
+	jrz	nijcrnd_move_sideways
 
 	;okay, move toward the correct row
-	move	*a13(tijRND_DEST),a14
+	move	*a13(nijcRND_DEST),a14
 	cmp	a11,a14
-	jrlt	tijstick_up
-	jruc	tijstick_down
+	jrlt	nijcstick_up
+	jruc	nijcstick_down
 
-tijmove_at_random
+nijcmove_at_random
 	;move in a random direction, but only in legal directions
 	movk	2,a0
 	calla	RNDRNG0
 	cmpi	2,a0
-	jreq	tijrnd_move_up
+	jreq	nijcrnd_move_up
 	cmpi	1,a0
-	jreq	tijrnd_move_down
+	jreq	nijcrnd_move_down
 
 	;move sideways by toggling bit zero in the index
-tijrnd_move_sideways
+nijcrnd_move_sideways
 	xori	1,a11
-	jruc	tijadjust
+	jruc	nijcadjust
 
-tijrnd_move_up
+nijcrnd_move_up
 	cmpi	2,a11
-	jrge	tijstick_up
+	jrge	nijcstick_up
 
 	;moving up isn't legal.  move sideways or down
 	movi	1,a0
 	calla	RNDRNG0
 	TEST	a0
-	jrz	tijrnd_move_sideways
-	jruc	tijstick_down
+	jrz	nijcrnd_move_sideways
+	jruc	nijcstick_down
 
-tijrnd_move_down
+nijcrnd_move_down
 	cmpi	5,a11
-	jrle	tijstick_down
+	jrle	nijcstick_down
 
 	;moving down isn't legal.  move sideways or up
 	movi	1,a0
 	calla	RNDRNG0
 	TEST	a0
-	jrz	tijrnd_move_sideways
-	jruc	tijstick_up
+	jrz	nijcrnd_move_sideways
+	jruc	nijcstick_up
 
-tijnot_rndsel
+nijcnot_rndsel
 	;if time is out, pick whoever we're on.
 	move	@time_out,a14
-	jrnz	tijbut_hit
+	jrnz	nijcbut_hit
 
 	;begin random select?
 	move	a10,a0
 	calla	get_start_cur
-	jrz	tijbutton_checks
+	jrz	nijcbutton_checks
 
 	;start is down.  check stick
 	move	a10,a0
 	calla	get_stick_val_cur
 	btst	JOYUP,a0
-	jrz	tijbutton_checks
+	jrz	nijcbutton_checks
 
 	;stick is up.  check position
-	move	*a9(tijPI_STARTPOS),a14
+	move	*a9(nijcPI_STARTPOS),a14
 	cmp	a11,a14
-	jreq	tijbegin_random_select
+	jreq	nijcbegin_random_select
 
-tijbutton_checks
+nijcbutton_checks
 	;button checks
 	move	a10,a0
 	calla	get_but_val_down
 	TEST	a0
-	jrnz	tijbut_hit
+	jrnz	nijcbut_hit
 
 	dec	a6
-	jrp	tijwaitloop
+	jrp	nijcwaitloop
 	clr	a6
 
 	;stick checks
 	move	a10,a0
 	calla	get_stick_val_down
 	btst	JOYDN,a0
-	jrnz	tijstick_down
+	jrnz	nijcstick_down
 	btst	JOYUP,a0
-	jrnz	tijstick_up
+	jrnz	nijcstick_up
 	btst	JOYLFT,a0
-	jrnz	tijstick_left
+	jrnz	nijcstick_left
 	btst	JOYRGT,a0
-	jrnz	tijstick_right
-	jruc	tijwaitloop
+	jrnz	nijcstick_right
+	jruc	nijcwaitloop
 
-tijstick_down
+nijcstick_down
 	;add 2 unless the index is 6 or 7
 	cmpi	6,a11
-	jrge	tijwaitloop
+	jrge	nijcwaitloop
 	addi	2,a11
-	jruc	tijadjust
+	jruc	nijcadjust
 
-tijstick_up
+nijcstick_up
 	;sub 2 unless index is 0 or 1
 	cmpi	2,a11
-	jrlt	tijwaitloop
+	jrlt	nijcwaitloop
 	subi	2,a11
-	jruc	tijadjust
+	jruc	nijcadjust
 
-tijstick_left
+nijcstick_left
 	;sub 1 unless index is even
 	btst	0,a11
-	jrz	tijwaitloop
+	jrz	nijcwaitloop
 	dec	a11
-	jruc	tijadjust
+	jruc	nijcadjust
 
-tijstick_right
+nijcstick_right
 	;add 1 unless index is odd
 	btst	0,a11
-	jrnz	tijwaitloop
+	jrnz	nijcwaitloop
 	inc	a11
-	jruc	tijadjust
+	jruc	nijcadjust
 
-tijbegin_random_select
+nijcbegin_random_select
 	movi	7,a0
 	calla	RNDRNG0
-	move	a0,*a13(tijRND_DEST)
-	movi	tijrnd_movespeed,a6
-	movi	tijrnd_wander,a7
-	jruc	tijwaitloop
+	move	a0,*a13(nijcRND_DEST)
+	movi	nijcrnd_movespeed,a6
+	movi	nijcrnd_wander,a7
+	jruc	nijcwaitloop
 
-tijbut_hit
+nijcbut_hit
 	;they hit a button.  Stick 'em with the current guy.
-	move	*a9(tijPI_INDEX),a0,L
+	move	*a9(nijcPI_INDEX),a0,L
 	;rewire kludge
 	X16	a11
 	addi	scramble_table,a11
@@ -823,7 +755,7 @@ tijbut_hit
 	move	a11,*a0
 
 	;make a joyful noise unto the player			    
-	move	*a9(tijPI_SELSOUND),a0
+	move	*a9(nijcPI_SELSOUND),a0
 	calla	triple_sound
 
 	;clear our bit in the active flag
@@ -836,24 +768,21 @@ tijbut_hit
 	;synch!  begin flashing on an even PCNT
 	move	@PCNT,a14
 	btst	0,a14
-	jrnz	tijsynch
+	jrnz	nijcsynch
 	SLEEPK	1
 
-tijsynch
-	move	*a13(tijHILITE),a8,L
-;MJT
-;	movi	0202h,a14
-;	move	a14,*a8(OCONST)
+nijcsynch
+	move	*a13(nijcHILITE),a8,L
 
 	movi	TSEC/2,a11
-tijflashloop
+nijcflashloop
 	movi	0202h,a14
 	move	a14,*a8(OCONST)
 	move	*a8(OCTRL),a14
 	xori	M_CONZER,a14
 	move	a14,*a8(OCTRL)
 	SLEEPK	1
-	dsj	a11,tijflashloop
+	dsj	a11,nijcflashloop
 
 	move	*a8(OCTRL),a14
 	andni	M_CONZER,a14
@@ -862,16 +791,14 @@ tijflashloop
 	movi	hilite_z,a14
 	move	a14,*a8(OZPOS)
 
-	move	*a13(tijHIPLATE),a8,L
+	move	*a13(nijcHIPLATE),a8,L
 	movi	hiplate_z,a14
 	move	a14,*a8(OZPOS)
 	
 	DIE
 
-********
-* moves cursor to the current index position
 
- SUBRP	tijplace_cursor
+ SUBRP	nijcplace_cursor
 
 	PUSH	a2,a3,a7,a8
 
@@ -881,8 +808,8 @@ tijflashloop
 	move	*a1+,a2,W
 	move	*a1,a3,W
 
-	move	*a13(tijHILITE),a7,L
-	move	*a13(tijHIPLATE),a8,L
+	move	*a13(nijcHILITE),a7,L
+	move	*a13(nijcHIPLATE),a8,L
 
 	move	a2,*a7(OXPOS)
 	move	a2,*a8(OXPOS)
@@ -893,10 +820,8 @@ tijflashloop
 	rets
 
 
-********
-* updates the name text
 
- SUBRP	tijupdate_name
+ SUBRP	nijcupdate_name
 
 	PUSH	a8,a11
 
@@ -909,37 +834,33 @@ tijflashloop
 	X32	a0
 	addi	name_tbl,a0
 	move	*a0,a0,L
-	move	*a13(tijNAME),a8,L
+	move	*a13(nijcNAME),a8,L
 	calla	civanic
 
 	PULL	a8,a11
 
 	rets
 
-********
-* erases current mugshot
 
- SUBRP	tijerase_mugshot
+ SUBRP	nijcerase_mugshot
 
 	PUSH	a5,a6,a8
 
 	movk	8,a6
 	move	a13,a5
-	addi	tijMUG1,a5
-tijeraseloop
+	addi	nijcMUG1,a5
+nijceraseloop
 	move	*a5+,a0,L
 	calla	DELOBJ
-	dsj	a6,tijeraseloop
+	dsj	a6,nijceraseloop
 
 	PULL	a5,a6,a8
 
 	rets
 
 
-********
-* draws a new mugshot
 
- SUBRP	tijdraw_mugshot
+ SUBRP	nijcdraw_mugshot
 
 	;reg use
 	;a10 = PDATA pointer
@@ -957,16 +878,16 @@ tijeraseloop
 	move	*a11,a11,L
 
 	move	a13,a10
-	addi	tijMUG1,a10
+	addi	nijcMUG1,a10
 	move	*a11+,a2,L
 
-tijdrawloop
-	move	*a9(tijPI_MUGXPOS),a0
-	move	*a9(tijPI_MUGYPOS),a1
+nijcdrawloop
+	move	*a9(nijcPI_MUGXPOS),a0
+	move	*a9(nijcPI_MUGYPOS),a1
 	sla	16,a0
 	sla	16,a1
 	movi	mugshot_z,a3
-	move	*a9(tijPI_MUGCTRL),a4
+	move	*a9(nijcPI_MUGCTRL),a4
 	movi	CLSNEUT,a5
 	clr	a6
 	clr	a7
@@ -974,59 +895,15 @@ tijdrawloop
 	move	a8,*a10+,L
 	
 	move	*a11+,a2,L
-	jrz	tijdone
-	jruc	tijdrawloop
+	jrz	nijcdone
+	jruc	nijcdrawloop
 
-tijdone
+nijcdone
 	PULL	a6,a7,a8,a10,a11
 	rets
 
 
-;MJT Start
-;********
-;* updates the attribute bars
-;
-; SUBRP	tijupdate_attbars
-;
-;	PUSH	a7,a10,a11
-;
-;
-;	;rewiring kludge
-;	X16	a11
-;	addi	scramble_table,a11
-;	move	*a11,a11,W
-;
-;	move	a11,a10
-;	X64	a10
-;	addi	wrestler_attributes,a10
-;	move	a13,a11
-;	addi	tijATT1,a11
-;
-;	movi	4,a7
-;tijualoop
-;	move	*a10+,a0,W
-;	X32	a0
-;	addi	attbars,a0
-;	move	*a0,a0,L
-;	move	*a11+,a8,L
-;	calla	civanic
-;	dsj	a7,tijualoop
-;
-;	PULL	a7,a10,a11
-;	rets
-;
-;wrestler_attributes
-;	.word	0,1,2,3
-;	.word	4,5,6,7
-;	.word	8,9,0,1
-;	.word	2,3,4,5
-;	.word	6,7,8,9
-;	.word	0,1,2,3
-;	.word	4,5,6,7
-;	.word	8,9,0,1
-;	.word	9,9,9,9
 
-;MJT End
 
 scramble_table	;swap bret and doink on the select page
 	.word	6
@@ -1034,64 +911,61 @@ scramble_table	;swap bret and doink on the select page
 	.word	0
 	.word	8		;put lex in place of adam
 
-;attbars
-;	.long	ATTMTR_0,ATTMTR_1,ATTMTR_2,ATTMTR_3,ATTMTR_4
-;	.long	ATTMTR_5,ATTMTR_6,ATTMTR_7,ATTMTR_8,ATTMTR_9
 
-tijinfo
-	.long	tijp1info,tijp2info
+nijcinfo
+	.long	nijcp1info,nijcp2info
 
-tijp1info
-	.long	tijhi_b,tijplt_b			;hilite, crouton
+nijcp1info
+	.long	nijchi_b,nijcplt_b			;hilite, crouton
 	.word	0				;start index
 	.word	0+18+2,175			;mug position
 	.word	DMAWNZ|M_3D|M_SCRNREL		;mug octrl
-	.long	tijp1name,latttxt			;start name,att text
+	.long	nijcp1name,latttxt			;start name,att text
 	.long	index1				;report choice to
 	.word	18h,35h				;cursor/select sounds
 
-tijp2info
-	.long	tijhi_r,tijplt_r			;hilite, crouton
+nijcp2info
+	.long	nijchi_r,nijcplt_r			;hilite, crouton
 	.word	1				;start index
 	.word	400-18,175			;mug position
 	.word	DMAWNZ|M_3D|M_SCRNREL|M_FLIPH	;mug octrl
-	.long	tijp2name,ratttxt			;start name,att text
+	.long	nijcp2name,ratttxt			;start name,att text
 	.long	index2				;report choice to
 	.word	19h,55h				;cursor/select sounds
 
 
 
-tijplt_b	.word	0,0,hiplate_z				;X,Y,Z
+nijcplt_b	.word	0,0,hiplate_z				;X,Y,Z
 	.long	CRUTPLT_B				;IMG
 	.word	DMAWNZ|M_3D|M_SCRNREL			;CTRL
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-tijplt_r	.word	0,0,hiplate_z+1				;X,Y,Z
+nijcplt_r	.word	0,0,hiplate_z+1				;X,Y,Z
 	.long	CRUTPLT_R				;IMG
 	.word	DMAWNZ|M_3D|M_SCRNREL			;CTRL
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-tijhi_b	.word	0,0,hilite_z				;X,Y,Z
+nijchi_b	.word	0,0,hilite_z				;X,Y,Z
 	.long	CRUTHI_B				;IMG
 	.word	DMAWNZ|M_3D|M_SCRNREL			;CTRL
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-tijhi_r	.word	0,0,hilite_z+1				;X,Y,Z
+nijchi_r	.word	0,0,hilite_z+1				;X,Y,Z
 	.long	CRUTHI_R				;IMG
 	.word	DMAWNZ|M_3D|M_SCRNREL			;CTRL
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-tijp1name	.word	051H,184,name_z
+nijcp1name	.word	051H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
 	.long	0,0
 
-tijp2name	.word	0142H,184,name_z
+nijcp2name	.word	0142H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
@@ -1109,7 +983,6 @@ ratttxt	.word	400-18-124,189,atttxt_z			;X, Y, Z
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-;Mugshot stuff
 
 wrestler_mugs
 	.long	BHARTMUG
@@ -1154,9 +1027,6 @@ name_tbl
 	.long	NAM_BRT,NAM_RZR,NAM_UND,NAM_YOK
 	.long	NAM_SHN2,NAM_BAM2,NAM_DNK,NAM_ADM,NAM_LEX
 
-*****************************************************************************
-* Player select clock - sets time_out when it runs out of time
-*
 
  SUBR	select_clock
 
@@ -1164,19 +1034,19 @@ name_tbl
 	; a8 - current pstatus
 	; a9 - time remaining
 
-ejpselect_time	equ	TSEC*25
+qsbkselect_time	equ	TSEC*25
 
-ejpreset
-	movi	ejpselect_time,a9
+qsbkreset
+	movi	qsbkselect_time,a9
 	move	@PSTATUS2,a8
 
-ejpwaitloop
+qsbkwaitloop
 	SLEEPK	1
 	move	@PSTATUS2,a14
 	cmp	a14,a8
-	jrne	ejpreset			;new buyin.  reset
+	jrne	qsbkreset			;new buyin.  reset
 
-	dsj	a9,ejpwaitloop
+	dsj	a9,qsbkwaitloop
 
 	movk	1,a14
 	move	a14,@time_out
@@ -1184,8 +1054,6 @@ ejpwaitloop
 	DIE
 
 clock_digits
-;When player select time gets down to 5 seconds, display it...
-;a10=select_clock *PROC
 
 	movi	[0cbh,0],a0			;x pos
 	movi	[232,0],a1			;y pos
@@ -1197,22 +1065,21 @@ clock_digits
 	clr	a7				;y vel
 	calla	BEGINOBJ
 	movk	4,a11
-ejploop0	callr	obj_off
+qsbkloop0	callr	obj_off
 
-ejploop	SLEEPK	1
+qsbkloop	SLEEPK	1
 	move	@time_out,a0
 	janz	SUCIDE
 	move	*a10(PA9),a0
 	srl	6,a0
 	cmp	a0,a11
-	jrz	ejploop
+	jrz	qsbkloop
 	cmpi	6,a0
-	jrge	ejploop0
+	jrge	qsbkloop0
 
-;New digit time	
 	move	a0,a11
 	sll	5,a0
-	addi	ejpdigits_tbl,a0
+	addi	qsbkdigits_tbl,a0
 	move	*a0,a0,L		;* image
 
 	move	*a8(OCTRL),a1		;DMA flags
@@ -1221,44 +1088,33 @@ ejploop	SLEEPK	1
 
 	movi	clock_snd,a0
 	calla	triple_sound
-	jruc	ejploop
+	jruc	qsbkloop
 
-ejpdigits_tbl
+qsbkdigits_tbl
 	.long	FNT9_0,FNT9_1,FNT9_2,FNT9_3,FNT9_4
 	.long	FNT9_5,FNT9_6,FNT9_7,FNT9_8,FNT9_9
 
 
-*****************************************************************************
-* "Tonight's Matchup"-type stuff.
-*
 
  SUBR	pregame_show
 
-;This will be the ladder type screen, showing the 1 player
-;game progression.  Chooses the CPU opponent.
 	
 	move	@index1,a0
-	jrnn	dltok
+	jrnn	fonook
 
-;Chooses CPU controlled player 1
 	movk	6,a0				;Doink
 	move	a0,@index1
 
-dltok
+fonook
 	move	@index2,a0
-	jrnn	dltok2
+	jrnn	fonook2
 
-;Chooses CPU controlled player 2
 	movk	6,a0				;Doink
 	move	a0,@index2
 
-dltok2
+fonook2
 	RETP
 
-*****************************************************************************
-*
-* INPUT:	a8 = * object
-*-----------------------------------------------------------------------------
 
  SUBRP	obj_on
  	move	*a8(OYPOS),a0
@@ -1267,10 +1123,6 @@ dltok2
  	rets
 
 
-*****************************************************************************
-*
-* INPUT:	a8 = * object
-*-----------------------------------------------------------------------------
 
  SUBRP	obj_off
  	move	*a8(OYPOS),a0
@@ -1279,6 +1131,5 @@ dltok2
  	rets
 
 
-******************************************************************************
 	.end
 
