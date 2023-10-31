@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		8/8/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"react1.asm"
 	.title	"wrester reactions to hits"
@@ -23,6 +31,8 @@
 	.include	"jjxm.h"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	change_anim1a,PCNT,flash_white,round_award,any_hits
 	.ref	wres_collis_off,slide_offscr
@@ -35,7 +45,10 @@
 	.ref	sp_change_anim
 
 
+******************************************************************************
+* EXTERNAL ANIM SEQUENCES
 
+;BAM BAM
 	.ref	bam_2_head_hit_anim,bam_4_head_hit_anim
 	.ref	bam_2_body_hit_anim,bam_4_body_hit_anim
 	.ref	bam_head_hit2_anim,bam_4_body_hit_dizzy_anim
@@ -43,6 +56,7 @@
 	.ref	bam_fall_back_anim,bam_fall_back_tbukl_anim
 	.ref	bam_4_hitblock_anim
 
+;DOINK
 	.ref	dnk_2_head_hit_anim,dnk_4_head_hit_anim
 	.ref	dnk_head_hit2_anim,dnk_hitonground_anim
 	.ref	dnk_head_hit_dizzy_anim
@@ -51,6 +65,7 @@
 	.ref	dnk_4_body_hit_anim
 	.ref	dnk_4_body_hit_dizzy_anim
 
+;BRET
 	.ref	hrt_4_hitblock_anim,hrt_hitonground_anim
 	.ref	hrt_2_head_hit_anim,hrt_4_head_hit_anim
 	.ref	hrt_4_head_hit_dizzy_anim
@@ -59,6 +74,7 @@
 	.ref	hrt_4_body_hit_dizzy_anim
 	.ref	hrt_fall_back_anim,hrt_fall_back_tbukl_anim
 
+;LEX
 	.ref	lex_2_head_hit_anim,lex_4_head_hit_anim
 	.ref	lex_2_body_hit_anim,lex_4_body_hit_anim
 	.ref	lex_4_hitblock_anim
@@ -68,6 +84,7 @@
 	.ref	lex_fall_back_anim,lex_fall_back_tbukl_anim
 	.ref	lex_flying_kick_anim,lex_super_kick_anim
 
+;RAZOR
 	.ref	rzr_4_head_hit_dizzy_anim
 	.ref	rzr_2_head_hit_anim,rzr_4_head_hit_anim
 	.ref	rzr_2_body_hit_anim,rzr_4_body_hit_anim
@@ -76,6 +93,7 @@
 	.ref	rzr_fall_back_anim,rzr_fall_back_tbukl_anim
 	.ref	rzr_4_body_hit_dizzy_anim,rzr_hitonground_anim
 
+;SHAWN
 	.ref	shn_4_head_hit_dizzy_anim
 	.ref	shn_2_head_hit_anim,shn_4_head_hit_anim
 	.ref	shn_2_head_hit2_anim,shn_4_head_hit2_anim
@@ -84,6 +102,7 @@
 	.ref	shn_fall_back_anim,shn_fall_back_tbukl_anim
 	.ref	shn_4_hitblock_anim
 
+;TAKER
 	.ref	und_2_head_hit_anim,und_4_head_hit_anim
 	.ref	und_2_body_hit_anim,und_4_body_hit_anim
 	.ref	und_head_hit_dizzy_anim
@@ -92,6 +111,7 @@
 	.ref	und_fall_back_anim,und_fall_back_tbukl_anim
 	.ref	und_4_hitblock_anim
 
+;YOKO
 	.ref	yok_4_head_hit_dizzy_anim
 	.ref	yok_2_head_hit_anim,yok_4_head_hit_anim
 	.ref	yok_2_head_hit2_anim,yok_4_head_hit2_anim
@@ -101,12 +121,23 @@
 	.ref	yok_fall_back_anim,yok_hitonground_anim
 
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
 
 	.def	hit_flykick
 
+;when a hit is scored, the damage is computed, then stuck in 'ere.  It won't
+; be applied until AFTER the appropriate hit routine is called, so you have
+; a chance to change the value in special mode-dependent cases. (A stomp
+; which shouldn't hurt someone in MODE_NORMAL, for example...)
 
 	BSSX	hit_damage_pending,16
 
+;In general, we want to clear a victim's MOVE_DIR when we hit him.  This
+; value is set to 0 before the hit routine is called.  If, for whatever
+; reason, we don't want a particular attack mode to clear the victim's
+; MOVE_DIR, just stuff it in here.  new_victim_movedir is stuffed into
+; victim's MOVE_DIR right after the amode routine returns.
 
 	BSSX	new_victim_movedir,16
 
@@ -114,7 +145,14 @@
 	BSSX	instant_death,16		;debug thing
 	.endif
 
+******************************************************************************
+* EQUATES FOR THIS FILE
 
+*****************************************************************************
+* A WRESTLER HAS JUST HIT/BEEN HIT (BY A PROJECTILE/SPECIAL OBJECT)
+*
+* a10 = * projectile process
+* a13 = * victim process
 
  SUBR	wrestler_hit_special
 
@@ -127,23 +165,27 @@
 
 	move	*a10(SP_ID),a14
 	cmpi	2,a14
-	jrnz	xjwgnot_salt
+	jrnz	fhvtnot_salt
 
+;Salt hits player
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jrnz	xjwgtag
+	jrnz	fhvttag
 	move	*a10(SP_WRESPROC),a0,L
 	movk	1,a14
 	move	a4,*a0(USR_VAR2)		;Tell Yoko his salt was failed!
-	jruc	xjwgin_block0
-xjwgtag
+	jruc	fhvtin_block0
+fhvttag
+;	cmpi	MODE_INAIR,a14
+;	jrz	fhvtin_block0
 
+;Salt projectiles do damage
 	calla	DO_SCREAM
 	movi	-D_SALT,a0
 	move	*a13(PLYRNUM),a1
 	calla	adjust_health
 
-xjwgin_block0
+fhvtin_block0
 	PUSH	a13
 	move	a10,a13
 	movi	saltsplat_anim,a0
@@ -152,16 +194,23 @@ xjwgin_block0
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	xjwgnoblock0
+	jrnz	fhvtnoblock0
 
+;	move	*a13(FACING_DIR),a0		;check for hit
+;	move	*a13(NEW_FACING_DIR),a1		;from behind
+;	and	a0,a1
+;	andi	MOVE_LEFT|MOVE_RIGHT,a1
+;	jrz	fhvtnoblock0
 
+;Block_hit
+;Slide opponent away from attacker
 	movi	[3,0],a2
 	move	*a10(SP_OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	xjwgfall_right0		;attacker on left
+	jrgt	fhvtfall_right0		;attacker on left
 	neg	a2
-xjwgfall_right0
+fhvtfall_right0
 	move	a2,*a13(OBJ_XVEL),L
 
 	CALLA	DO_BLOCK_SND
@@ -171,11 +220,15 @@ xjwgfall_right0
 
 	rets
 
-xjwgnoblock0
+fhvtnoblock0
 
+;Salt will pick off in air opponent!
+;	move	*a13(PLYRMODE),a14
+;	cmpi	MODE_INAIR,a14
+;	jrz	fhvtisdead
 
 	GETLIFE
-	jrz	xjwgisdead
+	jrz	fhvtisdead
 
 
 	SETMODE	NORMAL
@@ -186,6 +239,7 @@ xjwgnoblock0
 	subi	[1,0],a0
 	move	a0,*a13(OBJ_ZPOS),L
 
+;If opponent is in air, do fall back!
 	FACETBL head_hit2_sand_tbl
 	calla	change_anim1a
 
@@ -197,12 +251,14 @@ xjwgnoblock0
 
 
 	movi	-[1,0h],a0
+;	movi	-[3,8000h],a0
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	xjwgabs0			;right
+	jrnz	fhvtabs0			;right
 	neg	a0			;left
-xjwgabs0
+fhvtabs0
 	move	a0,*a13(OBJ_XVEL),L
+;	movi	[5,0],a0
 	movi	[3,0],a0
 	move	a0,*a13(OBJ_YVEL),L
 	movi	7000h,a0
@@ -215,22 +271,27 @@ xjwgabs0
 
 	rets
 
-xjwgnot_salt
+fhvtnot_salt
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jrz	xjwgin_block
+	jrz	fhvtin_block
+;	cmpi	MODE_INAIR,a14
+;	jrz	fhvtin_block
 
 	move	*a10(SP_ID),a14
-	jrnz	xjwgdmg
+	jrnz	fhvtdmg
+;Pull in spirits do no damage until Taker
+;whacks him at end!
 	movi	60,a0
 	move	a0,*a13(IMMOBILIZE_TIME)
-	jruc	xjwgin_block
-xjwgdmg
+	jruc	fhvtin_block
+fhvtdmg
+;Reaper projectiles do 2 damage hits
 	movi	-3,a0
 	move	*a13(PLYRNUM),a1
 	calla	adjust_health
 
-xjwgin_block
+fhvtin_block
 
 	PUSH	a13
 	move	a10,a13
@@ -239,33 +300,40 @@ xjwgin_block
 
 	move	*a13(SP_ID),a14
 	sll	5,a14
-	addi	xjwgsplat_tbl,a14
+	addi	fhvtsplat_tbl,a14
 
 	;range check
-	cmpi	xjwgsplat_tbl_end,a14
-	jrlt	xjwgstok
-	movi	xjwgsplat_tbl,a14
+	cmpi	fhvtsplat_tbl_end,a14
+	jrlt	fhvtstok
+	movi	fhvtsplat_tbl,a14
 	.if DEBUG
 	LOCKUP
 	.endif
 
-xjwgstok	move	*a14,a0,L
-xjwgreg
+fhvtstok	move	*a14,a0,L
+fhvtreg
 	calla	sp_change_anim
 	PULL	a13
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	xjwgnoblock
+	jrnz	fhvtnoblock
 
+;	move	*a13(FACING_DIR),a0		;check for hit
+;	move	*a13(NEW_FACING_DIR),a1		;from behind
+;	and	a0,a1
+;	andi	MOVE_LEFT|MOVE_RIGHT,a1
+;	jrz	fhvtnoblock
 
+;Block_hit
+;Slide opponent away from attacker
 	movi	[2,0],a2
 	move	*a10(SP_OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	xjwgfall_right		;attacker on left
+	jrgt	fhvtfall_right		;attacker on left
 	neg	a2
-xjwgfall_right
+fhvtfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 	CALLA	DO_BLOCK_SND
@@ -275,12 +343,12 @@ xjwgfall_right
 
 	rets
 
-xjwgnoblock
+fhvtnoblock
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_INAIR,a14
-	jrz	xjwgisdead
+	jrz	fhvtisdead
 	GETLIFE
-	jrz	xjwgisdead
+	jrz	fhvtisdead
 
 	SETMODE	NORMAL
 
@@ -290,6 +358,7 @@ xjwgnoblock
 	subi	[1,0],a0
 	move	a0,*a13(OBJ_ZPOS),L
 
+;If opponent is in air, do fall back!
 	FACETBL body_hit2_tbl
 	calla	change_anim1a
 
@@ -298,13 +367,18 @@ xjwgnoblock
 
 	movi	-[3,0],a0
 	move	*a10(SP_ID),a14
-	jrnz	xjwgpush_away
+	jrnz	fhvtpush_away
+;Pull toward
+;Send body hit into dizzy state at the end.
 	movk	1,a0
 	move	a0,*a13(USR_VAR1)
 
 	movi	10*60,a14
 	move	a14,*a13(DELAY_METER)
 
+;Get Taker's xpos
+;Don't allow the wrestler to get real close to Taker
+;Try to set him up for an uppercut!
 	move	*a10(SP_WRESPROC),a0,L
 	move	*a0(OBJ_XPOSINT),a14
 	move	*a13(OBJ_XPOSINT),a0
@@ -312,15 +386,15 @@ xjwgnoblock
 	abs	a14
 	clr	a0
 	cmpi	5ch,a14
-	jrlt	xjwgabs
+	jrlt	fhvtabs
 	movi	[4,0],a0
-xjwgpush_away
+fhvtpush_away
 
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	xjwgabs			;right
+	jrnz	fhvtabs			;right
 	neg	a0			;left
-xjwgabs
+fhvtabs
 	move	a0,*a13(OBJ_XVEL),L
 	movi	[3,0],a0
 	move	a0,*a13(OBJ_YVEL),L
@@ -329,15 +403,19 @@ xjwgabs
 
 	calla	DO_SCREAM
 
-xjwgisdead
+fhvtisdead
 	rets
 
-xjwgsplat_tbl
+fhvtsplat_tbl
 	REFLONG	spiritsplat_anim
 	REFLONG	reapersplat_anim
 	REFLONG	saltsplat_anim
-xjwgsplat_tbl_end
+fhvtsplat_tbl_end
 
+*****************************************************************************
+* A WRESTLER HAS JUST BEEN HIT
+* a10 = * attacking wrestler proc
+* a13 = * victim process
 
  SUBR	wrestler_hit
 
@@ -346,20 +424,21 @@ xjwgsplat_tbl_end
 
 	move	*a10(ATTACK_MODE),a14
 	cmpi	AMODE_RUN,a14
-	jrne	dxzagood_hit
+	jrne	kogugood_hit
 	calla	good_run_hit
-	jrc	dxzagood_hit
+	jrc	kogugood_hit
 
 	;crummy hit.  forget it.
 	rets
 
-dxzagood_hit
+kogugood_hit
 	;set WHOIHIT and WHOHITME HERE, not in COLLIS, because we don't
 	; want bogus run hits to change them.  (Otherwise reversals will
 	; start hitting innocent bystanders who run by.)
 	move	a10,*a13(WHOHITME),L
 	move	a13,*a10(WHOIHIT),L
 
+;Need to clear STARS_FLAG to get rid of stars!
 	callr	hit_stuff
 
 	;update LAST_HIT_TIME on attacker
@@ -378,13 +457,13 @@ dxzagood_hit
 	;if we've taken damage in the last 50 ticks, use the second value
 	; in the damage table.
 	move	*a13(LAST_DAMAGE),a14
-	jrz	dxzadmset
+	jrz	kogudmset
 	move	@PCNT,a1
 	sub	a14,a1
 	cmpi	50,a1	;20
-	jrgt	dxzadmset
+	jrgt	kogudmset
 	addk	10h,a0
-dxzadmset	move	*a0,a1
+kogudmset	move	*a0,a1
 
 	;ooh, wait.  if the attacker has a NEXT_DAMAGE set, use that instead.
 	; Exceptions:  If this hit does zero damage, don't mess with it,
@@ -392,23 +471,23 @@ dxzadmset	move	*a0,a1
 	; zero damage, but LESS THAN NEXT_DAMAGE, leave the value alone,
 	; and clear NEXT_DAMAGE.
 	TEST	a1
-	jrz	dxzannd		;not a damaging hit - don't check.
+	jrz	kogunnd		;not a damaging hit - don't check.
 	move	*a10(NEXT_DAMAGE),a14
-	jrz	dxzannd		;no NEXT_DAMAGE set.  move on.
+	jrz	kogunnd		;no NEXT_DAMAGE set.  move on.
 	move	*a10(SPECIAL_DAMAGE_TIME),a14,L
 	move	@PCNT,a0,L
 	cmp	a14,a0
-	jrgt	dxzaclrnd		;too late.  clear NEXT_DAMAGE
+	jrgt	koguclrnd		;too late.  clear NEXT_DAMAGE
 
 	move	*a10(NEXT_DAMAGE),a14
 	cmp	a1,a14
-	jrgt	dxzaclrnd		;if NEXT_DAMAGE is more than we were gonna
+	jrgt	koguclrnd		;if NEXT_DAMAGE is more than we were gonna
 				; do anyway, use the original damage.
 	move	a14,a1		;use NEXT_DAMAGE
-dxzaclrnd	clr	a14
+koguclrnd	clr	a14
 	move	a14,*a10(NEXT_DAMAGE)
 
-dxzannd	;add attacker mod
+kogunnd	;add attacker mod
 	move	*a10(WRESTLERNUM),a0
 	X16	a0
 	addi	offense_mods,a0
@@ -430,43 +509,47 @@ dxzannd	;add attacker mod
 	;block check
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jrnz	dxzano_block
+	jrnz	koguno_block
 
 	;Hey!  If the attack mode is BSTOMP or BSTOMP2, don't reduce the
 	; damage!
 	move	*a10(ATTACK_MODE),a14
 	cmpi	AMODE_BSTOMP,a14
-	jreq	dxzano_block
+	jreq	koguno_block
+;	cmpi	AMODE_BSTOMP2,a14	;bstomp2 is NOT a turnbuckle attack!
+;	jreq	koguno_block
 	cmpi	AMODE_BLBOWDROP,a14
-	jreq	dxzano_block
+	jreq	koguno_block
 
 	;we're blocking.  if damage isn't zero, reduce it to one.
 	TEST	a0
-	jrz	dxzano_mult
+	jrz	koguno_mult
 	movi	-1,a0
-	jruc	dxzano_mult
-dxzano_block
+	jruc	koguno_mult
+koguno_block
 	CLR	A1
 	MOVE	A0,A0
 	JRZ	JUST_CLEAR_OPP
 
 	MOVE	*A10(RISK),A1
-	JRZ	dxzano_mult
+	JRZ	koguno_mult
 
+;Is there a real good reason why this is a CREATE0 instead of a CREATE?
 	PUSH	a0,a8,a10
 	move	a10,a8
 	clr	a10
 	btst	15,a1
-	jrz	dxzareg
+	jrz	kogureg
+;Taunt style high risk move - give 3x dmg
 	movi	-1,a10
 	movk	4,a14
 	move	a14,@DAM_MULT
-dxzareg
+kogureg
 	movk	1,a0
 	move	a0,@any_hits
 	CREATE0	BONUS_MESS
 	PULL	a0,a8,a10
-dxzano_mult
+koguno_mult
 	CLR	A1
 	MOVE	A1,*A10(RISK)
 JUST_CLEAR_OPP
@@ -478,31 +561,31 @@ JUST_CLEAR_OPP
 	;if victim is on the turnbuckle, go to the special tbukl reaction
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ONTURNBKL,a14
-	jrne	dxzanot_onbukl
+	jrne	kogunot_onbukl
 
 	;if the attack mode is some kind of puppet, don't do this
 	move	*a10(ATTACK_MODE),a14
 
 	cmpi	AMODE_PUPPET,a14
-	jreq	dxzanot_onbukl
+	jreq	kogunot_onbukl
 	cmpi	AMODE_PUPPET2,a14
-	jreq	dxzanot_onbukl
+	jreq	kogunot_onbukl
 	cmpi	AMODE_PUPPET_HDGRAB,a14
-	jreq	dxzanot_onbukl
+	jreq	kogunot_onbukl
 	cmpi	AMODE_HITCHECK,a14
-	jreq	dxzanot_onbukl
+	jreq	kogunot_onbukl
 
 	movi	hit_ontbukl,a1
-	jruc	dxzacontinue
+	jruc	kogucontinue
 
-dxzanot_onbukl
+kogunot_onbukl
 
 	move	*a10(ATTACK_MODE),a0	;type of attack that hit doink
 	move	a0,a1
 	sll	5,a1			;x 32
-	addi	dxzahit_table,a1
+	addi	koguhit_table,a1
 	move	*a1,a1,L		;appropriate routine
-dxzacontinue
+kogucontinue
 	call	a1
 
 	;now apply the damage, unless it's zero.
@@ -510,12 +593,12 @@ dxzacontinue
 
 	.if DEBUG
 	move	@instant_death,a14
-	jrz	dxzanid
+	jrz	kogunid
 	movi	-200,a0
-dxzanid	TEST	a0
+kogunid	TEST	a0
 	.endif
 
-	jrz	dxzaskip_adjust
+	jrz	koguskip_adjust
 
 	;If this is the first unblocked hit this round and it did at least
 	; 2 pixels of damage, give an award
@@ -523,14 +606,14 @@ dxzanid	TEST	a0
 	PUSH	a0
 
 	cmpi	-2,a0
-	jrgt	dxzan1uh
+	jrgt	kogun1uh
 
 	move	@any_hits,a14
-	jrnz	dxzan1uh			;skip if there's already been one
+	jrnz	kogun1uh			;skip if there's already been one
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jreq	dxzan1uh			;skip if it was blocked
+	jreq	kogun1uh			;skip if it was blocked
 
 	RND_AWARD a10,FIRST_HIT_AWD
 
@@ -543,29 +626,32 @@ dxzanid	TEST	a0
 
 	movk	1,a14
 	move	a14,@any_hits
-dxzan1uh	PULL	a0
+kogun1uh	PULL	a0
 
 	move	*a13(PLYRNUM),a1
 	calla	adjust_health
-dxzaskip_adjust
+koguskip_adjust
 	move	@new_victim_movedir,a0
 	move	a0,*a13(MOVE_DIR)
 
 
 	rets
 
+**********
+* Stuff to do to the wrestler who got hit by another wrestler or by a
+* projectile.
 
  SUBRP	hit_stuff
 
 	;don't do ANY of this stuff if the attack mode is AMODE_HITCHECK
 	move	*a10(ATTACK_MODE),a14
 	cmpi	AMODE_HITCHECK,a14
-	jreq	dxzarets
+	jreq	kogurets
 
 	;if our victim is KO'd, wake him up and set his NO_KO bit.
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_KOD,a14
-	jrz	dxzanko
+	jrz	kogunko
 
 	ori	M_NO_KO,a14
 	andni	M_KOD,a14
@@ -573,7 +659,7 @@ dxzaskip_adjust
 
 	movk	1,a14
 	move	a14,*a13(PTIME)
-dxzanko
+kogunko
 
 	;routine cleanup
 	clr	a0
@@ -591,17 +677,17 @@ dxzanko
 
 	;attach cleanup
 	move	*a13(ATTACH_PROC),a1,L
-	jrz	dxzadone_attch
+	jrz	kogudone_attch
 
 	clr	a0
 	move	a0,*a13(ATTACH_PROC),L	;not attached to anything
 
 	move	*a1(ATTACH_PROC),a2,L
 	cmp	a2,a13
-	jrne	dxzamismatch
+	jrne	kogumismatch
 
 	cmp	a1,a10
-	jreq	dxzadone_attch	;ignore if victim is attached to attacker
+	jreq	kogudone_attch	;ignore if victim is attached to attacker
 
 	move	a0,*a1(ATTACH_PROC),L
 	move	a0,*a1(SHADTRAIL_PROC),L	;proc is toast
@@ -618,64 +704,78 @@ dxzanko
 	; 'em out of it.
 	move	*a1(PLYRMODE),a14
 	cmpi	MODE_PUPPET,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 	cmpi	MODE_ONGROUND,a14
-	jreq	dxzaabort_att_anim
+	jreq	koguabort_att_anim
 	cmpi	MODE_ATTACHED,a14
-	jreq	dxzaabort_att_anim
+	jreq	koguabort_att_anim
 	cmpi	MODE_INAIR,a14
-	jreq	dxzaabort_att_anim
+	jreq	koguabort_att_anim
 	cmpi	MODE_INAIR2,a14
-	jreq	dxzaabort_att_anim
+	jreq	koguabort_att_anim
 	cmpi	MODE_DEAD,a14
-	jreq	dxzaabort_att_anim
+	jreq	koguabort_att_anim
 	cmpi	MODE_PUPPET2,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 	cmpi	MODE_NORMAL,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 	cmpi	MODE_RUNNING,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 	cmpi	MODE_HEADHELD,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 	cmpi	MODE_HEADHOLD,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 	cmpi	MODE_CHOKEHOLD,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 	cmpi	MODE_OPPOVERHEAD,a14
-	jreq	dxzagoto_stand_anim
+	jreq	kogugoto_stand_anim
 
 	.if DEBUG
 	LOCKUP	;bizarre mode - don't know how to fix it.
 	.endif
-	jruc	dxzadone_attch
+	jruc	kogudone_attch
 
-dxzamismatch
+kogumismatch
 	.if DEBUG
 	LOCKUP	;I've been hit, but the guy I'm attached to isn't attached
 		; to me, so I don't know if I should break him out of what
 		; he's doing or not...
 	.endif
-	jruc	dxzadone_attch
+	jruc	kogudone_attch
 
-dxzagoto_stand_anim
+kogugoto_stand_anim
 	PUSH	a13
 	move	a1,a13
 	movi	xxx_goto_stand_anim,a0
 	calla	change_anim1a
 	PULL	a13
-	jruc	dxzadone_attch
+	jruc	kogudone_attch
 
-dxzaabort_att_anim
+koguabort_att_anim
 	PUSH	a13
 	move	a1,a13
 	movi	xxx_aborted_attach_anim,a0
 	calla	change_anim1a
 	PULL	a13
 
-dxzadone_attch
+kogudone_attch
 
+;	;If our TEMP_PAL bit is set, restore the original, since we'll be
+;	; aborting the sequence that would otherwise have restored it.
 	;Do this above, whether or not the bit is set, and for anyone
 	; we're attached to too.
+;	move	*a13(STATUS_FLAGS),a0
+;	btst	B_TEMP_PAL,a0
+;	jrz	kogudone_pal
+;
+;	;clear the bit
+;	andni	M_TEMP_PAL,a0
+;	move	a0,*a13(STATUS_FLAGS)
+;
+;	;restore the pal
+;	move	*a13(MY_PAL),*a13(OBJ_PAL)
+;
+;kogudone_pal
 
 	;if we're in SMART_ATTACK mode, clear it.
 	clr	a14
@@ -684,35 +784,40 @@ dxzadone_attch
 	andni	M_SMART_ATTACK,a14
 	move	a14,*a13(STATUS_FLAGS)
 
+;If a wrestler is running out of control, and gets hit, we need to make the
+;GETUP meter go away.
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_BOUNCING,a0
-	jrz	dxzayes
+	jrz	koguyes
 	cmpi	MODE_RUNNING,a0
-	jrnz	dxzacont
+	jrnz	kogucont
 
-dxzayes
+koguyes
 	.ref	ditch_getup_meter
 	calla	ditch_getup_meter
 
-dxzacont
+kogucont
 	clr	a0
 	move	a0,*a13(RUN_TIME)
 
+;If he's attached to someone, detach both of them.  (Note that we're not
+; checking the blocking case here.  you've no business being in mode_block
+; if you're attached.  Pbltltlt.)
 
 	.if DEBUG
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jrne	dxzax0
+	jrne	kogux0
 	move	*a13(ATTACH_PROC),a14,L
-	jrz	dxzax0
+	jrz	kogux0
 
 	LOCKUP	;HEY!  No blocking when attached.  Bogus.
-dxzax0
+kogux0
 	.endif
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrnz	dxzaattach_check_done
+	jrnz	koguattach_check_done
 
 	;attached.  zero attach_procs both ways, and set other guy to NORMAL.
 	clr	a14
@@ -721,11 +826,11 @@ dxzax0
 	movi	MODE_NORMAL,a14
 	move	a14,*a0(PLYRMODE)
 
-dxzaattach_check_done
-dxzarets	rets
+koguattach_check_done
+kogurets	rets
 
 
-dxzahit_table
+koguhit_table
 	.long	hit_punch	;0	(this file)
 	.long	hit_hdbutt	;1
 	.long	hit_kick	;2
@@ -794,112 +899,190 @@ dxzahit_table
 	REFLONG	hit_puppet_toss	;54	(react5.asm)
 	REFLONG	hit_napalm	;55	(react9.asm)
 
+*****************************************************************************
+;All hit routine use this block code
+;Perhaps the DAMAGE amount should be table driven
+;Perhaps we push him away after x blocks?
 
 
  SUBR	block_hit
 
+;Slide opponent away from attacker
 	movi	[4,8000h],a2
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	qgrgfall_right		;attacker on left
+	jrgt	vzgafall_right		;attacker on left
 	neg	a2
-qgrgfall_right
+vzgafall_right
 	move	a2,*a13(OBJ_XVEL),L
 
+;FIX!!
+;We need to put in grunts or something... This doesn't work!
 	CALLA	DO_BLOCK_SND
 
 	FACETBL hitblock_tbl
 	calla	change_anim1a
 
-qgrgisdead
+vzgaisdead
 	calla	wres_collis_off
 	rets
 
+*****************************************************************************
+;All hit routine use this block code
+;Perhaps the DAMAGE amount should be table driven
+;Perhaps we push him away after x blocks?
 
 
  SUBR	block_hit_flail
 
+;Slide opponent away from attacker
 	movi	[6,8000h],a2
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	hhwzfall_right		;attacker on left
+	jrgt	lmunfall_right		;attacker on left
 	neg	a2
-hhwzfall_right
+lmunfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
+;FIX!!
+;We need to put in grunts or something... This doesn't work!
 	CALLA	DO_BLOCK_SND
 
+;	FACETBL hitblock_tbl
 	FACETBL hitblock_flail_tbl
 	calla	change_anim1a
 
-hhwzisdead
+lmunisdead
 	calla	wres_collis_off
 	rets
+;
+;
+;
+;
+;
+;	CALLA	DO_BLOCK_SND
+;
+;	FACETBL hitblock_flail_tbl
+;	calla	change_anim1a
+;
+;lmunisdead
+;	calla	wres_collis_off
+;	rets
 
+*****************************************************************************
+;AMODE_PUNCH	0
 hit_unused	;13
 hit_punch
 hit_fire_punch
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	xwkvnoblock
+	jrnz	tgmqnoblock
 
+;	move	*a13(FACING_DIR),a0		;check for hit
+;	move	*a13(NEW_FACING_DIR),a1		;from behind
+;	and	a0,a1
+;	andi	MOVE_LEFT|MOVE_RIGHT,a1
+;	jrz	tgmqnoblock
 
 	callr	block_hit
 	rets
 
-xwkvnoblock
+tgmqnoblock
 
+;All of the damage amounts need to be in lookup tables linked to the wrestler
+;who actually struck the blow.
 
 	CALLA	CALL_FACE_HIT
 
 	GETLIFE
-	jrz	xwkvisdead
+	jrz	tgmqisdead
 
+;	calla	create_damage_points
 
 	WRSNDX	PUNCH_L1,PUNCH_L2
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	tgmqdiz
+;
+;	calla	check_dizzy
+;	jrz	tgmqnot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;tgmqdiz
+;	FACE24TBL head_hit_dizzy_tbl
+;	calla	change_anim1a
+;
+;tgmqisdead
+;	calla	wres_collis_off
+;
+;	rets
+;
+;tgmqnot_dizzy
+;
+;;	calla	inc_burnout
+;
+;;Test code
+;;	cmpi	6,a1			;a1 = consecutive hits
+;;	jrlt	tgmqok
+;;	LOCKUP
+;;tgmqok
+;
 	SETMODE	NORMAL
 
+;tgmqdo_hit
 	move	*a13(OBJ_YPOSINT),a14
 	move	*a13(GROUND_Y),a0
 	sub	a0,a14
 	cmpi	20,a14
-	jrge	xwkvfall_back
+	jrge	tgmqfall_back
 
 	move	*a13(CONSECUTIVE_HITS),a0
 	inc	a0
 	move	a0,*a13(CONSECUTIVE_HITS)
 	subk	6,a0
-	jrnz	xwkvok
+	jrnz	tgmqok
 
 	clr	a0
 	move	a0,*a13(CONSECUTIVE_HITS)
+;Consecutive hits without blocking/walking
+;Do push away
 
-	;go to xwkvok if opp is in combo mode
+	;go to tgmqok if opp is in combo mode
 	move	*a13(WHOHITME),a14,L
 	move	*a14(COMBO_COUNT),a14
-	jrnz	xwkvok
+	jrnz	tgmqok
 
-	FACETBL xwkvlosebal
+	FACETBL tgmqlosebal
 	calla	change_anim1a
 
+;	movi	[5,0],a2
+;
+;	move	*a10(OBJ_XPOSINT),a0
+;	move	*a13(OBJ_XPOSINT),a1
+;	cmp	a0,a1			;offx - defx
+;	jrgt	tgmqfall_right		;attacker on left
+;	neg	a2
+;tgmqfall_right
+;	move	a2,*a13(OBJ_XVEL),L
 
-	jruc	xwkvisdead
+	jruc	tgmqisdead
 
-xwkvok
+tgmqok
 
 	;normal punch
 	FACE24TBL head_hit_tbl
 	calla	change_anim1a
 
-xwkvisdead
+tgmqisdead
 	calla	wres_collis_off
 	rets
 
-xwkvfall_back
+tgmqfall_back
 	FACETBL	fall_back_tbl
 
 	calla	change_anim1a
@@ -909,14 +1092,14 @@ xwkvfall_back
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	xwkvfall_right1		;attacker on left
+	jrgt	tgmqfall_right1		;attacker on left
 	neg	a2
-xwkvfall_right1
+tgmqfall_right1
 	move	a2,*a13(OBJ_XVEL),L
 
 	rets
 
-xwkvlosebal
+tgmqlosebal
 	REFLONG	hrt_4_losebal_anim	;0 Bret Hart
 	REFLONG	rzr_4_losebal_anim	;1 Razor Ramon
 	REFLONG	und_4_losebal_anim	;2 Undertaker
@@ -927,36 +1110,56 @@ xwkvlosebal
 	REFLONG	dnk_4_losebal_anim	;7 spare
 	REFLONG	lex_4_losebal_anim	;8 Lex Luger
 
+*****************************************************************************
+;AMODE_HDBUTT	1
 hit_hdbutt
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	xeninoblock
+	jrnz	gjnrnoblock
 
 	callr	block_hit
 	rets
 
-xeninoblock
+gjnrnoblock
 
 	CALLA	CALL_FACE_HIT
 
 	GETLIFE
-	jrz	xeniisdead
+	jrz	gjnrisdead
 
 	WRSNDX	HDBUTT_L1,HDBUTT_L2
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	gjnrdiz
+;
+;	calla	check_dizzy
+;	jrz	gjnrnot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;gjnrdiz
+;	FACE24TBL head_hit_dizzy_tbl
+;	calla	change_anim1a
+;
+;gjnrnot_dizzy
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
 
 	FACE24TBL head_hit2_tbl
 	calla	change_anim1a
 
-xeniisdead
+gjnrisdead
 	calla	wres_collis_off
 
 	rets
 
+*****************************************************************************
+;AMODE_HDBUTT2	13
 hit_hdbutt2
+;From head hold attacks
 
 	CALLA	CALL_FACE_HIT
 
@@ -975,22 +1178,25 @@ hit_hdbutt2
 
 	rets
 
+*****************************************************************************
+;AMODE_URN	10
 hit_urn
 
+;From slap type attacks that want a face hit reaction!
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	rlnlnoblock
+	jrnz	dzeunoblock
 
 	callr	block_hit_flail
 	rets
 
-rlnlnoblock
+dzeunoblock
 
 	CALLA	CALL_FACE_HIT
 
 	GETLIFE
-	jrz	rlnlisdead
+	jrz	dzeuisdead
 
 	WRSNDX	HDBUTT_L1,HDBUTT_L2
 
@@ -999,17 +1205,17 @@ rlnlnoblock
 	move	*a13(GROUND_Y),a0
 	sub	a0,a14
 	cmpi	20,a14
-	jrge	rlnlfall_back
+	jrge	dzeufall_back
 
 
 	FACE24TBL head_hit2_tbl
 	calla	change_anim1a
-rlnlisdead
+dzeuisdead
 	calla	wres_collis_off
 
 	rets
 
-rlnlfall_back
+dzeufall_back
 	FACETBL	fall_back_tbl
 
 	calla	change_anim1a
@@ -1019,27 +1225,31 @@ rlnlfall_back
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	rlnlfall_right		;attacker on left
+	jrgt	dzeufall_right		;attacker on left
 	neg	a2
-rlnlfall_right
+dzeufall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 	rets
 
 
 
+*****************************************************************************
+;AMODE_HDBUTT_STAY	44
+;No xvel will happen
 hit_hdbutt_stay
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	gawtnoblock
+	jrnz	hgtpnoblock
 
 	callr	block_hit_flail
 	rets
 
-gawtnoblock
+hgtpnoblock
 
 	CALLA	CALL_FACE_HIT
 
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
 
@@ -1058,31 +1268,51 @@ gawtnoblock
 
 	rets
 
+*****************************************************************************
+;AMODE_TOMB	33
 hit_tomb
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	huplnoblock
+	jrnz	fpsrnoblock
 
 	callr	block_hit_flail
 	rets
 
-huplnoblock
+fpsrnoblock
 
 	CALLA	CALL_FACE_HIT
 
 	GETLIFE
-	jrz	huplisdead
+	jrz	fpsrisdead
 
 	calla	DO_SCREAM
 
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	fpsrdiz
+;
+;	calla	check_dizzy
+;	jrz	fpsrnot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;fpsrdiz
+;	FACE24TBL head_hit_dizzy_tbl
+;	calla	change_anim1a
+;
+;fpsrisdead
+;	calla	wres_collis_off
+;	rets
+;
+;fpsrnot_dizzy
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_ONGROUND,a14
-	jreq	huplongnd
+	jreq	fpsrongnd
 	cmpi	MODE_DEAD,a14
-	jreq	huplongnd
+	jreq	fpsrongnd
 
 
 
@@ -1091,12 +1321,12 @@ huplnoblock
 	move	*a13(GROUND_Y),a0
 	sub	a0,a14
 	cmpi	20,a14
-	jrge	huplfall_back
+	jrge	fpsrfall_back
 
 	FACE24TBL head_hit2_tbl
-	jruc	huplanim
+	jruc	fpsranim
 
-huplfall_back
+fpsrfall_back
 	FACETBL	fall_back_tbl
 
 	calla	change_anim1a
@@ -1106,50 +1336,73 @@ huplfall_back
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	huplfall_right		;attacker on left
+	jrgt	fpsrfall_right		;attacker on left
 	neg	a2
-huplfall_right
+fpsrfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 	rets
 
 
-huplongnd	FACETBL	hitonground_tbl
-huplanim	calla	change_anim1a
+fpsrongnd	FACETBL	hitonground_tbl
+fpsranim	calla	change_anim1a
 
-huplisdead
+fpsrisdead
 	calla	wres_collis_off
 
 	rets
 
+*****************************************************************************
+;AMODE_SUPER_KICK	48
 hit_super_kick
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	jhhpnoblock
+	jrnz	zwlpnoblock
 
 	callr	block_hit_flail
 	rets
 
+;AMODE_KICK	2
 hit_kick
 
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	jhhpnoblock
+	jrnz	zwlpnoblock
 
 	callr	block_hit
 	rets
 
-jhhpnoblock
+zwlpnoblock
 
 	CALLA	CALL_MID_HIT
 
 	GETLIFE
-	jrz	jhhpisdead
+	jrz	zwlpisdead
 
 	WRSNDX	KICK_L1,KICK_L2
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	zwlpdiz
+;
+;	calla	check_dizzy
+;	jrz	zwlpnot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;zwlpdiz
+;	FACE24TBL body_hit_dizzy_tbl
+;	calla	change_anim1a
+;
+;zwlpisdead
+;	calla	wres_collis_off
+;	rets
+;
+;zwlpnot_dizzy
+;
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
 
@@ -1158,70 +1411,93 @@ jhhpnoblock
 
 	FACE24TBL body_hit_tbl
 	calla	change_anim1a
-jhhpisdead
+zwlpisdead
 	calla	wres_collis_off
 	rets
 
 
+*****************************************************************************
+;AMODE_FLYKICK	3
  SUBR	hit_flykick
 
 
+;Any hit mode which does a fall back sequence onto the ground
+;will not check dizzy at the start.
+;The check dizzy happens in the sequence.
 
 	move	*a10(OBJ_XVEL),a0,L	;slow down doink's
 	sra	1,a0		   	;x_vel after collis
 	abs	a0
 	cmpi	20000h,a0
-	jrlt	ruocokv
+	jrlt	vlywokv
 	movi	40000h,a0
-ruocokv
+vlywokv
 	move	*a10(OBJ_XVEL),a14,L
-	jrn	ruocokv2
+	jrn	vlywokv2
 	neg	a0
-ruocokv2
+vlywokv2
 	move	a0,*a10(OBJ_XVEL),L
 	movi	40000h,a0
 	move	a0,*a10(OBJ_YVEL),L
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	ruocnoblock
+	jrnz	vlywnoblock
 
 	callr	block_hit_flail
 	setc				;return aborted
 	rets
 
-ruocnoblock
+vlywnoblock
 	;HACK! - Lex's flying kicks don't knock you down.  Use CALL_MID_HIT.
 	move	*a10(ANIBASE),a14,L
 	cmpi	lex_flying_kick_anim,a14
-	jreq	ruocmidhit
+	jreq	vlywmidhit
 	cmpi	lex_super_kick_anim,a14
-	jreq	ruocmidhit
+	jreq	vlywmidhit
 
 	calla	CALL_DROP_KICK
-	jruc	ruocsnd_done
-ruocmidhit	calla	CALL_MID_HIT
+	jruc	vlywsnd_done
+vlywmidhit	calla	CALL_MID_HIT
 
-ruocsnd_done
+vlywsnd_done
 	WRSNDX	FLYKICK_L1,FLYKICK_L2
 
 	GETLIFE
-	jrz	ruocskip
+	jrz	vlywskip
 
 
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
 
-ruocskip
+vlywskip
 
+;	move	*a10(OBJ_XVEL),a0,L	;slow down doink's
+;	sra	1,a0		   	;x_vel after collis
+;	abs	a0
+;	cmpi	28000h,a0
+;	jrlt	vlywokv
+;	movi	28000h,a0
+;vlywokv
+;	move	*a10(OBJ_XVEL),a14,L
+;	jrn	vlywokv2
+;	neg	a0
+;vlywokv2
+;	move	a0,*a10(OBJ_XVEL),L
+;	movi	40000h,a0
+;	move	a0,*a10(OBJ_YVEL),L
 
 	clr	a0
 	move	a0,*a13(ROLL_POS)
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	vlywdiz
 
 	calla	set_getup_time
 
 
+;vlywdiz
 	FACETBL fall_back_tbl
 	calla	change_anim1a
 
@@ -1229,45 +1505,60 @@ ruocskip
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	ruocfall_right		;attacker on left
+	jrgt	vlywfall_right		;attacker on left
 	movi	[-2,0],a2
-ruocfall_right
+vlywfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
-ruocisdead
+vlywisdead
 	calla	wres_collis_off
 	clrc				;return okay
 	rets
 
+*****************************************************************************
+;AMODE_BIGKNEE	34
 hit_bigknee
 
+;Any hit mode which does a fall back sequence onto the ground
+;will not check dizzy at the start.
+;The check dizzy happens in the sequence.
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	myqunoblock
+	jrnz	rkxvnoblock
 
 	callr	block_hit_flail
 	rets
 
-myqunoblock
+rkxvnoblock
 	calla	CALL_DROP_KICK
 	WRSNDX	FLYKICK_L1,FLYKICK_L2
 
 	GETLIFE
-	jrz	myquskip
+	jrz	rkxvskip
 
 
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
 
-myquskip
+rkxvskip
+;	move	*a10(OBJ_XVEL),a0,L	;slow down doink's
+;	sra	1,a0		   	;x_vel after collis
+;	neg	a0
+;	move	a0,*a10(OBJ_XVEL),L
+;	movi	40000h,a0
+;	move	a0,*a10(OBJ_YVEL),L
 
 	clr	a0
 	move	a0,*a13(ROLL_POS)
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	rkxvdiz
 
 	calla	set_getup_time
 
+;rkxvdiz
 	FACETBL fall_back_tbl
 	calla	change_anim1a
 
@@ -1275,21 +1566,25 @@ myquskip
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	myqufall_right		;attacker on left
+	jrgt	rkxvfall_right		;attacker on left
 	movi	-[4,0],a2
-myqufall_right
+rkxvfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
-myquisdead
+rkxvisdead
 	calla	wres_collis_off
 	rets
 
 
 
+*****************************************************************************
+;AMODE_GRABTHROW 4
 hit_grabthrow
 
 	rets
 
+*****************************************************************************
+; HIT WHILE STANDING ON TURNBUCKLE -- DOESN'T MATTER WHAT THE AMODE WAS
 hit_ontbukl
 
 
@@ -1310,19 +1605,24 @@ hit_ontbukl
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	bvxafall_right		;attacker on left
+	jrgt	ofolfall_right		;attacker on left
 	movi	[-4,0],a2
-bvxafall_right
+ofolfall_right
 	move	a2,*a13(OBJ_XVEL),L
 	movi	[6,0],a2
 	move	a2,*a13(OBJ_YVEL),L
 
-bvxaisdead
+ofolisdead
 	calla	wres_collis_off
 	rets
 
 
+******************************************************************************
+*
+* DAMAGE SECTION
+*
 
+;Base damage values and getup times
 damage_values
 	.word	D_PUNCH,	RD_PUNCH	;AMODE_PUNCH	
 	.word	D_HDBUTT,	RD_HDBUTT	;AMODE_HDBUTT	
@@ -1391,6 +1691,7 @@ damage_values
 	.word	0,		0		;AMODE_TOSS
 	.word	D_NAPALM,	RD_NAPALM	;AMODE_NAPALM
 
+;Wrestler offensive multipliers
 offense_mods
 	.word	_35PCT	;Bret
 	.word	_35PCT	;Razor
@@ -1402,6 +1703,7 @@ offense_mods
 	.word	_35PCT	;
 	.word	_35PCT	;Lex
 
+;Wrestler defensive multipliers
 defense_mods
 	.word	0	;Bret
 	.word	0	;Razor
@@ -1413,6 +1715,10 @@ defense_mods
 	.word	0	;
 	.word	0	;Lex
 
+******************************************************************************
+*
+* STANDARD REACTION TABLES
+*
 
  SUBR	head_hit_tbl
 	.long	hrt_2_head_hit_anim,hrt_4_head_hit_anim			;0 Bret Hart
@@ -1536,6 +1842,16 @@ hitblock_flail_tbl
 	.long	0		   	;7 spare
 	REFLONG	lex_4_hitblock2_anim	;8 Lex Luger
 
+;	.long	hrt_4_losebal_anim	;0 Bret Hart
+;	.long	rzr_4_losebal_anim	;1 Razor Ramon
+;	.long	und_4_losebal_anim	;2 Undertaker
+;	.long	yok_4_losebal_anim	;3 Yokozuna
+;	.long	shn_4_losebal_anim	;4 Shawn Michaels
+;	.long	bam_4_losebal_anim	;5 Bam Bam
+;	.long	dnk_4_losebal_anim	;6 Doink
+;	.long	dnk_4_losebal_anim	;7 spare
+;	.long	lex_4_losebal_anim	;8 Lex Luger
+;	.long	dnk_4_losebal_anim	;9 Referee
 
  SUBR	hitonground_tbl
 	.long	hrt_hitonground_anim		;0 Bret Hart
@@ -1549,6 +1865,10 @@ hitblock_flail_tbl
 	.long	lex_hitonground_anim		;8 Lex Luger
 	.long	0				;9 Referee
 
+*****************************************************************************
+*
+* Script for a wrestler who was the victim of a puppet sequence that got
+* interrupted by the attacker being smacked.
 
  SUBR	xxx_aborted_attach_anim
 
@@ -1561,12 +1881,12 @@ hitblock_flail_tbl
 	.word	ANI_SETMODE,MODE_NORMAL
 
 	;WAIT!  If I'm dead, just do a hitonground instead.
-	WL	ANI_CODE,ucypdead_or_dying
-	WL	ANI_IFSTATUS2,ucypdead
-	WL	ANI_CHANGEANIM_TBL,ucypgetup_tbl
-ucypdead	WL	ANI_CHANGEANIM_TBL,hitonground_tbl
+	WL	ANI_CODE,nuvidead_or_dying
+	WL	ANI_IFSTATUS2,nuvidead
+	WL	ANI_CHANGEANIM_TBL,nuvigetup_tbl
+nuvidead	WL	ANI_CHANGEANIM_TBL,hitonground_tbl
 
-ucypgetup_tbl
+nuvigetup_tbl
 	REFLONG	hrt_faceup_getup_anim
 	REFLONG	rzr_faceup_getup_anim
 	REFLONG	und_faceup_getup_anim
@@ -1578,7 +1898,7 @@ ucypgetup_tbl
 	REFLONG	lex_faceup_getup_anim
 
 
- SUBRP	ucypdead_or_dying
+ SUBRP	nuvidead_or_dying
 
 	;set status if I'm dead or my I_WILL_DIE flag is set.
 	move	*a13(ANIMODE),a14
@@ -1586,18 +1906,23 @@ ucypgetup_tbl
 	move	a14,*a13(ANIMODE)
 
 	move	*a13(I_WILL_DIE),a14
-	jrnz	ucypdie
+	jrnz	nuvidie
 
 	move	*a13(PLYRNUM),a1
 	calla	get_health
-	jrnz	ucypok
+	jrnz	nuviok
 
-ucypdie	move	*a13(ANIMODE),a14
+nuvidie	move	*a13(ANIMODE),a14
 	ori	MODE_STATUS2,a14
 	move	a14,*a13(ANIMODE)
 
-ucypok	rets
+nuviok	rets
 
+*****************************************************************************
+*
+* Script for a wrestler who was the victim of a puppet sequence that got
+* interrupted by the attacker being smacked.  - go to stand instead of
+* falling.
 
  SUBR	xxx_goto_stand_anim
 
@@ -1610,6 +1935,7 @@ ucypok	rets
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
+******************************************************************************
 
 	.end
 

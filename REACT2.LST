@@ -1,519 +1,628 @@
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
                                                                      PAGE    1
 
-       1                    
-       2                            .file   "react2.asm"
-       4                            .width  132
-       5                            .option b,d,l,t
-       6                            .mnolist
-       7                    
-       8                    
-       9                            .include        "macros.h"
-      10                            .include        "mproc.equ"             ;Mproc equates
-      11                            .include        "display.equ"           ;Display proc equates
-      12                            .include        "gsp.equ"               ;Gsp asm equates
-      13                            .include        "sys.equ"
-      14                            .include        "game.equ"
-      15                            .include        "plyr.equ"
-      16                            .include        "anim.equ"
-      17                            .include        "audit.equ"
-      18                            .include        "sound.h"
-      19                            .include        "ring.equ"
-      20                            .include        "lifebar.h"
-      21                    
-      22                    
-      23                    
-      24                            .ref    change_anim1a
-      25                            .ref    wres_collis_off
-      26                            .ref    block_hit
-      27                            .ref    face_each_other
-      28                            .ref    set_getup_time
-      29                            .ref    fall_back_tbl
-      30                            .ref    triple_sound,CALL_AVERAGE_MOVE
-      31                            .ref    CALL_NASTY_MOVE
-      32                            .ref    block_hit_flail
+       1                    **************************************************************
+       2                    *
+       3                    * Software:             Jamie Rivett
+       4                    * Initiated:            8/8/94
+       5                    *
+       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "react2.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "macros.h"
+      18                            .include        "mproc.equ"             ;Mproc equates
+      19                            .include        "display.equ"           ;Display proc equates
+      20                            .include        "gsp.equ"               ;Gsp asm equates
+      21                            .include        "sys.equ"
+      22                            .include        "game.equ"
+      23                            .include        "plyr.equ"
+      24                            .include        "anim.equ"
+      25                            .include        "audit.equ"
+      26                            .include        "sound.h"
+      27                            .include        "ring.equ"
+      28                            .include        "lifebar.h"
+      29                    
+      30                    
+      31                    ******************************************************************************
+      32                    * EXTERNAL REFERENCES
       33                    
-      34                    
-      35                    
-      36                            .ref    bam_heldoh_anim
-      37                            .ref    bam_4_losebal_anim
-      38                    
-      39                            .ref    dnk_heldoh_anim
-      40                            .ref    dnk_fall_back_anim
-      41                            .ref    dnk_4_losebal_anim
-      42                            .ref    dnk_knockdwn_anim
-      43                    
-      44                            .ref    hrt_4_losebal_anim,hrt_fall_back_anim
-      45                    
-      46                            .ref    lex_4_losebal_anim
-      47                            .ref    lex_heldoh_anim
+      34                            .ref    change_anim1a
+      35                            .ref    wres_collis_off
+      36                    ;       .ref    inc_burnout
+      37                            .ref    block_hit
+      38                            .ref    face_each_other
+      39                            .ref    set_getup_time
+      40                            .ref    fall_back_tbl
+      41                            .ref    triple_sound,CALL_AVERAGE_MOVE
+      42                            .ref    CALL_NASTY_MOVE
+      43                            .ref    block_hit_flail
+      44                    
+      45                    ******************************************************************************
+      46                    * EXTERNAL ANIM SEQUENCES
+      47                    
       48                    
-      49                            .ref    rzr_4_losebal_anim
-      50                            .ref    rzr_heldoh_anim
-      51                            .ref    rzr_fall_back_anim
-      52                    
-      53                            .ref    shn_4_losebal_anim
-      54                            .ref    shn_heldoh_anim
-      55                    
-      56                            .ref    und_heldoh_anim
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+      49                    ;BAM BAM
+      50                            .ref    bam_heldoh_anim
+      51                    ;       .ref    bam_ocrun_anim
+      52                            .ref    bam_4_losebal_anim
+      53                    
+      54                    ;DOINK
+      55                            .ref    dnk_heldoh_anim
+      56                    ;       .ref    dnk_ocrun_anim
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    2
 
-      57                            .ref    und_4_losebal_anim
-      58                    
-      59                            .ref    yok_4_losebal_anim
+      57                            .ref    dnk_fall_back_anim
+      58                            .ref    dnk_4_losebal_anim
+      59                            .ref    dnk_knockdwn_anim
       60                    
-      61                            .ref    hit_damage_pending,hitonground_tbl
-      62                            .ref    ck_live_teammates
+      61                    ;BRET
+      62                            .ref    hrt_4_losebal_anim,hrt_fall_back_anim
       63                    
-      64                    
-      65                    
-      66                    
-      67                    
-      68 00000000            SUBR   hit_uprcut
-      69                    
-      70                    
-      71 00000000     b5a1          move    *a13(PLYRMODE),a1
-         00000010     05c0  
-      72 00000020     0b41          cmpi    MODE_BLOCK,a1
-         00000030     fff8  
-      73 00000040     cb04          jrnz    gtxfnoblock
+      64                    ;LEX
+      65                            .ref    lex_4_losebal_anim
+      66                            .ref    lex_heldoh_anim
+      67                    ;       .ref    lex_ocrun_anim
+      68                    
+      69                    ;RAZOR
+      70                            .ref    rzr_4_losebal_anim
+      71                    ;       .ref    rzr_ocrun_anim
+      72                            .ref    rzr_heldoh_anim
+      73                            .ref    rzr_fall_back_anim
       74                    
-      75 00000050     0d5f          calla   block_hit_flail
-         00000060 00000000! 
-      76 00000080     0960          rets
-      77                    
-      78 00000090           gtxfnoblock
+      75                    ;SHAWN
+      76                            .ref    shn_4_losebal_anim
+      77                            .ref    shn_heldoh_anim
+      78                    ;       .ref    shn_ocrun_anim
       79                    
-      80 00000090                   GETLIFE
-      81 000000e0     ca0b          jrz     gtxfskip
-      82                    
-      83                    
+      80                    ;TAKER
+      81                            .ref    und_heldoh_anim
+      82                    ;       .ref    und_ocrun_anim
+      83                            .ref    und_4_losebal_anim
       84                    
-      85 000000f0                   SETMODE NORMAL
-      86                    
-      87 000001a0           gtxfskip
-      88                    
-      89 000001a0                   WRSNDX  UPRCUT_L1,UPRCUT_L2
-      90                    
-      91 000004e0                   FACETBL fall_back_tbl
-      92 00000550     0d5f          calla   change_anim1a
-         00000560 00000000! 
-      93                           
-      94                            .ref    flash_white
-      95 00000580     0d5f          calla   flash_white
-         00000590 00000000! 
-      96                    
-      97 000005b0     5600          clr     a0
-      98 000005c0     b00d          move    a0,*a13(ROLL_POS)
-         000005d0     0450  
-      99 000005e0     0d5f          calla   set_getup_time
-         000005f0 00000000! 
+      85                    ;YOKO
+      86                            .ref    yok_4_losebal_anim
+      87                    
+      88                    ;MISC
+      89                            .ref    hit_damage_pending,hitonground_tbl
+      90                            .ref    ck_live_teammates
+      91                    
+      92                    
+      93                    ******************************************************************************
+      94                    * SYMBOLS DEFINED IN THIS FILE
+      95                    
+      96                    ******************************************************************************
+      97                    * EQUATES FOR THIS FILE
+      98                    
+      99                    *****************************************************************************
      100                    
-     101                    
-     102                            ;silly temp
-     103 00000610     09e0          movi    [15,0],a0
-         00000620 000f0000  
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+     101                    *****************************************************************************
+     102                    ;AMODE_UPRCUT   5
+     103 00000000            SUBR   hit_uprcut
+     104                    
+     105                    
+     106 00000000     b5a1          move    *a13(PLYRMODE),a1
+         00000010     05c0  
+     107 00000020     0b41          cmpi    MODE_BLOCK,a1
+         00000030     fff8  
+     108 00000040     cb04          jrnz    wxdlnoblock
+     109                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    3
 
-     104 00000640     b54e          move    *a10(WRESTLERNUM),a14
-         00000650     0590  
-     105 00000660     0b4e          cmpi    3,a14
-         00000670     fffc  
-     106 00000680     ca11          jrz     gtxfnorm
-     107 00000690     09e0          movi    [13,0],a0
-         000006a0 000d0000  
-     108 000006c0     0b4e          cmpi    2,a14
-         000006d0     fffd  
-     109 000006e0     cb0b          jrnz    gtxfnorm
-     110                            
-     111 000006f0     4da0          move    a13,a0
-     112 00000700     0d5f          calla   ck_live_teammates
-         00000710 00000000! 
-     113 00000730     09e0          movi    [11,0],a0
-         00000740 000b0000  
-     114 00000760     c803          jrc     gtxfnorm
-     115                    
-     116                            ;no live teammates -- send them up into the air
+     110 00000050     0d5f          calla   block_hit_flail
+         00000060 00000000! 
+     111 00000080     0960          rets
+     112                    
+     113 00000090           wxdlnoblock
+     114                    
+     115 00000090                   GETLIFE
+     116 000000e0     ca0b          jrz     wxdlskip
      117                    
-     118 00000770     09e0          movi    [18,0],a0
-         00000780 00120000  
-     119 000007a0           gtxfnorm
-     120 000007a0     b20d          move    a0,*a13(OBJ_YVEL),L
-         000007b0     02f0  
+     118                    ;Any hit mode which does a fall back sequence onto the ground
+     119                    ;will not check dizzy at the start.
+     120                    ;The check dizzy happens in the sequence.
      121                    
-     122 000007c0     09e2          movi    [2,0],a2
-         000007d0 00020000  
-     123 000007f0     b540          move    *a10(OBJ_XPOSINT),a0
-         00000800     0110  
-     124 00000810     b5a1          move    *a13(OBJ_XPOSINT),a1
-         00000820     0110  
-     125 00000830     4801          cmp     a0,a1                   ;offx - defx
-     126 00000840     c703          jrgt    gtxffall_right          ;attacker on left
-     127 00000850     09e2          movi    [-2,0],a2
-         00000860 fffe0000  
-     128 00000880           gtxffall_right
-     129 00000880     b24d          move    a2,*a13(OBJ_XVEL),L
-         00000890     02d0  
-     130                    
-     131 000008a0           gtxfisdead
-     132 000008a0     0d5f          calla   wres_collis_off
-         000008b0 00000000! 
-     133 000008d0     0960          rets
-     134                    
+     122                    
+     123 000000f0                   SETMODE NORMAL
+     124                    
+     125 000001a0           wxdlskip
+     126                    ;       calla   inc_burnout
+     127                    
+     128 000001a0                   WRSNDX  UPRCUT_L1,UPRCUT_L2
+     129                    
+     130 000004e0                   FACETBL fall_back_tbl
+     131 00000550     0d5f          calla   change_anim1a
+         00000560 00000000! 
+     132                           
+     133                            .ref    flash_white
+     134 00000580     0d5f          calla   flash_white
+         00000590 00000000! 
      135                    
-     136 000008e0            SUBR   hit_combo_uprcut
-     137                    
-     138 000008e0     b5a1          move    *a13(PLYRMODE),a1
-         000008f0     05c0  
-     139 00000900     0b41          cmpi    MODE_BLOCK,a1
-         00000910     fff8  
-     140 00000920     cb04          jrnz    jybynoblock
-     141                    
-     142 00000930     0d5f          calla   block_hit
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+     136 000005b0     5600          clr     a0
+     137 000005c0     b00d          move    a0,*a13(ROLL_POS)
+         000005d0     0450  
+     138 000005e0     0d5f          calla   set_getup_time
+         000005f0 00000000! 
+     139                    
+     140                    
+     141                            ;silly temp
+     142 00000610     09e0          movi    [15,0],a0
+         00000620 000f0000  
+     143 00000640     b54e          move    *a10(WRESTLERNUM),a14
+         00000650     0590  
+     144 00000660     0b4e          cmpi    3,a14
+         00000670     fffc  
+     145 00000680     ca11          jrz     wxdlnorm
+     146 00000690     09e0          movi    [13,0],a0
+         000006a0 000d0000  
+     147 000006c0     0b4e          cmpi    2,a14
+         000006d0     fffd  
+     148 000006e0     cb0b          jrnz    wxdlnorm
+     149                            
+     150 000006f0     4da0          move    a13,a0
+     151 00000700     0d5f          calla   ck_live_teammates
+         00000710 00000000! 
+     152 00000730     09e0          movi    [11,0],a0
+         00000740 000b0000  
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    4
 
-         00000940 00000000! 
-     143 00000960     0960          rets
-     144                    
-     145 00000970           jybynoblock
-     146                    
-     147 00000970                   GETLIFE
-     148 000009c0     ca0b          jrz     jybyskip
-     149                    
-     150                    
-     151                    
-     152 000009d0                   SETMODE NORMAL
-     153                    
-     154 00000a80           jybyskip
-     155                    
-     156 00000a80                   WRSNDX  UPRCUT_L1,UPRCUT_L2
-     157                    
-     158 00000dc0                   FACETBL fall_back_tbl
-     159 00000e30     0d5f          calla   change_anim1a
-         00000e40 00000000! 
-     160                    
-     161                            .ref    flash_white
-     162 00000e60     0d5f          calla   flash_white
-         00000e70 00000000! 
+     153 00000760     c803          jrc     wxdlnorm
+     154                    
+     155                            ;no live teammates -- send them up into the air
+     156                    ;       .ref    reduce_bog
+     157                    ;       move    @reduce_bog,a14
+     158                    ;       jrnz    wxdlnorm
+     159                    
+     160 00000770     09e0          movi    [18,0],a0
+         00000780 00120000  
+     161 000007a0           wxdlnorm
+     162 000007a0     b20d          move    a0,*a13(OBJ_YVEL),L
+         000007b0     02f0  
      163                    
-     164 00000e90     5600          clr     a0
-     165 00000ea0     b00d          move    a0,*a13(ROLL_POS)
-         00000eb0     0450  
-     166 00000ec0     0d5f          calla   set_getup_time
-         00000ed0 00000000! 
-     167                    
-     168 00000ef0     09c0          MOVI    MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP,A0
-         00000f00     040c  
-     169 00000f10     b00d          MOVE    A0,*A13(ANIMODE)
-         00000f20     0660  
-     170                    
-     171                    
-     172 00000f30     b7a1          move    *a13(WHOHITME),A1,L
-         00000f40     04e0  
-     173 00000f50     09e0          movi    [7,0],a0
-         00000f60 00070000  
-     174 00000f80     b422          MOVE    *A1(RPT_COUNT),A2
-         00000f90     07d0  
-     175 00000fa0     1422          DEC     A2
-     176 00000fb0     ca03          JRZ     SET_YVEL
-     177 00000fc0     09e0          movi    [3,0],a0
-         00000fd0 00030000  
-     178 00000ff0           SET_YVEL
-     179 00000ff0     b20d          move    a0,*a13(OBJ_YVEL),L
-         00001000     02f0  
-     180                    
-     181 00001010     09e2          movi    [1,8000H],a2
-         00001020 00018000  
-     182 00001040     b540          move    *a10(OBJ_XPOSINT),a0
-         00001050     0110  
-     183 00001060     b5a1          move    *a13(OBJ_XPOSINT),a1
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+     164 000007c0     09e2          movi    [2,0],a2
+         000007d0 00020000  
+     165 000007f0     b540          move    *a10(OBJ_XPOSINT),a0
+         00000800     0110  
+     166 00000810     b5a1          move    *a13(OBJ_XPOSINT),a1
+         00000820     0110  
+     167 00000830     4801          cmp     a0,a1                   ;offx - defx
+     168 00000840     c703          jrgt    wxdlfall_right          ;attacker on left
+     169 00000850     09e2          movi    [-2,0],a2
+         00000860 fffe0000  
+     170 00000880           wxdlfall_right
+     171 00000880     b24d          move    a2,*a13(OBJ_XVEL),L
+         00000890     02d0  
+     172                    
+     173 000008a0           wxdlisdead
+     174 000008a0     0d5f          calla   wres_collis_off
+         000008b0 00000000! 
+     175 000008d0     0960          rets
+     176                    
+     177                    
+     178                    *****************************************************************************
+     179                    ;AMODE_UPRCUT2  39
+     180 000008e0            SUBR   hit_combo_uprcut
+     181                    
+     182 000008e0     b5a1          move    *a13(PLYRMODE),a1
+         000008f0     05c0  
+     183 00000900     0b41          cmpi    MODE_BLOCK,a1
+         00000910     fff8  
+     184 00000920     cb04          jrnz    mbvhnoblock
+     185                    
+     186 00000930     0d5f          calla   block_hit
+         00000940 00000000! 
+     187 00000960     0960          rets
+     188                    
+     189 00000970           mbvhnoblock
+     190                    
+     191 00000970                   GETLIFE
+     192 000009c0     ca0b          jrz     mbvhskip
+     193                    
+     194                    ;Any hit mode which does a fall back sequence onto the ground
+     195                    ;will not check dizzy at the start.
+     196                    ;The check dizzy happens in the sequence.
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    5
 
-         00001070     0110  
-     184 00001080     4801          cmp     a0,a1                   ;offx - defx
-     185 00001090     c701          jrgt    jybyfall_right          ;attacker on left
-     186 000010a0     03a2          NEG     A2
-     187 000010b0           jybyfall_right
-     188 000010b0     b24d          move    a2,*a13(OBJ_XVEL),L
-         000010c0     02d0  
-     189                    
-     190 000010d0           jybyisdead
-     191 000010d0     0d5f          calla   wres_collis_off
-         000010e0 00000000! 
-     192 00001100     0960          rets
-     193                    
-     194                    
-     195                    
-     196 00001110            SUBR   hit_lbowdrop
      197                    
-     198                            ;if we're standing, ignore this
-     199 00001110     b5a0          move    *a13(PLYRMODE),a0
-         00001120     05c0  
-     200 00001130     0b40          cmpi    MODE_NORMAL,a0
-         00001140     ffff  
-     201 00001150     ca4d          jrz     ywwhignore
-     202 00001160     0b40          cmpi    MODE_BLOCK,a0
-         00001170     fff8  
-     203 00001180     ca4a          jrz     ywwhignore
-     204                    
-     205 00001190                   WRSNDX  LBOWDROP_L1,LBOWDROP_L2
-     206 000014d0     09c0          movi    33h,a0
-         000014e0     0033  
-     207 000014f0     0d5f          calla   triple_sound
-         00001500 00000000! 
+     198                    
+     199 000009d0                   SETMODE NORMAL
+     200                    
+     201 00000a80           mbvhskip
+     202                    ;       calla   inc_burnout
+     203                    
+     204 00000a80                   WRSNDX  UPRCUT_L1,UPRCUT_L2
+     205                    
+     206 00000dc0                   FACETBL fall_back_tbl
+     207 00000e30     0d5f          calla   change_anim1a
+         00000e40 00000000! 
      208                    
-     209 00001520     0d5f          calla   wres_collis_off
-         00001530 00000000! 
-     210                    
-     211 00001550                   FACETBL hitonground_tbl
-     212 000015c0     0d5f          calla   change_anim1a
-         000015d0 00000000! 
-     213 000015f0     0d5f          calla   wres_collis_off
-         00001600 00000000! 
-     214 00001620     0960          rets
+     209                            .ref    flash_white
+     210 00000e60     0d5f          calla   flash_white
+         00000e70 00000000! 
+     211                    
+     212 00000e90     5600          clr     a0
+     213 00000ea0     b00d          move    a0,*a13(ROLL_POS)
+         00000eb0     0450  
+     214 00000ec0     0d5f          calla   set_getup_time
+         00000ed0 00000000! 
      215                    
-     216 00001630     57ce  ywwhignore      clr     a14
-     217 00001640     058e          move    a14,@hit_damage_pending
-         00001650 00000000! 
-     218 00001670     0d5f          calla   wres_collis_off
-         00001680 00000000! 
-     219 000016a0     0960          rets
-     220                    
-     221                    
-     222 000016b0            SUBR   hit_blbowdrop
-     223                    
-     224                            .ref    DO_SCREAM
-     225 000016b0     0d5f          calla   DO_SCREAM
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+     216 00000ef0     09c0          MOVI    MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP,A0
+         00000f00     040c  
+     217 00000f10     b00d          MOVE    A0,*A13(ANIMODE)
+         00000f20     0660  
+     218                    
+     219                    
+     220 00000f30     b7a1          move    *a13(WHOHITME),A1,L
+         00000f40     04e0  
+     221 00000f50     09e0          movi    [7,0],a0
+         00000f60 00070000  
+     222 00000f80     b422          MOVE    *A1(RPT_COUNT),A2
+         00000f90     07d0  
+     223 00000fa0     1422          DEC     A2
+     224 00000fb0     ca03          JRZ     SET_YVEL
+     225 00000fc0     09e0          movi    [3,0],a0
+         00000fd0 00030000  
+     226 00000ff0           SET_YVEL
+     227 00000ff0     b20d          move    a0,*a13(OBJ_YVEL),L
+         00001000     02f0  
+     228                    
+     229 00001010     09e2          movi    [1,8000H],a2
+         00001020 00018000  
+     230 00001040     b540          move    *a10(OBJ_XPOSINT),a0
+         00001050     0110  
+     231 00001060     b5a1          move    *a13(OBJ_XPOSINT),a1
+         00001070     0110  
+     232 00001080     4801          cmp     a0,a1                   ;offx - defx
+     233 00001090     c701          jrgt    mbvhfall_right          ;attacker on left
+     234 000010a0     03a2          NEG     A2
+     235 000010b0           mbvhfall_right
+     236 000010b0     b24d          move    a2,*a13(OBJ_XVEL),L
+         000010c0     02d0  
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    6
 
-         000016c0 00000000! 
-     226                    
-     227 000016e0                   WRSNDX  FLYKICK_L1,FLYKICK_L2
-     228 00001a20                   WRSNDX  LBOWDROP_L1,LBOWDROP_L2
-     229                    
-     230                    
-     231 00001d60     0d5f          calla   wres_collis_off
-         00001d70 00000000! 
-     232                    
-     233 00001d90     b5a0          move    *a13(PLYRMODE),a0
-         00001da0     05c0  
-     234 00001db0     0b40          cmpi    MODE_ONGROUND,a0
-         00001dc0     fffb  
-     235 00001dd0     ca4b          jrz     hqwlon_grnd
-     236 00001de0     0b40          cmpi    MODE_DEAD,a0
-         00001df0     fff6  
-     237 00001e00     ca48          jrz     hqwlon_grnd
-     238                    
-     239 00001e10                   SETMODE NORMAL
-     240 00001ec0     b5ae          move    *a13(OBJ_YPOSINT),a14
-         00001ed0     0130  
-     241 00001ee0     b5a0          move    *a13(GROUND_Y),a0
-         00001ef0     0570  
-     242 00001f00     440e          sub     a0,a14
-     243 00001f10     0b4e          cmpi    20,a14
-         00001f20     ffeb  
-     244 00001f30     c511          jrge    hqwlfall_back
+     237                    
+     238 000010d0           mbvhisdead
+     239 000010d0     0d5f          calla   wres_collis_off
+         000010e0 00000000! 
+     240 00001100     0960          rets
+     241                    
+     242                    
+     243                    *****************************************************************************
+     244                    ;AMODE_LBOWDROP 6
      245                    
-     246 00001f40     0d5f          calla   set_getup_time
-         00001f50 00000000! 
+     246 00001110            SUBR   hit_lbowdrop
      247                    
-     248 00001f70                   FACETBL hqwlknockdwn
-     249 00001fe0     0d5f          calla   change_anim1a
-         00001ff0 00000000! 
-     250 00002010     0d5f          calla   wres_collis_off
-         00002020 00000000! 
-     251 00002040     0960          rets
-     252                    
-     253 00002050           hqwlfall_back
-     254 00002050     09c0          movi    43h,a0
-         00002060     0043  
-     255 00002070     0d5f          calla   triple_sound
-         00002080 00000000! 
-     256 000020a0                   FACETBL fall_back_tbl
-     257                    
-     258 00002110     0d5f          calla   change_anim1a
-         00002120 00000000! 
-     259 00002140     0d5f          calla   wres_collis_off
-         00002150 00000000! 
+     248                            ;if we're standing, ignore this
+     249 00001110     b5a0          move    *a13(PLYRMODE),a0
+         00001120     05c0  
+     250 00001130     0b40          cmpi    MODE_NORMAL,a0
+         00001140     ffff  
+     251 00001150     ca4d          jrz     vkleignore
+     252 00001160     0b40          cmpi    MODE_BLOCK,a0
+         00001170     fff8  
+     253 00001180     ca4a          jrz     vkleignore
+     254                    
+     255 00001190                   WRSNDX  LBOWDROP_L1,LBOWDROP_L2
+     256 000014d0     09c0          movi    33h,a0
+         000014e0     0033  
+     257 000014f0     0d5f          calla   triple_sound
+         00001500 00000000! 
+     258                    
+     259 00001520     0d5f          calla   wres_collis_off
+         00001530 00000000! 
      260                    
-     261 00002170     09e2          movi    [3,0],a2
-         00002180 00030000  
-     262 000021a0     b540          move    *a10(OBJ_XPOSINT),a0
-         000021b0     0110  
-     263 000021c0     b5a1          move    *a13(OBJ_XPOSINT),a1
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+     261 00001550                   FACETBL hitonground_tbl
+     262 000015c0     0d5f          calla   change_anim1a
+         000015d0 00000000! 
+     263 000015f0     0d5f          calla   wres_collis_off
+         00001600 00000000! 
+     264 00001620     0960          rets
+     265                    
+     266 00001630     57ce  vkleignore      clr     a14
+     267 00001640     058e          move    a14,@hit_damage_pending
+         00001650 00000000! 
+     268 00001670     0d5f          calla   wres_collis_off
+         00001680 00000000! 
+     269 000016a0     0960          rets
+     270                    
+     271                    
+     272                    *****************************************************************************
+     273                    ;AMODE_BLBOWDROP        25
+     274 000016b0            SUBR   hit_blbowdrop
+     275                    
+     276                            .ref    DO_SCREAM
+     277 000016b0     0d5f          calla   DO_SCREAM
+         000016c0 00000000! 
+     278                    
+     279 000016e0                   WRSNDX  FLYKICK_L1,FLYKICK_L2
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    7
 
-         000021d0     0110  
-     264 000021e0     4801          cmp     a0,a1                   ;offx - defx
-     265 000021f0     c701          jrgt    hqwlfall_right          ;attacker on left
-     266 00002200     03a2          neg     a2
-     267 00002210           hqwlfall_right
-     268 00002210     b24d          move    a2,*a13(OBJ_XVEL),L
-         00002220     02d0  
-     269                    
-     270 00002230     09e0          movi    -30000h,a0
-         00002240 fffd0000  
-     271 00002260     b20d          move    a0,*a13(OBJ_YVEL),L
-         00002270     02f0  
-     272 00002280     0960          rets
-     273                    
-     274 00002290           hqwlon_grnd
-     275 00002290                   FACETBL hitonground_tbl
-     276 00002300     0d5f          calla   change_anim1a
-         00002310 00000000! 
-     277 00002330           hqwlisdead
-     278 00002330     0d5f          calla   wres_collis_off
-         00002340 00000000! 
-     279 00002360     0960          rets
-     280                    
-     281 00002370           hqwlknockdwn
-     282                            .ref    hrt_knockdwn_anim
-     283                            .ref    rzr_knockdwn_anim
-     284                            .ref    und_knockdwn_anim
-     285                            .ref    yok_knockdwn_anim
-     286                            .ref    shn_knockdwn_anim
-     287                            .ref    bam_knockdwn_anim
-     288                            .ref    dnk_knockdwn_anim
-     289                            .ref    lex_knockdwn_anim
-     290                    
-     291 00002370 00000000!         .long   hrt_knockdwn_anim               ;0 Bret Hart
-     292 00002390 00000000!         .long   rzr_knockdwn_anim               ;1 Razor Ramon
-     293 000023b0 00000000!         .long   und_knockdwn_anim               ;2 Undertaker
-     294 000023d0 00000000!         .long   yok_knockdwn_anim               ;3 Yokozuna
-     295 000023f0 00000000!         .long   shn_knockdwn_anim               ;4 Shawn Michaels
-     296 00002410 00000000!         .long   bam_knockdwn_anim               ;5 Bam Bam
-     297 00002430 00000000!         .long   dnk_knockdwn_anim               ;6 Doink
-     298 00002450 00000000          .long   0                               ;7 spare
-     299 00002470 00000000!         .long   lex_knockdwn_anim               ;8 Lex Luger
-     300 00002490 00000000          .long   0                               ;9 Referee
-     301                    
-     302                    
-     303 000024b0            SUBR   hit_grabhold
-     304                    
-     305 000024b0            SUBR   hit_grabfling
-     306 000024b0     0960          rets
-     307                    
-     308 000024c0            SUBR   hit_gutpush
-     309                    
-     310 000024c0     b5a1          move    *a13(PLYRMODE),a1
-         000024d0     05c0  
-     311 000024e0     0b41          cmpi    MODE_BLOCK,a1
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+     280 00001a20                   WRSNDX  LBOWDROP_L1,LBOWDROP_L2
+     281                    
+     282                    ;       movi    500,a0
+     283                    ;       .ref    RNDPER
+     284                    ;       calla   RNDPER
+     285                    ;       jrls    wgkeisdead
+     286                    ;       calla   inc_burnout
+     287                    
+     288 00001d60     0d5f          calla   wres_collis_off
+         00001d70 00000000! 
+     289                    
+     290 00001d90     b5a0          move    *a13(PLYRMODE),a0
+         00001da0     05c0  
+     291 00001db0     0b40          cmpi    MODE_ONGROUND,a0
+         00001dc0     fffb  
+     292 00001dd0     ca4b          jrz     wgkeon_grnd
+     293 00001de0     0b40          cmpi    MODE_DEAD,a0
+         00001df0     fff6  
+     294 00001e00     ca48          jrz     wgkeon_grnd
+     295                    ;Knock standing opponent onto ground
+     296                    
+     297 00001e10                   SETMODE NORMAL
+     298 00001ec0     b5ae          move    *a13(OBJ_YPOSINT),a14
+         00001ed0     0130  
+     299 00001ee0     b5a0          move    *a13(GROUND_Y),a0
+         00001ef0     0570  
+     300 00001f00     440e          sub     a0,a14
+     301 00001f10     0b4e          cmpi    20,a14
+         00001f20     ffeb  
+     302 00001f30     c511          jrge    wgkefall_back
+     303                    
+     304 00001f40     0d5f          calla   set_getup_time
+         00001f50 00000000! 
+     305                    
+     306 00001f70                   FACETBL wgkeknockdwn
+     307 00001fe0     0d5f          calla   change_anim1a
+         00001ff0 00000000! 
+     308 00002010     0d5f          calla   wres_collis_off
+         00002020 00000000! 
+     309 00002040     0960          rets
+     310                    
+     311 00002050           wgkefall_back
+     312 00002050     09c0          movi    43h,a0
+         00002060     0043  
+     313 00002070     0d5f          calla   triple_sound
+         00002080 00000000! 
+     314 000020a0                   FACETBL fall_back_tbl
+     315                    
+     316 00002110     0d5f          calla   change_anim1a
+         00002120 00000000! 
+     317 00002140     0d5f          calla   wres_collis_off
+         00002150 00000000! 
+     318                    
+     319 00002170     09e2          movi    [3,0],a2
+         00002180 00030000  
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    8
 
-         000024f0     fff8  
-     312 00002500     cb07          jrnz    cidhhit_push2
-     313                    
-     314 00002510     5600          clr     a0
-     315 00002520     b20d          move    a0,*a13(OBJ_XVEL),L
-         00002530     02d0  
-     316                    
-     317 00002540     0d5f          calla   block_hit_flail
-         00002550 00000000! 
-     318 00002570     0960          rets
-     319                    
-     320 00002580           cidhhit_push2
-     321                    
-     322 00002580                   SETMODE NORMAL
-     323                    
-     324 00002630     5600          clr     a0
-     325 00002640     b20a          move    a0,*a10(OBJ_XVEL),L     ;clr attacker's x-vel
-         00002650     02d0  
-     326                    
-     327 00002660                   FACETBL cidhlosebal
-     328 000026d0     0d5f          calla   change_anim1a
-         000026e0 00000000! 
-     329                    
-     330 00002700     09e2          movi    [8,0],a2
-         00002710 00080000  
-     331 00002730     c01b          jruc    cidhtag
-     332                    
-     333 00002740            SUBR   hit_push
-     334                    
-     335                    
-     336                    
-     337 00002740                   SETMODE NORMAL
+     320 000021a0     b540          move    *a10(OBJ_XPOSINT),a0
+         000021b0     0110  
+     321 000021c0     b5a1          move    *a13(OBJ_XPOSINT),a1
+         000021d0     0110  
+     322 000021e0     4801          cmp     a0,a1                   ;offx - defx
+     323 000021f0     c701          jrgt    wgkefall_right          ;attacker on left
+     324 00002200     03a2          neg     a2
+     325 00002210           wgkefall_right
+     326 00002210     b24d          move    a2,*a13(OBJ_XVEL),L
+         00002220     02d0  
+     327                    
+     328 00002230     09e0          movi    -30000h,a0
+         00002240 fffd0000  
+     329 00002260     b20d          move    a0,*a13(OBJ_YVEL),L
+         00002270     02f0  
+     330 00002280     0960          rets
+     331                    
+     332 00002290           wgkeon_grnd
+     333 00002290                   FACETBL hitonground_tbl
+     334 00002300     0d5f          calla   change_anim1a
+         00002310 00000000! 
+     335 00002330           wgkeisdead
+     336 00002330     0d5f          calla   wres_collis_off
+         00002340 00000000! 
+     337 00002360     0960          rets
      338                    
-     339 000027f0     5600          clr     a0
-     340 00002800     b20a          move    a0,*a10(OBJ_XVEL),L     ;clr attacker's x-vel
-         00002810     02d0  
-     341                    
-     342 00002820                   FACETBL cidhlosebal
-     343 00002890     0d5f          calla   change_anim1a
-         000028a0 00000000! 
-     344                    
-     345 000028c0     09e2          movi    [8,0],a2
-         000028d0 00080000  
-     346                    
-     347 000028f0           cidhtag
-     348 000028f0     b540          move    *a10(OBJ_XPOSINT),a0
-         00002900     0110  
-     349 00002910     b5a1          move    *a13(OBJ_XPOSINT),a1
-         00002920     0110  
-     350 00002930     4801          cmp     a0,a1                   ;offx - defx
-     351 00002940     c701          jrgt    cidhfall_right          ;attacker on left
-     352 00002950     03a2          neg     a2
-     353 00002960           cidhfall_right
-     354 00002960     b24d          move    a2,*a13(OBJ_XVEL),L
-         00002970     02d0  
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:23 2023
+     339 00002370           wgkeknockdwn
+     340                            .ref    hrt_knockdwn_anim
+     341                            .ref    rzr_knockdwn_anim
+     342                            .ref    und_knockdwn_anim
+     343                            .ref    yok_knockdwn_anim
+     344                            .ref    shn_knockdwn_anim
+     345                            .ref    bam_knockdwn_anim
+     346                            .ref    dnk_knockdwn_anim
+     347                            .ref    lex_knockdwn_anim
+     348                    
+     349 00002370 00000000!         .long   hrt_knockdwn_anim               ;0 Bret Hart
+     350 00002390 00000000!         .long   rzr_knockdwn_anim               ;1 Razor Ramon
+     351 000023b0 00000000!         .long   und_knockdwn_anim               ;2 Undertaker
+     352 000023d0 00000000!         .long   yok_knockdwn_anim               ;3 Yokozuna
+     353 000023f0 00000000!         .long   shn_knockdwn_anim               ;4 Shawn Michaels
+     354 00002410 00000000!         .long   bam_knockdwn_anim               ;5 Bam Bam
+     355 00002430 00000000!         .long   dnk_knockdwn_anim               ;6 Doink
+     356 00002450 00000000          .long   0                               ;7 spare
+     357 00002470 00000000!         .long   lex_knockdwn_anim               ;8 Lex Luger
+     358 00002490 00000000          .long   0                               ;9 Referee
+     359                    
+     360                    
+     361                    *****************************************************************************
+     362                    ;AMODE_GRABHOLD 7
+     363 000024b0            SUBR   hit_grabhold
+     364                    ; 
+     365                    ;       GETLIFE
+     366                    ;       jrz     etytisdead
+     367                    ;
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    9
 
-     355                    
-     356 00002980                   WRSNDX  PUSH_L1,PUSH_L2
-     357                    
-     358 00002cc0     b5a1          move    *a13(PLYRNUM),a1
+     368                    ;       WRSNDX  GRABHOLD_L1,GRABHOLD_L2
+     369                    ;
+     370                    ;       SETMODE ATTACHED
+     371                    ;
+     372                    ;       move    a10,*a13(ATTACH_PROC),L         ;proc attached to
+     373                    ;       move    a13,*a10(ATTACH_PROC),L
+     374                    ;
+     375                    ;       FACETBL etytheldoh
+     376                    ;       calla   change_anim1a
+     377                    ;
+     378                    ;etytisdead
+     379                    ;       calla   wres_collis_off
+     380                    ;       rets
+     381                    ;
+     382                    ;etytheldoh
+     383                    ;       .long   dnk_heldoh_anim                 ;0 Bret Hart
+     384                    ;       .long   rzr_heldoh_anim                 ;1 Razor Ramon
+     385                    ;       .long   und_heldoh_anim                 ;2 Undertaker
+     386                    ;       .long   dnk_heldoh_anim                 ;3 Yokozuna
+     387                    ;       .long   shn_heldoh_anim                 ;4 Shawn Michaels
+     388                    ;       .long   bam_heldoh_anim                 ;5 Bam Bam
+     389                    ;       .long   dnk_heldoh_anim                 ;6 Doink
+     390                    ;       .long   dnk_heldoh_anim                 ;7 spare
+     391                    ;       .long   lex_heldoh_anim                 ;8 Lex Luger
+     392                    ;       .long   dnk_heldoh_anim                 ;9 Referee
+     393                    ;
+     394                    
+     395                    ;Blank amode here....
+     396 000024b0            SUBR   hit_grabfling
+     397 000024b0     0960          rets
+     398                    
+     399                    *****************************************************************************
+     400                    ;AMODE_GUTPUSH  47
+     401 000024c0            SUBR   hit_gutpush
+     402                    
+     403 000024c0     b5a1          move    *a13(PLYRMODE),a1
+         000024d0     05c0  
+     404 000024e0     0b41          cmpi    MODE_BLOCK,a1
+         000024f0     fff8  
+     405 00002500     cb07          jrnz    gvfbhit_push2
+     406                    
+     407 00002510     5600          clr     a0
+     408 00002520     b20d          move    a0,*a13(OBJ_XVEL),L
+         00002530     02d0  
+     409                    
+     410 00002540     0d5f          calla   block_hit_flail
+         00002550 00000000! 
+     411 00002570     0960          rets
+     412                    
+     413 00002580           gvfbhit_push2
+     414                    
+     415 00002580                   SETMODE NORMAL
+     416                    
+     417 00002630     5600          clr     a0
+     418 00002640     b20a          move    a0,*a10(OBJ_XVEL),L     ;clr attacker's x-vel
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   10
+
+         00002650     02d0  
+     419                    
+     420 00002660                   FACETBL gvfblosebal
+     421 000026d0     0d5f          calla   change_anim1a
+         000026e0 00000000! 
+     422                    
+     423 00002700     09e2          movi    [8,0],a2
+         00002710 00080000  
+     424 00002730     c01b          jruc    gvfbtag
+     425                    
+     426                    ;AMODE_PUSH     9
+     427 00002740            SUBR   hit_push
+     428                    
+     429                    ;Lessen power of a push
+     430                    ;       move    *a10(PLYRMODE),a0
+     431                    ;       cmpi    MODE_INAIR,a0
+     432                    ;       jrz     gvfbnorm
+     433                    
+     434                    
+     435 00002740                   SETMODE NORMAL
+     436                    
+     437 000027f0     5600          clr     a0
+     438 00002800     b20a          move    a0,*a10(OBJ_XVEL),L     ;clr attacker's x-vel
+         00002810     02d0  
+     439                    
+     440 00002820                   FACETBL gvfblosebal
+     441 00002890     0d5f          calla   change_anim1a
+         000028a0 00000000! 
+     442                    
+     443 000028c0     09e2          movi    [8,0],a2
+         000028d0 00080000  
+     444                    
+     445 000028f0           gvfbtag
+     446 000028f0     b540          move    *a10(OBJ_XPOSINT),a0
+         00002900     0110  
+     447 00002910     b5a1          move    *a13(OBJ_XPOSINT),a1
+         00002920     0110  
+     448 00002930     4801          cmp     a0,a1                   ;offx - defx
+     449 00002940     c701          jrgt    gvfbfall_right          ;attacker on left
+     450 00002950     03a2          neg     a2
+     451 00002960           gvfbfall_right
+     452 00002960     b24d          move    a2,*a13(OBJ_XVEL),L
+         00002970     02d0  
+     453                    
+     454 00002980                   WRSNDX  PUSH_L1,PUSH_L2
+     455                    
+     456 00002cc0     b5a1          move    *a13(PLYRNUM),a1
          00002cd0     0580  
-     359                            .ref    get_health
-     360 00002ce0     0d5f          calla   get_health
+     457                            .ref    get_health
+     458 00002ce0     0d5f          calla   get_health
          00002cf0 00000000! 
-     361 00002d10     1420          subk    1,a0
-     362 00002d20     cb04          jrnz    cidhnorm
-     363 00002d30     5600          clr     a0
-     364 00002d40     0580          move    a0,@hit_damage_pending
+     459 00002d10     1420          subk    1,a0
+     460 00002d20     cb04          jrnz    gvfbnorm
+     461 00002d30     5600          clr     a0
+     462 00002d40     0580          move    a0,@hit_damage_pending
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:14:55 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE   11
+
          00002d50 00000000! 
-     365 00002d70           cidhnorm
-     366 00002d70     0d5f          calla   wres_collis_off
+     463 00002d70           gvfbnorm
+     464 00002d70     0d5f          calla   wres_collis_off
          00002d80 00000000! 
-     367 00002da0     0960          rets
-     368                    
-     369 00002db0           cidhlosebal
-     370 00002db0 00000000!         .long   hrt_4_losebal_anim      ;0 Bret Hart
-     371 00002dd0 00000000!         .long   rzr_4_losebal_anim      ;1 Razor Ramon
-     372 00002df0 00000000!         .long   und_4_losebal_anim      ;2 Undertaker
-     373 00002e10 00000000!         .long   yok_4_losebal_anim      ;3 Yokozuna
-     374 00002e30 00000000!         .long   shn_4_losebal_anim      ;4 Shawn Michaels
-     375 00002e50 00000000!         .long   bam_4_losebal_anim      ;5 Bam Bam
-     376 00002e70 00000000!         .long   dnk_4_losebal_anim      ;6 Doink
-     377 00002e90 00000000!         .long   dnk_4_losebal_anim      ;7 spare
-     378 00002eb0 00000000!         .long   lex_4_losebal_anim      ;8 Lex Luger
-     379 00002ed0 00000000!         .long   dnk_4_losebal_anim      ;9 Referee
-     380                    
-     381                    
-     382                            .end
+     465 00002da0     0960          rets
+     466                    
+     467 00002db0           gvfblosebal
+     468 00002db0 00000000!         .long   hrt_4_losebal_anim      ;0 Bret Hart
+     469 00002dd0 00000000!         .long   rzr_4_losebal_anim      ;1 Razor Ramon
+     470 00002df0 00000000!         .long   und_4_losebal_anim      ;2 Undertaker
+     471 00002e10 00000000!         .long   yok_4_losebal_anim      ;3 Yokozuna
+     472 00002e30 00000000!         .long   shn_4_losebal_anim      ;4 Shawn Michaels
+     473 00002e50 00000000!         .long   bam_4_losebal_anim      ;5 Bam Bam
+     474 00002e70 00000000!         .long   dnk_4_losebal_anim      ;6 Doink
+     475 00002e90 00000000!         .long   dnk_4_losebal_anim      ;7 spare
+     476 00002eb0 00000000!         .long   lex_4_losebal_anim      ;8 Lex Luger
+     477 00002ed0 00000000!         .long   dnk_4_losebal_anim      ;9 Referee
+     478                    
+     479                    ******************************************************************************
+     480                    
+     481                            .end
 
  No Errors,  No Warnings

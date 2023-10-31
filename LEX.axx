@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Gilbert the Wonder Hamster
+* Initiated:		7/15/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"lex.asm"
 	.title	"Lex Luger specific game code"
@@ -22,6 +30,8 @@
 	.include	"damage.equ"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	change_anim1a,change_anim2a,master_keep_attached
 	.ref	do_taunt,CLIMB_ROPES,bounce_off_ropes,mode_inair2
@@ -45,6 +55,8 @@
 	.endif
 	.endif
 
+******************************************************************************
+* ANIMATION SEQUENCES
 
 	.ref	start_run_anim
 
@@ -115,24 +127,37 @@
 	.ref	lex_2_pin_anim,lex_4_pin_anim
 	.ref	lex_2_clobber_anim,lex_4_clobber_anim
 
+;	.ref	lex_pkup_chair_anim
 	.ref	lex_sliding_elbow_anim
 	.ref	lex_knees_to_head_anim
 	.ref	lex_grab2elbow_anim
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
 
+******************************************************************************
+* EQUATES FOR THIS FILE
 
+*****************************************************************************
+*
+* SPECIAL MOVES - History checks
 
 lex_secret_moves
-	.long	nhcpcharge_clobber
-	.long	nhcpneck_grab
-	.long	nhcpgrab_fling
-	.long	nhcphip_toss
-	.long	nhcpgrab_fling2
-	.long	nhcphip_toss2
-	.long	nhcpsliding_elbow
-	.long	nhcphammer
+	.long	uijqcharge_clobber
+	.long	uijqneck_grab
+	.long	uijqgrab_fling
+	.long	uijqhip_toss
+	.long	uijqgrab_fling2
+	.long	uijqhip_toss2
+	.long	uijqsliding_elbow
+	.long	uijqhammer
 	.long	0
 
+******************************************************************************
+*
+* SPECIAL MOVE PROCESSES - Secret moves
+*
+;a8=process of wrestler
 
  SUBR	lex_smove_table
 	.long	lex_hdhold_pile
@@ -141,6 +166,7 @@ lex_secret_moves
 	.long	lex_grab_toss_air
 	.long	lex_hdhold_combo1
 	.long	lex_hdhold_combo2
+;	.long	lex_hdhold_anti_combo
 	.long	std_walk_fast
 	.long	std_taunt
 
@@ -152,39 +178,67 @@ lex_secret_moves
 	.endif
 	.long	0
 
-nhcpcharge_clobber
+*******************************************************************************
+uijqcharge_clobber
 	move	*a13(BUT_VAL_UP),a0
 	btst	PLAYER_PUNCH_BIT,a0
-	jrz	nhcpno_punch
+	jrz	uijqno_punch
 
+;	move	*a13(PLYRMODE),a0
+;	cmpi	MODE_ONTURNBKL,a0
+;	jrz	uijqno_punch
 
 	move	*a13(PLYRNUM),a0
 	.ref	get_punch_dtime
 	calla	get_punch_dtime
 	cmpi	100,a0			;> min?
-	jrlt	nhcpno_punch
+	jrlt	uijqno_punch
 
-	callr	nhcpscrt_clbr
+	callr	uijqscrt_clbr
 	setc
 	rets
 
-nhcpno_punch
+uijqno_punch
 	clrc
 	rets
 
 
-nhcpscrt_clbr
+uijqscrt_clbr
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_HEADHELD,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_HEADHOLD,a0
-	jrz	nhcpout
+	jrz	uijqout
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	nhcpout
+	jrnz	uijqout
 
+;Don't do it when he is on ground
+;	calla	get_opp_plyrmode
+;	cmpi	MODE_ONGROUND,a0
+;	jrz	uijqout
+;	cmpi	MODE_DEAD,a0
+;	jrz	uijqout
+;	move	*a13(PLYRMODE),a0
+;	cmpi	MODE_RUNNING,a0
+;	jrz	uijqleapclbr
+;
+;;If stick is toward opponent, then do sliding/leaping buzzer
+;	move	*a13(STICK_VAL_CUR),a0
+;	move	*a13(NEW_FACING_DIR),a1
+;	andi	0ch,a1
+;	cmp	a0,a1
+;	jrnz	uijqnorm
+;
+;uijqleapclbr
+;;missing noise for a reason !
+;	WRSND	W_LUGER,HDBUTT_T1,HDBUTT_T2
+;	FACE24	lex,clobber2_anim
+;	calla	change_anim1
+;	rets
+;uijqnorm
 
 	WRSND	W_LUGER,HDBUTT_T1,HDBUTT_T2
 	FACE24	lex,clobber_anim
@@ -192,7 +246,8 @@ nhcpscrt_clbr
 
 	rets
 
-nhcphammer
+*******************************************************************************
+uijqhammer
 	.word	B_SKICK,			J_ALL
 	.word	J_TOWARD,		J_REAL_LR
 	.word	J_TOWARD,		J_REAL_LR
@@ -202,130 +257,164 @@ nhcphammer
 scrt_hammer
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	nhcpout
+	jrnz	uijqout
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_ONTURNBKL,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_OPPOVERHEAD,a0
-	jreq	nhcpout
+	jreq	uijqout
 
 	.ref	lex_hammer_anim
 	movi	lex_hammer_anim,a0
 	calla	change_anim1a
 
+;missing noise for a reason !
 	WRSND	W_LUGER,HIPTOSS_T1,PUNCH_T2
 
 	rets
 
-nhcpneck_grab
+******************************************************************************
+uijqneck_grab
 	.word	B_SPUNCH,		J_ALL
 	.word	J_TOWARD,		J_REAL_LR
 	.word	J_TOWARD,		J_REAL_LR
 	.word	8000h | 30		;max
-	.long	nhcpscrt_neck
+	.long	uijqscrt_neck
 
-nhcpscrt_neck
+uijqscrt_neck
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	nhcpout
+	jrnz	uijqout
 
+;Don't do it when he is on ground
 	calla	get_opp_plyrmode
 	cmpi	MODE_ONGROUND,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_DEAD,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_HEADHELD,a0
-	jrz	nhcpout
+	jrz	uijqout
+;Mode held overhead!
 	cmpi	MODE_ATTACHED,a0
-	jrz	nhcpout
+	jrz	uijqout
 
 	move	*a13(LAST_HEADHOLD),a14,L
 	move	@PCNT,a0,L
 	sub	a14,a0
 	cmpi	2*60,a0
-	jrge	nhcpok2
+	jrge	uijqok2
 
+;This head grab is too close (in terms of time) to most recent grab
 	.ref	lex_3_fake_hold_anim
 	movi	lex_3_fake_hold_anim,a0
 	calla	change_anim1a
 	rets
 
-nhcpok2
+uijqok2
 	move	*a13(CLOSEST_XDIST),a1
 	cmpi	90,a1
-	jrgt	nhcpstd_grab
+	jrgt	uijqstd_grab
 
 	movi	lex_3_head_hold2_anim,a0
 	calla	change_anim1a
-nhcpout	rets
+uijqout	rets
 
-nhcpstd_grab
+uijqstd_grab
 	movi	lex_3_head_hold_anim,a0
 	calla	change_anim1a
 	rets
 
+*******************************************************************************
 
-nhcpgrab_fling2
+uijqgrab_fling2
 	.word	B_SPUNCH | J_AWAY,	J_REAL_LR | J_UP | J_DOWN
 	.word	8000h | 10		;max
-	.long	nhcpscrt_grabfling2
+	.long	uijqscrt_grabfling2
 
-nhcphip_toss2
+uijqhip_toss2
 	.word	B_PUNCH | J_AWAY,	J_REAL_LR | J_UP | J_DOWN
 	.word	8000h | 10		;max
-	.long	nhcpscrt_grabfling2
+	.long	uijqscrt_grabfling2
 
-nhcpscrt_grabfling2
+uijqscrt_grabfling2
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	nhcpout
+	jrnz	uijqout
 
+;If opponent is running, do a hip toss
 	calla	get_opp_plyrmode
 	cmpi	MODE_BOUNCING,a0
-	jrz	nhcpyes
+	jrz	uijqyes
 	cmpi	MODE_RUNNING,a0
-	jrz	nhcpyes
+	jrz	uijqyes
 	rets
 
-nhcpgrab_fling
+******************************************************************************
+uijqgrab_fling
+;	.word	B_SPUNCH | J_AWAY,	J_REAL_LR | J_UP | J_DOWN
+;	.word	8000h | 10		;max
+;	.long	uijqscrt_grabfling
 
 	.word	B_SPUNCH,		J_ALL
 	.word	J_AWAY,		J_REAL_LR
 	.word	J_AWAY,		J_REAL_LR
 	.word	8000h | 32		;max
-	.long	nhcpscrt_grabfling
+	.long	uijqscrt_grabfling
 
-nhcpscrt_grabfling
+uijqscrt_grabfling
 
+;Make this miss, rotate to missed opponent,
+;and stay rotated to flung opponent, also make
+;this work from both angles!
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	nhcpout
+	jrnz	uijqout
 
+;If opponent is running, do a hip toss
 	calla	get_opp_plyrmode
 	cmpi	MODE_BOUNCING,a0
-	jrz	nhcpyes
+	jrz	uijqyes
 	cmpi	MODE_RUNNING,a0
-	jrnz	nhcpnope
-nhcpyes
+	jrnz	uijqnope
+uijqyes
 	movi	lex_hiptoss_anim,a0
 	calla	change_anim1a
 
 	WRSND	W_LUGER,HIPTOSS_T1,PUNCH_T2
 	rets
 
-nhcpnope
+uijqnope
+;Don't fling when he is on ground
 	calla	get_opp_plyrmode
 	cmpi	MODE_HEADHELD,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_ONGROUND,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_DEAD,a0
-	jrz	nhcpout
+	jrz	uijqout
+;Mode held overhead!
 	cmpi	MODE_ATTACHED,a0
-	jrz	nhcpout
+	jrz	uijqout
 
+;	move	*a13(LAST_FLING_ATTEMPT),a14,L
+;	move	@PCNT,a0,L
+;	sub	a14,a0
+;	cmpi	3*60,a0
+;	jrge	uijqok2a
+;
+;;This head grab is too close (in terms of time) to most recent grab
+;	movi	lex_3_clobber_anim,a0
+;;	FACE24	lex,punch_anim
+;	calla	change_anim1a
+;
+;	WRSND	W_LUGER,HIPTOSS_T1,PUNCH_T2
+;	rets
+;
+;uijqok2a
+;	move	@PCNT,a14,L			;use 32-bit PCNT!
+;	move	a14,*a13(LAST_FLING_ATTEMPT),L
 
 	FACE24	lex,grabfling_anim
 	calla	change_anim1a
@@ -333,38 +422,46 @@ nhcpnope
 	WRSND	W_LUGER,GRABFLING_T1,PUNCH_T2
 	rets
 
-nhcphip_toss
+*******************************************************************************
+uijqhip_toss
+;	.word	B_PUNCH | J_AWAY,	J_REAL_LR | J_UP | J_DOWN
+;	.word	8000h | 10		;max
+;	.long	uijqscrt_hiptoss
 
 	.word	B_PUNCH,		J_ALL
 	.word	J_AWAY,		J_REAL_LR
 	.word	J_AWAY,		J_REAL_LR
 	.word	8000h | 32		;max
-	.long	nhcpscrt_hiptoss
+	.long	uijqscrt_hiptoss
 
-nhcpscrt_hiptoss
+uijqscrt_hiptoss
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	nhcpout
+	jrnz	uijqout
 
+;Don't do it when he is on ground
 	calla	get_opp_plyrmode
 	cmpi	MODE_ONGROUND,a0
-	jrz	nhcpout
+	jrz	uijqout
+;	cmpi	MODE_BLOCK,a0
+;	jrz	uijqout
 	cmpi	MODE_DEAD,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_HEADHELD,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_INAIR,a0
-	jrz	nhcpdoit
+	jrz	uijqdoit
 	cmpi	MODE_INAIR2,a0
-	jrz	nhcpdoit
+	jrz	uijqdoit
+;Mode held overhead!
 	cmpi	MODE_ATTACHED,a0
-	jrz	nhcpout
+	jrz	uijqout
 
 	move	*a13(CLOSEST_DIST),a0
 	cmpi	70h,a0
-	jrgt	nhcpout
+	jrgt	uijqout
 
-nhcpdoit
+uijqdoit
  	movi	lex_hiptoss_anim,a0
 	calla	change_anim1a
 
@@ -377,27 +474,29 @@ nhcpdoit
 
 	rets
 
-nhcpsliding_elbow
+*******************************************************************************
+uijqsliding_elbow
 	.word	B_PUNCH,		J_ALL
 	.word	J_TOWARD,		J_REAL_LR
 	.word	J_TOWARD,		J_REAL_LR
 	.word	8000h | 30		;max
-	.long	nhcpscrt_elbow
+	.long	uijqscrt_elbow
 
-nhcpscrt_elbow
+uijqscrt_elbow
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	nhcpout
+	jrnz	uijqout
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_OPPOVERHEAD,a0
-	jreq	nhcpout
+	jreq	uijqout
 
+;Don't do it when he is on ground
 	calla	get_opp_plyrmode
 	cmpi	MODE_ONGROUND,a0
-	jrz	nhcpout
+	jrz	uijqout
 	cmpi	MODE_DEAD,a0
-	jrz	nhcpout
+	jrz	uijqout
 
 	;we can do this from a headhold, so...
 	calla	FIND_AND_KILL_ENDLESS
@@ -415,29 +514,30 @@ nhcpscrt_elbow
 	rets
 
 	.if NUM_LEX_FINISHES
+******************************************************************************
  SUBRP	lex_finish_move1
 
-wpzzTIMEOUT	.equ	TSEC
+dyjbTIMEOUT	.equ	TSEC
 
-wpzzend_wait
+dyjbend_wait
 	SLEEP		TSEC/4
 	move		@p1rounds,a0			; Get player 1 rounds
 	move		@p2rounds,a1			; Get player 2 rounds
 	or		a1,a0				; Put em together
 	cmpi		2,a0				; Anybody got 2?
-	jrlt		wpzzend_wait			; br = no
+	jrlt		dyjbend_wait			; br = no
 
-wpzzreset
+dyjbreset
 	clr		a11
 	move		a11,@in_finish_move
 	SLEEPK		1
-	WAITSWITCH_DWN	J_UP,0,wpzzreset
-	movi		wpzzTIMEOUT,a11
+	WAITSWITCH_DWN	J_UP,0,dyjbreset
+	movi		dyjbTIMEOUT,a11
 	move		a11,@in_finish_move
-	WAITSWITCH_DWN	J_DOWN,0,wpzzreset
-	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,wpzzreset
-	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,wpzzreset
-	WAITSWITCH_DWN	B_PUNCH,J_ALL,wpzzreset
+	WAITSWITCH_DWN	J_DOWN,0,dyjbreset
+	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,dyjbreset
+	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,dyjbreset
+	WAITSWITCH_DWN	B_PUNCH,J_ALL,dyjbreset
 
 	movi		lex_finish1_move,a0
 	move		a0,*a8(SPECIAL_MOVE_ADDR),L
@@ -446,29 +546,30 @@ wpzzreset
 	
 
 	.if NUM_LEX_FINISHES > 1
+******************************************************************************
  SUBRP	lex_finish_move2
 
-cradTIMEOUT	.equ	TSEC
+duurTIMEOUT	.equ	TSEC
 
-cradend_wait
+duurend_wait
 	SLEEP		TSEC/4
 	move		@p1rounds,a0			; Get player 1 rounds
 	move		@p2rounds,a1			; Get player 2 rounds
 	or		a1,a0				; Put em together
 	cmpi		2,a0				; Anybody got 2?
-	jrlt		cradend_wait			; br = no
+	jrlt		duurend_wait			; br = no
 
-cradreset
+duurreset
 	clr		a11
 	move		a11,@in_finish_move
 	SLEEPK		1
-	WAITSWITCH_DWN	J_UP,0,cradreset
-	movi		cradTIMEOUT,a11
+	WAITSWITCH_DWN	J_UP,0,duurreset
+	movi		duurTIMEOUT,a11
 	move		a11,@in_finish_move
-	WAITSWITCH_DWN	J_UP,0,cradreset
-	WAITSWITCH_DWN	J_RIGHT,J_UP,cradreset
-	WAITSWITCH_DWN	J_RIGHT,J_UP,cradreset
-	WAITSWITCH_DWN	B_SPUNCH,J_ALL,cradreset
+	WAITSWITCH_DWN	J_UP,0,duurreset
+	WAITSWITCH_DWN	J_RIGHT,J_UP,duurreset
+	WAITSWITCH_DWN	J_RIGHT,J_UP,duurreset
+	WAITSWITCH_DWN	B_SPUNCH,J_ALL,duurreset
 
 	movi		lex_finish2_move,a0
 	move		a0,*a8(SPECIAL_MOVE_ADDR),L
@@ -476,39 +577,41 @@ cradreset
 	.endif
 
 
+*****************************************************************************
  SUBRP	lex_hdhold_pile
 
-gddcTIMEOUT	.equ	60
+douiTIMEOUT	.equ	60
 
-gddclp0
+douilp0
 	SLEEPK	1
-gddclp
+douilp
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	gddccont
+	jrz	douicont
 	cmpi	MODE_HEADHELD,a0
-	jrnz	gddclp0
+	jrnz	douilp0
 
-gddccont
+douicont
 	clr	a11
 
-	WAITSWITCH_DWN	J_TOWARD,0,gddclp
+;	WAITSWITCH_DWN	J_AWAY,0,douilp
+	WAITSWITCH_DWN	J_TOWARD,0,douilp
 
-	movi	gddcTIMEOUT,a11
+	movi	douiTIMEOUT,a11
 
-	WAITSWITCH_DWN	J_TOWARD,0,gddclp
-	WAITSWITCH_DWN	B_SPUNCH,J_ALL,gddclp
+	WAITSWITCH_DWN	J_TOWARD,0,douilp
+	WAITSWITCH_DWN	B_SPUNCH,J_ALL,douilp
 	
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	gddcslam
+	jrz	douislam
 	cmpi	MODE_HEADHELD,a0
-	jrnz	gddclp0
+	jrnz	douilp0
 	move	*a8(I_WILL_DIE),A14
-	jrnz	gddclp0
+	jrnz	douilp0
 
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	gddclp0				;ignore
+	jrnz	douilp0				;ignore
 
 	calla	DO_REVERSAL
 	calla	DO_REVERSAL_MESS
@@ -518,11 +621,11 @@ gddccont
 
 	;immobilize WHOHITME
 	move	*a8(WHOHITME),a0,L
-	jruc	gddcis_reversal
+	jruc	douiis_reversal
 
-gddcslam
+douislam
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	gddclp0				;ignore
+	jrnz	douilp0				;ignore
 
 	movi	42,a10
 	CREATE	MESSAGE_PID,BONUS_MESS
@@ -533,7 +636,7 @@ gddcslam
 	;immobilize WHOIHIT
 	move	*a8(WHOIHIT),a0,L
 
-gddcis_reversal
+douiis_reversal
 	movk	15,a14
 	move	a14,*a0(IMMOBILIZE_TIME)
 
@@ -545,41 +648,43 @@ gddcis_reversal
 
 	SLEEPK	20
 
-	jruc	gddclp
+	jruc	douilp
 
+*****************************************************************************
  SUBRP	lex_hdhold_elbow_face
 
-fillTIMEOUT	.equ	60
+guyqTIMEOUT	.equ	60
 
-filllp0
+guyqlp0
 	SLEEPK	1
-filllp
+guyqlp
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	fillcont
+	jrz	guyqcont
 	cmpi	MODE_HEADHELD,a0
-	jrnz	filllp0
+	jrnz	guyqlp0
 
-fillcont
+guyqcont
 	clr	a11
 
-	WAITSWITCH_DWN	J_DOWN,0,filllp
+;	WAITSWITCH_DWN	J_UP,0,guyqlp
+	WAITSWITCH_DWN	J_DOWN,0,guyqlp
 
-	movi	fillTIMEOUT,a11
+	movi	guyqTIMEOUT,a11
 
-	WAITSWITCH_DWN	J_DOWN,0,filllp
-	WAITSWITCH_DWN	B_SKICK,J_ALL,filllp
+	WAITSWITCH_DWN	J_DOWN,0,guyqlp
+	WAITSWITCH_DWN	B_SKICK,J_ALL,guyqlp
 	
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	fillslam
+	jrz	guyqslam
 	cmpi	MODE_HEADHELD,a0
-	jrnz	filllp0
+	jrnz	guyqlp0
 	move	*a8(I_WILL_DIE),A14
-	jrnz	filllp0
+	jrnz	guyqlp0
 
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	filllp0				;ignore
+	jrnz	guyqlp0				;ignore
 
 	calla	DO_REVERSAL
 	calla	DO_REVERSAL_MESS
@@ -593,12 +698,13 @@ fillcont
 	.ref	lex_grab2elbow_rev_anim
 
 	movi	lex_grab2elbow_rev_anim,a1
-	jruc	fillis_reversal
+	jruc	guyqis_reversal
 
-fillslam
+guyqslam
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	filllp0				;ignore
+	jrnz	guyqlp0				;ignore
 
+;fix !!! wrong name - jake
 	movk	6,a10
 	CREATE	MESSAGE_PID,BONUS_MESS
 
@@ -608,9 +714,12 @@ fillslam
 	;immobilize WHOIHIT
 	move	*a8(WHOIHIT),a0,L
 
+;This stops Lex from going for foot, then changing his mind!
+;	movk	15,a14
+;	move	a14,*a8(IMMOBILIZE_TIME)
 
 	movi	lex_grab2elbow_anim,a1
-fillis_reversal
+guyqis_reversal
 	movk	15,a14
 	move	a14,*a0(IMMOBILIZE_TIME)
 
@@ -620,43 +729,46 @@ fillis_reversal
 	WRSND	W_LUGER,FLYKICK_T1,FLYKICK_T2
 
 	SLEEPK	20
-	jruc	filllp
+	jruc	guyqlp
 
+******************************************************************************
 lex_grab_toss_air
 
-usnbTIMEOUT	.equ	40
+ktbgTIMEOUT	.equ	40
 
-usnblp0
+ktbglp0
 	SLEEPK	1
-usnblp
+ktbglp
 	clr	a11
 
-	WAITSWITCH_DWN	J_AWAY,0,usnblp
+	WAITSWITCH_DWN	J_AWAY,0,ktbglp
 
-	movi	usnbTIMEOUT,a11
+	movi	ktbgTIMEOUT,a11
 
-	WAITSWITCH_DWN	J_AWAY,0,usnblp
-	WAITSWITCH_DWN	B_PUNCH,J_ALL,usnblp
+	WAITSWITCH_DWN	J_AWAY,0,ktbglp
+	WAITSWITCH_DWN	B_PUNCH,J_ALL,ktbglp
 
 	move	*a8(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	usnblp
+	jrnz	ktbglp
 
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jreq	usnblp0
+	jreq	ktbglp0
 
+;Don't do it when he is on ground
 	SWAP	a8,a13
 	calla	get_opp_plyrmode
 	SWAP	a8,a13
+;Don't do it when he is on ground
 	cmpi	MODE_ONGROUND,a0
-	jrz	usnblp
+	jrz	ktbglp
 	cmpi	MODE_DEAD,a0
-	jrz	usnblp
+	jrz	ktbglp
 	cmpi	MODE_INAIR,a0
-	jrz	usnbdoit2
+	jrz	ktbgdoit2
 	cmpi	MODE_INAIR2,a0
-	jrz	usnbdoit2
+	jrz	ktbgdoit2
 
 	move	*a8(CLOSEST_NUM),a0
 	X32	a0
@@ -664,21 +776,23 @@ usnblp
 	move	*a0,a0,L
 	move	*a0(ATTACK_TYPE),a0
 	cmpi	AT_LEAPING,a0
-	jrz	usnbdoit2
+	jrz	ktbgdoit2
 
 	move	*a8(CLOSEST_DIST),a0
 	cmpi	6ch,a0
-	jrgt	usnblp
+	jrgt	ktbglp
 
+;	FACE24	lex,hiptoss_anim
 	movi	lex_hiptoss_anim,a0
 	move	a0,*a8(SPECIAL_MOVE_ADDR),L
 
 	WRSND	W_LUGER,GRABFLING_T1,PUNCH_T2
 
 	SLEEPK	20
-	jruc	usnblp
+	jruc	ktbglp
 
-usnbdoit2
+ktbgdoit2
+;	FACE24	lex,hiptoss2_anim
 	movi	lex_hiptoss2_anim,a0
 	move	a0,*a8(SPECIAL_MOVE_ADDR),L
 
@@ -686,40 +800,42 @@ usnbdoit2
 
 	SLEEPK	20
 
-	jruc	usnblp
+	jruc	ktbglp
 
+*****************************************************************************
 lex_hdhold_graboh
 
-lbzqTIMEOUT	.equ	60
+qjbtTIMEOUT	.equ	60
 
-lbzqlp0
+qjbtlp0
 	SLEEPK	1
-lbzqlp
+qjbtlp
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	lbzqcont0
+	jrz	qjbtcont0
 	cmpi	MODE_HEADHELD,a0
-	jrnz	lbzqlp0
-lbzqcont0
+	jrnz	qjbtlp0
+qjbtcont0
 	clr	a11
 
-	WAITSWITCH_DWN	J_DOWN,0,lbzqlp
+	WAITSWITCH_DWN	J_DOWN,0,qjbtlp
 
-	movi	lbzqTIMEOUT,a11
+	movi	qjbtTIMEOUT,a11
 
-	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,lbzqlp
-	WAITSWITCH_DWN	B_KICK,J_ALL,lbzqlp
+;	WAITSWITCH_DWN	J_DOWN_TOWARD,0,qjbtlp
+	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,qjbtlp
+	WAITSWITCH_DWN	B_KICK,J_ALL,qjbtlp
 
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	lbzqdograb
+	jrz	qjbtdograb
 	cmpi	MODE_HEADHELD,a0
-	jrnz	lbzqlp0
+	jrnz	qjbtlp0
 	move	*a8(I_WILL_DIE),A14
-	jrnz	lbzqlp0
+	jrnz	qjbtlp0
 
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	lbzqlp0				;ignore
+	jrnz	qjbtlp0				;ignore
 
 	CALLA	DO_REVERSAL
 	CALLA	DO_REVERSAL_MESS
@@ -729,12 +845,14 @@ lbzqcont0
 
 	;immobilize WHOHITME
 	move	*a8(WHOHITME),a0,L
-	jruc	lbzqis_reversal
+	jruc	qjbtis_reversal
 
-lbzqdograb
+qjbtdograb
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	lbzqlp0				;ignore
+	jrnz	qjbtlp0				;ignore
 
+;	movk	6,a10
+;	CREATE	MESSAGE_PID,BONUS_MESS
 
 	;target WHOIHIT -- don't hit anyone else
 	SMRTTGT	a8,WHOIHIT
@@ -742,7 +860,7 @@ lbzqdograb
 	;immobilize WHOIHIT
 	move	*a8(WHOIHIT),a0,L
 
-lbzqis_reversal
+qjbtis_reversal
 	movk	15,a14
 	move	a14,*a0(IMMOBILIZE_TIME)
 
@@ -755,40 +873,51 @@ lbzqis_reversal
 
 	SLEEPK	20
 
-	jruc	lbzqlp
+	jruc	qjbtlp
 
+*******************************************************************************
+*
 lex_hdhold_combo1
 
-bfujTIMEOUT	.equ	60
+wzggTIMEOUT	.equ	60
 
-bfujlp0
+wzgglp0
 	SLEEPK	1
-bfujlp
+wzgglp
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrnz	bfujlp0
+	jrnz	wzgglp0
+;	jrz	wzggcont
+;	cmpi	MODE_HEADHELD,a0
+;	jrnz	wzgglp0
+;wzggcont
+;In combo mode?
 	calla	CHECK_COMBO_GO
-	jrlt	bfujlp0
+	jrlt	wzgglp0
 
 	clr	a11
 
-	WAITSWITCH_DWN	J_TOWARD,0,bfujlp
+	WAITSWITCH_DWN	J_TOWARD,0,wzgglp
 
-	movi	bfujTIMEOUT,a11
+	movi	wzggTIMEOUT,a11
 
-	WAITSWITCH_DWN	J_TOWARD,0,bfujlp
-	WAITSWITCH_DWN	B_SKICK,J_ALL,bfujlp
+	WAITSWITCH_DWN	J_TOWARD,0,wzgglp
+	WAITSWITCH_DWN	B_SKICK,J_ALL,wzgglp
 
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	bfujslam
+	jrz	wzggslam
 	cmpi	MODE_HEADHELD,a0
-	jrnz	bfujlp0
+	jrnz	wzgglp0
 
-bfujslam
+wzggslam
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	bfujlp0				;ignore
+	jrnz	wzgglp0				;ignore
 
+;Start combo rules here
+;	move	*a8(ATTACH_PROC),a14,L
+;	movk	15,a0
+;	move	a0,*a14(IMMOBILIZE_TIME)
 
 	;target WHOIHIT
 	SMRTTGT	a8,WHOIHIT
@@ -801,40 +930,51 @@ bfujslam
 
 	SLEEPK	20
 
-	jruc	bfujlp
+	jruc	wzgglp
 
+*******************************************************************************
+*
 lex_hdhold_combo2
 
-duitTIMEOUT	.equ	60
+alyeTIMEOUT	.equ	60
 
-duitlp0
+alyelp0
 	SLEEPK	1
-duitlp
+alyelp
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrnz	duitlp0
+	jrnz	alyelp0
+;	jrz	alyecont
+;	cmpi	MODE_HEADHELD,a0
+;	jrnz	alyelp0
+;alyecont
+;In combo mode?
 	calla	CHECK_COMBO_GO
-	jrlt	duitlp0
+	jrlt	alyelp0
 
 	clr	a11
 
-	WAITSWITCH_DWN	J_TOWARD,0,duitlp
+	WAITSWITCH_DWN	J_TOWARD,0,alyelp
 
-	movi	duitTIMEOUT,a11
+	movi	alyeTIMEOUT,a11
 
-	WAITSWITCH_DWN	J_TOWARD,0,duitlp
-	WAITSWITCH_DWN	B_KICK,J_ALL,duitlp
+	WAITSWITCH_DWN	J_TOWARD,0,alyelp
+	WAITSWITCH_DWN	B_KICK,J_ALL,alyelp
 
 	move	*a8(PLYRMODE),a0
 	cmpi	MODE_HEADHOLD,a0
-	jrz	duitslam
+	jrz	alyeslam
 	cmpi	MODE_HEADHELD,a0
-	jrnz	duitlp0
+	jrnz	alyelp0
 
-duitslam
+alyeslam
 	move	*a8(IMMOBILIZE_TIME),a14
-	jrnz	duitlp0				;ignore
+	jrnz	alyelp0				;ignore
 
+;Start combo rules here
+;	move	*a8(ATTACH_PROC),a14,L
+;	movk	15,a0
+;	move	a0,*a14(IMMOBILIZE_TIME)
 
 	;target WHOIHIT
 	SMRTTGT	a8,WHOIHIT
@@ -847,14 +987,87 @@ duitslam
 
 	SLEEPK	20
 
-	jruc	duitlp
+	jruc	alyelp
 
+;******************************************************************************
+;
+;;Could start this process only when opponent is in combo mode!
+;
+;lex_hdhold_anti_combo
+;
+;alyeTIMEOUT	.equ	30
+;
+;alyelp0
+;	SLEEPK	1
+;alyelp
+;;Is my opponent in combo mode?
+;;	move	*a8(IMMOBILIZE_TIME),a14
+;;	jrz	alyelp0
+;;	move	*a8(CLOSEST_NUM),a0
+;;	X32	a0
+;;	addi	process_ptrs,a0
+;;	move	*a0,a0,L
+;;	move	*a0(COMBO_COUNT),a0
+;;	jrz	alyelp0
+;
+;	clr	a11
+;
+;	WAITSWITCH_DWN	B_SPUNCH,J_ALL,alyelp
+;
+;	movk	alyeTIMEOUT,a11
+;
+;	WAITSWITCH_DWN	B_SPUNCH,J_ALL,alyelp
+;	WAITSWITCH_DWN	B_SPUNCH,J_ALL,alyelp
+;
+;;Is my opponent in combo mode?
+;	move	*a8(CLOSEST_NUM),a0
+;	X32	a0
+;	addi	process_ptrs,a0
+;	move	*a0,a0,L
+;	move	*a0(COMBO_COUNT),a0
+;	jrz	alyelp0
+;
+;	move	*a8(ANTI_COMBO_TIME),a0		;Time stamp
+;	move	@PCNT,a14
+;	sub	a0,a14
+;	abs	a14
+;	cmpi	80,a14
+;	jrge	alyelp0
+;	move	*a8(I_WILL_DIE),A14
+;	jrnz	alyelp0
+;
+;;Combo breaker message!
+;	CALLA	DO_REVERSAL
+;	CALLA	DO_REVERSAL_MESS
+;
+;	clr	a0
+;	move	a0,*a8(IMMOBILIZE_TIME)
+;
+;	move	*a8(WHOHITME),a14,L
+;	movk	15,a0
+;	move	a0,*a14(IMMOBILIZE_TIME)
+;
+;	;target WHOHITME
+;	SMRTTGT	a8,WHOHITME
+;
+;	CALLA	FIND_AND_KILL_ENDLESS
+;
+;	WRSND	W_LUGER,GRABHOLD_T1,GRABHOLD_T2
+;	movi	lex_vsuplex_anim,a14
+;	move	a14,*a8(SPECIAL_MOVE_ADDR),L
+;
+;	SLEEPK	20
+;
+;	jruc	alyelp
+;
+*****************************************************************************
 
  SUBR	lex_ani_init
 
 	move	*a13(FACING_DIR),a0
 	btst	PLAYER_RIGHT_BIT,a0
-	jrnz	rjaop1
+	jrnz	vodyp1
+;Plyr 2
 	movi	lex_stand4_anim,a0
 	calla	change_anim1a
 
@@ -868,7 +1081,7 @@ duitslam
 
 	rets
 
-rjaop1
+vodyp1
 	movi	lex_stand2_anim,a0
 	calla	change_anim1a
 
@@ -878,22 +1091,29 @@ rjaop1
 	rets
 
 
+*****************************************************************************
+*
+* LEX CONTROL CODE
+*
+* a13 = * Lex process
 
  SUBR	move_lex
 
 
+;	movi	100h,a0			;temp fix!
+;	move	a0,*a13(ANI_SPEED)
 
 	movi	lex_secret_moves,a11
 	calla	check_secret_moves
 
 	move	*a13(PLYRMODE),a0
 	sll	5,a0			;x 32
-	addi	qpblmode_table,a0
+	addi	atlnmode_table,a0
 	move	*a0,a0,L
 	call	a0
 	rets
 
-qpblmode_table
+atlnmode_table
 	.long	mode_normal		;0
 	.long	mode_running		;1
 	.long	mode_inair		;2
@@ -921,20 +1141,24 @@ qpblmode_table
 	.long	mode_chokehold		;24
 	.long	mode_choking		;25
 
+*****************************************************************************
 
 mode_normal
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	tgcmno_interrupt
+	jrnz	ezcpno_interrupt
 
 	move	*a13(I_WILL_DIE),a0
-	jrz	tgcmnope
+	jrz	ezcpnope
 	move	*a13(IMMOBILIZE_TIME),a0
-	jrnz	tgcmnope
+	jrnz	ezcpnope
+;Player has died amidst a combo...
+;Knock me down.
 	movi	lex_fall_back_anim,a0
 	calla	change_anim1a
 
+;Zero health bar
 	movi	-10,a0
 	move	*a13(PLYRNUM),a1
 	calla	adjust_health
@@ -946,44 +1170,45 @@ mode_normal
 
 	rets
 
-tgcmnope
+ezcpnope
+;Perhaps we need to interrupt any sequence when a wrestler has won?
 
 	calla	get_opp_plyrmode
 	cmpi	MODE_DEAD,a0
-	jrne	tgcmopp_not_dead
+	jrne	ezcpopp_not_dead
 
 	;if closest is a zombie, skip pin section.
 	calla	get_opp_process
 	move	*a0(STATUS_FLAGS),a14
 	btst	B_ZOMBIE,a14
-	jrnz	tgcmopp_not_dead
+	jrnz	ezcpopp_not_dead
 	
 	;all opponents are dead.  Check for pins/raisearms
 
 	;if we're attached to someone, don't interrupt it.
 	move	*a13(ATTACH_PROC),a1,L
-	jrz	tgcmno_attch
+	jrz	ezcpno_attch
 	move	*a1(ATTACH_PROC),a2,L
 	cmp	a2,a13
-	jreq	tgcmno_pin_yet
-tgcmno_attch
+	jreq	ezcpno_pin_yet
+ezcpno_attch
 
 	;if a teammate has pinned, raise yer arm.
 	calla	ck_teammate_pin	
-	jrc	tgcmraisearm
+	jrc	ezcpraisearm
 
 	;nobody has pinned.  if we're outside or all our opponents are
 	; outside, do a raisearm.
 	calla	raisearm_check
-	jrc	tgcmraisearm
+	jrc	ezcpraisearm
 
 	;we're inside with a pinnable opponent.  any button pins.
 	move	*a13(BUT_VAL_CUR),a0
-	jrz	tgcmno_pin_yet
+	jrz	ezcpno_pin_yet
 
 	;we have a press -- make sure opponent is on the ground
 	calla	can_pin
-	jrnc	tgcmopp_notgnd
+	jrnc	ezcpopp_notgnd
 
 	;opponent is on the ground.  pin him.
 	FACE24	lex,pin_anim
@@ -1000,7 +1225,7 @@ tgcmno_attch
 
 	rets
 
-tgcmraisearm
+ezcpraisearm
 	FACE24	lex,raise_arm_anim
 	calla	change_anim1a
 	calla	set_raisearm_bit
@@ -1011,124 +1236,147 @@ tgcmraisearm
 
 	rets
 
-tgcmtoo_far_to_pin
-tgcmopp_notgnd
-tgcmopp_not_dead
-tgcmno_pin_yet
+ezcptoo_far_to_pin
+ezcpopp_notgnd
+ezcpopp_not_dead
+ezcpno_pin_yet
 
 	move	*a13(IMMOBILIZE_TIME),a0
-	jrnz	tgcmimmobilized
+	jrnz	ezcpimmobilized
 
 	move	*a13(BUT_VAL_CUR),a0
 	btst	PLAYER_BLOCK_BIT,a0	;maybe have to action tables?
-	jrz	tgcmnblk			;1 for down transitions
-	callr	tgcmblock			;& 1 for current buttons
-	jrc	tgcmnblk
+	jrz	ezcpnblk			;1 for down transitions
+	callr	ezcpblock			;& 1 for current buttons
+	jrc	ezcpnblk
 	clr	a0
 	move	a0,*a13(ATTACK_TYPE)
 	rets
-tgcmnblk
+ezcpnblk
 	move	*a13(BUT_VAL_CUR),a0
 	andi	011111b,a0
 	cmpi	PLAYER_PUNCH_VAL|PLAYER_KICK_VAL,a0
-	jrz	tgcmpunchkick
+	jrz	ezcppunchkick
 
 	move	*a13(BUT_VAL_DOWN),a0
 	andi	011111b,a0
 	X32	a0
-	addi	tgcmaction_table,a0
+	addi	ezcpaction_table,a0
 	move	*a0,a0,L
 	call	a0
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	tgcmno_interrupt
+	jrnz	ezcpno_interrupt
 
 
 	move	*a13(STICK_VAL_CUR),a0
 	move	a0,*a13(MOVE_DIR)
 	calla	climb_turnbuckle
-	jrnc	tgcmno_climb
+	jrnc	ezcpno_climb
 	move	*a13(WRESTLERNUM),A5
 	MOVI	CLIMB_ROPES,A2
 	MOVI	1000,A0
 	CALLA	ADD_IF_SILENT
 	rets
 
-tgcmimmobilized
+ezcpimmobilized
 	clr	a14
 	move	a14,*a13(MOVE_DIR)
-tgcmno_climb
+ezcpno_climb
 	calla	execute_walk
 
-tgcmno_interrupt
+ezcpno_interrupt
 	rets
 
-tgcmaction_table
-	.long	tgcmz,tgcmpunch,tgcmblock,tgcmblock			;0-3
-	.long	tgcmsuper_punch,tgcmsuper_punch,tgcmblock,tgcmblock	;4-7
-	.long	tgcmkick,tgcmpunchkick,tgcmblock,tgcmblock		;8-11
-	.long	tgcmsuper_punch,tgcmpunchkick,tgcmblock,tgcmblock	;12-15
-	.long	tgcmsuper_kick,tgcmsuper_kick,tgcmblock,tgcmblock	;16-19
-	.long	tgcmgraboh,tgcmgraboh,tgcmblock,tgcmblock		;20-23
-	.long	tgcmsuper_kick,tgcmpunchkick,tgcmblock,tgcmblock	;24-27
-	.long	tgcmgraboh,tgcmgraboh,tgcmblock,tgcmblock		;28-31
+ezcpaction_table
+	.long	ezcpz,ezcppunch,ezcpblock,ezcpblock			;0-3
+	.long	ezcpsuper_punch,ezcpsuper_punch,ezcpblock,ezcpblock	;4-7
+	.long	ezcpkick,ezcppunchkick,ezcpblock,ezcpblock		;8-11
+	.long	ezcpsuper_punch,ezcppunchkick,ezcpblock,ezcpblock	;12-15
+	.long	ezcpsuper_kick,ezcpsuper_kick,ezcpblock,ezcpblock	;16-19
+	.long	ezcpgraboh,ezcpgraboh,ezcpblock,ezcpblock		;20-23
+	.long	ezcpsuper_kick,ezcppunchkick,ezcpblock,ezcpblock	;24-27
+	.long	ezcpgraboh,ezcpgraboh,ezcpblock,ezcpblock		;28-31
 
-tgcmz
+************
+ezcpz
 	rets
 
 
-tgcmpunch		;1
+************
+ezcppunch		;1
+*
+* MODE		   DX  DZ	ACTION
+* ----------------------------------------------------
+* normal	<  40  45	headbutt
+* normal	>		normal punch
+*
+* onground	< 120 120	elbow drop
+* onground	>		normal punch
+*
+* running |
+* bouncing			normal punch
+*
+* onturnbkl	<  40  45	hdbutt
+* onturnbkl	>		normal punch
+*
+* climbturnbkl			punch
+*
 
 	JJXM_INIT
-	JJXM	NORMAL,		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;0
-	JJXM	RUNNING,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;1
-	JJXM	INAIR,		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;2
-	JJXM	ATTACHED,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;3
-	JJXM	ONGROUND,	160,140,tgcmpunch_lbowdrop,tgcmpunch_punch	;4
-	JJXM	BOUNCING,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;1
-	JJXM	ONTURNBKL,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;6
-	JJXM	BLOCK,		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;7
-	JJXM	DIZZY,		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;8
-	JJXM	DEAD,		160,140,tgcmpunch_lbowdrop,tgcmpunch_punch	;9
-	JJXM	OPPOVERHEAD,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;10
-	JJXM	CLIMBTURNBKL,		tgcmpunch_punch			;11
-	JJXM	WAITANIM,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;12
-	JJXM	GRAPPLE,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;13
-	JJXM	MASTER,		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;14
-	JJXM	SLAVE, 		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;15
-	JJXM	HEADHOLD,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;16
-	JJXM	HEADHELD,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;19
-	JJXM	CHOKEHOLD,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;16
-	JJXM	PUPPET,		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;20
-	JJXM	PUPPET2,	 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;20
-	JJXM	INAIR2,		 40, 45,tgcmpunch_hdbutt,tgcmpunch_punch	;21
+	JJXM	NORMAL,		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;0
+	JJXM	RUNNING,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;1
+	JJXM	INAIR,		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;2
+	JJXM	ATTACHED,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;3
+	JJXM	ONGROUND,	160,140,ezcppunch_lbowdrop,ezcppunch_punch	;4
+	JJXM	BOUNCING,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;1
+	JJXM	ONTURNBKL,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;6
+	JJXM	BLOCK,		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;7
+	JJXM	DIZZY,		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;8
+	JJXM	DEAD,		160,140,ezcppunch_lbowdrop,ezcppunch_punch	;9
+	JJXM	OPPOVERHEAD,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;10
+	JJXM	CLIMBTURNBKL,		ezcppunch_punch			;11
+	JJXM	WAITANIM,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;12
+	JJXM	GRAPPLE,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;13
+	JJXM	MASTER,		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;14
+	JJXM	SLAVE, 		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;15
+	JJXM	HEADHOLD,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;16
+	JJXM	HEADHELD,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;19
+	JJXM	CHOKEHOLD,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;16
+	JJXM	PUPPET,		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;20
+	JJXM	PUPPET2,	 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;20
+	JJXM	INAIR2,		 40, 45,ezcppunch_hdbutt,ezcppunch_punch	;21
 	JJXM_END
 
-tgcmpunch_punch
+*****	
+ezcppunch_punch
 std_punch
 	FACE24	lex,punch_anim
 	calla	change_anim1a
 	WRSND	W_LUGER,PUNCH_T1,PUNCH_T2
 	rets
 
-tgcmpunch_hdbutt
+*****
+ezcppunch_hdbutt
 	FACE24	lex,butt_anim
 	calla	change_anim1a
 	WRSND	W_LUGER,HDBUTT_T1,HDBUTT_T2
 	rets
 
-tgcmpunch_lbowdrop
+*****
+ezcppunch_lbowdrop
 	FACE24	lex,ground_punch_anim
 	calla	change_anim1a
 	WRSND	W_LUGER,LBOWDROP_T1,LBOWDROP_T2
 	rets
 
 
-tgcmblock		;2
+************
+ezcpblock		;2
 std_block
 	move	@blocking_off,a0
-	jrnz	tgcmno_blocking
+	jrnz	ezcpno_blocking
 
 	RND_AWARD	a13,BLOCKS_AWD
 
@@ -1142,48 +1390,72 @@ std_block
 	clrc
 	rets
 
-tgcmno_blocking
+ezcpno_blocking
 	setc
 	rets
 
 
-tgcmsuper_punch	;4
+************
+ezcpsuper_punch	;4
+*
+* MODE		   DX  DZ	ACTION
+* ----------------------------------------------------
+* normal	< 110   75	close in super move
+* dizzy			"		"
+* normal	>		jumping punch move
+* dizzy			"		"
+*
+* onground	< 136  112	super elbow drop
+* onground	>		normal punch
+*
+* running			hip toss
+* bouncing			nothing
+*
+* onturnbkl	<  60   96	yank down
+* onturnbkl	>		normal punch
+* climbturnbkl			normal punch
+*
 	JJXM_INIT
-	JJXM	NORMAL,		 70, 45,tgcmspunch_special,tgcmspunch_slap	;0
-	JJXM	RUNNING,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;1
-	JJXM	INAIR,		 40, 45,tgcmspunch_special,tgcmspunch_slap	;2
-	JJXM	ATTACHED,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;3
-	JJXM	ONGROUND,	160,140,tgcmspunch_lbowdrop,std_punch	;4
-	JJXM	BOUNCING,	110, 45,tgcmspunch_special,tgcmspunch_slap	;5
-	JJXM	ONTURNBKL,	 	tgcmspunch_slap			;6
-	JJXM	BLOCK,		 70, 45,tgcmspunch_special,tgcmspunch_slap	;7
-	JJXM	DIZZY,		 40, 45,tgcmspunch_special,tgcmspunch_slap	;8
-	JJXM	DEAD,		160,140,tgcmspunch_lbowdrop,std_punch	;9
-	JJXM	OPPOVERHEAD,	110, 35,tgcmspunch_special,tgcmspunch_slap	;10
+	JJXM	NORMAL,		 70, 45,ezcpspunch_special,ezcpspunch_slap	;0
+	JJXM	RUNNING,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;1
+	JJXM	INAIR,		 40, 45,ezcpspunch_special,ezcpspunch_slap	;2
+	JJXM	ATTACHED,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;3
+	JJXM	ONGROUND,	160,140,ezcpspunch_lbowdrop,std_punch	;4
+	JJXM	BOUNCING,	110, 45,ezcpspunch_special,ezcpspunch_slap	;5
+	JJXM	ONTURNBKL,	 	ezcpspunch_slap			;6
+	JJXM	BLOCK,		 70, 45,ezcpspunch_special,ezcpspunch_slap	;7
+	JJXM	DIZZY,		 40, 45,ezcpspunch_special,ezcpspunch_slap	;8
+	JJXM	DEAD,		160,140,ezcpspunch_lbowdrop,std_punch	;9
+	JJXM	OPPOVERHEAD,	110, 35,ezcpspunch_special,ezcpspunch_slap	;10
 	JJXM	CLIMBTURNBKL,		std_punch			;11
-	JJXM	WAITANIM,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;12
-	JJXM	GRAPPLE,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;13
-	JJXM	MASTER,		 40, 45,tgcmspunch_special,tgcmspunch_slap	;14
-	JJXM	SLAVE, 		 40, 45,tgcmspunch_special,tgcmspunch_slap	;15
-	JJXM	HEADHOLD,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;16
-	JJXM	HEADHELD,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;19
-	JJXM	CHOKEHOLD,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;16
-	JJXM	PUPPET,		 40, 45,tgcmspunch_special,tgcmspunch_slap	;20
-	JJXM	PUPPET2,	 40, 45,tgcmspunch_special,tgcmspunch_slap	;20
-	JJXM	INAIR2,		 40, 45,tgcmspunch_special,tgcmspunch_slap	;21
+	JJXM	WAITANIM,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;12
+	JJXM	GRAPPLE,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;13
+	JJXM	MASTER,		 40, 45,ezcpspunch_special,ezcpspunch_slap	;14
+	JJXM	SLAVE, 		 40, 45,ezcpspunch_special,ezcpspunch_slap	;15
+	JJXM	HEADHOLD,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;16
+	JJXM	HEADHELD,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;19
+	JJXM	CHOKEHOLD,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;16
+	JJXM	PUPPET,		 40, 45,ezcpspunch_special,ezcpspunch_slap	;20
+	JJXM	PUPPET2,	 40, 45,ezcpspunch_special,ezcpspunch_slap	;20
+	JJXM	INAIR2,		 40, 45,ezcpspunch_special,ezcpspunch_slap	;21
 	JJXM_END
 
-tgcmspunch_rets
+ezcpspunch_rets
 	rets
 
-tgcmspunch_slap
+*****
+ezcpspunch_slap
 	movi	lex_3_clobber_anim,a0
 	calla	change_anim1a
 
 	WRSND	W_LUGER,PUNCH_T1,PUNCH_T2
 	rets
 
-tgcmspunch_special
+*****
+ezcpspunch_special
+;	move	*a13(CLOSEST_XDIST),a1
+;	cmpi	65,a1
+;	jrgt	ezcpspunch_slap
 
 	move	*a13(CLOSEST_XDIST),a1
 	cmpi	55,a1
@@ -1199,7 +1471,8 @@ tgcmspunch_special
 
 	rets
 
-tgcmspunch_lbowdrop
+*****
+ezcpspunch_lbowdrop
 
 	move	*a13(CLOSEST_NUM),a14
 	X32	a14
@@ -1207,65 +1480,84 @@ tgcmspunch_lbowdrop
 	move	*a14,a14,L
 	move	*a14(PLYRMODE),a2
 	cmpi	MODE_DEAD,a2
-	jrz	tgcmno
+	jrz	ezcpno
 	move	*a13(OBJ_XPOS),a1,L 
 	move	*a14(OBJ_XPOS),a2,L
 	sub	a2,a1
 	abs	a1
 	srl	16,a1
 	cmpi	20h,a1	;28
- 	jrlt	tgcmno
+ 	jrlt	ezcpno
 
+;At head or feet!
 
 	move	*a14(OBJ_CONTROL),a14
 	andi	M_FLIPH,a14
 	move	*a13(OBJ_CONTROL),a0
 	andi	M_FLIPH,a0
 	cmp	a0,a14
-	jrz	tgcmno
+	jrz	ezcpno
 
+;At head!  Do hair pickup.
 
 	FACE24	lex,hair_pickup_anim
 	calla	change_anim1
 	WRSND	W_LUGER,LBOWDROP_T1,LBOWDROP_T2
 	rets
 
-tgcmno
+ezcpno
 	FACE24	lex,ground_punch_anim
 	calla	change_anim1
 	WRSND	W_LUGER,LBOWDROP_T1,LBOWDROP_T2
 	rets
 
 
-tgcmkick		;8
+************
+ezcpkick		;8
+*
+* MODE		   DX  DZ	ACTION
+* ----------------------------------------------------
+* normal	<  60   50	knee
+*		>		normal kick
+*
+* onground	< 128  128	stomp
+* onground	>		normal kick
+*
+* running |
+* bouncing			big boot
+*
+* onturnbkl |
+* climbturnbkl			normal kick
+*
 
 
 	JJXM_INIT
-	JJXM	NORMAL,		 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	BLOCK,		 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	DIZZY,		 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	ONGROUND,	160,140,tgcmkick_stomp,tgcmkick_kick
-	JJXM	RUNNING, 	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	BOUNCING, 	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	ONTURNBKL,	 	tgcmkick_kick
-	JJXM	CLIMBTURNBKL,	 	tgcmkick_kick
-	JJXM	INAIR,		 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	ATTACHED,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	DEAD,		160,140,tgcmkick_stomp,tgcmkick_kick
-	JJXM	OPPOVERHEAD,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	WAITANIM,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	GRAPPLE,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	MASTER,		 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	SLAVE,		 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	HEADHOLD,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	HEADHELD,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	CHOKEHOLD,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	PUPPET,		 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	PUPPET2,	 60, 50,tgcmkick_knee,tgcmkick_kick
-	JJXM	INAIR2,		 	tgcmkick_TB
+	JJXM	NORMAL,		 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	BLOCK,		 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	DIZZY,		 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	ONGROUND,	160,140,ezcpkick_stomp,ezcpkick_kick
+	JJXM	RUNNING, 	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	BOUNCING, 	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	ONTURNBKL,	 	ezcpkick_kick
+	JJXM	CLIMBTURNBKL,	 	ezcpkick_kick
+	JJXM	INAIR,		 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	ATTACHED,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	DEAD,		160,140,ezcpkick_stomp,ezcpkick_kick
+	JJXM	OPPOVERHEAD,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	WAITANIM,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	GRAPPLE,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	MASTER,		 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	SLAVE,		 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	HEADHOLD,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	HEADHELD,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	CHOKEHOLD,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	PUPPET,		 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	PUPPET2,	 60, 50,ezcpkick_knee,ezcpkick_kick
+	JJXM	INAIR2,		 	ezcpkick_TB
 	JJXM_END
 
-tgcmkick_TB
+*****
+ezcpkick_TB
 
 	.ref	lex_kick_TB_anim
 	movi	lex_kick_TB_anim,a0
@@ -1273,7 +1565,8 @@ tgcmkick_TB
 
 	WRSND	W_LUGER,KICK_T1,KICK_T2
 	rets
-tgcmkick_kick
+*****
+ezcpkick_kick
 std_kick
 
 	FACE24	lex,kick_anim
@@ -1282,7 +1575,8 @@ std_kick
 	WRSND	W_LUGER,KICK_T1,KICK_T2
 	rets
 
-tgcmkick_knee
+*****
+ezcpkick_knee
 std_knee
 
 	movi	lex_4_knee_anim,a0
@@ -1291,7 +1585,8 @@ std_knee
 	WRSND	W_LUGER,KICK_T1,KICK_T2
 	rets
 
-tgcmkick_stomp
+*****
+ezcpkick_stomp
 std_stomp
 
 	FACE24	lex,stomp_anim
@@ -1301,9 +1596,18 @@ std_stomp
 
 	rets
 
+;*****
+;ezcpkick_bigboot
+;
+;	FACE24	lex,kick_anim
+;	calla	change_anim1a
+;
+;	WRSND	W_LUGER,KICK_T1,KICK_T2
+;	rets
 
 
-tgcmpunchkick	;9
+************
+ezcppunchkick	;9
 
 	movi	start_run_anim,a0
 	calla	change_anim1a
@@ -1311,33 +1615,54 @@ tgcmpunchkick	;9
 	rets
 
 
-tgcmsuper_kick	;16
+************
+ezcpsuper_kick	;16
+*
+* MODE		   DX  DZ	ACTION
+* ----------------------------------------------------
+* normal	<  60   60	close in super move
+* dizzy			"		"
+* normal	>		jumping kick move
+* dizzy			"		"
+*
+* onground	< 120  120	super stomp
+* onground	>		normal kick
+*
+* running			big boot
+* bouncing			big boot
+*
+* onturnbkl	<  60   96	jumping kick move
+* climbturnbkl		"		"
+* onturnbkl	>		normal kick
+* climbturnbkl		"		"
+*
 	JJXM_INIT
-	JJXM	NORMAL,		 60, 60,tgcmskick_special,tgcmskick_kick	;0
-	JJXM	RUNNING,	 	tgcmskick_bigboot			;1
-	JJXM	INAIR,		 60, 60,tgcmskick_special,tgcmskick_kick	;2
-	JJXM	ATTACHED,	 60, 60,tgcmskick_special,tgcmskick_kick	;3
+	JJXM	NORMAL,		 60, 60,ezcpskick_special,ezcpskick_kick	;0
+	JJXM	RUNNING,	 	ezcpskick_bigboot			;1
+	JJXM	INAIR,		 60, 60,ezcpskick_special,ezcpskick_kick	;2
+	JJXM	ATTACHED,	 60, 60,ezcpskick_special,ezcpskick_kick	;3
 	JJXM	ONGROUND,	160,140,std_stomp,std_kick		;4
-	JJXM	BOUNCING,	 	tgcmskick_bigboot			;5
-	JJXM	ONTURNBKL,	 60, 96,tgcmskick_kick,std_kick		;6
-	JJXM	BLOCK,		 60, 60,tgcmskick_special,tgcmskick_kick	;7
-	JJXM	DIZZY,		 60, 60,tgcmskick_special,tgcmskick_kick	;8
+	JJXM	BOUNCING,	 	ezcpskick_bigboot			;5
+	JJXM	ONTURNBKL,	 60, 96,ezcpskick_kick,std_kick		;6
+	JJXM	BLOCK,		 60, 60,ezcpskick_special,ezcpskick_kick	;7
+	JJXM	DIZZY,		 60, 60,ezcpskick_special,ezcpskick_kick	;8
 	JJXM	DEAD,		160,140,std_stomp,std_kick		;9
-	JJXM	OPPOVERHEAD,	 60, 60,tgcmskick_special,tgcmskick_kick	;10
-	JJXM	CLIMBTURNBKL,	 60, 96,tgcmskick_kick,std_kick		;11
-	JJXM	WAITANIM,	 60, 62,tgcmskick_special,tgcmskick_kick	;12
-	JJXM	GRAPPLE,	 60, 62,tgcmskick_special,tgcmskick_kick	;13
-	JJXM	MASTER,		 60, 62,tgcmskick_special,tgcmskick_kick	;14
-	JJXM	SLAVE, 		 60, 62,tgcmskick_special,tgcmskick_kick	;15
-	JJXM	HEADHOLD,	 60, 62,tgcmskick_special,tgcmskick_kick	;16
+	JJXM	OPPOVERHEAD,	 60, 60,ezcpskick_special,ezcpskick_kick	;10
+	JJXM	CLIMBTURNBKL,	 60, 96,ezcpskick_kick,std_kick		;11
+	JJXM	WAITANIM,	 60, 62,ezcpskick_special,ezcpskick_kick	;12
+	JJXM	GRAPPLE,	 60, 62,ezcpskick_special,ezcpskick_kick	;13
+	JJXM	MASTER,		 60, 62,ezcpskick_special,ezcpskick_kick	;14
+	JJXM	SLAVE, 		 60, 62,ezcpskick_special,ezcpskick_kick	;15
+	JJXM	HEADHOLD,	 60, 62,ezcpskick_special,ezcpskick_kick	;16
 	JJXM	HEADHELD,	 	std_kick
-	JJXM	CHOKEHOLD,	 60, 62,tgcmskick_special,tgcmskick_kick	;16
-	JJXM	PUPPET,		 60, 62,tgcmskick_special,tgcmskick_kick	;20
-	JJXM	PUPPET2,	 60, 62,tgcmskick_special,tgcmskick_kick	;20
-	JJXM	INAIR2,		 	tgcmkick_TB
+	JJXM	CHOKEHOLD,	 60, 62,ezcpskick_special,ezcpskick_kick	;16
+	JJXM	PUPPET,		 60, 62,ezcpskick_special,ezcpskick_kick	;20
+	JJXM	PUPPET2,	 60, 62,ezcpskick_special,ezcpskick_kick	;20
+	JJXM	INAIR2,		 	ezcpkick_TB
 	JJXM_END
 
-tgcmskick_kick
+*****
+ezcpskick_kick
 	movi	lex_super_kick_anim,a0
 	calla	change_anim1a
 
@@ -1345,12 +1670,13 @@ tgcmskick_kick
 	rets
 
 
-tgcmskick_special
+*****
+ezcpskick_special
 	move	*a13(STICK_VAL_CUR),a0
 	move	*a13(NEW_FACING_DIR),a1
 	andi	0ch,a1
 	cmp	a0,a1
-	jrz	tgcmcont2
+	jrz	ezcpcont2
 
 	movi	lex_4_knee_anim,a0
 	calla	change_anim1a
@@ -1359,14 +1685,15 @@ tgcmskick_special
 
 	rets
 
-tgcmcont2
+ezcpcont2
 	movi	lex_4_knee_fall_anim,a0
 	calla	change_anim1
 
 	WRSND	W_LUGER,GRABHOLD_T1,GRABHOLD_T2
 	rets
 
-tgcmskick_bigboot	;we can probably get away with just a tgcm4 big boot
+*****
+ezcpskick_bigboot	;we can probably get away with just a ezcp4 big boot
 
 	movi	lex_4_bigboot_anim,a0		;*****
 	calla	change_anim1a
@@ -1375,7 +1702,8 @@ tgcmskick_bigboot	;we can probably get away with just a tgcm4 big boot
 
 	rets
 
-tgcmgraboh		;20
+************
+ezcpgraboh		;20
 
 	movi	lex_4_graboh_anim,a0
 	calla	change_anim1a
@@ -1385,9 +1713,13 @@ tgcmgraboh		;20
 	rets
 
 
+*****************************************************************************
+*
+* RUNNING (if GETUP_TIME > 0 then player is out of control)
+*
 
-dazkXRUN_VAL	equ	LEX_XRUN
-dazkZDRIFT_VAL	equ	LEX_ZDRIFT
+hhbqXRUN_VAL	equ	LEX_XRUN
+hhbqZDRIFT_VAL	equ	LEX_ZDRIFT
 
 mode_running
 
@@ -1396,123 +1728,145 @@ mode_running
 	move	a0,*a13(RUN_TIME)
 
 	move	*a13(USR_VAR1),a0
-	jrnz	dazkno_vel
+	jrnz	hhbqno_vel
 
 	calla	bounce_off_ropes
 
-	movi	dazkXRUN_VAL,a0
+	movi	hhbqXRUN_VAL,a0
 	move	*a13(MOVE_DIR),a14
 	btst	PLAYER_RIGHT_BIT,a14
-	jrnz	dazkpos
+	jrnz	hhbqpos
 	neg	a0
-dazkpos
+hhbqpos
 	move	@hyper_speed_on,a14
 	sll	a14,a0
 	move	a0,*a13(OBJ_XVEL),L
 
-dazkno_vel
+hhbqno_vel
 
 	move	*a13(GETUP_TIME),a0		;delay b4 gaining control
-	jrnz	dazkout_of_control
+	jrnz	hhbqout_of_control
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	dazkno_interrupt
+	jrnz	hhbqno_interrupt
 
 	move	*a13(STICK_VAL_CUR),a0
 	move	*a13(MOVE_DIR),a1
 	or	a0,a1
 	andi	MOVE_LEFT|MOVE_RIGHT,a1
 	cmpi	MOVE_LEFT|MOVE_RIGHT,a1
-	jrne	dazkcontinue_run
+	jrne	hhbqcontinue_run
 
 	;braking with stick.  abort run.
 
 	SETMODE	NORMAL
 
-dazkcontinue_run
-dazkno_interrupt
+hhbqcontinue_run
+hhbqno_interrupt
 
 	move	*a13(STICK_VAL_CUR),a0
 	clr	a1
 
-	movi	-dazkZDRIFT_VAL,a1
+	movi	-hhbqZDRIFT_VAL,a1
 	btst	PLAYER_UP_BIT,a0
-	jrnz	dazksetvel
+	jrnz	hhbqsetvel
 
-	movi	dazkZDRIFT_VAL,a1
+	movi	hhbqZDRIFT_VAL,a1
 	btst	PLAYER_DOWN_BIT,a0
-	jrnz	dazksetvel
+	jrnz	hhbqsetvel
 
 	clr	a1
-dazksetvel
+hhbqsetvel
 	move	a1,*a13(OBJ_ZVEL),L
 
+;Delay reading buttons after just getting out of an out of control run
+;so a mistaken move isn't fired off
 	move	*a13(DELAY_BUTNS),a0
-	jrnz	dazkout_of_control
+	jrnz	hhbqout_of_control
 
 	move	*a13(BUT_VAL_DOWN),a0
 	andi	011111b,a0
 	X32	a0
-	addi	dazkaction_table,a0
+	addi	hhbqaction_table,a0
 	move	*a0,a0,L
 	call	a0
-dazkout_of_control
+hhbqout_of_control
 	rets
 
-dazkaction_table
-	.long	dazkz,dazkpunch,dazkblock,dazkblock			;0-3
-	.long	dazksuper_punch,dazksuper_punch,dazkblock,dazkblock	;4-7
-	.long	dazkkick,dazkpunchkick,dazkblock,dazkblock		;8-11
-	.long	dazksuper_punch,dazkpunchkick,dazkblock,dazkblock	;12-15
-	.long	dazksuper_kick,dazksuper_kick,dazkblock,dazkblock	;16-19
-	.long	dazkgraboh,dazkgraboh,dazkblock,dazkblock		;20-23
-	.long	dazksuper_kick,dazkpunchkick,dazkblock,dazkblock	;24-27
-	.long	dazkgraboh,dazkgraboh,dazkblock,dazkblock		;28-31
+hhbqaction_table
+	.long	hhbqz,hhbqpunch,hhbqblock,hhbqblock			;0-3
+	.long	hhbqsuper_punch,hhbqsuper_punch,hhbqblock,hhbqblock	;4-7
+	.long	hhbqkick,hhbqpunchkick,hhbqblock,hhbqblock		;8-11
+	.long	hhbqsuper_punch,hhbqpunchkick,hhbqblock,hhbqblock	;12-15
+	.long	hhbqsuper_kick,hhbqsuper_kick,hhbqblock,hhbqblock	;16-19
+	.long	hhbqgraboh,hhbqgraboh,hhbqblock,hhbqblock		;20-23
+	.long	hhbqsuper_kick,hhbqpunchkick,hhbqblock,hhbqblock	;24-27
+	.long	hhbqgraboh,hhbqgraboh,hhbqblock,hhbqblock		;28-31
 
-dazkz
+************
+hhbqz
 	rets
 
 
-dazkpunch		;1
-dazksuper_punch	;4
-dazkpunchkick
-dazkgraboh
+************
+hhbqpunch		;1
+hhbqsuper_punch	;4
+hhbqpunchkick
+hhbqgraboh
+*
+* MODE		   DX  DZ	ACTION
+* ----------------------------------------------------
+* normal			flying clothesline
+* dizzy					"
+*
+* onground	< 176 176	flying ground punch
+* onground	>		nothing
+*
+* running			flying clothesline
+* bouncing			flying clothesline
+*
+* onturnbkl			flying clothesline
+* climbturnbkl			flying clothesline
+*
 	JJXM_INIT
-	JJXM	NORMAL,			dazkpunch_clothesline
-	JJXM	BLOCK,			dazkpunch_clothesline
-	JJXM	DIZZY,			dazkpunch_clothesline
-	JJXM	ONGROUND,	176,176,dazkpunch_bellyflop,dazkpunch_rets
-	JJXM	RUNNING,		dazkpunch_clothesline
-	JJXM	BOUNCING,		dazkpunch_clothesline
-	JJXM	ONTURNBKL,		dazkpunch_clothesline
-	JJXM	CLIMBTURNBKL,		dazkpunch_clothesline
-	JJXM	INAIR,			dazkpunch_clothesline
-	JJXM	ATTACHED,		dazkpunch_clothesline
-	JJXM	ONGROUND,	176,176,dazkpunch_bellyflop,dazkpunch_rets
-	JJXM	OPPOVERHEAD,		dazkpunch_clothesline
-	JJXM	WAITANIM,		dazkpunch_clothesline
-	JJXM	GRAPPLE,		dazkpunch_clothesline
-	JJXM	MASTER,			dazkpunch_clothesline
-	JJXM	SLAVE,			dazkpunch_clothesline
-	JJXM	HEADHOLD,		dazkpunch_clothesline
-	JJXM	HEADHELD,		dazkpunch_clothesline
-	JJXM	CHOKEHOLD,		dazkpunch_clothesline
-	JJXM	PUPPET,			dazkpunch_clothesline
-	JJXM	PUPPET2,		dazkpunch_clothesline
-	JJXM	INAIR2,			dazkpunch_clothesline
+	JJXM	NORMAL,			hhbqpunch_clothesline
+	JJXM	BLOCK,			hhbqpunch_clothesline
+	JJXM	DIZZY,			hhbqpunch_clothesline
+	JJXM	ONGROUND,	176,176,hhbqpunch_bellyflop,hhbqpunch_rets
+	JJXM	RUNNING,		hhbqpunch_clothesline
+	JJXM	BOUNCING,		hhbqpunch_clothesline
+	JJXM	ONTURNBKL,		hhbqpunch_clothesline
+	JJXM	CLIMBTURNBKL,		hhbqpunch_clothesline
+	JJXM	INAIR,			hhbqpunch_clothesline
+	JJXM	ATTACHED,		hhbqpunch_clothesline
+	JJXM	ONGROUND,	176,176,hhbqpunch_bellyflop,hhbqpunch_rets
+	JJXM	OPPOVERHEAD,		hhbqpunch_clothesline
+	JJXM	WAITANIM,		hhbqpunch_clothesline
+	JJXM	GRAPPLE,		hhbqpunch_clothesline
+	JJXM	MASTER,			hhbqpunch_clothesline
+	JJXM	SLAVE,			hhbqpunch_clothesline
+	JJXM	HEADHOLD,		hhbqpunch_clothesline
+	JJXM	HEADHELD,		hhbqpunch_clothesline
+	JJXM	CHOKEHOLD,		hhbqpunch_clothesline
+	JJXM	PUPPET,			hhbqpunch_clothesline
+	JJXM	PUPPET2,		hhbqpunch_clothesline
+	JJXM	INAIR2,			hhbqpunch_clothesline
 	JJXM_END
 
-dazkpunch_rets
+hhbqpunch_rets
 	rets
 
-dazkpunch_clothesline
+*****
+hhbqpunch_clothesline
+;TODO - fix this
 	;HACK!!!
-	jruc	dazkkick_flyingkick
+	jruc	hhbqkick_flyingkick
 
 	rets
 
-dazkpunch_bellyflop
+*****
+hhbqpunch_bellyflop
 attack_bellyflop
 
 	movi	lex_flying_ground_punch_anim,a0
@@ -1522,7 +1876,8 @@ attack_bellyflop
 	rets
 
 
-dazkblock		;2
+************
+hhbqblock		;2
 
 	move	*a13(OBJ_XVEL),a0,L
 	sra	1,a0
@@ -1531,40 +1886,57 @@ dazkblock		;2
 	jruc	std_block
 	rets
 
-dazkkick		;8
-dazksuper_kick	;16
+************
+hhbqkick		;8
+hhbqsuper_kick	;16
+*
+* MODE		   DX  DZ	ACTION
+* ----------------------------------------------------
+* normal			flying kick
+* dizzy					"
+*
+* onground	< 176 176	flying ground punch
+* onground	>		nothing
+*
+* running			flying kick
+* bouncing			flying kick
+*
+* onturnbkl			flying kick
+* climbturnbkl			flying kick
+*
 	JJXM_INIT
-	JJXM	NORMAL,			dazkkick_flyingkick
-	JJXM	BLOCK,			dazkkick_flyingkick
-	JJXM	DIZZY,			dazkkick_flyingkick
-	JJXM	ONGROUND,	176,176,attack_bellyflop,dazkkick_rets
-	JJXM	RUNNING,		dazkkick_flyingkick
-	JJXM	BOUNCING,		dazkkick_flyingkick
-	JJXM	ONTURNBKL,		dazkkick_flyingkick
-	JJXM	CLIMBTURNBKL,		dazkkick_flyingkick
-	JJXM	INAIR,			dazkkick_flyingkick
-	JJXM	ATTACHED,		dazkkick_flyingkick
-	JJXM	DEAD,		176,176,attack_bellyflop,dazkkick_rets
-	JJXM	OPPOVERHEAD,		dazkkick_flyingkick
-	JJXM	WAITANIM,		dazkkick_flyingkick
-	JJXM	GRAPPLE,		dazkkick_flyingkick
-	JJXM	MASTER,			dazkkick_flyingkick
-	JJXM	SLAVE,			dazkkick_flyingkick
-	JJXM	HEADHOLD,		dazkkick_flyingkick
-	JJXM	HEADHELD,		dazkkick_flyingkick
-	JJXM	CHOKEHOLD,		dazkkick_flyingkick
-	JJXM	PUPPET,			dazkkick_flyingkick
-	JJXM	PUPPET2,		dazkkick_flyingkick
-	JJXM	INAIR2,			dazkkick_flyingkick
+	JJXM	NORMAL,			hhbqkick_flyingkick
+	JJXM	BLOCK,			hhbqkick_flyingkick
+	JJXM	DIZZY,			hhbqkick_flyingkick
+	JJXM	ONGROUND,	176,176,attack_bellyflop,hhbqkick_rets
+	JJXM	RUNNING,		hhbqkick_flyingkick
+	JJXM	BOUNCING,		hhbqkick_flyingkick
+	JJXM	ONTURNBKL,		hhbqkick_flyingkick
+	JJXM	CLIMBTURNBKL,		hhbqkick_flyingkick
+	JJXM	INAIR,			hhbqkick_flyingkick
+	JJXM	ATTACHED,		hhbqkick_flyingkick
+	JJXM	DEAD,		176,176,attack_bellyflop,hhbqkick_rets
+	JJXM	OPPOVERHEAD,		hhbqkick_flyingkick
+	JJXM	WAITANIM,		hhbqkick_flyingkick
+	JJXM	GRAPPLE,		hhbqkick_flyingkick
+	JJXM	MASTER,			hhbqkick_flyingkick
+	JJXM	SLAVE,			hhbqkick_flyingkick
+	JJXM	HEADHOLD,		hhbqkick_flyingkick
+	JJXM	HEADHELD,		hhbqkick_flyingkick
+	JJXM	CHOKEHOLD,		hhbqkick_flyingkick
+	JJXM	PUPPET,			hhbqkick_flyingkick
+	JJXM	PUPPET2,		hhbqkick_flyingkick
+	JJXM	INAIR2,			hhbqkick_flyingkick
 	JJXM_END
 
-dazkkick_rets
+hhbqkick_rets
 	rets
 
-dazkkick_flyingkick
+*****
+hhbqkick_flyingkick
 
 	calla	ck_ignore
-	jrc	dazkz
+	jrc	hhbqz
 
 	SETMODE	INAIR
 
@@ -1576,16 +1948,20 @@ dazkkick_flyingkick
 	rets
 
 
+*****************************************************************************
+*
 
 mode_inair	;2
 
 	rets
 
+*****************************************************************************
+*
 
 mode_attached	;3
 
 	calla	keep_attached
-	jrnz	drmhstill_attached
+	jrnz	ifqvstill_attached
 
 	clr	a0
 	move	a0,*a13(ATTACH_PROC),L
@@ -1595,15 +1971,34 @@ mode_attached	;3
 	movi	MODE_NORMAL,a0
 	move	a0,*a13(ANIMODE)
 
-drmhstill_attached
+ifqvstill_attached
 	rets
 
+*****************************************************************************
 
 mode_onground	;4
 
+;	move	*a13(GETUP_TIME),a0
+;	jrnz	umicexit
+;
+;	move	*a13(ANIBASE),a0,L
+;	cmpi	lex_faceup_getup_anim,a0
+;	jrz	umicexit
+;
+;	calla	do_roll
+;	jrnz	umicexit			;did roll
+;
+;	movi	lex_faceup_getup_anim,a0
+;
+;	calla	change_anim1a
+;
+;umicexit
 	rets
 
 
+*****************************************************************************
+*
+* bouncing off ropes while running
 
 mode_bouncing	;5
 
@@ -1613,7 +2008,7 @@ mode_bouncing	;5
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_END_BIT,a0
-	jrz	emrinot_ended
+	jrz	iontnot_ended
 
 	move	*a13(MOVE_DIR),a0
 	xori	MOVE_LEFT+MOVE_RIGHT,a0	;flip LEFT/RIGHT
@@ -1629,33 +2024,42 @@ mode_bouncing	;5
 
 	SETMODE	RUNNING
 
+;	clr	a0
+;	move	a0,*a13(GETUP_TIME)	;in control
 
-emrinot_ended
+iontnot_ended
 	rets
 
+*****************************************************************************
+*
+* STANDING ON TOP OF TURNBUCKLE
 
 mode_onturnbkl	;6
 
+;	;check unint
+;	move	*a13(ANIMODE),a14
+;	btst	MODE_UNINT_BIT,a14
+;	jrnz	tlecno_interrupt
 
 	move	*a13(STICK_VAL_CUR),a0
 	btst	PLAYER_DOWN_BIT,a0
-	jrz	dptyno_climbdown
+	jrz	tlecno_climbdown
 
 	movi	lex_climb_down_anim,a0
 	calla	change_anim1a
 
 	SETMODE	CLIMBTURNBKL
 
-dptyno_interrupt
+tlecno_interrupt
 	rets
 
-dptyno_climbdown
+tlecno_climbdown
 	move	*a13(BUT_VAL_DOWN),a0
 	andi	011111b,a0
-	jrz	dptyz
+	jrz	tlecz
 
 	X32	a0
-	addi	dptyaction_table,a0
+	addi	tlecaction_table,a0
 	move	*a0,a0,L
 	call	a0
 
@@ -1667,28 +2071,42 @@ dptyno_climbdown
 	rets
 
 
+;For standing on top of turnbuckles
 
-dptyaction_table
-	.long	dptyz,dptypunch,dptyblock,dptyblock			;0-3
-	.long	dptysuper_punch,dptysuper_punch,dptyblock,dptyblock	;4-7
-	.long	dptykick,dptypunchkick,dptyblock,dptyblock		;8-11
-	.long	dptysuper_punch,dptypunchkick,dptyblock,dptyblock	;12-15
-	.long	dptysuper_kick,dptysuper_kick,dptyblock,dptyblock	;16-19
-	.long	dptygraboh,dptygraboh,dptyblock,dptyblock		;20-23
-	.long	dptysuper_kick,dptypunchkick,dptyblock,dptyblock	;24-27
-	.long	dptygraboh,dptygraboh,dptyblock,dptyblock		;28-31
+tlecaction_table
+	.long	tlecz,tlecpunch,tlecblock,tlecblock			;0-3
+	.long	tlecsuper_punch,tlecsuper_punch,tlecblock,tlecblock	;4-7
+	.long	tleckick,tlecpunchkick,tlecblock,tlecblock		;8-11
+	.long	tlecsuper_punch,tlecpunchkick,tlecblock,tlecblock	;12-15
+	.long	tlecsuper_kick,tlecsuper_kick,tlecblock,tlecblock	;16-19
+	.long	tlecgraboh,tlecgraboh,tlecblock,tlecblock		;20-23
+	.long	tlecsuper_kick,tlecpunchkick,tlecblock,tlecblock	;24-27
+	.long	tlecgraboh,tlecgraboh,tlecblock,tlecblock		;28-31
 
+;	.long	tlecz			;0
+;	.long	tlecpunch			;1
+;	.long	tlecblock			;2
+;	.long	tlecz			;3
+;	.long	tlecsuper_punch		;4
+;	.long	tlecz,tlecz,tlecz		;5-7
+;	.long	tleckick			;8
+;	.long	tlecz,tlecz,tlecz,tlecz,tlecz,tlecz,tlecz	;9-15
+;	.long	tlecsuper_kick		;16
+;	.long	tlecz,tlecz,tlecz,tlecz,tlecz,tlecz,tlecz	;17-23
+;	.long	tlecz,tlecz,tlecz,tlecz,tlecz,tlecz,tlecz,tlecz	;24-31
 
-dptyz
-dptyblock
+************
+tlecz
+tlecblock
 	rets
 
-dptypunch		;1
-dptysuper_punch	;4
-dptypunchkick	;5
-dptykick		;8
-dptysuper_kick	;16
-dptygraboh		;20
+************
+tlecpunch		;1
+tlecsuper_punch	;4
+tlecpunchkick	;5
+tleckick		;8
+tlecsuper_kick	;16
+tlecgraboh		;20
 
 	SETMODE	INAIR
 
@@ -1698,6 +2116,8 @@ dptygraboh		;20
 	WRSND	W_LUGER,FLYKICK_T1,FLYKICK_T2
 	rets
 
+*****************************************************************************
+* blocking
 
 mode_block	;7
 
@@ -1705,57 +2125,65 @@ mode_block	;7
 	inc	a0
 	move	a0,*a13(BLOCK_TIME)
 	cmpi	160,a0
-	jrlt	hvwano
+	jrlt	ukxsno
 
 	calla	get_opp_plyrmode
 	cmpi	MODE_BLOCK,a0
-	jrnz	hvwano
+	jrnz	ukxsno
 	move	*a13(CLOSEST_XDIST),a0
 	cmpi	61h,a0
-	jrge	hvwano
+	jrge	ukxsno
 	cmpi	45,a0
-	jrlt	hvwano
+	jrlt	ukxsno
 	move	*a13(CLOSEST_ZDIST),a0
 	cmpi	30,a0
-	jrlt	hvwapunchblock
+	jrlt	ukxspunchblock
 
-hvwano
+ukxsno
 	move	*a13(BUT_VAL_DOWN),a0
 	andi	011111b,a0
-	jrz	hvwano_interrupt
+	jrz	ukxsno_interrupt
 
 	;press.  if block isn't down, let mode_normal handle it
 	move	a0,a2			;save a0 from ...val_down
 	move	*a13(BUT_VAL_CUR),a0
 	btst	PLAYER_BLOCK_BIT,a0
-	jrz	hvwaset_mode_normal
+	jrz	ukxsset_mode_normal
 	move	a2,a0			;restore a0 from ...val_down
 
 	X32	a0
-	addi	hvwaaction_table,a0
+	addi	ukxsaction_table,a0
 	move	*a0,a0,L
 	call	a0
 
-hvwano_interrupt
+ukxsno_interrupt
 	rets
 
-hvwaset_mode_normal
+ukxsset_mode_normal
 	SETMODE	NORMAL
 	jruc	mode_normal
 
-hvwaaction_table
-	.long	hvwaz,hvwapunchblock,hvwaz	;0-2
-	.long	hvwapunchblock		;3
-	.long	hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz	;4-10
-	.long	hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz	;11-17
-	.long	hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz	;18-24
-	.long	hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz,hvwaz	;25-31
+ukxsaction_table
+	.long	ukxsz,ukxspunchblock,ukxsz	;0-2
+	.long	ukxspunchblock		;3
+	.long	ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz	;4-10
+	.long	ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz	;11-17
+	.long	ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz	;18-24
+	.long	ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz,ukxsz	;25-31
 
-hvwaz
+************
+ukxsz
 	rets
 
-hvwapunchblock	;3
+************
+ukxspunchblock	;3
+*
+* MODE		   DX  DZ	ACTION
+* ----------------------------------------------------
+* all				push
+*
 
+;This push has no collisions set!
 
 	SETMODE	NORMAL
 
@@ -1767,24 +2195,39 @@ hvwapunchblock	;3
 	rets
 
 
+*****************************************************************************
+* doink with zero health
 
 mode_dizzy	;8
 
+;	move	*a13(GETUP_TIME),a0
+;	jrnz	bbrostill_going
+;
+;	calla	clear_damage_log
+;
+;	clr	a0
+;	move	a0,*a13(STARS_FLAG)
+;
+;	SETMODE	NORMAL
+;
+;bbrostill_going
 	rets
 
+*****************************************************************************
+* opponent held overhead
 
 mode_oppoverhead ;10
 
 	move	*a13(ATTACH_PROC),a2,L		;proc attached to
-	jrz	ajexnot_attached
+	jrz	rrmcnot_attached
 	move	*a2(ATTACH_PROC),a0,L
-	jrnz	ajexstill_attached
+	jrnz	rrmcstill_attached
 
-ajexnot_attached
+rrmcnot_attached
 
 	move	*a13(ANIMODE),a0		;* remove this????
 	btst	MODE_UNINT_BIT,a0		;*
-	jrnz	ajexno_interrupt			;*
+	jrnz	rrmcno_interrupt			;*
 
 	clr	a0
 	move	a0,*a13(ATTACH_PROC),L
@@ -1797,10 +2240,10 @@ ajexnot_attached
 
 	rets
 
-ajexstill_attached
+rrmcstill_attached
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	ajexno_interrupt
+	jrnz	rrmcno_interrupt
 
 	move	*a13(FACING_DIR),a0
 	andni	MOVE_UP,a0
@@ -1809,7 +2252,7 @@ ajexstill_attached
 	move	a0,*a13(NEW_FACING_DIR)
 
 	move	*a13(STICK_VAL_CUR),a0
-	jrz	ajexstand
+	jrz	rrmcstand
 
 	move	a0,*a13(MOVE_DIR)
 	calla	execute_walk
@@ -1818,8 +2261,8 @@ ajexstill_attached
 	movi	lex_holdoh_anim,a0
 	.ref	change_anim2
 	calla	change_anim2
- 	jruc	ajexck_butns
-ajexstand
+ 	jruc	rrmcck_butns
+rrmcstand
 	clr	a0
 	move	a0,*a13(MOVE_DIR)
 	move	a0,*a13(OBJ_XVEL),L
@@ -1829,37 +2272,43 @@ ajexstand
 	movi	lex_stndholdoh_anim,a0
 	calla	change_anim1
 
-ajexck_butns
+rrmcck_butns
 
 	move	*a13(BUT_VAL_DOWN),a0
 	andi	011111b,a0
 	X32	a0
-	addi	ajexaction_table,a0
+	addi	rrmcaction_table,a0
 	move	*a0,a0,L
 	call	a0
 
-ajexno_interrupt
+rrmcno_interrupt
 	rets
 
-ajexaction_table
-	.long	ajexz,ajexpunch,ajexblock,ajexblock			;0-3
-	.long	ajexsuper_punch,ajexsuper_punch,ajexblock,ajexblock	;4-7
-	.long	ajexkick,ajexpunchkick,ajexblock,ajexblock		;8-11
-	.long	ajexsuper_punch,ajexpunchkick,ajexblock,ajexblock	;12-15
-	.long	ajexsuper_kick,ajexsuper_kick,ajexblock,ajexblock	;16-19
-	.long	ajexgraboh,ajexgraboh,ajexblock,ajexblock		;20-23
-	.long	ajexsuper_kick,ajexpunchkick,ajexblock,ajexblock	;24-27
-	.long	ajexgraboh,ajexgraboh,ajexblock,ajexblock		;28-31
+rrmcaction_table
+	.long	rrmcz,rrmcpunch,rrmcblock,rrmcblock			;0-3
+	.long	rrmcsuper_punch,rrmcsuper_punch,rrmcblock,rrmcblock	;4-7
+	.long	rrmckick,rrmcpunchkick,rrmcblock,rrmcblock		;8-11
+	.long	rrmcsuper_punch,rrmcpunchkick,rrmcblock,rrmcblock	;12-15
+	.long	rrmcsuper_kick,rrmcsuper_kick,rrmcblock,rrmcblock	;16-19
+	.long	rrmcgraboh,rrmcgraboh,rrmcblock,rrmcblock		;20-23
+	.long	rrmcsuper_kick,rrmcpunchkick,rrmcblock,rrmcblock	;24-27
+	.long	rrmcgraboh,rrmcgraboh,rrmcblock,rrmcblock		;28-31
 
+;three moves from headhold: backbreaker, slamdown, and ohslam.
 
-ajexz
+************
+rrmcz
 	rets
 
-ajexpunch		;1
-ajexpunchkick
-ajexblock		;2
-ajexkick		;8
+************
+rrmcpunch		;1
+rrmcpunchkick
+rrmcblock		;2
+rrmckick		;8
 
+;	move	*a13(STICK_VAL_CUR),a0
+;	btst	PLAYER_DOWN_BIT,a0
+;	jrz	rrmcz
 
 	CALLA	FIND_AND_KILL_ENDLESS
 	movi	lex_ohslam_anim,a0
@@ -1869,12 +2318,13 @@ ajexkick		;8
 
 	rets
 
-ajexsuper_punch	;4
-ajexgraboh
+************
+rrmcsuper_punch	;4
+rrmcgraboh
 
 	move	*a13(STICK_VAL_CUR),a0
 	btst	PLAYER_UP_BIT,a0
-	jrz	ajexpunch
+	jrz	rrmcpunch
 
 	CALLA	FIND_AND_KILL_ENDLESS
 	movi	lex_slamdown_anim,a0
@@ -1884,11 +2334,12 @@ ajexgraboh
 
 	rets
 
-ajexsuper_kick	;16
+************
+rrmcsuper_kick	;16
 
 	move	*a13(STICK_VAL_CUR),a0
 	btst	PLAYER_UP_BIT,a0
-	jrz	ajexpunch
+	jrz	rrmcpunch
 
 	CALLA	FIND_AND_KILL_ENDLESS
 	movi	lex_backbreaker_anim,a0
@@ -1898,32 +2349,38 @@ ajexsuper_kick	;16
 
 	rets
 
+*****************************************************************************
+*
+* CLIMBING UP OR DOWN THE TURNBUCKLE
 
 mode_climbturnbkl	;11
 
 	rets
 
 
+*****************************************************************************
 
 mode_waitanim	;12
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_END_BIT,a0
-	jrz	pjaonot_ended
+	jrz	nhjlnot_ended
 
 	move	*a13(CODE_ADDR),a0,L
 	call	a0
 
-pjaonot_ended
+nhjlnot_ended
 	rets
 
 
+*****************************************************************************
 
 mode_grapple	;13
 
 	rets
 
 
+*****************************************************************************
 
 mode_master	;14
 
@@ -1931,50 +2388,55 @@ mode_master	;14
 
 	rets
 
+*****************************************************************************
 
 mode_slave	;15
 	rets
 
+*****************************************************************************
 
 mode_headhold	;16
 
+;Bozo power move
 	.ref	bozo_check
 	calla	bozo_check
-	jrnc	scqyfail
+	jrnc	eaabfail
 
 	WRSND	W_LUGER,FLYKICK_T1,FLYKICK_T2
 
 	movi	lex_vsuplex_anim,a0
 	move	@PCNT,a14
 	btst	0,a14
-	jrz	scqytag
+	jrz	eaabtag
 	movi	lex_4_graboh_anim,a0
-scqytag	calla	change_anim1a
+eaabtag	calla	change_anim1a
 
 	rets
 
-scqyfail
+eaabfail
 	move	*a13(WHOIHIT),a0,L
 	move	*a0(PLYRMODE),a0
 	cmpi	MODE_HEADHELD,a0
-	jrnz	scqyexit
+	jrnz	eaabexit
 
+;	move	*a13(ATTACH_PROC),a10,L
+;	jrz	eaabexit
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	scqyno_interrupt
+	jrnz	eaabno_interrupt
 
 	move	*a13(BUT_VAL_DOWN),a0
 	andi	011111b,a0
 	X32	a0
-	addi	scqyaction_table,a0
+	addi	eaabaction_table,a0
 	move	*a0,a0,L
 	call	a0
 
-scqyno_interrupt
+eaabno_interrupt
 	rets
 
-scqyexit
+eaabexit
 	move	*a13(OBJ_ZPOS),a14,L
 	subi	[6,0],a14
 	move	a14,*a13(OBJ_ZPOS),L
@@ -1982,39 +2444,43 @@ scqyexit
 	movk	MOVE_DOWN_RIGHT,a1
 	move	*a13(OBJ_CONTROL),a0
 	btst	B_FLIPH,a0
-	jrz	scqyright
+	jrz	eaabright
 	movk	MOVE_DOWN_LEFT,a1
-scqyright	move	a1,*a13(FACING_DIR)
+eaabright	move	a1,*a13(FACING_DIR)
 	move	a1,*a13(NEW_FACING_DIR)
 
 	SETMODE	NORMAL
 
 	rets
 
-scqyaction_table
-	.long	scqyz,scqypunch,scqyblock,scqyblock			;0-3
-	.long	scqysuper_punch,scqysuper_punch,scqyblock,scqyblock	;4-7
-	.long	scqykick,scqypunchkick,scqyblock,scqyblock		;8-11
-	.long	scqysuper_punch,scqypunchkick,scqyblock,scqyblock	;12-15
-	.long	scqysuper_kick,scqysuper_kick,scqyblock,scqyblock	;16-19
-	.long	scqygraboh,scqygraboh,scqyblock,scqyblock		;20-23
-	.long	scqysuper_kick,scqypunchkick,scqyblock,scqyblock	;24-27
-	.long	scqygraboh,scqygraboh,scqyblock,scqyblock		;28-31
+eaabaction_table
+	.long	eaabz,eaabpunch,eaabblock,eaabblock			;0-3
+	.long	eaabsuper_punch,eaabsuper_punch,eaabblock,eaabblock	;4-7
+	.long	eaabkick,eaabpunchkick,eaabblock,eaabblock		;8-11
+	.long	eaabsuper_punch,eaabpunchkick,eaabblock,eaabblock	;12-15
+	.long	eaabsuper_kick,eaabsuper_kick,eaabblock,eaabblock	;16-19
+	.long	eaabgraboh,eaabgraboh,eaabblock,eaabblock		;20-23
+	.long	eaabsuper_kick,eaabpunchkick,eaabblock,eaabblock	;24-27
+	.long	eaabgraboh,eaabgraboh,eaabblock,eaabblock		;28-31
 
 
-scqyblock
-scqygraboh
-scqyz		;0
+************
+eaabblock
+eaabgraboh
+eaabz		;0
 	rets
 
+************
 
-scqypunch		;1
+eaabpunch		;1
 	CALLA	FIND_AND_KILL_ENDLESS
+;If stick is toward opponent, then do quick punches
 	move	*a13(STICK_VAL_CUR),a0
 	move	*a13(NEW_FACING_DIR),a1
 	andi	0ch,a1
 	cmp	a0,a1
-	jrnz	scqytag2
+	jrnz	eaabtag2
+;TODO - change this to uppercuts_to_head_anim!
 	WRSND	W_LUGER,KICK_T1,KICK_T2
 
 	.ref	lex_4_knee2_anim
@@ -2022,30 +2488,34 @@ scqypunch		;1
 	calla	change_anim1a
 	rets
 
-scqytag2
+eaabtag2
+;TODO - change this to an uppercut
 	WRSND	W_LUGER,KICK_T1,KICK_T2
 	movi	lex_4_knee2_anim,a0
 	calla	change_anim1a
 	rets
 
-scqysuper_punch	;4
+************
+eaabsuper_punch	;4
 	rets
 
-scqypunchkick
-scqykick
+eaabpunchkick
+eaabkick
 	CALLA	FIND_AND_KILL_ENDLESS
 	movi	lex_3_knee_to_head_anim,a0
 	calla	change_anim1a
 	WRSND	W_LUGER,KICK_T1,KICK_T2
 	rets
 
-scqysuper_kick	;16
+eaabsuper_kick	;16
+;If stick is toward opponent, then do quick knees
 	move	*a13(STICK_VAL_CUR),a0
 	move	*a13(NEW_FACING_DIR),a1
 	andi	0ch,a1
 	cmp	a0,a1
-	jrnz	scqykick
+	jrnz	eaabkick
 
+;Quick knees
 	CALLA	FIND_AND_KILL_ENDLESS
 	movi	lex_knees_to_head_anim,a0
 	calla	change_anim1a
@@ -2053,10 +2523,39 @@ scqysuper_kick	;16
 	rets
 
 
+*****************************************************************************
 mode_puppet2	;17
 
+;	;check for the head-grab breaker
+;	move	*a13(BUT_VAL_DOWN),a0
+;	btst	PLAYER_KICK_BIT,a0
+;	jrz	andwout
+;
+;	;check the time - must do it within 20 ticks
+;	move	*a13(HEAD_GRAB_TIME),a14
+;	move	@PCNT,a0
+;	sub	a14,a0
+;	cmpi	KICK_OUT,a0
+;	jrgt	andwout
+;
+;	move	*a13(PLYR_TYPE),a14
+;	cmpi	PTYPE_DRONE,a14
+;	jrz	andwout
+;     
+;	;okay, waste 'im. - detach, setmode, immobilize, and launch the knee
+;	move	*a13(ATTACH_PROC),a0,L
+;	clr	a14
+;	move	a14,*a13(ATTACH_PROC),L
+;	move	a14,*a0(ATTACH_PROC),L
+;	movi	15,a14
+;	move	a14,*a0(IMMOBILIZE_TIME)
+;	SETMODE	NORMAL
+;	jruc	std_knee
+;
+;andwout
 	rets
 
+*****************************************************************************
 
 mode_headheld	;19
 	move	*a13(ANIMODE),a0
@@ -2064,8 +2563,9 @@ mode_headheld	;19
 	janz	mode_choking
 
 
+;Bozo reversal
 	calla	bozo_check
-	jrnc	zlzjfail
+	jrnc	eilhfail
 
 	PUSH	a8
 	move	a13,a8
@@ -2078,71 +2578,87 @@ mode_headheld	;19
 	movi	lex_vsuplex_anim,a0
 	move	@PCNT,a14
 	btst	0,a14
-	jrz	zlzjtag
-zlzjtag	calla	change_anim1a
+	jrz	eilhtag
+;	movi	lex_4_graboh_anim,a0
+eilhtag	calla	change_anim1a
 
 	rets
-zlzjfail
+eilhfail
+;He may have let me go by hitting his block butn!
 	move	*a13(ATTACH_PROC),a0,L
-	jrnz	zlzjno_luck
+	jrnz	eilhno_luck
 
+;Make sure this guy is on ground
 	move	*a13(OBJ_YPOSINT),a0
 	move	*a13(GROUND_Y),a1
 	cmp	a1,a0			;a0-a1
-	jrgt	zlzjno_luck
+	jrgt	eilhno_luck
 
+;hit_gnd
 
 	movi	lex_3_head_held_stand_anim,a0
 	calla	change_anim1a
 
-zlzjno_luck
+eilhno_luck
 	rets
 
+*****************************************************************************
 mode_chokehold	;24
 	rets
 
+*****************************************************************************
 
-fdzjVEL	equ	3a000h		;38000h	;30000h
-fdzjDVEL	equ	31000h		;27978h	;21f0eh
+;dmscVEL	equ	30000h		;38000h	;30000h
+;dmscDVEL	equ	21f0eh		;27978h	;21f0eh
+;dmscVEL	equ	38000h		;38000h	;30000h
+;dmscDVEL	equ	30000h		;27978h	;21f0eh
+dmscVEL	equ	3a000h		;38000h	;30000h
+dmscDVEL	equ	31000h		;27978h	;21f0eh
 
 
  SUBR lex_velocity_table
 
+;		X,	Z
 
-	.long	0,	-fdzjVEL	;0 UP
+	.long	0,	-dmscVEL	;0 UP
 
-	.long	fdzjDVEL,	-fdzjDVEL	;1 UP-RIGHT
+	.long	dmscDVEL,	-dmscDVEL	;1 UP-RIGHT
 
-	.long	fdzjVEL,	0	;2 RIGHT
+	.long	dmscVEL,	0	;2 RIGHT
 
-	.long	fdzjDVEL,	fdzjDVEL	;3 DOWN-RIGHT
+	.long	dmscDVEL,	dmscDVEL	;3 DOWN-RIGHT
 
-	.long	0,	fdzjVEL	;4 DOWN
+	.long	0,	dmscVEL	;4 DOWN
 
-	.long	-fdzjDVEL,	fdzjDVEL	;5 DOWN-LEFT
+	.long	-dmscDVEL,	dmscDVEL	;5 DOWN-LEFT
 
-	.long	-fdzjVEL,	0	;6 LEFT
+	.long	-dmscVEL,	0	;6 LEFT
 
-	.long	-fdzjDVEL,	-fdzjDVEL	;7 UP-LEFT
+	.long	-dmscDVEL,	-dmscDVEL	;7 UP-LEFT
 
 
+*****************************************************************************
 
  SUBR lex_rotate_anims_table
+; old = up right
 	.long	lex_stand2_anim		;new = up right
 	.long	lex_2_to_4_turn_anim	;    = down right
 	.long	lex_2_to_6_turn_anim	;    = down left
 	.long	lex_2_to_8_turn_anim	;    = up left
 
+; old = down right
 	.long	lex_4_to_2_turn_anim	;new = up right
 	.long	lex_stand4_anim		;    = down right
 	.long	lex_4_to_6_turn_anim	;    = down left
 	.long	lex_4_to_8_turn_anim	;    = up left
 
+; old = down left
 	.long	lex_6_to_2_turn_anim	;new = up right
 	.long	lex_6_to_4_turn_anim	;    = down right
 	.long	lex_stand6_anim		;    = down left
 	.long	lex_6_to_8_turn_anim	;    = up left
 
+; old = up left
 	.long	lex_8_to_2_turn_anim	;new = up right
 	.long	lex_8_to_4_turn_anim	;    = down right
 	.long	lex_8_to_6_turn_anim	;    = down left
@@ -2150,6 +2666,8 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 
 
  SUBR lex_leg_anims_table
+;  MOVE
+;(dnsq1 - UP)				FACING
 	.long	lex_walk1_f2_anim	;1 (UP)
 	.long	lex_walk1_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk1_f4_anim	;3 (RIGHT)
@@ -2159,6 +2677,7 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 	.long	lex_walk1_f2_anim	;7 (LEFT)
 	.long	lex_walk1_f2_anim	;8 (UP-LEFT)
 
+;(dnsq2 - UP-RIGHT)
 	.long	lex_walk2_f2_anim	;1 (UP)
 	.long	lex_walk2_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk2_f2_anim	;3 (RIGHT)
@@ -2168,6 +2687,7 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 	.long	lex_walk4_f2_anim	;7 (LEFT)
 	.long	lex_walk4_f2_anim	;8 (UP-LEFT)
 
+;(dnsq3 - RIGHT)
 	.long	lex_walk2_f2_anim	;1 (UP)
 	.long	lex_walk2_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk2_f2_anim	;3 (RIGHT)
@@ -2178,6 +2698,7 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 	.long	lex_walk6_f2_anim	;8 (UP-LEFT)
 
 
+;(dnsq4 - DOWN-RIGHT)
 	.long	lex_walk2_f2_anim	;1 (UP)
 	.long	lex_walk8_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk4_f4_anim	;3 (RIGHT)
@@ -2187,6 +2708,7 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 	.long	lex_walk2_f2_anim	;7 (LEFT)
 	.long	lex_walk6_f2_anim	;8 (UP-LEFT)
 
+;(dnsq5 - DOWN)
 	.long	lex_walk5_f2_anim	;1 (UP)
 	.long	lex_walk5_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk5_f4_anim	;3 (RIGHT)
@@ -2196,6 +2718,7 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 	.long	lex_walk5_f2_anim	;7 (LEFT)
 	.long	lex_walk5_f2_anim	;8 (UP-LEFT)
 
+;(dnsq6 - DOWN-LEFT)
 	.long	lex_walk2_f2_anim	;1 (UP)
 	.long	lex_walk6_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk2_f2_anim	;3 (RIGHT)
@@ -2205,6 +2728,7 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 	.long	lex_walk2_f2_anim	;7 (LEFT)
 	.long	lex_walk8_f2_anim	;8 (UP-LEFT)
 
+;(dnsq7 - LEFT)
 	.long	lex_walk2_f2_anim	;1 (UP)
 	.long	lex_walk6_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk6_f2_anim	;3 (RIGHT)
@@ -2214,6 +2738,7 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 	.long	lex_walk2_f2_anim	;7 (LEFT)
 	.long	lex_walk2_f2_anim	;8 (UP-LEFT)
 
+;(dnsq8 - UP-LEFT)
 	.long	lex_walk2_f2_anim	;1 (UP)
 	.long	lex_walk4_f2_anim	;2 (UP_RIGHT)
 	.long	lex_walk6_f2_anim	;3 (RIGHT)
@@ -2225,27 +2750,32 @@ fdzjDVEL	equ	31000h		;27978h	;21f0eh
 
 
  SUBR lex_torso_anims_table
+; old = up right
 	.long	lex_torso2_anim		;new = up right
 	.long	lex_2_to_4_turn2_anim	;    = down right
 	.long	lex_2_to_6_turn2_anim	;    = down left
 	.long	lex_2_to_8_turn2_anim	;    = up left
 
+; old = down right
 	.long	lex_4_to_2_turn2_anim	;new = up right
 	.long	lex_torso4_anim		;    = down right
 	.long	lex_4_to_6_turn2_anim	;    = down left
 	.long	lex_4_to_8_turn2_anim	;    = up left
 
+; old = down left
 	.long	lex_6_to_2_turn2_anim	;new = up right
 	.long	lex_6_to_4_turn2_anim	;    = down right
 	.long	lex_torso6_anim		;    = down left
 	.long	lex_6_to_8_turn2_anim	;    = up left
 
+; old = up left
 	.long	lex_8_to_2_turn2_anim	;new = up right
 	.long	lex_8_to_4_turn2_anim	;    = down right
 	.long	lex_8_to_6_turn2_anim	;    = down left
 	.long	lex_torso8_anim		;    = up left
 
 
+******************************************************************************
 
 	.end
 

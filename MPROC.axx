@@ -1,3 +1,20 @@
+**************************************************************
+* GSP MULTI-PROCESSING SYSTEM
+*
+* Software:	Eugene P Jarvis, Shawn Liptak
+* Initiated:	1988?
+*
+* Modified:	Shawn Liptak, 7/?/91	-New KILL stuff (Total carnage)
+* 		Shawn Liptak, 8/12/91	-KOP code
+* 		Shawn Liptak, 10/27/91	-Shawn.hdr
+* 		Shawn Liptak, 2/18/92	-Basketball (cleanup)
+* 		Shawn Liptak, 7/1/92	-Slowmotion
+*		Jason Skiles, 2/23/94	-Super-procs
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 2/23/94 11:45
+**************************************************************
 	.file	"mproc.asm"
 	.title	"GSP multi-processing system"
 	.width	132
@@ -12,14 +29,20 @@
 	.include	"macros.h"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	dirqtimer
 	.ref	L_TIMER
 
+******************************************************************************
 
 
 	.bss	PRCSTR	,NPROC*PRCSIZ	;Process data blocks
 
+; Note: A super-proc is spotted by comparing its address to SPRCSTR.
+;       Make SURE that SPRCSTR always rests higher in RAM than PRCSTR.
+;	It would be A Bad Thing were this test to become unreliable.
 
 	.bss	SPRCSTR	,SNPROC*SPRCSIZ	;Super-process data blocks
 
@@ -32,6 +55,10 @@ SFREE	.long	0
 	.text
 
 
+********************************
+* Process list initialize
+* 0A13H=*Process active list
+* Trashes scratch
 
  SUBR	process_init
 
@@ -43,10 +70,10 @@ SFREE	.long	0
 	move	a1,@FREE,L	;Full free list
 
 	movi	NPROC,b0	;# of processes
-cfiulp	move	a1,a14
+hkzulp	move	a1,a14
 	addi	PRCSIZ,a1
 	move	a1,*a14,L	;Set link
-	dsj	b0,cfiulp
+	dsj	b0,hkzulp
 
 	move	a0,*a14,L	;Null last link
 
@@ -55,16 +82,18 @@ cfiulp	move	a1,a14
 	move	a1,@SFREE,L
 
 	movi	SNPROC,b0	;# of processes
-cfiuslp	move	a1,a14
+hkzuslp	move	a1,a14
 	addi	SPRCSIZ,a1
 	move	a1,*a14,L	;Set link
-	dsj	b0,cfiuslp
+	dsj	b0,hkzuslp
 
 	move	a0,*a14,L	;Null last link
 
 	rets
 
 
+*******************************
+* Process dispatch
 
  SUBR	process_dispatch
 
@@ -73,27 +102,28 @@ cfiuslp	move	a1,a14
 	movi	31*32,a0		;Proc usage
 	move	a0,@ERASELOC
 
-uhiydmawt	move	b13,b13
-	jrge	uhiydmawt
+vmnkdmawt	move	b13,b13
+	jrge	vmnkdmawt
 	movk	6,a0			;DMA usage
 	move	a0,@ERASELOC
-uhiynoline
+vmnknoline
  .endif
 
  .if DEBUG
 	.ref	slowmotion
 	move	@slowmotion,a0
-uhiysmlp	move	@dirqtimer,a1
+vmnksmlp	move	@dirqtimer,a1
 	cmp	a1,a0
-	jrge	uhiysmlp
+	jrge	vmnksmlp
  .endif
 
 	movi	ACTIVE,a13		;*Proc list
 	clr	a0
 	move	a0,@dirqtimer		;Tell DIRQ to flip and draw
 
-uhiylp
+vmnklp
 
+;inlined obj_yzsort
 
 	movi	OBJLST,a0
 	movk	1,a1			;Lowest Z
@@ -132,25 +162,29 @@ yzlp	move	*a0,a2,L		;A2=*Next obj
 	jrnz	yz0
 
 	move	a8,a8
-	jrnz	uhiylp
+	jrnz	vmnklp
 
-uhiylp2
+vmnklp2
 	move	@dirqtimer,a0
-	jrz	uhiylp2			;Wait?
+	jrz	vmnklp2			;Wait?
 
 	calla	L_TIMER			;Linky timer (FIX so BOG time is OK!)
 
 	jruc	prcd1
 
+********************************
+* Process sleep
+* Stack=*Wakeup
+* A0=Sleep time
 
 PRCSLP
 	PULL	a7			;Get *Wakeup
 
 	.if DEBUG
 	cmpi	0FF800000H,a7
-	jrhs	uhiypsok
+	jrhs	vmnkpsok
 	LOCKUP	;bad wake address!
-uhiypsok
+vmnkpsok
 	.endif
 
 PRCLSP	move	a13,a1
@@ -161,7 +195,7 @@ PRCLSP	move	a13,a1
 	.if	DEBUG
 	move	a13,a0
 	cmpi	SPRCSTR,a13		;is it a superproc?
-	jrge	uhiysuper_stkchk
+	jrge	vmnksuper_stkchk
 
 	addi	PSDATA,a0
 	cmp	a0,a12
@@ -171,7 +205,7 @@ PRCLSP	move	a13,a1
 	jrgt	$			;stick on stack underflow
 	jruc	prcd1
 
-uhiysuper_stkchk
+vmnksuper_stkchk
 	addi	SPSDATA,a0
 	cmp	a0,a12
 	jrlt	$			;stick on stack overflow
@@ -195,18 +229,20 @@ prcd1
 	addi	040H,a1
 	mmfm	a1,a7,a8,a9,a10,a11,a12	;*Wake, regs, *stack
 
-uhiygo
+vmnkgo
 	.if DEBUG
 	cmpi	0FF800000H,a7
-	jrhs	uhiywake_ok
+	jrhs	vmnkwake_ok
 	LOCKUP	;bad wake address!
-uhiywake_ok
+vmnkwake_ok
 	.endif
 	jump	a7			;Do process
 
 prcdx
 	rets
 
+********************************
+* Process kills itself
 
 SUCIDE
 	movi	ACTIVE,a1
@@ -220,7 +256,7 @@ suclp	move	a1,a2		;save previous
 	move	*a1,*a2,L	;Unlink
 
 	cmpi	SPRCSTR,a1
-	jrge	uhiysuclink_sproc
+	jrge	vmnksuclink_sproc
 
 	move	@FREE,*a1+,L	;Link into free list at start
 	subk	32,a1
@@ -229,7 +265,7 @@ suclp	move	a1,a2		;save previous
 	move	a2,a13		;Set current process to previous
 	jruc	prcd1		;Continue with dispatch
 
-uhiysuclink_sproc
+vmnksuclink_sproc
 	move	@SFREE,*a1+,L	;Link into super-proc free list at start
 	subk	32,a1
 	move	a1,@SFREE,L
@@ -247,35 +283,39 @@ sucerr
 	jruc	prcd1
 
 
+*******************************
+* Kill process (won't kill self)
+* A0=*Process to kill
+* Trashes scratch
 
 KILL
 	cmp	a0,a13
-	jreq	hgnbx		;Killing self?
+	jreq	amsix		;Killing self?
 
 	movi	ACTIVE,a1
 
-hgnblp	move	a1,a14		;Save previous
+amsilp	move	a1,a14		;Save previous
 	move	*a1,a1,L
 	jrz	killerr		;Can't find?
 	cmp	a1,a0
-	jrne	hgnblp		;Not the one?
+	jrne	amsilp		;Not the one?
 
 	move	*a0,*a14,L	;Unlink from active
 
 	cmpi	SPRCSTR,a0
-	jrge	hgnbkill_super
+	jrge	amsikill_super
 	move	@FREE,*a0+,L	;Link into free list at start
 	subk	32,a0
 	move	a0,@FREE,L
-	jruc	hgnbx
+	jruc	amsix
 
-hgnbkill_super
+amsikill_super
 	move	@SFREE,*a0+,L	;Link into free list at start
 	subk	32,a0
 	move	a0,@SFREE,L
-	jruc	hgnbx
+	jruc	amsix
 
-hgnbx	rets
+amsix	rets
 
 killerr
 	.if	DEBUG
@@ -284,9 +324,15 @@ killerr
 	.else
 	CALLERR	6,0
 	.endif
-	jruc	hgnbx
+	jruc	amsix
 
 
+********************************
+* Create a process
+* A1=PID, A7=PC, A8,A9,A10,A11 Passed parameters
+* A13=*Current process
+* 0A0H=*Created process (Flags invalid!)
+* Trashes A14,B0-B1
 
 GETPRC
 	move	a12,b0
@@ -308,6 +354,15 @@ nonelft
 	.endif
 	jruc	getpx
 
+********************************
+*
+* Identical to GETPRC, except that the created process is placed in the
+* process list immediately BEFORE the parent process, not after.
+*
+* A1=PID, A7=PC, A8,A9,A10,A11 Passed parameters
+* A13=*Current process
+* 0A0H=*Created process (Flags invalid!)
+* Trashes A14,B0-B1
 
 GETPRC_INSERT
 	move	a12,b0
@@ -322,12 +377,12 @@ GETPRC_INSERT
 	PUSH	a1,a2
 	movi	ACTIVE,a1
 	move	*a1,a2,L
-hgnbsearch
+amsisearch
 	cmp	a13,a2
-	jreq	hgnbfound
+	jreq	amsifound
 	move	a2,a1
 	move	*a1,a2,L
-	jrnz	hgnbsearch
+	jrnz	amsisearch
 
 	;We've been called by a nonexistent process.  How odd.
 	.if DEBUG
@@ -336,7 +391,7 @@ hgnbsearch
 	PULL	a1,a2
 	jruc	getpx
 
-hgnbfound
+amsifound
 	;a2 is parent proc, a1 is before that.  slip in between.
 	move	a0,*a1,L
 	move	a2,*a0,L
@@ -345,7 +400,16 @@ hgnbfound
 	
 	
 	
+;	move	*a13,*a0,L	;Link into active list after current process
+;	move	a0,*a13,L
+;	jruc	xferprc0
 
+********************************
+* Create a super-process
+* A1=PID, A7=PC, A8,A9,A10,A11 Passed parameters
+* A13=*Current process
+* 0A0H=*Created process (Flags invalid!)
+* Trashes A14,B0-B1
 
  SUBR	GETSPRC
 	move	a12,b0
@@ -359,6 +423,13 @@ hgnbfound
 	jruc	xferprc0
 
 
+********************************
+* Transfer control of an existing process
+* A0=*Process to be xfer'd
+* A1=New PID
+* A7=*Wake address
+* A8-A11=Passed to the xfer'd proc
+* Trashes A14,B0-B1
 
 XFERPROC
 	move	a12,b0
@@ -371,10 +442,10 @@ xferprc0
 	move	a0,a12			;Reset process stack pointer
 	addi	SPRCSIZ,a12
 	cmpi	SPRCSTR,a0
-	jrge	hgnbsuperproc
+	jrge	amsisuperproc
 
 	addi	PRCSIZ-SPRCSIZ,a12
-hgnbsuperproc
+amsisuperproc
 	mmtm	a14,a7,a8,a9,a10,a11,a12 ;Stuff wake, regs, p stack ptr
 	movk	1,a12
 	move	a12,-*a14		;Wakeup next time
@@ -393,16 +464,30 @@ procwakeerr
 	jruc	getpx
 
 
+********************************
+* Kill a class of processes except for self
+* A0=PID
+* A1=Mask (bits to keep)
+* Trashes scratch
 
 KILALL
 	not	a1
 	jruc	KILALLN
 
 
+********************************
+* Kill one class of processes
+* A0=PID
+* Trashes scratch
 
 KIL1C
 	clr	a1
 
+*******************************
+* Kill a class of processes
+* A0=PID
+* A1=!Mask (bits to remove)
+* Trashes scratch
 
 KILALLN
 	move	a2,b0
@@ -412,45 +497,63 @@ KILALLN
 	andn	a1,a0		;Form match
 	movi	ACTIVE,a2
 
-fyjmlp	move	a2,a3		;Save previous
+rsjzlp	move	a2,a3		;Save previous
 	move	*a2,a2,L
-	jrz	fyjmx		;Done?
+	jrz	rsjzx		;Done?
 	move	*a2(PROCID),a14
-	JRN	fyjmlp		;ALLOW INDESTRUCTABLES (ANYTHING 8000h+)
+	JRN	rsjzlp		;ALLOW INDESTRUCTABLES (ANYTHING 8000h+)
 
+;	jrnn	rsjzok
+;	LOCKUP
+;rsjzok
 	andn	a1,a14		;Apply mask
 	cmp	a0,a14
-	jrne	fyjmlp		;No match?
+	jrne	rsjzlp		;No match?
 
 	cmp	a2,a13
-	jreq	fyjmlp		;Current proecess?
+	jreq	rsjzlp		;Current proecess?
 
 	move	*a2,*a3,L	;Unlink
 	cmpi	SPRCSTR,a2
-	jrge	fyjmspr
+	jrge	rsjzspr
 	move	@FREE,a14,L	;Link into free list at start
 	move	a14,*a2,L
 	move	a2,@FREE,L
 	move	a3,a2
-	jruc	fyjmlp
+	jruc	rsjzlp
 
-fyjmspr
+rsjzspr
 	move	@SFREE,a14,L	;Link into super-proc free list at start
 	move	a14,*a2,L
 	move	a2,@SFREE,L
 	move	a3,a2
-	jruc	fyjmlp
+	jruc	rsjzlp
 
-fyjmx	move	b0,a2
+rsjzx	move	b0,a2
 	move	b1,a3
 	rets
 
 
+********************************
+* Kill one class of indestructable processes
+*
+* NOTE - BE EXTEMELY CAREFUL WITH THIS FUNCTION (IT KILLS INDESTRUCTABLES)
+*
+* A0=PID
+* Trashes scratch
 
  SUBR	IKIL1C
 	clr	a1
 
 
+*******************************
+* Kill a class of indestructable processes
+*
+* NOTE - BE EXTEMELY CAREFUL WITH THIS FUNCTION (IT KILLS INDESTRUCTABLES)
+*
+* A0=PID
+* A1=!Mask (bits to remove)
+* Trashes scratch
 
  SUBR	IKILALLN
 	move	a2,b0
@@ -460,54 +563,96 @@ fyjmx	move	b0,a2
 	andn	a1,a0		;Form match
 	movi	ACTIVE,a2
 
-nulllp	move	a2,a3		;Save previous
+cqsglp	move	a2,a3		;Save previous
 	move	*a2,a2,L
-	jrz	nullx		;Done?
+	jrz	cqsgx		;Done?
 	move	*a2(PROCID),a14
 
 	andn	a1,a14		;Apply mask
 	cmp	a0,a14
-	jrne	nulllp		;No match?
+	jrne	cqsglp		;No match?
 
 	cmp	a2,a13
-	jreq	nulllp		;Current proecess?
+	jreq	cqsglp		;Current proecess?
 
 	move	*a2,*a3,L	;Unlink
 	cmpi	SPRCSTR,a2
-	jrge	nullspr
+	jrge	cqsgspr
 	move	@FREE,a14,L	;Link into free list at start
 	move	a14,*a2,L
 	move	a2,@FREE,L
 	move	a3,a2
-	jruc	nulllp
+	jruc	cqsglp
 
-nullspr
+cqsgspr
 	move	@SFREE,a14,L	;Link into super-proc free list at start
 	move	a14,*a2,L
 	move	a2,@SFREE,L
 	move	a3,a2
-	jruc	nulllp
+	jruc	cqsglp
 
-nullx	move	b0,a2
+cqsgx	move	b0,a2
 	move	b1,a3
 	rets
 
 
+;********************************
+;* Knock out one class of processes
+;* A0=PID, A2=Time to add
+;* Trashes scratch
+;
+;KOP_1C
+;	clr	a1
+;
+;*******************************
+;* Knock out a class of processes
+;* A0=PID, A1=!Mask (Bits to remove), A2=Time to add
+;* Trashes scratch
+;
+;KOP_ALL
+;	move	a3,b0
+;	andn	a1,a0		;Form match
+;	movi	ACTIVE,a3,L
+;
+;cqsglp	move	*a3,a3,L	;Get next
+;	jrz	cqsgx		;End?
+;	move	*a3(PROCID),a14
+;	andn	a1,a14		;Mask
+;	cmp	a0,a14
+;	jrnz	cqsglp		;No match?
+;
+;	move	*a3(PTIME),a14	;Add sleep
+;	add	a2,a14
+;	move	a14,*a3(PTIME)
+;	jruc	cqsglp
+;
+;cqsgx	move	b0,a3
+;	rets
 
 
+*******************************
+* Check to see if process exists
+* A0=*Process
+* Rets: Z=Not found, NZ=Found
+* Trashes scratch
 
 process_exist
 	movi	ACTIVE,a1
 
-uvislp	move	*a1,a1,L
-	jrz	uvisx		;End?
+wtwplp	move	*a1,a1,L
+	jrz	wtwpx		;End?
 	cmp	a0,a1
-	jrne	uvislp		;!Match?
+	jrne	wtwplp		;!Match?
 	move	a0,a0		;Clr Z
 
-uvisx	rets
+wtwpx	rets
 
 
+*******************************
+* Find if at least one process, other than calling process, exists
+* A0=PROCID
+* A1=Mask
+* Rets: A0=*Process or 0 (Z)
 
 EXISTP
 	PUSH	a1,a2,a4
@@ -516,21 +661,22 @@ EXISTP
 	and	a1,a0		;form match
 	movi	ACTIVE,a2
 
-sibmlp	move	*a2,a2,L
-	jrz	sibmx		;End?
+byvglp	move	*a2,a2,L
+	jrz	byvgx		;End?
 	move	*a2(PROCID),a4
 	and	a1,a4
 	cmp	a0,a4
-	jrne	sibmlp		;!Match?
+	jrne	byvglp		;!Match?
 
 	cmp	a2,a13
-	jreq	sibmlp		;Self?
+	jreq	byvglp		;Self?
 
-sibmx	move	a2,a0
+byvgx	move	a2,a0
 
 	PULL	a1,a2,a4
 	rets
 
+******************************************************************************
 
 	.end
 

@@ -1,3 +1,16 @@
+**************************************************************
+*
+* Software:		Shawn Liptak and ?
+* Initiated:		?
+*
+* Modified:		Shawn Liptak, 8/?/91	-Clean up
+* 			Shawn Liptak, 1/27/92	-Basketball start
+* 			Shawn Liptak, 3/19/93	-Clean up
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 3/19/93 13:59
+**************************************************************
 	.file	"main.asm"
 	.title	"initialization and interrupts"
 	.width	132
@@ -16,6 +29,8 @@
 	.include	"wwfsec.equ"
 			
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	RESET_VOICE_QUEUE,ANNOUNCE_VOICE
 
@@ -78,7 +93,9 @@ ALARM_MAC	.macro	month,date,hour,minute,func
 	BSSX	dma_meter,16		;show line?
 	BSSX	cpu_meter,16		;show line for cpu
 
+******************************************************************************
 
+;ram
 
 	BSSX	SYSCOPY		,16	;Copy of SYSCTRL latch
 
@@ -125,6 +142,9 @@ _SecurityFunctions	.long	SetAddresses
 	.text
 
 
+********************************
+* Alarm Clock Support (Called by DIRQ when seconds are 0)
+* Trashes a0
   SUBR	_AlarmClock
 	mmtm	sp,a0,a1,a2
 	movi	ALARM_TAB,a0,L
@@ -162,16 +182,20 @@ _ac_done
 	mmfm	sp,a0,a1,a2		;All done - restore registers
 	rets				;Go back to interrupt handler
 
+********************************
+* Remap I/O space - Changes the I/O map
+* Trashes a0,a1
  SUBR	RemapIO
 
 	;temp!
+;	rets
 
 	move	@_io_map,a0,L		;Get Current I/O map
 	addk	1,a0			;Increment it
 	cmpi	5,a0			;>= 5?
-	jrlt	dizumap_ok			;Nope - then use it
+	jrlt	hfbzmap_ok			;Nope - then use it
 	clr	a0			;else reset it back to 0
-dizumap_ok
+hfbzmap_ok
 	move	a0,@_io_map,L		;a0 = I/O map number
 	clr	a1			;a1 = SetAddresses Trap Request
 	trap	3			;Remap I/O space
@@ -183,6 +207,7 @@ SecFuncTable
 	.word	06a9h			;This is a checksum of the function
 	.long	0
 
+******************************************************************************
  SUBR  InitAddresses
 	movi	COINS,a0
 	move	a0,@_coin_addr,L
@@ -204,6 +229,7 @@ SecFuncTable
 	move	a0,@VMUX_CONTROL
 	rets
 
+******************************************************************************
  SUBR  AddressSet1
 	movi	COINS_M1,a0
 	move	a0,@_coin_addr,L
@@ -225,6 +251,7 @@ SecFuncTable
 	move	a0,@VMUX_CONTROL
 	rets
 
+******************************************************************************
  SUBR  AddressSet2
 	movi	COINS_M2,a0
 	move	a0,@_coin_addr,L
@@ -246,6 +273,7 @@ SecFuncTable
 	move	a0,@VMUX_CONTROL
 	rets
 
+******************************************************************************
  SUBR  AddressSet3
 	movi	COINS_M3,a0
 	move	a0,@_coin_addr,L
@@ -267,6 +295,7 @@ SecFuncTable
 	move	a0,@VMUX_CONTROL
 	rets
 
+******************************************************************************
  SUBR  AddressSet4
 	movi	COINS_M4,a0
 	move	a0,@_coin_addr,L
@@ -291,6 +320,8 @@ SecFuncTable
 AddressTable	.long	InitAddresses, AddressSet1, AddressSet2
 		.long	AddressSet3, AddressSet4
 
+******************************************************************************
+; A0 = Address Set to install (0-4)
 
  SUBR  SetAddresses
 	move	a0,a0
@@ -307,6 +338,9 @@ AddressTable	.long	InitAddresses, AddressSet1, AddressSet2
 _invalid
 	rets
 
+**********************************
+* SecFuncCheck - Checks to make sure security functions have not be mucked with
+* Trashes a0,a1,a2,a3, a4
  SUBR	SecFuncCheck
 
 
@@ -334,6 +368,9 @@ SFC_iloop
 SFC_done
 	
 
+***************************************************************
+* InitPIC - Initializes the PIC Microcontroller
+*
   SUBR	InitPIC
 	calla	InitAddresses
 	clr	a0			;Reset the PIC
@@ -370,14 +407,17 @@ _pwait_loop1
 _pwait_done
 	rets
 
+********************************
+* Init hardware, IO, RAM
+* Trashes scratch, A2-A7
 
  SUBR	init_all
 	dint				;No interrupts until addresses set up
 	clr	a0			;0CHlr scratch mem
 	movi	SCRATCH,a1
 	movi	018000H-20,a2		;128K minus some stack
-dizulp	move	a0,*a1+,L
-	dsjs	a2,dizulp
+hfbzlp	move	a0,*a1+,L
+	dsjs	a2,hfbzlp
 
 	calla	set_up_line_tables
 	movi	-1,a0			;Auto Clock update OFF
@@ -430,6 +470,8 @@ dizulp	move	a0,*a1+,L
 	rets
 
 
+********************************
+* Initialize options via dip switch settings
 
 dip_init
 	PUSH	a0,a1
@@ -439,14 +481,14 @@ dip_init
 
 	andi	DPPLAYERS,a0		;AQUIRE THE NUMBER OF PLAYERS
 	sll	3,a0
-	addi	dizupnum_t,a0
+	addi	hfbzpnum_t,a0
 	movb	*a0,a0
 	move	a0,@NPLAYERS
 
 	move	a1,a0
 	andi	DPCOUNTER,a0
 	srl	DPCOUNTER_SRL-3,a0
-	addi	dizucntr_t,a0
+	addi	hfbzcntr_t,a0
 	movb	*a0,a0			;Match eugene's old shit
 	move	a0,@COUNTER_MODE
 
@@ -462,14 +504,18 @@ dip_init
 	PULL	a0,a1
 	rets
 
+;Translate dipswitch into number of players allowed
 
-dizupnum_t	.byte	4,2
+hfbzpnum_t	.byte	4,2
 
+;Translate dipswitch coin counter adjustment to what the old cmos values were
 
-dizucntr_t	.byte	2,3,1,2
+hfbzcntr_t	.byte	2,3,1,2
 	.even
 
 
+**************************************************************************
+* Initialize GSP I/O registers
 
 io_init
 	PUSH	b2,b6
@@ -479,14 +525,18 @@ io_init
 	rets
 
 
+*******************************
+* Initialize GSP I/O registers
+* B6=*Return address
+* Trashes B0-B2
 
  SUBR	INTIO
 
 	movi	HESYNC,b2
 	movi	gspioinit_t,b0
 	movi	(giiend-gspioinit_t)/16,b1
-jjgdlp	move	*b0+,*b2+
-	dsj	b1,jjgdlp
+wauulp	move	*b0+,*b2+
+	dsj	b1,wauulp
 
 	movi	VMUX_INITMODE,a0
 	move	a0,@VMUX_CONTROL,W
@@ -494,6 +544,9 @@ jjgdlp	move	*b0+,*b2+
 	exgpc	b6
 
 
+*******************************
+* Watch dog disable
+* Note: Call while interrupts are turned off
 
  SUBR	WDOGDIS
 
@@ -504,18 +557,18 @@ jjgdlp	move	*b0+,*b2+
 	pushst
 	setf	16,1,0
 
-	movi	jnhudis_t,a1
+	movi	asdpdis_t,a1
 	move	@SYSCOPY,a2
 	movk	1,a3
 	movi	SYSCTRL,a4
 	move	*a1+,a0
 
-jnhulp	or	a2,a0
+asdplp	or	a2,a0
 	move	a0,*a4
 	xor	a3,a0
 	move	a0,*a4
 	move	*a1+,a0
-	jrnn	jnhulp
+	jrnn	asdplp
 
 	move	a2,*a4
 
@@ -524,7 +577,7 @@ jnhulp	or	a2,a0
 	rets
 
 
-jnhudis_t	.word	0,0,0,0, 2,0,2,0, -1	;WATCH DOG DISABLE TABLE
+asdpdis_t	.word	0,0,0,0, 2,0,2,0, -1	;WATCH DOG DISABLE TABLE
 
 	.else
 
@@ -533,6 +586,8 @@ jnhudis_t	.word	0,0,0,0, 2,0,2,0, -1	;WATCH DOG DISABLE TABLE
 	.endif
 
 
+****************************************************************
+* Display IRQ
 
 DIRQ
 	mmtm	sp,b0,b1,b2,b3,b4,b5,b6,b7,b11
@@ -565,16 +620,16 @@ DIRQ
 	jrnz	di50			;In draw code?
 
 	move	b13,b0
-	jrn	jnhuchkmp			;DMA done?
+	jrn	asdpchkmp			;DMA done?
 
 
 	move	@GAMSTATE,a0
-	jrn	jnhuchkmp			;In diagnostics? (B13 invalid)
+	jrn	asdpchkmp			;In diagnostics? (B13 invalid)
 
 	movi	26000/4,a1		;>Make sure DMA is OK
-jnhudqwait	cmp	b13,b0
+asdpdqwait	cmp	b13,b0
 	jrne	di50			;DMAQ changed?
-	dsj	a1,jnhudqwait
+	dsj	a1,asdpdqwait
 
 	.if	DEBUG
 	trap	29
@@ -587,24 +642,25 @@ jnhudqwait	cmp	b13,b0
 	move	a1,b13
 
 di50	move	a7,*a8			;Restore
-	jruc	jnhu60hzcode		;Skip flip
+	jruc	asdp60hzcode		;Skip flip
 
 
-jnhuchkmp	move	@dirqtimer,a1
+asdpchkmp	move	@dirqtimer,a1
 	jrnz	di50			;Mproc not done?
 
 	move	@dpageflip,a2
 	jrz	di400			;Flipping off?
 
 
+;	movi	-4,a0			;Page0
 	movk	4,a0			; this save 1 cycle
 	neg	a0
 	movi	PAGE1YO*01000H,b2	;*Page1
 	move	@dpage,a1
-	jrnz	jnhuonp1
+	jrnz	asdponp1
 	movi	-01004H,a0		;Page1
 	clr	b2			;*Page0
-jnhuonp1	move	a0,@DPYSTRT		;If we don't page flip next time
+asdponp1	move	a0,@DPYSTRT		;If we don't page flip next time
 	move	a0,@DPYADR		;Override DPYSTRT
 	not	a1			;Flip
 	move	a1,@dpage
@@ -612,21 +668,33 @@ jnhuonp1	move	a0,@DPYSTRT		;If we don't page flip next time
 
 	dint
 	movi	26000/8,a1		;>Wait on last DMA
-jnhudwait	move	@DMACTRL,a0
-	jrnn	jnhudmaoff			;DMA stopped?
-	dsj	a1,jnhudwait
+asdpdwait	move	@DMACTRL,a0
+	jrnn	asdpdmaoff			;DMA stopped?
+	dsj	a1,asdpdwait
 	move	a1,@DMACTRL		;Timed out
 	.if	DEBUG
 	trap	29
 	.endif
-jnhudmaoff
+asdpdmaoff
 
 	move	a2,a2
-	jrn	jnhunoerase		;Erase off?
+	jrn	asdpnoerase		;Erase off?
 
 	movi	CONTROL,a9		;0CHlear whole page
 	move	*a9,a6
 
+;NEW - This is a bug - NEVER Turn OFF CAS before RAS Refreshes
+;There is a possibility that by putting an 8 in the CONTROL register
+;the Dynamic RAM device's (Bitmap RAM and/or Scratch RAM) could lose
+;data. Because the amount of time that CAS before RAS refreshes are turned
+;off is very short, the probabilty of actual data loss is minimal.  Data
+;loss could occur if the CAS before RAS refreshes are shut off just prior
+;to a refresh cycle occuring.  This is not very likely though because of the
+;asynchronous nature of the 34010's refresh cycles.  Setting the control
+;register to 0ch will guarentee that there will be no possibilty of losing
+;refresh cycles to the DRAM and VRAM devices.  This NOTE is here simply to
+;explain the reason for the code change below.
+;  --->	movk	8,a0 <---
 
 	MOVk	0ch,a0
 
@@ -642,7 +710,7 @@ jnhudmaoff
 	move	a6,*a9			;Restore
 	movk	PXSIZE,a0
 	move	a0,@PSIZE		;Normal
-jnhunoerase
+asdpnoerase
 
 di400	move	a7,*a8			;Restore
 	eint
@@ -651,6 +719,13 @@ di400	move	a7,*a8			;Restore
 	calla	pal_transfer		;Copy new PALs
 
 	move	@IRQSKYE,@ERASELOC	;Copy bkgnd color
+;	move	@COLRTEMP,a0,L
+;	jrz	asdpnotindiag
+;	movi	CYCOLORS,a1
+;	move	a0,*a1+,L		;Copy diagnostics color cycler
+;	move	@COLRTEMP+32,*a1,L
+;asdpnotindiag
+;	callr	switch_stack		;Scan misc switches
 
 	movk	1,a0
 
@@ -670,7 +745,7 @@ di400	move	a7,*a8			;Restore
 
 
 
-jnhu60hzcode				;*** This code must run at 60HZ
+asdp60hzcode				;*** This code must run at 60HZ
 
 	move	@_clk_rd,a2,L		;Increment the time get counter
 	jrn	_no_gt			;If negative then no auto clock update
@@ -697,11 +772,15 @@ _no_gt
 	movi	FSWITCH,a3
 
 	.if	WWFUNIT
+;	move	@SWITCH,a2
+;	move	@COINS,a0
 	move	@_switch_addr,a2,L
 	move	*a2,a2
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	sll	16,a0
+;	andi	0ffffh,a2		; 3,12
+;	or	a2,a0			; 1,4
 	movx	a2,a0			; 1,4
 	.else
 	move	*a2+,a0,L
@@ -710,11 +789,15 @@ _no_gt
 	move	a0,*a3+,L
 
 	.if	WWFUNIT
+;	move	@SWITCH2,a0
+;	move	@DIPSWITCH,a1
    	move	@_switch2_addr,a0,L
 	move	*a0,a0
 	move	@_dipswitch_addr,a1,L
 	move	*a1,a1
 	sll	16,a1
+;	andi	0ffffh,a2		; 3,12
+;	or	a2,a0			; 1,4
 	movx	a0,a1			; 1,4
 	.else
 	move	*a2,a1,L
@@ -754,6 +837,7 @@ _no_gt
 	addk	1,a1
 	move	a1,@dirqtimer
 
+;	callr	switch_stack		;Scan misc switches
 
 	MOVK	5,A1
 	MOVI	C_FLAGS,A2
@@ -791,12 +875,12 @@ NO_WORRY_COUNTER
 
 
 	move	@C_FRAC,a0		;0CHount down coin fraction timer
-	jrz	jnhunfrc			;No frac?
+	jrz	asdpnfrc			;No frac?
 	sll	32-8,a0
 	srl	32-8,a0
 	subk	1,a0
 	move	a0,@C_FRAC
-jnhunfrc
+asdpnfrc
 
 					;0CHoin counters
 	move	@COINCNTR,a0,L
@@ -818,6 +902,7 @@ c_cntr0
 	dsjs	a4,ccntr0l
 
 	clr	a2			;counter on mask
+;	movi	0100H,a3
 	movk	1,a3
 	movk	2,a4
 c_cntr1l
@@ -841,6 +926,7 @@ c_cntr1
 
 l_dog
 	.if	TUNIT2
+;	move	a0,@WATCHDOG		;Hit
 	move	@_watchdog_addr,a0,L
 	move	a0,*a0
 	.else
@@ -873,26 +959,38 @@ wdogbone_t
 	.word	0,2,0,2,2,-1	;Watchdog feed table
 
 
+*******************************
+* Scan switches
 
  SUBRP	switch_stack
 
+;	move	@COINS,a0,W
+;	move	@SWITCH,a1,W
 
+;02/23/95 - This maps the Test Dipswitch onto the TEST switch from the
+; coindoor when NOT in Diagnostics mode - This allows the diagnostics
+; process to be triggered by the TEST dipswitch
 	move	@GAMSTATE,a0,W
-	jrn	vatrno_testsw_map
+	jrn	jiwono_testsw_map
 	move	@_dipswitch_addr,a1,L
 	move	*a1,a1,W
 	sll	4,a1
 	ori	0ffefh,a1
-vatrno_testsw_map
+jiwono_testsw_map
 	move	@_coin_addr,a0,L
 	move	*a0,a0,W
 	and	a1,a0
 	move	@_switch_addr,a1,L
 	move	*a1,a1,W
 	sll	16,a0
+;	sll	16,a1		;mask off top 16
+;	srl	16,a1
+;	or	a1,a0
 	movx	a1,a0
 
 	ori	06600ffffH,a0	;Set ignore bits
+;	movb	@COINS+16,a1
+;	move	@SWITCH2,a1,W
 	move	@_switch2_addr,a1,L
 	move	*a1,a1,W
 	move	@swtemp1,a1,L	;previous state t=n-1
@@ -901,15 +999,15 @@ vatrno_testsw_map
 	move	a0,@swtemp1,L	;new previous
 	and	a1,a2
 	andn	a0,a2		;look for 110
-	jrz	vatrx		;No switches?
+	jrz	jiwox		;No switches?
 
 	move	@swstack_p,a3,L
 
-vatrlp	cmpi	swstackbot,a3
-	jreq	vatrx		;Switch stack overflow?
+jiwolp	cmpi	swstackbot,a3
+	jreq	jiwox		;Switch stack overflow?
 
 	move	a2,a2
-	jrz	vatrx
+	jrz	jiwox
 
 	lmo	a2,a0		;1's comp leftmost bit
 	rl	a0,a2		;get rid of bit
@@ -918,13 +1016,15 @@ vatrlp	cmpi	swstackbot,a3
 	sub	a0,a1
 	move	a1,-*a3		;Stack switch number (0-31)
 	rl	a1,a2		;Restore switch word without bit
-	jrnz	vatrlp
+	jrnz	jiwolp
 
 	move	a3,@swstack_p,L	;restore switch stack
 
-vatrx	rets
+jiwox	rets
 
 
+******************************************************************************
+* badtrapx - Come here when a trap is hit that is not defined and log it
 
 badtrap31
 badtrap30
@@ -964,13 +1064,16 @@ badtrap3
 	reti
 
 
+;WRITE TO CODE/IMAGE ROM
 wrom_int
 
 	.if	DEBUG
+;If debug, just	lockup so we can fix it.
 	LOCKUP
 	eint
 	.else
 
+;If shipping code, audit the error and clear the int
 	PUSH	a14
 	movi	SYSCINIT,a14
 	xori	02000h,a14
@@ -997,9 +1100,17 @@ badtrap
 badtrap29
 	.if	DEBUG
 	reti
+;	LOCKUP			;A write to ROM!
 	.endif
 	jruc	badtrap
 
+******************************************************************************
+* trap3_handler - Security Trap
+* a1 = Security Service Identifier
+*      0 = SetAddresses (I/O address remap)
+* a0 = Data for particular Security Service
+*      Security Service		Value
+*            0			Don't Care
  SUBR trap3_handler
 	sll	5,a1
 	addi	_SecurityFunctions,a1
@@ -1007,8 +1118,14 @@ badtrap29
 	call	a1
 	reti
 
+;Initial GSP I/O register values
 
 gspioinit_t
+;NEW - Values change because dot clock is twice as fast.
+;	.word	015h		;0C0000000H -- HESYNC
+;	.word	HEBLNKINIT	;0C0000010H -- HEBLNK
+;	.word	0fah		;0C0000020H -- HSBLNK
+;	.word	0fch		;0C0000030H -- HTOTAL
 	.word	02bh		;0C0000000H -- HESYNC
 	.word	HEBLNKINIT	;0C0000010H -- HEBLNK
 	.word	01f5h		;0C0000020H -- HSBLNK
@@ -1041,6 +1158,7 @@ gspioinit_t
 giiend
 
 
+;Initialize all 32 trap vectors
 
 	.sect	"VECTORS"
 
@@ -1077,6 +1195,7 @@ giiend
 	.long	dma_irq		;TRAP 1		INT1 --- EXTERNAL INTERRUPT 1
 	.long	init_prog	;TRAP 0		RESET
 
+******************************************************************************
 
 	.end
 

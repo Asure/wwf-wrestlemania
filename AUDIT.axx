@@ -1,3 +1,18 @@
+**************************************************************
+*
+* Software:	LARRY DEMAR and DR. J
+* Initiated:	?
+*
+* Modified:	Shawn Liptak, 9/6/91	-SLEEPK (Total carnage)
+* 		Shawn Liptak, 11/1/91	-Clean up
+* 		Shawn Liptak, 2/11/91	-Started basketball
+* 		Shawn Liptak, 11/6/92	-L_TIMER clean up
+*		Jason Skiles, 12/3/93	-Started WWF
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 12/3/93 9:52
+**************************************************************
 	.file	"audit.asm"
 	.title	"audits and ajustments handling"
 	.width	132
@@ -22,6 +37,11 @@
 	.include	"imgtbl.glo"
 
 
+*	 BAD_AUD - ANYTIME AN AUDIT NUMBER IS FETCHED, IF ITS
+*			CHECKSUM IS BAD, THEN BAD_AUD GETS SET TO 1
+*			THIS CAUSES "ERROR" IF ANY AUDIT IN A CALCULATION
+*			IS CORRUPTED, AND KEEPS A BAD CHECKSUM BAD WHEN
+*			AN AUDIT IS CHANGED.
 			
 	.BSS	BAD_AUD		,16	;(BAD_AUD...NOT BAD_DOG!)	
 	.bss	playtimer	,16	;timer units for game
@@ -31,6 +51,7 @@
 	.BSS	COINCNTR	,32	;MECH COIN COUNTER TIMERS AND COUNTS	
 COINCNT1	.EQU	COINCNTR
 COINCNT2	.EQU	COINCNTR+8
+*			TIMERS 1,2:B16-23,B24-B31; COUNTS 1,2 B0-B7;B8-B15
 	.BSS	OCT_FLG,16		;!0=Did 1st part
 	BSSX	THIS_GAME_TIME,16
 
@@ -38,6 +59,8 @@ COINCNT2	.EQU	COINCNTR+8
 					; too slow and we check this often.)
 
 			
+*	 IN THIS MODULE
+;	.def	ADD_DUMP
 	.def	ADJ_PAGE
 	.def	BAD_AUD
 	.def	C_FRAC,COINCNTR			
@@ -47,20 +70,25 @@ COINCNT2	.EQU	COINCNTR+8
 	.def	CAT_A0
 	.def	CCCC
 	.def	CK_MAX
+;	.def	CLRSWPRC
 	.def	CLR_AUD,FAC_SET
 	.def	CLR_AUDR
+;	.def	CLR_SUBS
 	.def	CMOS_VAL
 	.def	COIN_PAG
+;	.def	COINIRQ
 	.def	CR_STRTP
 	.def	CR_CONTP
 	.def	CRD_SCRN
 	.def	CRED_P	
 	.def	DEF_PAGE
+;	.def	DUMP_FS
 	.def	FORM_ADC
 	.def	F_ADC_S
 	.def	GET_CREDITS
 	.def	GET_CSTR
 	.def	HTOHXASC
+;	.def	KILL_CRD
 	.def	L_TIMER
 	.def	LD_CTAB
 	.def	LM_SETUP
@@ -79,6 +107,8 @@ COINCNT2	.EQU	COINCNTR+8
 	.def	CCOIN,RCOIN,SERVICE,XCOIN,LCOIN
 	.DEF	DBV
 
+;	.ref	osgemd_ascii,sgmd8_ascii,ogmd10_ascii,lgmd_ascii
+;	.ref	osgemd_ascii,sgmd8_ascii,ogmd10_ascii,wgsf24_ascii
 	.ref	osgemd_ascii,ogmd10_ascii,wgsf24_ascii
 	.ref	mess_cursy
 	.ref	mess_line_spacing
@@ -107,6 +137,7 @@ COINCNT2	.EQU	COINCNTR+8
 
 	.REF	PSTARTS
 
+*	IN HSTD.ASM
 
 	.ref		SET_PAGE
 	.ref		P_FORK
@@ -123,6 +154,7 @@ COINCNT2	.EQU	COINCNTR+8
 	.ref		WC_LONG
 	.ref		WC_LONGI
 
+*	IN MENU.ASM
 
 	.ref		GET_CSPT
 	.ref		STR_OBJ
@@ -132,17 +164,23 @@ COINCNT2	.EQU	COINCNTR+8
 	.ref		BUILD_ST
 	.ref		HID_P
 
+*	 IN ROBOATT.ASM
 
 	.ref		WIPEOUT
 
 
+*	 IN TEST.ASM
 
+;	.ref	CK_DOOR
+;	.ref	WT_ADV,WW_ADV
 	.ref	FORM_SWS
 	.ref	opmsg_clr
 
 
 
+*	 OTHERS
 
+;	.ref	plyr_strtb1,plyr_strtb2
 	.ref	dirqtimer
 	.ref	SOUNDSUP
 	.ref	RD15FONT,RD7FONT,STRCNRM
@@ -157,50 +195,71 @@ COINCNT2	.EQU	COINCNTR+8
 
 	.text
 
+**************************************************************************
+*
+*	COIN HANDLING
+*
+**************************************************************************
 
+**************************************************************************
+*
+*	L_TIMER
+*
+*	THIS IS CALLED EACH TICK THROUGH THE EXEC LOOP
+*	BEFORE TIMER IS CLEARED. IT DOES NOTHING
+*	IF THE GAME IS NOT IN PLAY, ELSE IT ADDS
+*	THE EXEC TIME TO THE 1 PLAYER OR 2 PLAYER
+*	TIMER BASED ON CURRENT NUMBER OF PEOPLE PLAYING.
+*
+**************************************************************************
 
 L_TIMER
 	move	@GAMSTATE,a0
 	cmpi	INAMODE,a0
-	jrne	omrjNO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
+	jrne	arjtNO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
 
+;	move	@SWITCH,a0
 	move	@_switch_addr,a0,L
 	move	*a0,a0
 	not	a0
 	andi	07f7fH,a0		;Get sticks 'n starts
 	move	@OCT_FLG,a1
-	jrgt	omrjp2			;Got part one?
+	jrgt	arjtp2			;Got part one?
 
 	cmpi	07171H,a0		;P1&P2 all buts down & both sticks up
-	jrne	omrjNO_CK_OCTO			;Wrong?
+	jrne	arjtNO_CK_OCTO			;Wrong?
 	movi	TSEC,a1			;One sec to get part two
-omrjp2
+arjtp2
 	subk	1,a1
 	move	a1,@OCT_FLG
-	jrgt	omrjNO_CK_OCTO			;Still counting?
+	jrgt	arjtNO_CK_OCTO			;Still counting?
 	cmpi	0202H,a0
-	jrne	omrjNO_CK_OCTO			;Wrong?
+	jrne	arjtNO_CK_OCTO			;Wrong?
 
 	movi	ACTIVE,a13
+;	movi	HID_P,a7		;Start the process!
+;	movi	DIAG_PID,a1
 	movi	AMODE_PID,a1
 	.ref	octopus_page
 	movi	octopus_page,a7
 	calla	GETPRC
-omrjNO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
+arjtNO_CK_OCTO 		;ATTRACT MODE..CHECK OCTOPUS!
 
 	move	@dirqtimer,a1		;get elapsed time
 	move	@playtimer,a0		;get play timer
 	sub	a1,a0			;add elapsed time
 	move	a0,@playtimer
-	jrgt	omrjnot5			;Under 5 seconds?
+	jrgt	arjtnot5			;Under 5 seconds?
 
 	CREATE	AUDIT_UD_PID,audit_ud
 
 	movi	TSEC*5,a0		;reset the countdown
-omrjnot5
+arjtnot5
 	move	a0,@playtimer
 	rets
 
+;each call to AUD1 takes 2 days to execute
+;so it's now split over 3 frames
 
  SUBRP	audit_ud
 
@@ -208,16 +267,17 @@ omrjnot5
 	move	a14,@audit_ud_flag
 
 	move	@GAMSTATE,a14
-	jrn	omrjskip			;in diagnostics
+	jrn	arjtskip			;in diagnostics
 
 	move	@PSTATUS2,a14
-	jrz	omrjskip			;no players
+	jrz	arjtskip			;no players
+;oops ! wrong order
 
 	movi	AUD_1PLAYTIME,a0	;update the 1/2P time
 	cmpi	3,a14
-	jrne	omrj1pmode
+	jrne	arjt1pmode
 	movi	AUD_2PLAYTIME,a0
-omrj1pmode
+arjt1pmode
 	callr	AUD1
 	MOVE	@PSTATUS2,A14
 	JRZ	NO_NEED_TO_DO_ANYTHING
@@ -240,7 +300,7 @@ NO_NEED_TO_DO_ANYTHING
 	callr	AUD1
 
 	SLEEPK	1
-omrjskip
+arjtskip
 	movi	AUD_UPTIME,a0		;update the total uptime
 	callr	AUD1
 
@@ -254,42 +314,44 @@ omrjskip
 
 
 	move	@PSTATUS2,a2
-	jrz	omrjaudup
+	jrz	arjtaudup
 
 	move	@GAMSTATE,a2
-	jrn	omrjaudup
+	jrn	arjtaudup
 
 	movi	AUD_1PLAYTIME,a0	;update the 1/2P time
 	cmpi	3,a2
-	jrne	omrj1pmode
+	jrne	arjt1pmode
 	movi	AUD_2PLAYTIME,a0
-omrj1pmode
+arjt1pmode
 	callr	AUD1
 
 	movi	AUD_PLTIME,a0
 	callr	AUD1
 
-omrjaudup
+arjtaudup
 	movi	AUD_UPTIME,a0		;update the total uptime
 	callr	AUD1
 
 	movi	TSEC*5,a0		;reset the countdown
 
-omrjnot5
+arjtnot5
 	rets
 
  .endif
 
 
+*******************************
+* Give him a service credit
 
 SERVICE
 	move	@GAMSTATE,a0
-	jrn	ihfbx 			;In diagnostics?
+	jrn	gebkx 			;In diagnostics?
 
 	move	@_coin_addr,a0,L	;Get COIN inputs
 	move	*a0,a0
 	btst	CDI_BIT,a0		;Coin Door Closed ?
-	jrz	ihfbx			;Yes - Then NO Service Credits Allowed
+	jrz	gebkx			;Yes - Then NO Service Credits Allowed
 
 	callr	CCCC			;MAKE SURE THINGS ARE IN TACT
 
@@ -310,9 +372,11 @@ SERVICE
 
 	jruc	CREDSP
 
-ihfbx	DIE
+gebkx	DIE
 
 
+********************************
+* THE FOLLOWING COIN ROUTINES ARE PROCESSES!
 
 LCOIN	MOVK	ADJLMULT,A8	;CMOS RAM ADJUST
 	MOVI	LC_FLAG,A10	;LEFT COIN FLAG
@@ -338,11 +402,21 @@ DBV	MOVK	ADJDBVMULT,A8
 	MOVI	DBV_FLAG,A10	;XTRA (FOURTH) COIN FLAG
 	MOVI	AUD_DBV,A11
 	JRUC	VALID_COIN
+;
+; COIN CONTROL EQUATES
+;
 LC_FLAG 	.EQU	C_FLAGS		;UHB LEFT COIN
 RC_FLAG 	.EQU	C_FLAGS+8	;UHB RGT   "
 CC_FLAG 	.EQU	C_FLAGS+16	;UHB CNTR  "
 XC_FLAG 	.EQU	C_FLAGS+24	;UHB XTRA  "
 DBV_FLAG 	.EQU	C_FLAGS+32	;UHB DOLLAR BILL VALIDATOR  
+;
+; VALID_COIN- CHECK THE DURATION OF COIN DROP AND SEES IF IT IS A VALID
+;	ENTRY
+;PARAMS REQUIRED:
+; A8 = MULTIPLIER FOR THAT SWITCH.			
+; A10 = RAM TIMER/FLAG
+; A11 = BASE AUDIT NUMBER				
 
 VALID_COIN
 	move	@GAMSTATE,a0
@@ -358,9 +432,14 @@ VALID_COIN
 	MOVI	LC_PID,A0		;ALL 4 SLOTS USE THIS ID NOW
 	MOVE	A0,*A13(PROCID)		;SET OUR ID (IN CASE TABLE IS WRONG)
 
+;	movb	*a10,a0 		;get flag byte
+;	jrz	gebkfok
+;	LOCKUP
+;gebkfok
 	MOVB	*A10,A0 		;GET FLAG BYTE
 	JRNZ	CRX			;SOMEONE ELSE THERE...WE'RE A BOUNCE!
 
+;OK....THIS IS A NEW POSITIVE EDGE....START THE DROP TIMING
 
 	movk	5,a0			;Wait a few ticks
 	movb	a0,*a10
@@ -373,6 +452,7 @@ COIN_LOOP
 	CALLR	SLAM_P			;SLAM?
 	JRNZ	CRX			;THEN WE'RE OUT OF HERE
 
+; 1/2 SECOND HAS PASSED WITHOUT A SLAM....INDICATE COIN DROP
 					
 	CLR	A0
 	MOVE	A0,@SOUNDSUP		;TURN SOUNDS ON. (A-MODE SOUND SUPRESSOR)
@@ -385,6 +465,7 @@ COIN_LOOP
 	MOVE	A11,A0
 	CALLR	AUD1			;CHALK THE DIRECT AUDIT
 
+*HIT THE MECHANICAL COIN COUNTERS
 	MOVE	@COUNTER_MODE,A0,W
 	CMPI	1,A0
 	JRNE	MECH20
@@ -400,7 +481,21 @@ COIN_LOOP
 	JRUC	RE_ENTER_FROM_CUST_TOTALIZER
 NORMAL_TOTALIZER
 
+*MULTIPLE OF LEAST VALUE COIN MODE
 	CALLA	GET_CSPT		;POINT TO COIN TABLE A6
+;	MOVK	5,A1			;CHECK ALL CHUTES
+;	ADDI	CS_LVAL,A6		;ADD IN OFFSET TO CHUTE VALUES
+;	MOVE	A6,A5			;SAVE A6
+;	CLR	A2
+;	NOT	A2
+;MECH1L
+;	MOVE	*A5+,A0			;FIND LOWEST NON-ZERO NUMBER IN LIST
+;	JRZ	MECH_SKIPZ
+;	CMP	A2,A0
+;	JRHI	MECH_SKIPZ
+;	MOVE	A0,A2			;A NEW LOW!
+;MECH_SKIPZ
+;	DSJS	A1,MECH1L
 
 	ADDI	CS_LVAL,A6		;ADD IN OFFSET TO CHUTE VALUES
 	DEC	A11			;GET YOUR CLICK COUNT
@@ -411,6 +506,14 @@ NORMAL_TOTALIZER
 	JRZ	MECH10			;SOMETHING ILLEGAL HAPPENED, JUST ONE
 
 RE_ENTER_FROM_CUST_TOTALIZER
+;	CALLA	GET_CSPT		;POINT TO COIN TABLE A6
+;	DEC	A11			;GET YOUR CLICK COUNT
+;	SLL	4,A11			;OFFSET FOR CHUTE, WORD CORRECT
+;	ADD	A11,A6
+;	MOVE	*A6,A1			;GET MONEY VALUE
+;	JRZ	MECH10			;WIERDNESS, JUST ONE CLICK
+;	DIVU	A2,A1			;DIVIDE BY LOWEST COMMON DENOMINATOR
+;	MOVE	A1,A2			;RESULT TO KEEP COMPAT
 	MOVI	COINCNT1,A1
 	JRUC	MECH3B
 MECH10
@@ -440,10 +543,22 @@ MECH4
 	CALLR	DEF_PAGE		;POINT PAGE AWAY!
 
 
+; SET-UP CREDITS MSG IN GAME SCREEN AND INDICATE 'INSERT COIN' IF NOT ENOUGH
+; HAVE BEEN DROPPED
+;
+;	 CALLA	 G_MSG			;PLOT MESSAGE FOR GAME PLAY SCREEN
 CREDSP
+;	MOVE	@GAMSTATE,A0
+;	CMPI	INAMODE,A0
+;	JRNZ	NOZERO
+;NOZERO
+;	move	@GAMSTATE,a0
+;	cmpi	INGAME,a0
+;	jrne	gebknot_ingame
 
 	calla	update_credit_msg
 
+;gebknot_ingame
 	MOVE	@PSTATUS2,A0
 	JRNZ	CRX
 	move	@GAMSTATE,a0
@@ -455,9 +570,34 @@ CRY	jruc	CRD_SCRN		;PUT UP THE CREDITS SCREEN
 CRX	JAUC	SUCIDE
 
 
+********************************
+* Make all switch process dumdie entries
+
+;CLRSWPRC
+;	MMTM	SP,A0,A1,A3
+;
+;	CLR	A1		;USE SWTAB ENTRY 0 FOR DUMDIE PROC
+;	MOVE	@SWSTACK,A3,L
+;CLRSTKL	CMPI	SWSTST,A3,L	;STACK AT START?
+;	JREQ	CLRSTKX		;YES, EXIT
+;	MOVE	*A3+,A0
+;	CMPI	31,A0
+;	JRLS	CLRSTKL		;THIS ENTRY IS A REAL SWITCH
+;	MOVE	A1,*A3(-10H)	;STORE THE DUMDIE CALL
+;	JRUC	CLRSTKL
+;
+;CLRSTKX	MMFM	SP,A0,A1,A3
+;	RETS
 
 
-
+********************************
+*	CR_STRTP - ARE THERE ENOUGH CREDITS TO START
+*	CR_CONTP - ARE THERE ENOUGH CREDITS TO CONTINUE
+*	P_START  - PLAYER STARTED...DEDUCT CREDITS
+*	P_CONT	 - PLAYER CONTINUED...DEDUCT CREDITS
+*	CRED_P	 - HOW MANY CREDITS
+*
+*	JRHS FOR OK TO START!
 
 CR_STRTP
 	PUSH	a0,a1
@@ -537,6 +677,14 @@ PS1	CALLR	COIN_PAG
 	CALLR	DEF_PAGE		;POINT AT DEFAULT PAGE.
 	RETS
 		
+**************************************************************************
+*
+*		NO_CREDS
+*
+*		THIS IS CALLED TO REMOVE CREDITS AND CREDIT FRACTIONS
+*		FROM THE MACHINE.
+*
+**************************************************************************
 NO_CREDS
 	MMTM	SP,A0,A1,A7
 	CALLR	FORM_COIN_CKSUM ;MAKE THE REAL CKSUM
@@ -546,11 +694,65 @@ NO_CREDS
 	CALLA	WC_BYTE
 	MMFM	SP,A0,A1,A7
 	RETS
+**************************************************************************
+*
+*	CHALK_COIN
+*
+*	A11 contains the base audit number. Chalk the audit for
+*	1 more coin hit there!
+*
+*	3 away from the base is the "door-closed" counter
+*	3 away from that is the "sub-total".
+*	3 away from that is the "door-closed" sub-total.
+*
+**************************************************************************
+;CHALK_COIN
+;	 MMTM	 SP,A0
+;	 MOVE	 A11,A0
+;*
+;*	 READY TO CHALK THE AUDIT......ZERO MEANS "EXTRA SLOT"
+;*
+;
+;CCC01
+;	CALLR	CHALK_FOR_A0	;CHALK RELEVANT COUNTERS
+;	MMFM	SP,A0
+;	RETS
 
+**************************************************************************
+*
+*	CHALK_FOR_A0
+*
+*	THIS IS CALLED TO CHALK THE AUDITS FOR A COIN SWITCH.
+*	A0 HAS THE BASE AUDIT FOR THE COIN SWITCH.
+*
+**************************************************************************
+;CHALK_FOR_A0
+;	 MMTM	 SP,A0
+;	 CALLR	 AUD1		 ;CHALK THE DIRECT AUDIT
 
+;	 ADDI	 2*CHUTES,A0	 ;AND THE "SUB-TOTAL"
+;	 CALLR	 AUD1
 
+;	 SUBI	 CHUTES,A0	 ;MOVE TO DOOR OPEN TOTAL
+;	 CALLR	 AUD1
+;
+;	 ADDI	 2*CHUTES,A0	 ;AND DOOR OPEN SUB-TOTAL
+;	 CALLR	 AUD1
 
+;CKCN1	
+;	MMFM	SP,A0
+;	RETS
 
+**************************************************************************
+*
+*	ADJUST_CREDITS
+*
+*	This is the routine that turns the coin switch hit
+*	into a tangable (if you could say that) reward.
+*
+*	The coin chute multiplier is in A8.
+*
+**************************************************************************
 ADJUST_CREDITS
 	
 	MMTM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11
@@ -561,6 +763,9 @@ ADJUST_CREDITS
 
 	CALLR	FETCH_REQ	;GET THE REQUIRED FOR CREDIT, BONUS AND MINIMUM
 
+*	A2 = REQUIRED FOR CREDIT
+*	A3 = FOR BONUS
+*	A4 = MINIMUM
 
 	CALLR	ADD_TO_CUNITS	;ADD TO OUR CUNITS
 	MOVE	A3,A3		;BONUS EFFECTIVE?
@@ -626,6 +831,9 @@ NO_CR
 
 	MOVE	A10,A10 	;WAS THE BONUS EARNED?
 	JRZ	ADCRX		;NOPE...EXIT!
+*
+*	 WHEN BONUS EARNED...WE START THE WHOLE SYSTEM OVER!
+*
 	CALLR	CLEAR_UNITS
 
 ADCRX	CALLR	FORM_COIN_CKSUM_AND_STORE
@@ -633,11 +841,21 @@ ADCRX	CALLR	FORM_COIN_CKSUM_AND_STORE
 ADCRXX	MMFM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11
 	RETS
 
+**************************************************************************
+*
+*	PUT_CREDITS
+*
+*	STORE CREDIT COUNT IN A0 TO CMOS....ENFORCING MAXIMUM CREDITS.
+*
+**************************************************************************
 PUT_CREDITS
 	MMTM	SP,A0,A6,A7
 	CALLR	GET_MAX 	;GET MAX CREDS IN A1....BE ON COIN PAGE
 	CMP	A1,A0		;SEE HOW WE STACK UP.
 	JRLO	USE_A0		;WE'RE LOWER...JUST STORE.
+*
+*	WE'RE AT (OR OVER) MAXIMUM CREDITS
+*
 	CALLR	CLEAR_UNITS	;CLEAR OUT THE UNIT FRACTIONS.
 	MOVE	A1,A0		;USE MAXIMUM
 
@@ -646,6 +864,15 @@ USE_A0	MOVI	CREDITS,A7
 	MMFM	SP,A0,A6,A7
 	RETS
 
+**************************************************************************
+*
+*	GET_MAX
+*
+*	GET MAXIMUM CREDITS IN A1.
+*
+*	THIS LEAVES YOU ON COIN PAGE.
+*
+**************************************************************************
 GET_MAX
 	PUSH	a0
 	MOVK	ADJMAXC,A0
@@ -654,6 +881,14 @@ GET_MAX
 	MMFM	SP,A0
 	RETS
 
+**************************************************************************
+*
+*	CK_MAX
+*
+*	THIS IS CALLED TO SEE IF WE ARE AT MAXIMUM CREDITS.
+*	.HS. MEANS WE ARE AT MAXIMUM CREDITS.
+*
+**************************************************************************
 CK_MAX
 	MMTM	SP,A0,A1
 	CALLR	GET_MAX 		;GET MAXIMUM IN A1
@@ -662,6 +897,22 @@ CK_MAX
 	MMFM	SP,A0,A1
 	RETS
 
+**************************************************************************
+*
+*	UNIT_CLR
+*
+*	THIS IS CALLED AT GAME OVER.  IT CLEARS
+*	OUT ANY COIN FRACTIONS THAT WERE NOT USED BY THE
+*	CURRENT PLAYER(S).  THIS ALLOWS ALL BUY-IN TO
+*	TAKE ADVANTAGE OF MULTIPLE COIN BONUSES.
+*
+*	ANYTIME A COIN IS INSERTED, C_FRAC IS SET TO ABOUT
+*	10 SECONDS. MY TIMING INTERFACE COUNTS C_FRAC DOWN
+*	TO ZERO.  IF C_FRAC IS NON ZERO WHEN THIS ROUTINE IS
+*	CALLED, THEN SOMEONE PUT A COIN IN NOT TOO LONG BEFORE
+*	GAME OVER.  DON'T SCREW HIM OUT OF HIS FRACTIONS.
+*
+**************************************************************************
 UNIT_CLR
 	PUSH	a0
 	MOVE	@C_FRAC,A0			;DO WE GIVE HIM A REPRIEVE?
@@ -683,6 +934,8 @@ CLEAR_UNITS
 	MMFM	SP,A0,A7
 	RETS
 
+*	 RETURN CREDITS IN A0.........AND Z BIT CLEAR IF
+*	 CREDITS EXIST OR IN FREE PLAY.
 
 CRED_P
 	CALLR	CCCC		;CHECK TO SEE IF DATA IS OK.
@@ -736,6 +989,7 @@ ADD_TO_BUNITS
 	RETS
 
 
+******************************************************************************
 
 CRD_SCRN
 
@@ -751,7 +1005,7 @@ CRD_SCRN
 	MOVE	A0,*A13(PROCID)
 	MOVI	0FFFFH,A1		;CHECK TO SEE IF CREDIT PAGE IS UP
 	CALLA	EXISTP
-	jrnz	ihfbexists			;credit page up, so reprint text only
+	jrnz	gebkexists			;credit page up, so reprint text only
 
 	calla	display_blank
 	calla	WIPEOUT			;CLEAN SYSTEM OUT
@@ -785,21 +1039,21 @@ CRD_SCRN
 	SLEEPK	2
 	calla	display_unblank
 
-	jruc	ihfbcont
+	jruc	gebkcont
 
 
-ihfbexists
+gebkexists
 	move	@HEBLNK,a0
 	cmpi	HEBLNKINIT,a0
-	jrne	ihfbinscl
+	jrne	gebkinscl
 	move	@dtype,a0
-	jrge	ihfbnotinscl
-ihfbinscl	move	a10,a10
+	jrge	gebknotinscl
+gebkinscl	move	a10,a10
 	jrnz	KILL_CRD2
-	jruc	ihfbdie
-ihfbnotinscl
+	jruc	gebkdie
+gebknotinscl
 	SLEEPK	3
-ihfbcont
+gebkcont
 	callr	crd_updatetxt		;Display players per credit messages
 
 	movi	HEBLNKINIT,a0			;Display on (just in case)
@@ -810,31 +1064,31 @@ ihfbcont
 
 
 	movi	4*TSEC,a11
-ihfblp	SLEEPK	1
+gebklp	SLEEPK	1
 	.ref	get_all_buttons_cur2
 	calla	get_all_buttons_cur2
-	jrz	ihfbnob
+	jrz	gebknob
 	movi	bounce_snd,a0
 	calla	triple_sound
 	move	a10,a10
 	jrnz	KILL_CRD2
 	jruc	KILL_CRD
-ihfbnob
-	dsj	a11,ihfblp
+gebknob
+	dsj	a11,gebklp
 
-ihfbck2
+gebkck2
 	move	a10,a10
 	jrnz	KILL_CRD2
 
 	movi	10*TSEC,a11
-ihfblp1	SLEEPK	1
+gebklp1	SLEEPK	1
 	calla	get_all_buttons_cur2
-	jrz	ihfbnob1
+	jrz	gebknob1
 	movi	bounce_snd,a0
 	calla	triple_sound
 	jruc	KILL_CRD
-ihfbnob1
-	dsj	a11,ihfblp1
+gebknob1
+	dsj	a11,gebklp1
 
 KILL_CRD
 	calla	display_blank
@@ -843,7 +1097,7 @@ KILL_CRD
 
 	CREATE	AMODE_PID,attract_mode
 
-ihfbdie	DIE
+gebkdie	DIE
 
 
 KILL_CRD2
@@ -855,6 +1109,7 @@ coinin_mod
 	.long	0
 
 
+********************************
 
  SUBRP	crd_updatetxt
 
@@ -866,22 +1121,27 @@ coinin_mod
 	clr	a1			;mask
 	calla	obj_delc		;delete existing text
 
+;	MOVI	CPYR_MES,a2		;COPYRIGHT MESSAGE
 
+;	.ref	DIPSWITCH
+;	move	@DIPSWITCH,a0
 	move	@_dipswitch_addr,a0,L
 	move	*a0,a0
 	btst	6,a0			;UJ2 switch 1
-	jrnz	ihfbnotfair		;OFF?
+	jrnz	gebknotfair		;OFF?
 
+;Yes, a dollar bill acceptor is hooked up!
 
 	MOVI	dollar_mes,a2		;Dollar bill message
 	calla	print_message
-ihfbnotfair
+gebknotfair
 
 	PUSH	A10
 	callr	credits_string
 	PULL	A10
 	rets
 
+*****************************************************************************
 
 	.asg	25,YSPACE
 	.asg	17,YSPACE0
@@ -905,49 +1165,71 @@ credits_string
 
 	MOVK	ADJFREPL,A0		;ARE WE IN FREE PLAY?
 	CALLA	GET_ADJ
-	JRZ	dhzhnot_freeply
+	JRZ	fmrnnot_freeply
 
 	movi	LN3x_setup,a2
 	calla	setup_message
 	movi	40,a0
 	move	a0,@mess_line_spacing
-	movi	dhzhstr_freeply,a4
+	movi	fmrnstr_freeply,a4
 	calla	print_string_C2
 	
 	rets
 
-dhzhnot_freeply
+fmrnnot_freeply
+
+;print	"BEST VALUE"
+;	movi	LN0a_setup,a2
+;	calla	setup_message
+;	movi	fmrnstr_value,a4
+;	calla	print_string_C2
 
 
+;print "PURCHASE FULL GAMES FOR ONLY X CREDITS!"
+;	movi	LN0_setup,a2
+;	calla	setup_message
+;	movi	fmrnstr_fullg1,a4
+;	calla	print_string_C2
 
-
+;	move	@mess_cursy,a0
+;	addi	YSPACE0,a0
+;	move	a0,@mess_cursy
+;	movi	ADJFULLG,a0
+;	calla	GET_ADJ 		;# credits for full game
+;	movi	20,a1			;max string value
+;	calla	dec_to_asc
+;	calla	copy_string
+;	movi	fmrnstr_fullg2,a4
+;	calla	concat_rom_string
+;	calla	print_string_C
 
 
 
 	calla	GET_CSPT		;a6 = * current pricing table
 	movk	2,a10			;min number strings to print
 	move	*a6(CS_LIST),a11,L	;a11 = * string list
-	jrz	dhzhno_strings
+	jrz	fmrnno_strings
 
 	move	a11,a2
-dhzhnext_string
+fmrnnext_string
 	move	*a2+,a0,L		;count up number of strings
-	jrz	dhzhlast
+	jrz	fmrnlast
 	inc	a10
-	jruc	dhzhnext_string
-dhzhlast
-dhzhno_strings
+	jruc	fmrnnext_string
+fmrnlast
+fmrnno_strings
 	callr	CRED_P			;get number credits
 	move	a0,a3
 	MOVK	ADJCSTRT,A0
 	callr	GET_ADJ 		;# credits to start
 	divu	a0,a3			;credits / credits to start
 	move	a3,a3
-	jrz	dhzhnot_enough1
+	jrz	fmrnnot_enough1
 	inc	a10			;+1 string	(READY FOR...)
-dhzhnot_enough1
+fmrnnot_enough1
 
 
+;print	"CREDITS : N"
 
 	movi	LN1_setup,a2
 	calla	setup_message
@@ -955,7 +1237,7 @@ dhzhnot_enough1
 	callr	CRED_P			;# credits in a0
 	PUSH	a0
 
-	movi	dhzhcrd_str,a4
+	movi	fmrncrd_str,a4
 	calla	copy_rom_string
 
 	PULL	a0
@@ -968,13 +1250,14 @@ dhzhnot_enough1
 	calla	GET_ADJ_FOR_COIN 	;a0 = max credits
 	PULL	a1
 	cmp	a0,a1
-	jrlo	dhzhnot_max_crds
-	movi	dhzhstr_max,a4		;max credits
+	jrlo	fmrnnot_max_crds
+	movi	fmrnstr_max,a4		;max credits
 	calla	concat_rom_string
-dhzhnot_max_crds
+fmrnnot_max_crds
 	calla	print_string_C		;"CREDITS : NN"
 
 
+;print 0-3 strings from current pricing table
 
 	movi	LN2_setup,a2
 	calla	setup_message
@@ -987,11 +1270,11 @@ dhzhnot_max_crds
 	move	a0,@mess_cursy		;centered Y
 
 	calla	TAMPEREDP
-	JRZ	dhzhdone
+	JRZ	fmrndone
 
-dhzhnext_string2
+fmrnnext_string2
 	move	*a11+,a4,L            	;* next string
-	jrz	dhzhdone
+	jrz	fmrndone
 
 	move	@mess_cursy,a0
 	addi	YSPACE0,a0
@@ -999,10 +1282,11 @@ dhzhnext_string2
 
 	calla	print_string_C2
 
-	jruc	dhzhnext_string2
-dhzhdone
+	jruc	fmrnnext_string2
+fmrndone
 
 
+;print	"N CREDITS TO START"
 
 	move	@mess_cursy,a0
 	addi	YSPACE0,a0
@@ -1015,16 +1299,17 @@ dhzhdone
 	calla	dec_to_asc
 	calla	copy_string
 
-	movi	dhzhcrd_2start,a4
+	movi	fmrncrd_2start,a4
 	PULL	a0
 	dec	a0
-	jrz	dhzh1credit
-	movi	dhzhcrd_2starts,a4
-dhzh1credit
+	jrz	fmrn1credit
+	movi	fmrncrd_2starts,a4
+fmrn1credit
 	calla	concat_rom_string
 	calla	print_string_C
 
 
+;print	"N CREDITS TO CONTINUE"
 
 	move	@mess_cursy,a0
 	addi	YSPACE0,a0
@@ -1036,16 +1321,17 @@ dhzh1credit
 	movi	99,a1			;max string value
 	calla	dec_to_asc
 	calla	copy_string
-	movi	dhzhcrd_2cont,a4
+	movi	fmrncrd_2cont,a4
 	PULL	a0
 	dec	a0
-	jrz	dhzh1_creditb
-	movi	dhzhcrd_2conts,a4
-dhzh1_creditb
+	jrz	fmrn1_creditb
+	movi	fmrncrd_2conts,a4
+fmrn1_creditb
 	calla	concat_rom_string
 	calla	print_string_C
 
 
+;print READY FOR N PLAYERS and PRESS START/INSERT COIN messages
 	movi	LN5_setup,a2
 	calla	setup_message
 
@@ -1057,27 +1343,38 @@ dhzh1_creditb
 
 	divu	a0,a3			;credits / credits to start
 	move	a3,a3
-	jrz	dhzhnot_ready
+	jrz	fmrnnot_ready
 	dec	a3
 
+;;;	move	@TWOPLAYERS,a0		;0 = NO, 1 = YES 2 players
+;;;	jrz	fmrn4_plyrs
 
 	cmpi	2,a3
-	jrlo	dhzhnot_max
+	jrlo	fmrnnot_max
 	movi	1,a3
 
-dhzh4_plyrs
-dhzhnot_max
+fmrn4_plyrs
+;;;	cmpi	4,a3
+;;;	jrlo	fmrnnot_max
+;;;	movi	3,a3
+fmrnnot_max
 	sll	5,a3		;x 32 bits
-	addi	dhzhready_for_lookup,a3
+	addi	fmrnready_for_lookup,a3
 	move	*a3,a4,L
+;	move	@mess_cursy,a0
+;	addi	YSPACE,a0
+;	move	a0,@mess_cursy
 	calla	print_string_C2
 
-	movi	dhzhstr_start,a4
-	jruc	dhzhready
+	movi	fmrnstr_start,a4
+	jruc	fmrnready
 
-dhzhnot_ready
-	movi	dhzhstr_insert,a4
-dhzhready
+fmrnnot_ready
+;Turmell
+;	movi	RUBYPAL,a0		;redpal
+;	move	a0,@message_palette
+	movi	fmrnstr_insert,a4
+fmrnready
 	move	@mess_cursy,a0
 	addi	YSPACE,a0
 	move	a0,@mess_cursy
@@ -1088,6 +1385,12 @@ dhzhready
 
 
 
+;LN0a_setup
+;	JAM_STR	osgemd_ascii,10,0,200,LN0-3-YSPACE,WHITEPAL,0
+;	.even
+;LN0_setup
+;	JAM_STR	ogmd10_ascii,5,0,200,LN0-YSPACE,SGMD8WHT,0
+;	.even
 LN1_setup
 	JAM_STR	osgemd_ascii,10,0,200,LN1+4,GOLD,0
 	.even
@@ -1107,38 +1410,38 @@ LN6_setup
 	JAM_STR	osgemd_ascii,10,0,200,LN6,GOLD,0
 	.even
 
-dhzhstr_value
+fmrnstr_value
 	.string	"BEST VALUE:",0
-dhzhstr_fullg1
+fmrnstr_fullg1
 	.string	"PURCHASE FULL GAMES FOR ONLY ",0
-dhzhstr_fullg2
+fmrnstr_fullg2
 	.string	" CREDITS PER PLAYER!",0
-dhzhstr_max
+fmrnstr_max
 	.string	" (MAXIMUM)",0
-dhzhcrd_str
+fmrncrd_str
 	.string	"CREDITS : ",0
-dhzhcrd_2start
+fmrncrd_2start
 	.string	" CREDIT TO START",0
-dhzhcrd_2starts
+fmrncrd_2starts
 	.string	" CREDITS TO START",0
-dhzhcrd_2cont
+fmrncrd_2cont
 	.string	" CREDIT TO CONTINUE",0
-dhzhcrd_2conts
+fmrncrd_2conts
 	.string	" CREDITS TO CONTINUE",0
-dhzhstr_freeply
+fmrnstr_freeply
 	.string	"FREE  PLAY",1
-dhzhstr_start
+fmrnstr_start
 	.string	"PRESS  START",0
-dhzhstr_insert
+fmrnstr_insert
 	.string	"INSERT COINS",0
 	.even
-dhzhready_for_lookup
-	.long	dhzhstr_1p,dhzhstr_2p
-	.long	dhzhstr_3p,dhzhstr_4p
-dhzhstr_1p	.string	"READY FOR 1 PLAYER",0
-dhzhstr_2p	.string	"READY FOR 1 OR 2 PLAYERS",0
-dhzhstr_3p	.string	"READY FOR 1 - 3 PLAYERS",0
-dhzhstr_4p	.string	"READY FOR 1 - 4 PLAYERS",0
+fmrnready_for_lookup
+	.long	fmrnstr_1p,fmrnstr_2p
+	.long	fmrnstr_3p,fmrnstr_4p
+fmrnstr_1p	.string	"READY FOR 1 PLAYER",0
+fmrnstr_2p	.string	"READY FOR 1 OR 2 PLAYERS",0
+fmrnstr_3p	.string	"READY FOR 1 - 3 PLAYERS",0
+fmrnstr_4p	.string	"READY FOR 1 - 4 PLAYERS",0
 	.even
 
 
@@ -1148,13 +1451,14 @@ CM_LINE1  EQU	  CUSTOM_MESSAGE
 CM_LINE2  EQU	  CUSTOM_MESSAGE+CMESS_LINE_SIZE
 CM_LINE3  EQU	  CUSTOM_MESSAGE+(2*CMESS_LINE_SIZE)
 
+;OUTPUT_CUSTOM
 
 
         CALLA   ADJ_PAGE 
         MOVI    VALID_CUSTOM,A7
         CALLA   RC_WORD
         CMPI    VALID_VALUE,A0		; CHECK TO SEE IF MESSAGE IS VALID
-	JRNZ	dhzhzippo
+	JRNZ	fmrnzippo
 
 
 	movi	CM_LINE3,A10		;CHECK LINE 3
@@ -1175,14 +1479,15 @@ GO_FOR_2
 GO_FOR_1
 	movi	CM_LINE1,A10		;CHECK LINE 1
 	callr	CK_LINE 		;1 VALID LINES?
-	jrz	dhzhzippo
+	jrz	fmrnzippo
 	movi	LN4_setup,a2
 	calla	setup_message
 	movi	STRNGRAM,a4
 	calla	print_string_C2
-dhzhzippo
+fmrnzippo
  .endif
 
+*****************************************************************************
 
 	.if 0
 HELP_TAB
@@ -1200,6 +1505,9 @@ JUST_LIST
 	MOVE	A8,A3			;STASH WHERE IT WILL SURVIVE
 	MOVE	*A3(LONG_SIZE),A2,L	;ONE WORD ONLY?
 	JRZ	JUST_ONE		;YEP....CENTER IT NICELY
+*
+*	there's a 2nd line...check for 3rd!
+*
 	MOVE	*A3(2*LONG_SIZE),A2,L  ;IS THERE A 3RD LINE?
 	JRZ	JUST_TWO		;NOPE
 
@@ -1229,6 +1537,9 @@ JUST_ONE
 	MOVI	SETUP_1_OF_1,A8
 	JRUC	FIRST_LINE		  ;DO TOP LEN AND RETURN
 
+*
+*	OUTPUT THE CUSTOM MESSAGE
+*
 CM_LINE1  EQU	  CUSTOM_MESSAGE
 CM_LINE2  EQU	  CUSTOM_MESSAGE+CMESS_LINE_SIZE
 CM_LINE3  EQU	  CUSTOM_MESSAGE+(2*CMESS_LINE_SIZE)
@@ -1268,17 +1579,49 @@ GO_FOR_1
 
 	.endif
 
+**************************************************************************
+*
+*	SET_THEN_A2
+*
+*	THIS IS A PRIMITIVE FOR THE COIN PAGE PLOTTERS.
+*
+*	IT SETS UP WITH THE STRING IN A8, THEN FINSHES
+*	ON THE STRING IN A2.
+*
+*	JSRP THIS ROUTINE!
+*
+**************************************************************************
 SET_THEN_A2
 	CALLA	LM_SETUP
 	MOVE	A2,A8
 	JAUC	LM_FINIS		;THAT DOES LINE 3
 
+**************************************************************************
+*
+*	SET_THEN_STRNGRAM
+*
+*	A10 POINTS AT A CMOS STRING FOR CUSTOM MESSAGE.
+*	A8 CONTAINS THE SETUP STRING FOR PRINTING THIS
+*	STRING OUT. CONVERT FROM CMOS TO STRNGRAM
+*	AND PRINT ON THE STRING.
+*
+**************************************************************************
 SET_THEN_STRNGRAM
 	CALLR	CK_LINE 		;TRANSFER TO STRNGRAM
 	CALLR	LM_SETUP
 	MOVI	STRNGRAM,A8
 	JAUC	LM_FINIS
 
+**************************************************************************
+*
+*	CK_LINE
+*
+*	A10 POINTS AT A CMOS STRING.  WE MOVE THIS STRING
+*	TO OUR PDATA AREA.  THEN WE CALL BUILD_ST TO
+*	PACK IT INTO "STRNGRAM" WE RETURN .EQ. (PASSED FROM
+*	BUILD_ST) BACK TO OUR CALLER IF IT IS ALL SPACES.
+*
+**************************************************************************
 CK_LINE
 	MMTM	SP,A0,A7,A1,A2,A10
 	MOVE	A10,A7			;INPUT POINTER TO CMOS
@@ -1315,6 +1658,9 @@ LOP_2
 	MOVI	TWO_TS,A8		;TWO TO START STUFF
 	JAUC	L_MESS			;PRINT IT AND RETURN
 
+*
+*	 IF THE GAME IS IN A 2 TO START....2 TO CONTINUE MODE
+*
 LINE_THREE_PLUS
 	MOVE	*A8(2*LONG_SIZE),A2,L	;FETCH LINE 3
 	JRZ	LOP_2			;NOTHING ON LINE 3
@@ -1347,6 +1693,15 @@ LINE_THREE_PLUS_2
 	JRZ	LOP_22			;NOTHING ON LINE 3
 	JAUC	LOP_12			;THEN ITS THE SAME AS ABOVE!
 
+**************************************************************************
+*
+*	SELECT_SETUP
+*
+*	THIS IS CALLED TO SELECT A SETUP STRING FOR THE
+*	CREDITS MESSAGE.  IF THERE IS PROMPTING TO ADD...WE
+*	DROP IT DOWN....ELSE WE PRINT IT CENTERED.
+*
+**************************************************************************
 SELECT_SETUP
 	PUSH	a0
 	MOVI	MESS_CNUM,A8		  ;ASSUME NO EXTRA PROMPT
@@ -1359,6 +1714,18 @@ NO_EXTRA
 	MMFM	SP,A0			
 	RETS
 
+**************************************************************************
+*
+*	FETCH_REQ
+*
+*	THIS ROUTINE FETCHES THE NUMBER OF UNITS REQUIRED
+*	FOR CREDIT, BONUS AND MINIMUM:
+*
+*		A2 = REQ FOR CREDITS
+*		A3 = REQ FOR BONUS
+*		A4 = MINIMUM
+*
+**************************************************************************
 FETCH_REQ
 	PUSH	a0
 	MOVK	ADJCUNIT,A0
@@ -1375,6 +1742,16 @@ FETCH_REQ
 	MMFM	SP,A0
 	RETS
 
+**************************************************************************
+*
+*	SLAM_P
+*
+*	IS THERE A SLAM PROCESS RUNNING?
+*
+*	.EQ.	NO
+*	.NE.	YES
+*
+**************************************************************************
 SLAM_P
 	MOVI	SLAM_PID,A0		;SLAM PROCESS ACTIVE?
 	MOVI	0FFFFH,A1
@@ -1388,6 +1765,17 @@ SLAM_SW
 	SLEEP	TSEC			;1 second of coin ignoring
 	jauc	SUCIDE
 
+**************************************************************************
+*
+*	FORM_COIN_CKSUM
+*
+*	THIS ROUTINE IS CALLED TO FORM THE COIN/CREDITS
+*	CHECKSUM.  THE CHECKSUM IS RETURNED IN A1.
+*
+*	Z	IT MATCHES WHATS THERE
+*	NZ	IT DOESN'T MATCH
+*
+**************************************************************************
 FORM_COIN_CKSUM
 	MMTM	SP,A0,A7,A2
 	CALLR	COIN_PAG		 ;MAKE SURE WE'RE ON THE RIGHT PAGE.
@@ -1419,6 +1807,22 @@ FORM_COIN_CKSUM_AND_STORE
 	MMFM	SP,A1,A7,A0
 	RETS
 
+**************************************************************************
+*
+*	CCCC
+*
+*	Check_Coin_and_Clear_on_bad_Checksum.
+*
+*	This is called before operations that deal with
+*	the coinage and credits values.
+*
+*	It checks to see if the area is in tact. If it
+*	is, then no action is performed.
+*
+*	Else, it clears our all values (credits, etc.)
+*	so that nothing is given away erroneously.
+*
+**************************************************************************
 CCCC
 	MMTM	SP,A0,A1,A7,A2
 	CALLR	FORM_COIN_CKSUM		;THIS SETS US TO THE COINAGE PAGE!
@@ -1438,6 +1842,13 @@ CCCCX
 	MMFM	SP,A0,A1,A7,A2
 	RETS
 
+**************************************************************************
+*
+*	COIN_PAG
+*
+*	THIS SETS THE CURRENT CMOS PAGE FOR COIN/CREDITS
+*
+**************************************************************************
 COIN_PAG
 	PUSH	a1
 	MOVI	COIN_SELECT,A1		;THIS IS COIN/CREDITS PAGE
@@ -1446,6 +1857,10 @@ COIN_PAG
 	RETS
 
 
+********************************
+* Add the # of players to the audit
+* A0=Audit #
+* Trashes A0-A1,B0-B1
 
  SUBR	aud_addnumplyrs
 
@@ -1457,6 +1872,19 @@ COIN_PAG
 aanp50	jruc	AUD
 
 
+**************************************************************************
+*
+*	AUDIT HANDLING
+*
+**************************************************************************
+*
+*	POINT_AT_AUDIT
+*
+*	THIS IS CALLED TO POINT AT THE AUDIT INDICATED BY
+*	A0. A0 IS THE AUDIT NUMBER 0-30. A7 IS RETURNED
+*	POINTING AT THE BEGINNING OF THE AUDIT.
+*
+**************************************************************************
 POINT_AT_AUDIT
 	PUSH	a1
 	CALLR	AUDIT_PAGE
@@ -1474,6 +1902,18 @@ AUDIT_PAGE
 	MMFM	SP,A1
 	RETS
 
+**************************************************************************
+*
+*	FORM_AUD_CKSUM
+*
+*	THIS IS CALLED TO FORM THE CHECKSUM FOR THE AUDIT
+*	SPECIFIED IN A0.
+*
+*	A1 RETURNS THE CHECKSUM.
+*
+*	Z BIT IS SET BASED ON WHETHER IT MATCHES THE CHECKSUM THERE.
+*
+**************************************************************************
 FORM_AUD_CKSUM
 	MMTM	SP,A0,A4,A7
 	CALLR	POINT_AT_AUDIT		  ;A7 = POINTER TO CURRENT ENTRY
@@ -1486,6 +1926,7 @@ ADD_A_BYTE
 	DSJ	A4,ADD_A_BYTE		  ;ONE MORE ADDED
 	NOT	A1			  ;CHECKSUM IS NOW IN LOW WORD
 	ZEXT	A1
+;	 ANDI	 WORD_MASK,A1			;MASK SO ITS COOL
 	MMFM	SP,A7			  ;GET POINTER BACK
 	ADDI	AUD_CKSUM,A7		  ;POINT AT CHECKBYTE
 	CALLA	RC_WORD 		  ;READ IN THE CKSUM
@@ -1493,6 +1934,14 @@ ADD_A_BYTE
 	MMFM	SP,A0,A4,A7		  ;Z BIT RETURNS COMPARE
 	RETS				  ;A1 RETURNS CKSUM
 
+**************************************************************************
+*
+*	STORE_AUD_CKSUM
+*
+*	THIS WILL STORE THE AUDIT CHECKSUM IN A1 FOR THE
+*	AUDIT NUMBER SPECIFIED BY A0.
+*
+**************************************************************************
 STORE_AUD_CKSUM
 	MMTM	SP,A7,A0		  ;POINTING REGISTER
 	CALLR	POINT_AT_AUDIT		  ;A7 POINTS AT AUDIT
@@ -1502,6 +1951,16 @@ STORE_AUD_CKSUM
 	MMFM	SP,A7,A0		  ;POINTING REGISTER
 	RETS
 
+**************************************************************************
+*
+*	FORM_AUD_CKSUM_AND_STORE
+*
+*	THE VALUE AT BAD_AUD IS USED TO DETERMINE WHETHER TO STORE
+*	THE CORRECT OR INCORRECT VALUE!
+*
+*	A0 = AUDIT NUMBER
+*
+**************************************************************************
 FORM_AUD_CKSUM_AND_STORE
 	MMTM	SP,A1,A2			;SAVE A1!
 	CALLR	FORM_AUD_CKSUM
@@ -1511,6 +1970,16 @@ FORM_AUD_CKSUM_AND_STORE
 	MMFM	SP,A1,A2
 	RETS
 
+**************************************************************************
+*
+*	GET_AUD
+*
+*	THIS IS CALLED TO FETCH THE AUDIT VALUE FOR THE AUDIT
+*	SPECIFIED IN A0 INTO A1.  IF THE CHECKBYTE FOR THE
+*	AUDIT IS INCORRECT, THEN RAM LOCATION BAD_AUD WILL BE
+*	SET TO 1.
+*
+**************************************************************************
 GET_AUD
 	MMTM	SP,A0,A7
 	CALLR	FORM_AUD_CKSUM		;SEE IF CKSUM IS OK
@@ -1527,6 +1996,15 @@ FETCH_AUDIT_1
 	MMFM	SP,A0,A7
 	RETS
 
+**************************************************************************
+*
+*	STORE_AUDIT
+*
+*	A0 = AUDIT NUMBER TO STORE VALUE FOR
+*	A1 = VALUE TO STORE.
+*	BAD_AUD = NON ZERO IF BAD CHECKSUM IS TO BE MAINTAINED.
+*
+**************************************************************************
 STORE_AUDIT
 	
 	MMTM	SP,A0,A7
@@ -1538,6 +2016,28 @@ STORE_AUDIT
 	JRUC	FORM_AUD_CKSUM_AND_STORE	;STORE GOOD OR BAD CKSUM BASED
 						;ON BAD_AUD
 
+**************************************************************************
+*
+*	CLR_SUBS
+*
+*	THIS IS CALLED TO CLEAR OUT THE COINAGE SUB-TOTALS.
+*
+**************************************************************************
+;CLR_SUBS
+;	MOVI	FRST_SUB,A0
+;	 MOVI	 LAST_SUB,A1
+;	 CALLR	 CLR_AUDR	 ;CLEAR EM OUT!
+;	 RETP
+;
+**************************************************************************
+*
+*		CLR_AUDR
+*
+*		THIS IS CALLED TO CLEAR OUT A RANGE OF AUDITS.
+*		A0 = 1ST AUDIT NUMBER
+*		A1 = LAST AUDIT NUMBER (INCLUSIVE)
+*
+**************************************************************************
 CLR_AUDR
 	MMTM	SP,A0,A1,A2
 	MOVE	A1,A2			  ;MOVE "LAST" TO A2
@@ -1551,7 +2051,37 @@ CAR1
 	MMFM	SP,A0,A1,A2
 	RETS
 
+**************************************************************************
+*
+*	CLR_DUMP_AUD
+*
+*	This is called by both joysticks down while looking
+*	at dump page.	It clears out the audits associated
+*	with that page.
+*
+**************************************************************************
+;CLR_DUMP_AUD
+;	 MOVI	 AUDDOGGY,A0
+;	CALLR	KILL_AUD
+;	 MOVI	 AUDLOCK,A0
+;	CALLR	KILL_AUD
+;	 MOVI	 AUDTRAP,A0
+;	CALLR	KILL_AUD
+;	 MOVI	 AUDSURV,A0
+;	CALLR	KILL_AUD
+;	 MOVI	 AUDBONE,A0
+;	CALLR	KILL_AUD
+;	RETS
 	
+**************************************************************************
+*
+*	KILL_AUD
+*
+*	This is called to clear out an audit.
+*
+*	A0 = audit number.
+*
+**************************************************************************
 KILL_AUD
 	PUSH	a1
 	CLR	A1			  ;WE'LL STORE ZEROS
@@ -1560,6 +2090,13 @@ KILL_AUD
 	MMFM	SP,A1
 	RETS
 
+**************************************************************************
+*
+*	AUD
+*
+*	A0 = AUDIT NUMBER.......A1 = COUNT TO ADD.
+*
+**************************************************************************
 AUD
 	MMTM	SP,A1,A2
 	CLR	A2			;SET "BAD_AUD" GOOD UNTIL OTHERWISE PROVEN!
@@ -1579,6 +2116,15 @@ AUD1
 	MMFM	SP,A1
 	RETS
 
+**************************************************************************
+*
+*	CLR_AUD
+*
+*	This is called to clear out all of the audits.
+*
+*	A relatively easy task given the primitives available.
+*
+**************************************************************************
 CLR_AUD
 	MMTM	SP,A0,A1
 	MOVK	1,A0			;START AT AUDIT 1
@@ -1587,6 +2133,21 @@ CLR_AUD
 	MMFM	SP,A0,A1
 	RETS
 
+**************************************************************************
+*
+*	ADJUSTMENTS
+*
+**************************************************************************
+**************************************************************************
+*
+*	CMOS_VAL
+*
+*	ARE ADJUSTMENTS AND NAME/REV OK?
+*
+*	.EQ. MEANS YES
+*	.NE. MEANS NO
+*
+**************************************************************************
 CMOS_VAL
 	callr	form_crc32
 	jrnz	CMOS_BAD
@@ -1597,6 +2158,24 @@ CMOS_VAL
 CMOS_BAD
 	RETS
 
+**************************************************************************
+*
+*	Adjustments are all stored as long words in CMOS.
+*	They are referenced by adjustment number.  Stuff
+*	adjustment number in A0. Call GET_ADJ and the
+*	value is returned in A0.
+*
+**************************************************************************
+**************************************************************************
+*
+*	FORM_ADC
+*
+*	THIS IS CALLED TO FORM THE CHECKSUM FOR THE ADJUSTMENTS
+*	AREA.  IT IS RETURNED IN A1.
+*
+*	IT IS COMPARED TO THE REAL CHECKSUM AND .EQ. RETURNED IF OK.
+*
+**************************************************************************
 FORM_ADC
 	MMTM	SP,A7,A0,A6
 	CALLR	ADJ_PAGE	  ;SET CMOS PAGE FOR ADJUSTMENTS
@@ -1632,6 +2211,14 @@ crc_lp
 	mmfm	sp,a7,a0,a6
 	rets
 
+**************************************************************************
+*
+*	F_ADC_S
+*
+*	CALCULATE THE ADJUSTMENT CHECKSUM AND STORE THE
+*	NEW VALUE.
+*
+**************************************************************************
 F_ADC_S
 	MMTM	SP,A0,A1,A7
 	CALLR	FORM_ADC		;FORM THE CKSUM
@@ -1645,6 +2232,16 @@ F_ADC_S
 	MMFM	SP,A0,A1,A7
 	RETS
 
+**************************************************************************
+*
+*	GET_ADJ
+*
+*	THIS IS CALLED TO FETCH THE VALUE OF AN ADJUSTMENT.
+*
+*	THE ADJUSTMENT NUMBER IS GIVEN IN A0.
+*	THE VALUE FOR THE ADJUSTMENT IS RETURNED IN A0.
+*
+**************************************************************************
 GET_ADJ
 	PUSH	a1,a7
 	CALLR	ADJPOINT		;POINT AT ADJUSTMENT
@@ -1654,6 +2251,19 @@ GET_ADJ
 	MOVE	A0,A0			;RETURN Z BIT BASED ON ADJUSTMENT!
 	RETS
 
+**************************************************************************
+*
+*	PUT_ADJ
+*
+*	ADJUST NUMBER IN A0.
+*	VALUE IN A1.
+*	STORE IT!........
+*
+*	****************** THIS IS A UTILITY......IT DOES NOT
+*			CORRECT ANY CHECKSUM CHANGE THAT
+*			MAY OCCUR!!
+*
+**************************************************************************
 PUT_ADJ
 	PUSH	a0,a7
 	CALLR	ADJPOINT		;POINT AT REQUESTED ADJ.
@@ -1674,6 +2284,15 @@ GET_ADJ_FOR_COIN
 	CALLR	GET_ADJ 		;GET THE ADJUSTMENT
 	JAUC	COIN_PAG		;THEN RE-INSTATE THE COIN PAGE!
 
+**************************************************************************
+*
+*	CHECK_NAME_AND_REV
+*
+*	THIS ROUTINE IS CALLED TO SEE IF THE GAME NAME/REV IS
+*	CORRECT.  IF IT IS NOT, THE GAME WILL AUTOMATICALLY
+*	FACTORY SET. Z MEANS OK!
+*
+**************************************************************************
 CHECK_NAME_AND_REV
 	MMTM	SP,A0,A1,A2,A3,A7
 	CALLR	ADJ_PAGE	  ;MAKE SURE WE'RE ON THE CORRECT PAGE
@@ -1701,6 +2320,13 @@ RETURN_NOW
 	MMFM	SP,A0,A1,A2,A3,A7
 	RETS
 
+**************************************************************************
+*
+*	ADJ_PAGE
+*
+*	THIS SETS THE CURRENT CMOS PAGE FOR ADJUSTMENTS.
+*
+**************************************************************************
 ADJ_PAGE
 	PUSH	a1
 	MOVI	ADJUST_SELECT,A1	;THIS IS AUDIT PAGE
@@ -1709,6 +2335,16 @@ ADJ_PAGE
 	RETS
 
 
+**************************************************************************
+*
+*	DEF_PAGE
+*
+*	THIS SWITCHES TO "DEFAULT" PAGE.  THE DEFAULT
+*	PAGE IS THE ONE THAT WE WOULD LIKE TO SMASH
+*	MOST IN THE CASE OF A CRASH.  AFTER MOST
+*	PROCESSING, WE SWITCH TO THIS PAGE!
+*
+**************************************************************************
 DEF_PAGE
  .if 0
 	PUSHST				;PRESERVE CODES THAT ARE BEING RETURNED
@@ -1720,6 +2356,9 @@ DEF_PAGE
  .endif
 	RETS
 
+**************************************************************************
+* FAC_SET - Restores the factory settings to the adjustments
+* A0=Mode (0=All adjustments, 1=Only coinage)
 
 FAC_SET
 	PUSH	a1,a2,a7
@@ -1730,6 +2369,8 @@ FAC_SET
 
 	calla	opmsg_clr
 
+;;;	CALLR	DUMP_FS 		;CLEAR OUT "DUMP" MEMORY
+;;;			(stomps on player records)
 
 
 	CALLR	NO_CREDS		;REMOVE ANY COINS
@@ -1745,6 +2386,25 @@ FACS1
 	CALLA	WC_LONGI		;WRITE THE WORD TO CMOS
 	DSJS	A2,FACS1		;WRITE 1 LONG WORD PER ADJUST
 fs20
+;	.if	YUNIT
+;	move	@SWITCH+030H,a1
+;	btst	6,a1
+;	jrnz	fs80
+;	not	a1
+;	sll	32-5,a1
+;	srl	32-5-3,a1		;*8
+;	cmpi	(dctend-dipcoinage_t),a1
+;	jrhs	fs50			;Illegal setting?
+;	addi	dipcoinage_t,a1
+;	movb	*a1,a1
+;	movk	ADJPRICE,a0		;Master priceing
+;	callr	PUT_ADJ
+;fs50
+;	movk	ADJFREPL,a0		;Free play
+;	clr	a1			;Off
+;	callr	PUT_ADJ
+;fs80
+;	.endif
 
 	callr	LD_CTAB			;EXPAND THE CSELCT VALUE
 	callr	F_ADC_S			;MAKE THE CHECKSUM CORRECT.
@@ -1753,6 +2413,7 @@ fs20
 	subk	1,a0
 	jreq	fsx			;Only coinage?
 
+*	NOW STORE THE GAME NAME AND REVISION INFO
 
 	MOVI	NAME_REV,A7		;POINT AT CMOS NAME STORAGE
 	MOVI	ROM_NAME,A1		;POINT AT OUR VERSION
@@ -1769,14 +2430,97 @@ NEXT_LETTER
 fsx	PULL	a1,a2,a7
 	rets
 
+;dipcoinage_t
+;	.byte	1,2,3, 10,11,12, 16,17,18, 29, 32, 33,34,35, 37
+;	.byte	39, 41,42, 43, 45,46, 49, 50, 52, 53, 54, 55
+;dctend
 	.even
 
+**************************************************************************
+*
+*	SWITCH_FOR_JUMPER
+*
+*	THIS IS CALLED OUT OF THE FACTORY SETTING SEQUENCE.
+*	IT CHECKS FOR JUMPER COMBINATIONS INDICATING
+*	GERMAN OR FRENCH GAMES.
+*
+*	THE JUMPERS ARE CONNECTED AS FOLLOWS:
+*
+*	GERMAN JUMPER = BIT 15 OF "COINS"
+*	FRENCH JUMPER = BIT 14 OF "COINS"
+*
+*	IF BOTH JUMPERS ARE IN, OR BOTH ARE MISSING, THEN
+*	ITS U.S. DEFAULT....LEAVE EVERYTHING ALONE.
+*
+*	IF GERMAN IS MISSING (READ AS A 1) THEN USE
+*	GERMAN 1 COINAGE.
+*
+*	IF FRENCH IS MISSING THEN USE FRENCH 1 COINAGE.
+*
+**************************************************************************
+;SWITCH_FOR_JUMPER
+;	 MMTM	 SP,A0
+;	 MOVE	 @COINS,A0		;GET THE 16 BITS
+;	 ANDI	 JUMPERS,A0		;JUST KEEP THE BITS
+;	 JRZ	 USA			;BOTH ARE IN...US!
+;
+;	 CMPI	 JUMPERS,A0		;ARE BOTH MISSING?
+;	 JRZ	 USA			;YEP....US.
+;
+;	 CMPI	 GERMAN_BIT,A0		;IS JUST THE GERMAN MISSING?
+;	 JRNZ	 NOGERM 		;NOPE
+;
+;	 CALLR	 DO_GERMAN		;DO THE GERMAN STUFF
+;	 JRUC	 SFJX			;AND EXIT
+;*
+;*	 MUST BE FRENCH
+;*
+;NOGERM
+;	CALLR	DO_FRENCH		;IF IT IS NOT POSSIBLE....DO IT.
+;USA
+;SFJX
+;	MMFM	SP,A0
+;	RETS
+;
+;DO_FRENCH
+;	 MMTM	 SP,A0,A1
+;	 MOVK	 ADJPRICE,A0		;AS MASTER PRICER.
+;	 MOVI	 F1SEL,A1		;USE FRENCH SELECTOR
+;	 CALLA	 PUT_ADJ
+;	MMFM	SP,A0,A1
+;	RETS
+;
+;DO_GERMAN
+;	 MMTM	 SP,A0,A1
+;	 MOVK	 ADJPRICE,A0		;AS MASTER PRICER.
+;	 MOVI	 G1SEL,A1		;USE GERMAN SELECTOR
+;	 CALLA	 PUT_ADJ
+;
+;	 MOVK	 ADJDIFF,A0
+;	 MOVI	 1,A1			;DIFFICULTY 1 FOR GERMANS
+;	 CALLA	 PUT_ADJ
+;
+;	 MOVK	 ADJBUYIN,A0
+;	 MOVI	 1,A1			;EASY BUY-IN FOR GERMANS
+;	 CALLA	 PUT_ADJ
+;
+;	MMFM	SP,A0,A1
+;	RETS
 
+**************************************************************************
+*
+*	LD_CTAB
+*
+*	THIS IS CALLED TO STORE THE CSELCT VALUES FOR
+*	THE COIN SELECTOR STORED AS ADJPRICE.
+*
+**************************************************************************
 LD_CTAB
 	mmtm	sp,a0,a6,a1
 
 	calla	GET_CSPT		;A6=CSELCT table
 
+;{
  .IF 0
 	movk	1,a1
 	move	*a6(16*4),a0
@@ -1798,6 +2542,7 @@ lct8	move	*a6+,a1			;Get word
 
  .ENDIF
 
+;}
 
 	movi	ADJLMULT,a0
 	move	*a6+,a1
@@ -1876,7 +2621,35 @@ lct8	move	*a6+,a1			;Get word
 	mmfm	sp,a0,a6,a1
 	rets
 
+**************************************************************************
+*
+* CC_COIN
+*	MMTM	SP,A7
+*	CALLR	COIN_PAG
+*	MOVI	HSR_C,A7
+*	CALLA	RC_LONG		;GET THE TABLE COUNTER
+*	JRZ	CCC_X		;ITS DOWN
+*	DEC	A0		;1 LESS
+*	CALLA	WC_LONG
+* CCC_X	MMFM	SP,A7
+*	RETS
+*
+**************************************************************************
 
+**************************************************************************
+*
+*	L_MESS
+*
+*	A8 POINTS AT MESS_MAC FOLLOWED BY MESSAGE TEXT.
+*	POP ALL REGGIES LEAVING A8 POINTING AT TEXT.
+*	AND JUMP TO THE TEXT PROCESSOR!
+*
+*	THE MMFM POPS THE ROUTINE TO CALL INTO A1.
+*
+*	YOU ***MUST*** USE JSRP TO GET HERE.  WE JUMP TO
+*	THE STRING ROUTINE WHICH WILL RETP BACK TO THE CALLER!
+*
+**************************************************************************
 L_MESS_LOOP
 	addk	BYTE_SIZE,a8		;PUSH BEYOND THIS BYTE
 L_MESS	addk	0fH,a8			;Round up word
@@ -1893,6 +2666,20 @@ L_RET	MOVB	*A8,A0		;CHECK NEXT BYTE 0=DONE...1=MORE.
 	JRNZ	L_MESS_LOOP
 	RETP
 	
+**************************************************************************
+*
+*	LM_SETUP
+*
+*	THIS IS CALLED TO SETUP THE WORLD FOR A STRING
+*	OPERATION, BUT NOT PHYSICALLY MAKE THE CALL.
+*
+*	THIS ALLOWS TWEAKING OF REGGIES BEFORE THE CALL.
+*
+*	LM_FINIS
+*
+*	THIS IS CALLED ONCE THE MODIFICATIONS ARE MADE!
+*
+**************************************************************************
 LM_SETUP
 	MMFM	A8,A1,A6,A9,A10,A11	  ;LOAD UP REGGIES FROM A8.
 	CLR	A0			  ;DON'T SLEEP
@@ -1901,6 +2688,18 @@ LM_SETUP
 LM_FINIS
 	JUMP	A1				;THIS RUNS ROUTINE AND
 
+**************************************************************************
+*
+*	GET_CSTR
+*
+*	HERE WE FORM THE CREDITS STRING AND
+*	RETURN IT IN THE STRING BUFFER.
+*	WE RETURN A8 POINTING AT THIS BUFFER.
+*
+*	WE ALSO PUT APPROPRIATE FRACTION ON THE
+*	END IF ADJUSTED ACCORDINGLY.
+*
+**************************************************************************
 GET_CSTR
 	MOVK	ADJFREPL,A0		;ARE WE IN FREE PLAY?
 	CALLA	GET_ADJ
@@ -1918,14 +2717,23 @@ NOT_FREE
 	CALLR	CRED_P
 	MOVE	A0,A10			;SAVE CREDITS
 	CALLR	CAT_A0
+*
+*	NOW WE NEED TO SEE IF WE SHOULD ADD A FRACTION.
+*
 	MOVK	ADJFRAC,A0
 	CALLA	GET_ADJ 		;CHECK THE ADJUSTMENT
 	JRZ	NSFRAC			;DON'T SHOW IT!
+*
+*	ADD ANY FRACTION WE HAVE.
+*
 	CALLR	COIN_PAG		;PUT US ON COIN PAGE
 	CALLR	GET_CUNITS		;A0 HAS CUNITS
 	CALLR	DEF_PAGE		;FLIP CMOS AWAY
 	MOVE	A0,A0			;ZERO?
 	JRZ	NSFRAC			;THEN NO FRACTION.
+*
+*	WE HAVE A FRACTION...WERE THE CREDITS ZERO?
+*
 	MOVE	A10,A10 		;WE SAVED EM IN A10
 	JRNZ	NZM			;NON ZERO MANTISSA
 
@@ -1971,11 +2779,22 @@ GET_CX
 	CLRC				;RETURN OK
 GET_CXX
 	RETS
+*
+*	 NO OBJECTS AVAILABLE TO FORM STRING
+*
 NO_SOBJ
 	MOVI	MESS_NULL,A8
 	SETC
 	JRUC	GET_CXX 		;RETURN BLANK STRING!
 
+**************************************************************************
+*
+*	CAT_A0
+*
+*	A0 HAS A BINARY NUMBER.  TURN INTO DECIMAL STRING
+*	AND CONCATONATE TO THE STRING WE'RE BUILDING IN	A7.								 *
+*
+**************************************************************************
 CAT_A0
 	PUSH	a8
 	MOVE	A0,A8			;CREDIT COUNT IN A8
@@ -1984,6 +2803,15 @@ CAT_A0
 	MMFM	SP,A8
 	RETS
 
+**************************************************************************
+*
+*	ADD_PROMPT
+*
+*	THIS IS CALLED ON THE CREDITS PAGE TO ADD A WORD OF
+*	WISDOM BELOW THE CREDITS MESSAGE. IT PICKS OUT THE
+*	CORRECT MESSAGES AND BLINKS THEM.
+*
+**************************************************************************
 ADD_PROMPT
 	MOVI	PROMPT_PROC,A7
 	CALLA	P_FORK			;START UP ANOTHER W/ SAME ID TO FLASH!
@@ -2002,6 +2830,9 @@ PROMPT_PROC
 	CALLA	GET_ADJ
 	CMP	A0,A1			;ARE THERE ENOUGH TO START?
 	JRLO	PP1			;NOPE...."INSERT COIN"
+*
+*	WE HAVE ENOUGH TO START FOR 1....HOW ABOUT 2?
+*
 	jrz	PP2
 	move	a0,a2
 	add	a2,a2
@@ -2016,6 +2847,9 @@ PROMPT_PROC
 	jrhi	rf3
 
 
+*
+*	01H = READY FOR 2 PLAYERS.  PRESS START.
+*
 rf4
 	MOVI	MESS_READY_4,A1
 	JRUC	RED_1
@@ -2059,6 +2893,11 @@ BL2
 	SLEEPK	10H
 	JRUC	BLINK_LOOP
 
+**************************************************************************
+*
+*	MESSAGE SECTION
+*
+**************************************************************************
 ROM_NAME
 	.byte	"WRESTLEMANIA REV 1.30 8/10/95",0
 	.even
@@ -2080,6 +2919,7 @@ FACTORY_TABLE
 	.word	2	;ADJCSTRT	12	;CREDITS REQUIRED TO START
 	.word	2	;ADJCCONT	13	;CREDITS REQUIRED TO CONTINUE
 
+;	.word	3	;ADJDIFF	14
 	.word	5	;ADJDIFF	14	;Difficulty Level (1-10)
 
 	.word	0	;		15
@@ -2102,6 +2942,7 @@ FACTORY_TABLE
 	.WORD	1	;TOTALIZER CHUTE 3
 	.WORD	1	;TOTALIZER CHUTE 4
 	.WORD	1	;TOTALIZER DBV
+**
 
 	.if 0
 	.word	0	;ADJ_UNUSED		0
@@ -2130,13 +2971,28 @@ FACTORY_TABLE
 	.word	1	;ADJCNTR  23   ADJUST MECH COIN COUNTER
 	.endif
 
+*	 A0 = SLEEP
+*	 A1 = ROUTINE
+*	 A6 = COLOR
+*	 A8 = STRING POINTER
+*	 A9 = SCREEN ADDRESS
+*	 A10 = SPACING
+*	 A11 = FONT
+*	 A14 = FLAGS
+*
 
 MESS_CREDITS
 	.byte	"CREDITS: ",0
 	.even
 
+*	 NORMAL CREDITS SETUP STRING
+*
 MESS_CNUM
 	MESS_MAC  RD15FONT,SPACING20,CP_CX,135,ROBO_LF,STRCNRM,0
+*
+*	 "LOW" CREDITS SETUP STRING WHEN EXTRA ADVICE ON PRICING
+*	 IS BEING ADDED.
+*
 MESS_LOWNUM
 	MESS_MAC  RD15FONT,SPACING20,CP_CX,135,ROBO_LF,STRCNRM,0
 
@@ -2180,6 +3036,11 @@ MESS_PRESS_START
 
  .if 0
 
+**************************************************************************
+*
+*	DUMPING SOFTWARE
+*
+**************************************************************************
 DUMP_FS
 	CALLR	DUMP_PAGE
 	CLR	A0
@@ -2187,6 +3048,14 @@ DUMP_FS
 	CALLA	WC_WORD 		;SET NUMBER OF DUMPS TO ZERO
 	RETS
 
+**************************************************************************
+*
+*	ADD_DUMP
+*
+*	THIS IS CALLED TO RECORD A DUMP. A0 THROUGH A9 ARE
+*	RECORDED IN MEMORY.
+*
+**************************************************************************
 DUMP_SIZE	 .equ	 10*C_LONG_SIZE		;9 LONG WORDS.
 DUMP_LAST	 .equ	 CMOS+08000H-DUMP_SIZE	;Let em use the whole page!
 MAX_DUMP	 .equ	 8			;DON'T HOLD MORE THAN 12/PAGE
@@ -2273,8 +3142,20 @@ DO_ANOTHER_DUMP
 
  .endif
 
+**************************************************************************
+*
+*	WAIT_MUT
+*
+*	THIS IS LIKE "WAIT_BUT"....WAIT FOR ANY BUTTON EXCEPT
+*	THAT IT WILL CLEAR OUT THE DUMPS IF BOTH STICKS ARE PUSHED
+*	DOWN.
+*
+**************************************************************************
 WAIT_MUT
 	CALLA	FORM_SWS	;1ST STATE DOESN'T COUNT
+*
+*	RETURN CURRENT STATE IN A0..PREVIOUS STATE IN A1.
+*
 WB1
 	SLEEPK	1
 
@@ -2284,8 +3165,12 @@ WB1
 	CMPI	2002H,A2
 	JRNZ	WB2			;NOT "CLEAR"
 
+;	.ref	GETSPEAK
+;	CALLA	GETSPEAK
 
 
+;	CALLR	DUMP_FS 		;CLEAR OUT THE DUMPS!
+;	CALLR	CLR_DUMP_AUD
 	JRUC	WB1
 
 getcoin
@@ -2294,9 +3179,9 @@ getcoin
 	move	@PCNT,a14
 	sll	32-9,a14
 	srl	32-9,a14
-	jrnz	wugxcsnd
+	jrnz	hqazcsnd
 	movi	39h,a0
-wugxcsnd	calla	triple_sound
+hqazcsnd	calla	triple_sound
 	rets
 
 
@@ -2305,6 +3190,7 @@ WB2	NOT	A1			;LAST = 0 AND NOW = 1 MEANS EDGE!
 	ANDI	BUTTONS,A0		;IS IT A BUTTON?
 	JRZ	WB1
 
+;DO NEW SOUND CALL HERE
 
 	movi	beep2_snd,a0
 	calla	triple_sound
@@ -2320,6 +3206,10 @@ NOTHIN_TO_DUMP
 	JSRP	L_MESS
 	RETP
 
+**************************************************************************
+* DO_DUMP
+* A9=DUMP NUMBER TO DO
+* A10=Y POSITION.
 
  .if 0
 DO_DUMP
@@ -2329,6 +3219,9 @@ DO_DUMP
 	MPYU	A9,A7			;THIS IS OFFSET INTO CMOS FOR THIS ENTRY!
 
 	ADDI	DUMP_DATA,A7		;NOW A1 POINTS WHERE WE'RE PUTTING THE DATA!
+*
+*	Y IS IN A10
+*
 	MOVE	A10,A3			;Y IN A3
 	MOVK	30,A2			;STORE X IN A2
 	MOVK	10,A5			;NUMBER OF WORDS TO DUMP
@@ -2342,6 +3235,8 @@ NEXT_ELE
 	MOVE	A5,*A13(PDATA+(3*LONG_SIZE)),L
 
 	JSRP	WRITE_HEX		;WRITE IT OUT.....A0 = DATA
+*						A10 = Y
+*						A11 = X
 	MOVE	*A13(PDATA),A7,L
 	MOVE	*A13(PDATA+LONG_SIZE),A2,L
 	MOVE	*A13(PDATA+(2*LONG_SIZE)),A3,L
@@ -2363,6 +3258,15 @@ NO_SKIP_NOW
 
  .endif
 
+**************************************************************************
+*
+*	WRITE_HEX
+*
+*	A4  = DATA
+*	A3  = Y
+*	A2  = X
+*
+**************************************************************************
 WRITE_HEX
 	MOVI	MESS_DUMP,A8
 	CALLR	LM_SETUP		;SETUP FOR A DUMP!
@@ -2376,6 +3280,12 @@ WRITE_HEX
 	JSRP	LM_FINIS
 	RETP
 
+**************************************************************************
+* HTOHXASC - CONVERTS A 32 BIT HEX # TO AN ASCII STRING TERMINATED BY 0
+* A3=NON ZERO IF COMMAS ARE TO BE ADDED!
+* A8=HEX #
+* Rets:
+* A8=PTR TO THE STRING
 
 HTOHXASC
 	MMTM	SP,A1,A2,A9
@@ -2398,6 +3308,9 @@ HHH1
 	INC	A2
 	CMPI	3,A2			;COMMA CHECK	
 	JRLO	HEXTASC2		;BR = NO COMMA
+*
+*	 SEE IF WE'RE DOING COMMAS
+*
 	MOVE	A3,A3			;COMMAS?
 	JRZ	HEXTASC2		;NOPE....IGNORE!
 
@@ -2418,6 +3331,10 @@ HEXTASC4
 	MMFM	SP,A1,A2,A9
 	RETS
 
+**************************************************************************
+* STRCAT - THIS IS CALLED TO CONCATONATE 2 STRINGS.
+* A7 <--- <A7><A8>
+* THAT IS.......CONCATONATE A8 ONTO THE END OF A7.
 
 STRCAT
 	MMTM	SP,A7,A0,A8
@@ -2427,6 +3344,9 @@ STRC2
 
 	ADDK	BYTE_SIZE,A7	;KICK TO NEXT BYTE
 	JRUC	STRC2
+*
+*	NOW A7 POINTS AT ITS ZERO.
+*
 STRC1
 	MOVB	*A8,A0		;GET A BYTE FROM 2ND STRING
 	MOVB	A0,*A7		;ADD THIS TO 1ST STRING
@@ -2475,9 +3395,26 @@ dollar_mes
 	.byte	"THIS GAME ACCEPTS DOLLAR BILLS",0,0
 	.even
 
+;CPYR_MES
+;	JAM_STR	sgmd8_ascii,5,0,200,240,SGMD8YEL,print_string_C2
+;	.byte	" COPYRIGHT 1993 MIDWAY MANUFACTURING COMPANY",0,0
+;	.even
+;
+;	MESS_MAC RD7FONT,SPACING07,CP_CX,240,ROBO_WHITE,STRCNRM,0
+;	.byte	" COPYRIGHT 1993 MIDWAY MANUFACTURING COMPANY",0,0
+;	.even
+
+;MEN_MES
+;	MESS_MAC RD7FONT,SPACING07,CP_CX+6,20,ROBO_WHITE,STRCNRM,0
+;	.byte	"LIVES AWARDED AT START",0,0
+;	.even
+;MEN_MES2
+;	MESS_MAC RD7FONT,SPACING07,CP_CX+6,30,ROBO_WHITE,STRCNRM,0
+;	.byte	"LIVES AWARDED FOR A CONTINUE",0,0
+;	.even
 
 
-
+******************************************************************************
 
 	.end
 

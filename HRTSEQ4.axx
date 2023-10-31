@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		5/17/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"hrtseq4.asm"
 	.title	"blocks, reactions to routine and special attacks"
@@ -29,6 +37,8 @@
 
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 
 	.ref	free_toss_check,setup_freetoss,hrt_hiptoss_anim
@@ -45,9 +55,51 @@
 	.ref	make_norm,make_white
 	.ref	set_wrestler_xflip
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
 
+******************************************************************************
+* EQUATES FOR THIS FILE
 
+;*****************************************************************************
+;*
+;* #2 BLOCK & HITBLOCK
+;
+; SUBR	hrt_2_block_anim
+;
+;	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+;	.word	ANI_FRICTION,3000h
+;	.word	ANI_ZERO_XZVELS
+;	.word	ANI_SETSPEED,100h
+;
+;	.word	ANI_SETFACING		;ANI_XFLIP <- not primary anim
+;	.word	ANI_SET_WRESTLER_XFLIP
+;;Rotate toward opponent if needed!
+;	.word	ANI_SETPLYRMODE,MODE_BLOCK
+;	WL	3,H2BK3A+FR1
+;#2block
+;	WL	3,H2BK3A+FR2
+;	.word	ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
+;	.word	ANI_ZERO_XZVELS
+;	.word	ANI_WAITRELEASE,PLAYER_BLOCK_BIT
+;	.word	ANI_SETMODE,MODE_NOAUTOFLIP	;uninterruptable
+;	.word	ANI_SETFACING
+;	WL	3,H2BK3A+FR1
+;	.word	ANI_SETPLYRMODE,MODE_NORMAL
+;	.word	ANI_END
+;
+; SUBR	hrt_2_hitblock_anim
+;
+;	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+;	.word	ANI_SETSPEED,100h
+;	.word	ANI_FRICTION,3000h
+;	WL	4,H2BK3A+FR4
+;	WL	4,H2BK3A+FR3
+;	WL	ANI_GOTO,#2block
 
+************
+*
+* iqwo4 BLOCK & HITBLOCK
 
  SUBR	hrt_4_block_anim
 
@@ -57,12 +109,15 @@
 	.word	ANI_SETFACING		;ANI_XFLIP <- not primary anim
 	.word	ANI_SET_WRESTLER_XFLIP
 
+;	WL	ANI_CODE,block_if_safe
 	.word	ANI_SETPLYRMODE,MODE_BLOCK
 	WL	3,H4BK3A+FR1
-arfv4block
+;	.word	ANI_SETPLYRMODE,MODE_BLOCK
+iqwo4block
 	WL	3,H4BK3A+FR2
 	.word	ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT|MODE_FRICTION
 	.word	ANI_WAITRELEASE,PLAYER_BLOCK_BIT
+;	.word	ANI_ZERO_XZVELS
 	.word	ANI_SETMODE,MODE_NOAUTOFLIP	;uninterruptable
 	.word	ANI_SETFACING
 	WL	3,H4BK3A+FR1
@@ -77,7 +132,7 @@ arfv4block
 	WL	ANI_CODE,DO_BLOCKED
 	WL	2,H4BK3A+FR4
 	WL	2,H4BK3A+FR3
-	WL	ANI_GOTO,arfv4block
+	WL	ANI_GOTO,iqwo4block
 
  SUBR	hrt_4_hitblock2_anim
 
@@ -92,9 +147,12 @@ arfv4block
 	WL	3,H4BK3A+FR3
 	WL	3,H4BK3A+FR4
 	WL	3,H4BK3A+FR3
-	WL	ANI_GOTO,arfv4block
+	WL	ANI_GOTO,iqwo4block
 
 
+*****************************************************************************
+*
+* tjoe2 HEAD HIT
 
  SUBR	hrt_2_head_hit_anim
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
@@ -143,6 +201,9 @@ arfv4block
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
+************
+*
+* wavh4 HEAD HIT
 
  SUBR	hrt_4_head_hit_anim
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
@@ -194,6 +255,7 @@ arfv4block
 	.word	ANI_END
 
  SUBR	hrt_4_head_hit4_anim
+;From earslap
 
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
 	.word	ANI_ZEROVELS
@@ -201,10 +263,14 @@ arfv4block
 	.word	ANI_SETFACING		;ANI_XFLIP <- not primary anim
 	.word	ANI_SET_WRESTLER_XFLIP
 
+;	WLW	ANI_SET_XVEL,-28000h,AM_HIT_REL
+;	WLW	ANI_SET_ZVEL,-20000h,AM_ABS
 	WL	ANI_SET_YVEL,40000h
 
 	WLWWWW	ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
 	WL	3,H4AH3A+FR2
+;	.word	ANI_WAITHITGND
+;	.word	ANI_ZEROVELS
 	WL	3,H4AH3A+FR3
 	WL	3,H4AH3A+FR4
 	WL	3,H4AH3A+FR5
@@ -215,6 +281,9 @@ arfv4block
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
+*****************************************************************************
+*
+* vyas2 HEAD HIT2 (HANDS ON FACE)
 
  SUBR	hrt_2_head_hit2_anim
 
@@ -243,6 +312,9 @@ arfv4block
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
+************
+*
+* qdug4 HEAD HIT2 (HANDS ON FACE)
 
  SUBR	hrt_4_head_hit2_anim
 
@@ -267,17 +339,20 @@ arfv4block
 	WL	3,H4AE3A+FR8
 
 	WL	ANI_CODE,am_I_dead
-	WL	ANI_IFNOTSTATUS2,dbjunodead
+;If I'm dead, goto fall back
+	WL	ANI_IFNOTSTATUS2,qdugnodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
+;	.word	ANI_END
 
-dbjunodead
+qdugnodead
 	.word	ANI_FACEDOWN
 	.word	ANI_SETPLYRMODE,MODE_NORMAL
        	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
  SUBR	hrt_4_head_hit2s_anim
+;Salt hits me in face
 
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
 	.word	ANI_ZEROVELS
@@ -307,6 +382,9 @@ dbjunodead
 	.word	ANI_END
 
 
+************
+*
+* vjuh4 HEAD HIT2 (ENDS IN DIZZY)
 
  SUBR	hrt_4_head_hit_dizzy_anim
 
@@ -331,9 +409,14 @@ dbjunodead
 	WL	3,H4AE3A+FR8
 
 	.word	ANI_FACEDOWN
+;	.word	ANI_SETPLYRMODE,MODE_DIZZY
 	WL	ANI_CHANGEANIM,hrt_dizzy_anim
 
+;	.word	ANI_END
 
+******************************************************************************
+*
+* vjuh2 RUNNING BOUNCE OFF OF OPPONENT
 
  SUBR	hrt_2_bncoff_anim
 
@@ -348,6 +431,7 @@ dbjunodead
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
+* vjuh4 RUNNING BOUNCE OFF OF OPPONENT
 
  SUBR	hrt_4_bncoff_anim
 
@@ -364,7 +448,9 @@ dbjunodead
 	.word	ANI_END
 
 
+* vjuh4 RUNNING BOUNCE OFF OF OPPONENT
 
+;Bounce off but stay dizzy!
 
  SUBR	hrt_4_bncoff_dizzy_anim
 
@@ -378,10 +464,15 @@ dbjunodead
 	WL	14,H4AH3A+FR3
 	WL	2,H4AH3A+FR5
 
+;	.word	ANI_SETPLYRMODE,MODE_DIZZY
 	WL	ANI_CHANGEANIM,hrt_dizzy_anim
+;	.word	ANI_END
 
 
 
+*****************************************************************************
+*
+* wfaq2 BODY HIT
 
  SUBR	hrt_2_body_hit_anim
 
@@ -412,7 +503,34 @@ dbjunodead
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
+; SUBR	hrt_2_body_hit_dizzy_anim
+;
+;	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
+;	.word	ANI_ZEROVELS
+;	.word	ANI_SETSPEED,100h
+;	WL	ANI_SET_YVEL,48000h
+;	WLW	ANI_SET_XVEL,-30000h,AM_HIT_REL
+;
+;	WL	3,H2AM3A+FR1
+;	WL	3,H2AM3A+FR2
+;	WL	3,H2AM3A+FR3
+;
+;	.word	ANI_WAITHITGND
+;	.word	ANI_ZEROVELS
+;
+;	WL	3,H2AM3A+FR4
+;	WL	3,H2AM3A+FR5
+;	WL	3,H2AM3A+FR6
+;	WL	3,H2AM3A+FR7
+;	WL	3,H2AM3A+FR8
+;
+;	.word	ANI_SETPLYRMODE,MODE_DIZZY
+;	WL	ANI_CHANGEANIM,hrt_dizzy_anim
+;	.word	ANI_END
 
+************
+*
+* tuhq4 BODY HIT
 
  SUBR	hrt_4_body_hit_anim
 
@@ -440,7 +558,7 @@ dbjunodead
 	WL	3,H4AM3A+FR8
 
 	.word	ANI_CHECKWORD,USR_VAR1
-	WL	ANI_IFNOTSTATUS2,sltqreg
+	WL	ANI_IFNOTSTATUS2,tuhqreg
 
 	WL	5,H4TI4B+FR1
 	WL	5,H4TI4B+FR2
@@ -457,8 +575,18 @@ dbjunodead
 	WL	5,H4TI4B+FR3
 	WL	5,H4TI4B+FR2
 
+;	WL	5,H4TI4B+FR1
+;	WL	5,H4TI4B+FR2
+;	WL	5,H4TI4B+FR3
+;	WL	5,H4TI4B+FR4
+;	WL	5,H4TI4B+FR5
+;	WL	5,H4TI4B+FR6
+;	WL	5,H4TI4B+FR7
+;	WL	5,H4TI4B+FR8
+;	WL	5,H4TI4B+FR7
+;	WL	5,H4TI4B+FR6
 
-sltqreg
+tuhqreg
 	.word	ANI_FACEDOWN
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
@@ -489,7 +617,9 @@ sltqreg
 	WL	3,H4AM3A+FR8
 
 	.word	ANI_FACEDOWN
+;	.word	ANI_SETPLYRMODE,MODE_DIZZY
 	WL	ANI_CHANGEANIM,hrt_dizzy_anim
+;	.word	ANI_END
 
 
 
@@ -583,12 +713,16 @@ sltqreg
 
 
 	.word	ANI_FACEDOWN
+;	.word	ANI_SETPLYRMODE,MODE_DIZZY
 	WL	ANI_CHANGEANIM,hrt_dizzy_anim
+;	.word	ANI_END
 
 
+;Being held by head, hit by a quick knee!
  SUBR	hrt_quick_knee_hit_anim
 
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
+;	.word	ANI_ZEROVELS
 	.word	ANI_SETSPEED,100h
 
 	.word	ANI_OFFSET,0,0,2			;x,y,z
@@ -602,19 +736,25 @@ sltqreg
 	.word	ANI_WAITHITGND
 	.ref	am_I_dead
 	WL	ANI_CODE,am_I_dead
-	WL	ANI_IFNOTSTATUS2,sltqnodead
+;If I'm dead, goto fall back
+	WL	ANI_IFNOTSTATUS2,tuhqnodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
+;	.word	ANI_END
 
-sltqnodead
+tuhqnodead
 	.ref	hrt_3_head_held_anim
 
 	WL	ANI_CHANGEANIM,hrt_3_head_held_anim
 
+;	.word	ANI_END
 
 
 
 
+*****************************************************************************
+*
+* HITS ON GROUND
 
  SUBR	hrt_up_anim
 
@@ -680,10 +820,14 @@ sltqnodead
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
 
+*****************************************************************************
+*
+* FALL BACK
 
  SUBR	hrt_fall_back_anim
 
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP|MODE_NOCOLLIS
+;	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP
 	.word	ANI_SETSPEED,100h
 	.word	ANI_ZERO_XZVELS
 	WL	ANI_MIN_YVEL,60000h
@@ -741,7 +885,11 @@ sltqnodead
 
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
+;	.word	ANI_END
 
+*****************************************************************************
+*
+* FALL BACK
 
  SUBR	hrt_fall_back2_anim
 
@@ -792,7 +940,11 @@ sltqnodead
 
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
+;	.word	ANI_END
 
+*****************************************************************************
+*
+* FALL FROM TURNBUCKLE
 
  SUBR	hrt_fall_back_tbukl_anim
 
@@ -817,11 +969,16 @@ sltqnodead
 	.word	ANI_SHAKEALL,1
 	.word	ANI_SHAKER,30
 
+;	.word	ANI_FRICTION,3000h
 
 	WL	2,H3UC3X+FR6
+;	.word	ANI_BOUNCE,5
 	WL	2,H3UC3X+FR6
 	WL	3,H3UC3X+FR7
 	WL	3,H3UC3X+FR8
+;	.word	ANI_WAITHITGND
+;	WL	ANI_CODE,SMALL_BOUNCE
+;	.word	ANI_ZEROVELS
 	WL	3,H3UC3X+FR9
 	WL	3,H3UC3X+FR10
 	.word	ANI_XFLIP
@@ -832,6 +989,9 @@ sltqnodead
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
 
+*****************************************************************************
+*
+* FACE UP GETUP
 
  SUBR	hrt_faceup_getup_anim
 
@@ -840,9 +1000,9 @@ sltqnodead
 	.word	ANI_SETSPEED,100h
 
 	WL	ANI_CODE,choose_2or4
-	WL	ANI_IFSTATUS2,snnhgetup_in_4
+	WL	ANI_IFSTATUS2,xswrgetup_in_4
 
-snnhgetup_in_2
+xswrgetup_in_2
 	WL	2,H3GU2A+FR1
 	WL	2,H3GU2A+FR2
 	WL	2,H3GU2A+FR3
@@ -857,16 +1017,16 @@ snnhgetup_in_2
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS2,snnhno_freetoss
+	WL	ANI_IFNOTSTATUS2,xswrno_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,11,83,70,20
 	WL	1,H3GU2A+FR10
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS2,snnhno_freetoss
+	WL	ANI_IFNOTSTATUS2,xswrno_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
 	WL	ANI_CHANGEANIM,hrt_4_push_anim
-snnhno_freetoss
+xswrno_freetoss
 
 	.word	ANI_SETFACING
 	.word	ANI_SETMODE,MODE_NORMAL
@@ -874,12 +1034,12 @@ snnhno_freetoss
 	.word	ANI_END
 
 
-snnhgetup_in_4
+xswrgetup_in_4
 	WL	2,H3GU4A+FR1
 	WL	2,H3GU4A+FR2
 	WL	2,H3GU4A+FR3
 	WL	2,H3GU4A+FR4
-	WL	ANI_GOTO,snnhcommon_4
+	WL	ANI_GOTO,xswrcommon_4
 
  SUBR	hrt_4_faceup_getup2_anim
 
@@ -887,7 +1047,7 @@ snnhgetup_in_4
 	.word	ANI_SETPLYRMODE,MODE_NORMAL
 	.word	ANI_SETSPEED,100h
 
-snnhcommon_4
+xswrcommon_4
 	WL	2,H3GU4A+FR5
 	WL	2,H3GU4A+FR6
 	WL	2,H3GU4A+FR7
@@ -898,17 +1058,17 @@ snnhcommon_4
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS2,snnhno_freetoss1
+	WL	ANI_IFNOTSTATUS2,xswrno_freetoss1
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,11,83,70,20
 	.ref	hrt_4_push_anim
 	WL	1,H3GU4A+FR10
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS2,snnhno_freetoss1
+	WL	ANI_IFNOTSTATUS2,xswrno_freetoss1
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
 	WL	ANI_CHANGEANIM,hrt_4_push_anim
-snnhno_freetoss1
+xswrno_freetoss1
 
 	.word	ANI_SETFACING
 	.word	ANI_SETMODE,MODE_NORMAL
@@ -916,6 +1076,8 @@ snnhno_freetoss1
 	.word	ANI_END
 
 
+*****
+* set status bit for a getup in 4, clear for a 2.
 choose_2or4
 
 	move	*a13(ANIMODE),a0
@@ -923,12 +1085,15 @@ choose_2or4
 
 	move	*a13(NEW_FACING_DIR),a14
 	btst	MOVE_UP_BIT,a14
-	jrnz	snnhchoose_2
+	jrnz	xswrchoose_2
 	ori	MODE_STATUS2,a0
-snnhchoose_2
+xswrchoose_2
 	move	a0,*a13(ANIMODE)
 	rets
 
+*****************************************************************************
+*
+* FACE DOWN GETUP
 
  SUBR	hrt_facedown_getup_anim
 
@@ -940,23 +1105,23 @@ snnhchoose_2
 	WL	2,H3GU4A+FR5
 	WL	2,H3GU4A+FR6
 	WL	2,H3GU4A+FR7
-	WL	ANI_CODE,avwdset_wrestler_xflip
+	WL	ANI_CODE,fbodset_wrestler_xflip
 	WL	2,H3GU4A+FR8
 	WL	2,H3GU4A+FR9
 	WL	2,H3GU4A+FR10
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS2,avwdno_freetoss
+	WL	ANI_IFNOTSTATUS2,fbodno_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,11,83,70,20
 	WL	1,H3GU4A+FR10
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS2,avwdno_freetoss
+	WL	ANI_IFNOTSTATUS2,fbodno_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
 	WL	ANI_CHANGEANIM,hrt_4_push_anim
-avwdno_freetoss
+fbodno_freetoss
 
 	.word	ANI_FACEDOWN
 
@@ -964,11 +1129,16 @@ avwdno_freetoss
 	.word	ANI_SETPLYRMODE,MODE_NORMAL
 	.word	ANI_END
 
-avwdset_wrestler_xflip
+*****
+* call set_wrestler_xflip
+fbodset_wrestler_xflip
 	move	a13,a0
 	calla	set_wrestler_xflip
 	rets
 
+*****************************************************************************
+*
+* DIZZY
 
  SUBR	hrt_dizzy_anim
 
@@ -978,7 +1148,7 @@ avwdset_wrestler_xflip
 	.word	ANI_START_DIZZY,0	;0=Standing dizzy
 	.word	ANI_FACE,MOVE_RIGHT|MOVE_DOWN
 
-zcrtloop
+pignloop
 
 	WL	5,H4TI4B+FR1
 	WL	5,H4TI4B+FR2
@@ -995,15 +1165,18 @@ zcrtloop
 	WL	5,H4TI4B+FR3
 	WL	5,H4TI4B+FR2
 
-	WL	ANI_GOTO,zcrtloop
+	WL	ANI_GOTO,pignloop
 
+*****************************************************************************
+*
+* ROLL OVER AND BREAK YER STINKIN' NECK
 
  SUBR	hrt_break_neck_anim
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
 	.word	ANI_SETFACING		;ANI_XFLIP <- not primary anim
 	.word	ANI_ZEROVELS
 	.word	ANI_SETPLYRMODE,MODE_ONGROUND
-	WWWL	ANI_IFROPE,RC_FRONT,100,tgujfall_back
+	WWWL	ANI_IFROPE,RC_FRONT,100,tgejfall_back
 
 	;break the neck
 	WL	3,H3UC3Z+FR2
@@ -1019,7 +1192,7 @@ zcrtloop
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_facedown_getup_anim
 
-tgujfall_back
+tgejfall_back
 	WL	6,H3UC3Z+FR2
 	.word	ANI_OFFSET,-8,0,0
 	WL	3,H3UC3Z+FR1
@@ -1066,6 +1239,7 @@ tgujfall_back
 	WL	10,H3RL1A+FR8
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
+;	.word	ANI_END
 
  SUBR	hrt_break_neck3_anim
 
@@ -1106,8 +1280,12 @@ tgujfall_back
 	WL	4,H3RL1A+FR8	;10
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
+;	.word	ANI_END
 
 
+******************************************************************************
+*
+* tgej4 LOSE BALANCE
 
  SUBR	hrt_4_losebal_anim
 
@@ -1156,15 +1334,22 @@ tgujfall_back
 	WL	3,H4LB3A+FR9
 	WL	3,H4LB3A+FR10
 
+;	.word	ANI_SETPLYRMODE,MODE_DIZZY
 	WL	ANI_CHANGEANIM,hrt_dizzy_anim
+;	.word	ANI_END
 
+*****************************************************************************
+*
+* GET BUZZED FROM DOINK
 
  SUBR	hrt_get_buzz_anim
 
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
 
+;	.word	ANI_ZEROVELS
 	.word	ANI_SETSPEED,100h
 
+;	.word	ANI_XFLIP
 
 	.word	ANI_GRAVITY_OFF
 
@@ -1219,15 +1404,15 @@ tgujfall_back
 	WL	ANI_SET_YVEL,60000h
 	WLW	ANI_SET_XVEL,-30000h,AM_FACE_REL
 	WLW	ANI_SET_ZVEL,20000h,AM_ABS
-	WL	ANI_CODE,jyhvmake_black
+	WL	ANI_CODE,ngkzmake_black
 	WL	3,H4BZ4A+FR1
 	WL	ANI_CODE,make_norm
 	WL	3,H4BZ4A+FR1
-	WL	ANI_CODE,jyhvmake_black
+	WL	ANI_CODE,ngkzmake_black
 	WL	3,H4BZ4A+FR1
 	WL	ANI_CODE,make_norm
 	WL	3,H4BZ4A+FR1
-	WL	ANI_CODE,jyhvmake_black
+	WL	ANI_CODE,ngkzmake_black
 	WL	3,H4BZ4A+FR1
 	WL	ANI_CODE,make_norm
 	WL	3,H4BZ4A+FR1
@@ -1239,17 +1424,21 @@ tgujfall_back
 	WL	1,H4ST4A+FR5
 
 	WL	ANI_CODE,am_I_dead
-	WL	ANI_IFNOTSTATUS2,jyhvnodead
+;If I'm dead, goto fall back
+	WL	ANI_IFNOTSTATUS2,ngkznodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
+;	.word	ANI_END
 
-jyhvnodead
+ngkznodead
 
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-jyhvmake_black
+ngkzmake_black
 
+;This is a black color within the wrestler's pal.  It is different for each
+;wrestler.
 	movi	2f2fh,a14
 
 	move	a14,*a13(OBJ_CONST)
@@ -1260,6 +1449,9 @@ jyhvmake_black
 	rets
 
 
+*****************************************************************************
+*
+* THROWN FROM RING (shn_bslm, shn_frnk)
 
  SUBR	hrt_flyout_anim
 
@@ -1280,6 +1472,8 @@ jyhvmake_black
 	WWL	ANI_SETLONG,OBJ_GRAVITY,GRAVITY
 
 	.word	ANI_DAMAGE,D_HIPTOSS
+;	.word	ANI_SETWORD,DELAY_METER,0
+;	.word	ANI_GETUP,500
 
 
 	.word	ANI_SHAKEALL,2
@@ -1288,6 +1482,10 @@ jyhvmake_black
 	WL	ANI_CHANGEANIM,hrt_hitonground_anim
 
 
+*****************************************************************************
+*
+* FLY OUT rhjq2 - (hrt_hpsl)
+*
 
  SUBR	hrt_flyout2_anim
 
@@ -1326,12 +1524,16 @@ jyhvmake_black
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_hitonground_facedown_anim
 
+*****************************************************************************
+*
+* END OF BACK BROKEN SEQ.
 
  SUBR	hrt_backbroken_anim
 
 	.word	ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
 	.word	ANI_ZEROVELS
 	.word	ANI_SETSPEED,100h
+;	.word	ANI_DETACH
 
 	.word	ANI_GRAVITY_OFF
 	WL	5,H3BR3Z+FR1
@@ -1344,6 +1546,7 @@ jyhvmake_black
 	WL	25,H3BR3Z+FR1
 
 
+;	WL	3,H3BR3Z+FR2
 	WL	3,H3BR3Z+FR3
 	.word	ANI_XFLIP
 	WL	2,H3RL1A+FR8
@@ -1363,6 +1566,7 @@ jyhvmake_black
 
 	.word	ANI_SETPLYRMODE,MODE_ONGROUND
 
+;No stars around head here...
 
 	.word	ANI_DETACH
 
@@ -1370,7 +1574,11 @@ jyhvmake_black
 
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
+;	.word	ANI_END
 
+*****************************************************************************
+*
+* GENERIC BOUNCE
 
  SUBR	hrt_slamnobounce_anim
 
@@ -1461,6 +1669,7 @@ jyhvmake_black
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,hrt_faceup_getup_anim
 
+*****************************************************************************
 
  SUBR	hrt_breakneck2_anim
 
@@ -1500,6 +1709,7 @@ jyhvmake_black
 	WL	ANI_CHANGEANIM,hrt_facedown_getup_anim
 
 
+*****************************************************************************
 
  SUBR	hrt_arm_broken_anim
 
@@ -1523,15 +1733,18 @@ jyhvmake_black
 	WL	1,H4ST4A+FR5
 
 	WL	ANI_CODE,am_I_dead
-	WL	ANI_IFNOTSTATUS2,tlpanodead
+;If I'm dead, goto fall back
+	WL	ANI_IFNOTSTATUS2,kfoynodead
 
 	WL	ANI_CHANGEANIM,hrt_fall_back_anim
+;	.word	ANI_END
 
-tlpanodead
+kfoynodead
 	.word	ANI_FACEDOWN
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
+*****************************************************************************
 
  SUBR	hrt_2_shooter_anim
 
@@ -1559,7 +1772,8 @@ tlpanodead
 	WL	1,H4GH3Z+FR1
 	.word	ANI_ATTACK_OFF
 
-	WL	ANI_IFNOTSTATUS2,cjremissed
+	WL	ANI_IFNOTSTATUS2,hxftmissed
+;got him
 	.word	ANI_DRAW_NAME,5
 	.word	ANI_ATTACHZ,0,0,-4		;x & y don't matter.
 	.ref	DO_NONO
@@ -1567,73 +1781,82 @@ tlpanodead
 	.word	ANI_SETOPPMODE,MODE_GHOST
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP|MODE_KEEPATTACHED
 
+;	.word	ANI_SHAKER,30
 	WL	ANI_CODE,impact_sound
 
-	WWLLW	ANI_SUPERSLAVE2,1,H4GH3Z+FR1,cjrepuppet_tbl,0
-	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR2,cjrepuppet_tbl,1
-	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR3,cjrepuppet_tbl,2
-	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR4,cjrepuppet_tbl,3
-	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR5,cjrepuppet_tbl,4
-	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR6,cjrepuppet_tbl,5
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR2,cjrepuppet_tbl,6
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR3,cjrepuppet_tbl,7
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR4,cjrepuppet_tbl,8
+	WWLLW	ANI_SUPERSLAVE2,1,H4GH3Z+FR1,hxftpuppet_tbl,0
+	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR2,hxftpuppet_tbl,1
+	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR3,hxftpuppet_tbl,2
+	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR4,hxftpuppet_tbl,3
+	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR5,hxftpuppet_tbl,4
+	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR6,hxftpuppet_tbl,5
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR2,hxftpuppet_tbl,6
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR3,hxftpuppet_tbl,7
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR4,hxftpuppet_tbl,8
 
 	.ref	MAKE_HIM_SCREAM
 	WL	ANI_CODE,MAKE_HIM_SCREAM
 	.word	ANI_DAMAGEOPP,D_SHOOTER,RD_SHOOTER
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR5,cjrepuppet_tbl,9
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR6,cjrepuppet_tbl,10
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR5,hxftpuppet_tbl,9
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR6,hxftpuppet_tbl,10
 
-	WWLLW	ANI_SUPERSLAVE2,15,H4ZZ4B+FR2,cjrepuppet_tbl,11
+	WWLLW	ANI_SUPERSLAVE2,15,H4ZZ4B+FR2,hxftpuppet_tbl,11
 	.word	ANI_SOUND,9bh			;neck break (5-7 ticks late)
 	.word	ANI_DAMAGEOPP,D_SHOOTER,RD_SHOOTER
-	WWLLW	ANI_SUPERSLAVE2,15,H4ZZ4B+FR3,cjrepuppet_tbl,12
-	WWLLW	ANI_SUPERSLAVE2,4,H4ZZ4B+FR2,cjrepuppet_tbl,11
+	WWLLW	ANI_SUPERSLAVE2,15,H4ZZ4B+FR3,hxftpuppet_tbl,12
+	WWLLW	ANI_SUPERSLAVE2,4,H4ZZ4B+FR2,hxftpuppet_tbl,11
 	.word	ANI_DEBRISAT,100,1,0,8,0	;%chance,tbl index,x,y,z off
 	.word	ANI_SOUND,98h			;neck break (5-7 ticks late)
 
-	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,cjrefail
+	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,hxftfail
 	.word	ANI_CLR_BUTCOUNT
 
 	.word	ANI_DAMAGEOPP,D_SHOOTER,RD_SHOOTER
 	WL	ANI_CODE,MAKE_HIM_SCREAM
-	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR3,cjrepuppet_tbl,12
-	WWLLW	ANI_SUPERSLAVE2,15,H4ZZ4B+FR2,cjrepuppet_tbl,11
+	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR3,hxftpuppet_tbl,12
+	WWLLW	ANI_SUPERSLAVE2,15,H4ZZ4B+FR2,hxftpuppet_tbl,11
 	.word	ANI_SOUND,98h			;neck break (5-7 ticks late)
 
-	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,cjrefail
+	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,hxftfail
 	.word	ANI_CLR_BUTCOUNT
 
 	.word	ANI_DAMAGEOPP,D_SHOOTER,RD_SHOOTER
-	WWLLW	ANI_SUPERSLAVE2,14,H4ZZ4B+FR3,cjrepuppet_tbl,12
-	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR2,cjrepuppet_tbl,11
+	WWLLW	ANI_SUPERSLAVE2,14,H4ZZ4B+FR3,hxftpuppet_tbl,12
+	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR2,hxftpuppet_tbl,11
 	.word	ANI_SOUND,9bh			;neck break (5-7 ticks late)
 
-	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,cjrefail
+	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,hxftfail
 	.word	ANI_CLR_BUTCOUNT
 
 	.word	ANI_DAMAGEOPP,D_SHOOTER,RD_SHOOTER
-	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR3,cjrepuppet_tbl,12
-	WWLLW	ANI_SUPERSLAVE2,9,H4ZZ4B+FR2,cjrepuppet_tbl,11
+	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR3,hxftpuppet_tbl,12
+	WWLLW	ANI_SUPERSLAVE2,9,H4ZZ4B+FR2,hxftpuppet_tbl,11
 	.word	ANI_SOUND,98h			;neck break (5-7 ticks late)
 
-	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,cjrefail
+	WWWL	ANI_IF_BUTCOUNT_LT,PUNCHB_COUNT,2,hxftfail
 	.word	ANI_CLR_BUTCOUNT
 
 	.word	ANI_DAMAGEOPP,D_SHOOTER,RD_SHOOTER
-	WWLLW	ANI_SUPERSLAVE2,9,H4ZZ4B+FR3,cjrepuppet_tbl,12
+	WWLLW	ANI_SUPERSLAVE2,9,H4ZZ4B+FR3,hxftpuppet_tbl,12
 	WL	ANI_CODE,MAKE_HIM_SCREAM
-	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR2,cjrepuppet_tbl,11
+	WWLLW	ANI_SUPERSLAVE2,20,H4ZZ4B+FR2,hxftpuppet_tbl,11
 	.word	ANI_SOUND,98h			;neck break (5-7 ticks late)
-cjrefail
+hxftfail
 	.word	ANI_DAMAGEOPP,D_SHOOTER,RD_SHOOTER
 	.word	ANI_DEBRISAT,100,1,0,8,0	;%chance,tbl index,x,y,z off
 
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR6,cjrepuppet_tbl,10
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR5,cjrepuppet_tbl,9
-	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR4,cjrepuppet_tbl,8
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR6,hxftpuppet_tbl,10
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR5,hxftpuppet_tbl,9
+	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR4,hxftpuppet_tbl,8
 
+;	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR3,hxftpuppet_tbl,7
+;	WWLLW	ANI_SUPERSLAVE2,3,H4ZZ4C+FR2,hxftpuppet_tbl,6
+;	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR6,hxftpuppet_tbl,5
+;	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR5,hxftpuppet_tbl,4
+;	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR4,hxftpuppet_tbl,3
+;	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR3,hxftpuppet_tbl,2
+;	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR2,hxftpuppet_tbl,1
+;	WWLLW	ANI_SUPERSLAVE2,3,H4GH3Z+FR1,hxftpuppet_tbl,0
 
 
 	.ref	hitonground_tbl
@@ -1653,7 +1876,7 @@ cjrefail
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-cjremissed
+hxftmissed
 	WL	4,H4GH3Z+FR1
 
 	.word	ANI_FACEDOWN
@@ -1664,22 +1887,22 @@ cjremissed
  SUBRP	impact_sound
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrz	cjrex
+	jrz	hxftx
 	WRSNDX	a0,RUGSLAM_YELL,RUGSLAM_IMPACT
-cjrex	rets
+hxftx	rets
 
 
-cjrepuppet_tbl
- .long cjreBret
- .long cjreRazor
- .long cjreTaker
- .long cjreYokozuna
- .long cjreShawn
- .long cjreBamBam
- .long cjreDoink
- .long cjreAdam
- .long cjreLex
-cjreBret
+hxftpuppet_tbl
+ .long hxftBret
+ .long hxftRazor
+ .long hxftTaker
+ .long hxftYokozuna
+ .long hxftShawn
+ .long hxftBamBam
+ .long hxftDoink
+ .long hxftAdam
+ .long hxftLex
+hxftBret
  LWWW H3RL1A+FR1,19,-76,1
  LWWW H3RL1A+FR3,26,-42,1
  LWWW H3RL1A+FR4,24,-29,1
@@ -1694,7 +1917,7 @@ cjreBret
  LWWW H3ZS3A+FR2,2,-14,1
  LWWW H3ZS3A+FR3,-10,-18,1
  .long 0
-cjreRazor
+hxftRazor
  LWWW R3RL1B+FR11,19,-79,1
  LWWW R3RL1B+FR10,28,-46,1
  LWWW R3RL1B+FR9,32,-28,1
@@ -1709,7 +1932,7 @@ cjreRazor
  LWWW R3ZS3C+FR2,-15,-12,1
  LWWW R3ZS3C+FR3,-3,-8,1
  .long 0
-cjreTaker
+hxftTaker
  LWWW U3CR3A+FR1,23,-73,1
  LWWW U3CR3A+FR3,25,-41,1
  LWWW U3CR3A+FR4,31,-24,1
@@ -1724,7 +1947,7 @@ cjreTaker
  LWWW U3ZS3B+FR2,-14,-7,1
  LWWW U3ZS3B+FR3,-5,-9,1
  .long 0
-cjreYokozuna
+hxftYokozuna
  LWWW Y3RL1A+FR1,24,-65,1
  LWWW Y3RL1A+FR10,30,-35,1
  LWWW Y3RL1A+FR9,21,-24,1
@@ -1739,7 +1962,7 @@ cjreYokozuna
  LWWW Y3ZS3A+FR2,-14,-13,1
  LWWW Y3ZS3A+FR3,-11,-2,1
  .long 0
-cjreShawn
+hxftShawn
  LWWW S3CP3B+FR7,27,-78,1
  LWWW S3RL3A+FR9,30,-32,1
  LWWW S3RL3A+FR8,30,-24,1
@@ -1754,7 +1977,7 @@ cjreShawn
  LWWW S3ZS3A+FR2,-20,-20,1
  LWWW S3ZS3A+FR3,-8,-13,1
  .long 0
-cjreBamBam
+hxftBamBam
  LWWW B3RL1A+FR1,28,-69,1
  LWWW B3RL1A+FR11,30,-33,1
  LWWW B3RL1A+FR10,30,-19,1
@@ -1769,7 +1992,7 @@ cjreBamBam
  LWWW B3ZS3A+FR2,-14,-11,1
  LWWW B3ZS3A+FR3,-5,-5,1
  .long 0
-cjreDoink
+hxftDoink
  LWWW D3GU4A+FR1,34,-80,1
  LWWW D3RL1B+FR11,35,-42,1
  LWWW D3RL1B+FR10,36,-27,1
@@ -1784,9 +2007,9 @@ cjreDoink
  LWWW D3ZS3A+FR2,-16,-12,1
  LWWW D3ZS3A+FR3,-10,-15,1
  .long 0
-cjreAdam
+hxftAdam
  .long 0
-cjreLex
+hxftLex
  LWWW L3RL1A+FR11,18,-74,1
  LWWW L3RL1A+FR1,25,-42,1
  LWWW L3RL1A+FR2,24,-29,1
@@ -1801,7 +2024,14 @@ cjreLex
  LWWW L3ZS3A+FR2,-19,-16,1
  LWWW L3ZS3A+FR3,-5,-8,1
  .long 0
+;
+;hxftrelease_tbl
+;	.long	hrt_hitonground_anim,rzr_hitonground_anim
+;	.long	und_hitonground_anim,yok_hitonground_anim
+;	.long	shn_hitonground_anim,bam_hitonground_anim
+;	.long	dnk_hitonground_anim,0,lex_hitonground_anim
 
+******************************************************************************
 
 	.end
 

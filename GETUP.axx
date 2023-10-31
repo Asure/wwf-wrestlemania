@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		5/1/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"getup.asm"
 	.title	"getup time tables"
@@ -15,15 +23,20 @@
 	.REF	MAYBE_GIDDUP
 
 
+*****************************************************************************
+* WRESTLER HAS JUST BEEN HIT
+*
+* a10 = * offensive process (attacker)
+* a13 = * defensive process (victim)
 
  SUBR	set_getup_time
 
 	PUSH	a0,a1,A8
 	move	*a13(GETUP_TIME),a14
-	jrnz	bjgdout
+	jrnz	euyuout
 	move	*a10(ATTACK_MODE),a0	;type of attack that hit
 	X64	a0
-	addi	bjgdhit_table,a0
+	addi	euyuhit_table,a0
 	MOVE	A0,A8
 	move	*a0,a0,L
 	move	*a13(WRESTLERNUM),a1
@@ -32,14 +45,14 @@
 	move	*a0,a0
 	move	a0,*a13(GETUP_TIME)
 	move	*a13(DELAY_METER),A0
-	JRNZ	bjgdout
+	JRNZ	euyuout
 	MOVE	*A8(020H),A0,L
-	JRZ	bjgdout
+	JRZ	euyuout
 	CALL	A0
-bjgdout	PULL	a0,a1,A8
+euyuout	PULL	a0,a1,A8
 	rets
 
-bjgdhit_table
+euyuhit_table
 	.long	_punch,0		;0
 	.long	_hdbutt,0		;1
 	.long	_kick,MAYBE_GIDDUP		;2
@@ -98,9 +111,13 @@ bjgdhit_table
 	.long	_null,0		;46
 	.long	_null,0		;47
 
+************************
+;DEFAULT
 _null
+;	.word	1,1,1,1,1,1,1,1,1,1	;get right back up
 	.word	0,0,0,0,0,0,0,0,0,0	;get right back up
 
+************************
 _punch
 _hdbutt
 _kick
@@ -147,6 +164,10 @@ _buttdrop
 	.word	000	;9	(Referee)
 
 
+************************
+;AMODE_FLYKICK	3
+;AMODE_HIPTOSS	10
+;AMODE_BIGBOOT	11
 _hiptoss
 _bigboot
 _flykick
@@ -163,6 +184,7 @@ _bigknee
 	.word	STAY_TIME	;9	(Referee)
 
 
+******************************************************************************
 
 	.end
 

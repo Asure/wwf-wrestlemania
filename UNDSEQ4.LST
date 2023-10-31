@@ -1,372 +1,435 @@
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:36 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
                                                                      PAGE    1
 
-       1                    
-       2                            .file   "undseq4.asm"
-       4                            .width  132
-       5                            .option b,d,l,t
-       6                            .mnolist
-       7                    
-       8                    
-       9                            .include        "macros.h"
-      10                            .include        "mproc.equ"
-      11                            .include        "sys.equ"
-      12                            .include        "game.equ"
-      13                            .include        "plyr.equ"
-      14                            .include        "anim.equ"
-      15                            .include        "sound.h"
-      16                            .include        "takerimg.h"
-      17                            .include        "damage.equ"
-      18                            .INCLUDE        "SWEAT.EQU"
-      19                    
-      20                    
-      21                    
-      22                            .ref    DO_SCREAM
-      23                            .ref    HIT_THE_MAT,SMALL_BOUNCE
-      24                            .ref    CALL_MISSES
-      25                            .ref    am_I_dizzy
-      26                            .ref    am_I_dead
-      27                            .ref    ckzpos
-      28                            .ref    start_run_anim
-      29                            .ref    und_getup_anim
-      30                    
+       1                    **************************************************************
+       2                    *
+       3                    * Software:             Jamie Rivett
+       4                    * Initiated:            11/28/94
+       5                    *
+       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "undseq4.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "macros.h"
+      18                            .include        "mproc.equ"
+      19                            .include        "sys.equ"
+      20                            .include        "game.equ"
+      21                            .include        "plyr.equ"
+      22                            .include        "anim.equ"
+      23                            .include        "sound.h"
+      24                            .include        "takerimg.h"
+      25                            .include        "damage.equ"
+      26                            .INCLUDE        "SWEAT.EQU"
+      27                    
+      28                    
+      29                    ******************************************************************************
+      30                    * EXTERNAL REFERENCES
       31                    
-      32                    
-      33                    
-      34 00000000            SUBR   und_slamnobounce_anim
-      35                    
-      36 00000000     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-      37 00000020     8003          .word   ANI_ZEROVELS
-      38 00000030     8026          .word   ANI_SETSPEED,100h
-      39                    
-      40 00000050     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
-      41 00000070     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-      42                    
-      43 00000090                   WL      1,U3CP3B+FR2
-      44 000000c0                   WL      4,U3CP3B+FR2
-      45 000000f0                   WL      4,U3CP3B+FR3
-      46 00000120                   WL      4,U3CP3B+FR4
-      47 00000150                   WL      4,U3CP3B+FR5
-      48                    
-      49 00000180     800b          .word   ANI_WAITHITGND
-      50 00000190     8028          .word   ANI_ZERO_XZVELS
+      32                            .ref    DO_SCREAM
+      33                            .ref    HIT_THE_MAT,SMALL_BOUNCE
+      34                            .ref    CALL_MISSES
+      35                            .ref    am_I_dizzy
+      36                            .ref    am_I_dead
+      37                            .ref    ckzpos
+      38                    ;       .ref    ck_dizzy
+      39                            .ref    start_run_anim
+      40                            .ref    und_getup_anim
+      41                    
+      42                    ******************************************************************************
+      43                    * SYMBOLS DEFINED IN THIS FILE
+      44                    
+      45                    ******************************************************************************
+      46                    * EQUATES FOR THIS FILE
+      47                    
+      48                    *****************************************************************************
+      49                    *
+      50                    * GENERIC BOUNCE
       51                    
-      52 000001a0                   WL      2,U3CP3B+FR7
+      52 00000000            SUBR   und_slamnobounce_anim
       53                    
-      54 000001d0     8015          .word   ANI_OFFSET,2,0,0                        ;x,y,z
-      55 00000210                   WL      10,U3CP3B+FR1
-      56 00000240     8054          .word   ANI_WAITROLL
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:36 2023
+      54 00000000     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+      55 00000020     8003          .word   ANI_ZEROVELS
+      56 00000030     8026          .word   ANI_SETSPEED,100h
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Undertaker animation sequences                                       PAGE    2
 
-      57 00000250                   WL      ANI_CHANGEANIM,und_getup_anim
-      58                    
-      59 00000280            SUBR   und_slambounce_anim
+      57                    
+      58 00000050     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
+      59 00000070     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
       60                    
-      61 00000280     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-      62 000002a0     8003          .word   ANI_ZEROVELS
-      63 000002b0     8026          .word   ANI_SETSPEED,100h
-      64                    
-      65 000002d0     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
-      66 000002f0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-      67                    
-      68 00000310     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
+      61 00000090                   WL      1,U3CP3B+FR2
+      62 000000c0                   WL      4,U3CP3B+FR2
+      63 000000f0                   WL      4,U3CP3B+FR3
+      64 00000120                   WL      4,U3CP3B+FR4
+      65 00000150                   WL      4,U3CP3B+FR5
+      66                    
+      67 00000180     800b          .word   ANI_WAITHITGND
+      68 00000190     8028          .word   ANI_ZERO_XZVELS
       69                    
-      70 00000370                   WL      ANI_CODE,HIT_THE_MAT
-      71 000003a0                   WL      1,U3CP3B+FR2
-      72 000003d0                   WL      ANI_SET_YVEL,040000h
-      73                            .ref    ckzpos
-      74 00000400                   WL      ANI_CODE,ckzpos
-      75 00000430                   WL      4,U3CP3B+FR2
-      76 00000460                   WL      4,U3CP3B+FR3
-      77 00000490                   WL      4,U3CP3B+FR4
-      78 000004c0                   WL      4,U3CP3B+FR5
-      79                    
-      80 000004f0     800b          .word   ANI_WAITHITGND
-      81 00000500     8028          .word   ANI_ZERO_XZVELS
-      82 00000510                   WL      ANI_CODE,HIT_THE_MAT
-      83                    
-      84 00000540                   WL      2,U3CP3B+FR7
+      70 000001a0                   WL      2,U3CP3B+FR7
+      71                    
+      72 000001d0     8015          .word   ANI_OFFSET,2,0,0                        ;x,y,z
+      73 00000210                   WL      10,U3CP3B+FR1
+      74 00000240     8054          .word   ANI_WAITROLL
+      75 00000250                   WL      ANI_CHANGEANIM,und_getup_anim
+      76                    
+      77 00000280            SUBR   und_slambounce_anim
+      78                    
+      79 00000280     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+      80 000002a0     8003          .word   ANI_ZEROVELS
+      81 000002b0     8026          .word   ANI_SETSPEED,100h
+      82                    
+      83 000002d0     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
+      84 000002f0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
       85                    
-      86 00000570     8015          .word   ANI_OFFSET,2,0,0                        ;x,y,z
-      87 000005b0                   WL      10,U3CP3B+FR1
-      88 000005e0     8054          .word   ANI_WAITROLL
-      89 000005f0                   WL      ANI_CHANGEANIM,und_getup_anim
-      90                    
-      91 00000620            SUBR   und_slambounce2_anim
-      92                    
-      93 00000620     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-      94 00000640     8003          .word   ANI_ZEROVELS
-      95 00000650     8026          .word   ANI_SETSPEED,100h
-      96                    
-      97 00000670     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
-      98 00000690     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-      99                    
-     100 000006b0                   WL      ANI_CODE,HIT_THE_MAT
-     101 000006e0     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
-     102 00000740                   WL      1,U3DD3X+FR9
-     103 00000770                   WL      ANI_CODE,ckzpos
-     104 000007a0                   WL      3,U3DD3X+FR9
-     105 000007d0     800b          .word   ANI_WAITHITGND
-     106 000007e0     8003          .word   ANI_ZEROVELS
-     107 000007f0                   WL      ANI_CODE,HIT_THE_MAT
-     108 00000820     800c          .word   ANI_XFLIP
-     109 00000830                   WL      ANI_SET_YVEL,030000h
-     110 00000860                   WL      4,U3CP3B+FR2
-     111 00000890                   WL      4,U3CP3B+FR3
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:36 2023
+      86 00000310     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
+      87                    
+      88 00000370                   WL      ANI_CODE,HIT_THE_MAT
+      89 000003a0                   WL      1,U3CP3B+FR2
+      90 000003d0                   WL      ANI_SET_YVEL,040000h
+      91                            .ref    ckzpos
+      92 00000400                   WL      ANI_CODE,ckzpos
+      93 00000430                   WL      4,U3CP3B+FR2
+      94 00000460                   WL      4,U3CP3B+FR3
+      95 00000490                   WL      4,U3CP3B+FR4
+      96 000004c0                   WL      4,U3CP3B+FR5
+      97                    
+      98 000004f0     800b          .word   ANI_WAITHITGND
+      99 00000500     8028          .word   ANI_ZERO_XZVELS
+     100 00000510                   WL      ANI_CODE,HIT_THE_MAT
+     101                    
+     102 00000540                   WL      2,U3CP3B+FR7
+     103                    
+     104 00000570     8015          .word   ANI_OFFSET,2,0,0                        ;x,y,z
+     105 000005b0                   WL      10,U3CP3B+FR1
+     106 000005e0     8054          .word   ANI_WAITROLL
+     107 000005f0                   WL      ANI_CHANGEANIM,und_getup_anim
+     108                    
+     109 00000620            SUBR   und_slambounce2_anim
+     110                    
+     111 00000620     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Undertaker animation sequences                                       PAGE    3
 
-     112 000008c0                   WL      4,U3CP3B+FR4
-     113 000008f0                   WL      4,U3CP3B+FR5
+     112 00000640     8003          .word   ANI_ZEROVELS
+     113 00000650     8026          .word   ANI_SETSPEED,100h
      114                    
-     115 00000920     800b          .word   ANI_WAITHITGND
-     116 00000930     8028          .word   ANI_ZERO_XZVELS
+     115 00000670     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
+     116 00000690     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
      117                    
-     118 00000940                   WL      3,U3CP3B+FR7
-     119                    
-     120 00000970     8015          .word   ANI_OFFSET,2,0,0                        ;x,y,z
-     121 000009b0                   WL      10,U3CP3B+FR1
-     122 000009e0     8054          .word   ANI_WAITROLL
-     123 000009f0                   WL      ANI_CHANGEANIM,und_getup_anim
-     124                    
-     125                    
-     126 00000a20            SUBR   und_breakneck2_anim
-     127                    
-     128 00000a20     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-     129 00000a40     8003          .word   ANI_ZEROVELS
-     130 00000a50     8026          .word   ANI_SETSPEED,100h
-     131                    
-     132 00000a70                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYD_SWEAT,SWEAT_PER,0
-     133 00000ae0                   WL      5,U3FD3X+FR2
-     134 00000b10     8015          .word   ANI_OFFSET,0,49,0                       ;x,y,z
-     135 00000b50                   WL      5,U3FD3X+FR3
-     136 00000b80                   WL      5,U3FD3X+FR4
-     137 00000bb0                   WL      5,U3FD3X+FR5
-     138 00000be0                   WL      1,U3FD3X+FR6
-     139                    
-     140 00000c10     800b          .word   ANI_WAITHITGND
-     141                    
-     142 00000c20                   WL      ANI_CODE,HIT_THE_MAT
-     143 00000c50     8037          .word   ANI_SHAKEALL,2
-     144 00000c70     801f          .word   ANI_SHAKER,25
-     145                    
-     146 00000c90                   WL      3,U3GP3X+FR1
-     147 00000cc0                   WL      3,U3GP3X+FR2
-     148 00000cf0                   WL      3,U3GP3X+FR3
-     149 00000d20                   WL      3,U3GP3X+FR4
-     150 00000d50                   WL      3,U3GP3X+FR5
-     151 00000d80                   WL      3,U3GP3X+FR6
-     152                    
-     153 00000db0     8028          .word   ANI_ZERO_XZVELS
-     154                    
-     155 00000dc0     800c          .word   ANI_XFLIP
-     156 00000dd0                   WL      ANI_CODE,HIT_THE_MAT
-     157                    
-     158 00000e00                   WL      8,U3CR3A+FR7
-     159                    
-     160 00000e30     8054          .word   ANI_WAITROLL
-     161 00000e40                   WL      ANI_CHANGEANIM,und_getup_anim
-     162                    
-     163                    
-     164 00000e70            SUBR   und_spirit_pull_anim
-     165                    
-     166                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:36 2023
+     118 000006b0                   WL      ANI_CODE,HIT_THE_MAT
+     119 000006e0     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
+     120 00000740                   WL      1,U3DD3X+FR9
+     121 00000770                   WL      ANI_CODE,ckzpos
+     122 000007a0                   WL      3,U3DD3X+FR9
+     123 000007d0     800b          .word   ANI_WAITHITGND
+     124 000007e0     8003          .word   ANI_ZEROVELS
+     125 000007f0                   WL      ANI_CODE,HIT_THE_MAT
+     126 00000820     800c          .word   ANI_XFLIP
+     127 00000830                   WL      ANI_SET_YVEL,030000h
+     128 00000860                   WL      4,U3CP3B+FR2
+     129 00000890                   WL      4,U3CP3B+FR3
+     130 000008c0                   WL      4,U3CP3B+FR4
+     131 000008f0                   WL      4,U3CP3B+FR5
+     132                    
+     133 00000920     800b          .word   ANI_WAITHITGND
+     134 00000930     8028          .word   ANI_ZERO_XZVELS
+     135                    
+     136 00000940                   WL      3,U3CP3B+FR7
+     137                    
+     138 00000970     8015          .word   ANI_OFFSET,2,0,0                        ;x,y,z
+     139 000009b0                   WL      10,U3CP3B+FR1
+     140 000009e0     8054          .word   ANI_WAITROLL
+     141 000009f0                   WL      ANI_CHANGEANIM,und_getup_anim
+     142                    
+     143                    *****************************************************************************
+     144                    
+     145 00000a20            SUBR   und_breakneck2_anim
+     146                    
+     147 00000a20     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+     148 00000a40     8003          .word   ANI_ZEROVELS
+     149 00000a50     8026          .word   ANI_SETSPEED,100h
+     150                    
+     151 00000a70                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYD_SWEAT,SWEAT_PER,0
+     152 00000ae0                   WL      5,U3FD3X+FR2
+     153 00000b10     8015          .word   ANI_OFFSET,0,49,0                       ;x,y,z
+     154 00000b50                   WL      5,U3FD3X+FR3
+     155 00000b80                   WL      5,U3FD3X+FR4
+     156 00000bb0                   WL      5,U3FD3X+FR5
+     157 00000be0                   WL      1,U3FD3X+FR6
+     158                    
+     159 00000c10     800b          .word   ANI_WAITHITGND
+     160                    
+     161 00000c20                   WL      ANI_CODE,HIT_THE_MAT
+     162 00000c50     8037          .word   ANI_SHAKEALL,2
+     163 00000c70     801f          .word   ANI_SHAKER,25
+     164                    
+     165 00000c90                   WL      3,U3GP3X+FR1
+     166 00000cc0                   WL      3,U3GP3X+FR2
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Undertaker animation sequences                                       PAGE    4
 
-     167 00000e70     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     168 00000e90     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     169 00000eb0     8026          .word   ANI_SETSPEED,100h
-     170 00000ed0     8003          .word   ANI_ZEROVELS
+     167 00000cf0                   WL      3,U3GP3X+FR3
+     168 00000d20                   WL      3,U3GP3X+FR4
+     169 00000d50                   WL      3,U3GP3X+FR5
+     170 00000d80                   WL      3,U3GP3X+FR6
      171                    
-     172 00000ee0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     173 00000ef0     805f          .word   ANI_SET_WRESTLER_XFLIP
-     174                    
-     175 00000f00     801a          .word   ANI_SOUND,0ceH                  ;spirits
+     172 00000db0     8028          .word   ANI_ZERO_XZVELS
+     173                    
+     174 00000dc0     800c          .word   ANI_XFLIP
+     175 00000dd0                   WL      ANI_CODE,HIT_THE_MAT
      176                    
-     177 00000f20     8075          .word   ANI_STARTATTACK,AT_MSL,80
+     177 00000e00                   WL      8,U3CR3A+FR7
      178                    
-     179 00000f50                   WL      2,U3MS3B+FR2
-     180 00000f80                   WL      2,U3MS3B+FR3
+     179 00000e30     8054          .word   ANI_WAITROLL
+     180 00000e40                   WL      ANI_CHANGEANIM,und_getup_anim
      181                    
-     182 00000fb0                   WL      1,U3MS3B+FR4
-     183 00000fe0                   WL      2,U3MS3B+FR5
-     184 00001010                   WL      ANI_CODE,ltqgfireball
-     185 00001040                   WL      2,U3MS3B+FR6
-     186                    
+     182                    *****************************************************************************
+     183                    *
+     184                    * SHOOT SPIRITS - Pull in opponent
+     185                    
+     186 00000e70            SUBR   und_spirit_pull_anim
      187                    
-     188 00001070                   WL      2,U3MS3B+FR7
-     189 000010a0                   WL      2,U3MS3B+FR8
-     190 000010d0                   WL      ANI_CODE,ltqgfireball
-     191 00001100                   WL      2,U3MS3B+FR9
-     192 00001130                   WL      1,U3MS3B+FR10
-     193 00001160                   WL      2,U3MS3B+FR11
-     194                    
+     188                    ;Drones will have to be alerted to the presence of projectiles
+     189                    ;and then check for them!
+     190                    
+     191 00000e70     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     192 00000e90     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     193 00000eb0     8026          .word   ANI_SETSPEED,100h
+     194 00000ed0     8003          .word   ANI_ZEROVELS
      195                    
-     196 00001190                   WL      1,U3MS3B+FR4
-     197 000011c0                   WL      2,U3MS3B+FR5
+     196 00000ee0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     197 00000ef0     805f          .word   ANI_SET_WRESTLER_XFLIP
      198                    
-     199                    
-     200 000011f0                   WL      1,U3MS3B+FR6
-     201 00001220                   WL      2,U3MS3B+FR7
-     202 00001250                   WL      1,U3MS3B+FR8
-     203                    
-     204 00001280                   WL      3,U3MS3B+FR8
+     199 00000f00     801a          .word   ANI_SOUND,0ceH                  ;spirits
+     200                    
+     201 00000f20     8075          .word   ANI_STARTATTACK,AT_MSL,80
+     202                    
+     203 00000f50                   WL      2,U3MS3B+FR2
+     204 00000f80                   WL      2,U3MS3B+FR3
      205                    
-     206 000012b0     8015          .word   ANI_OFFSET,-15,0,0                      ;x,y,z
-     207 000012f0                   WL      2,U4FT3A+FR9
-     208 00001320                   WL      2,U4FT3A+FR10
-     209 00001350                   WL      2,U4FT3A+FR11
+     206 00000fb0                   WL      1,U3MS3B+FR4
+     207 00000fe0                   WL      2,U3MS3B+FR5
+     208 00001010                   WL      ANI_CODE,dukafireball
+     209 00001040                   WL      2,U3MS3B+FR6
      210                    
-     211 00001380     8022          .word   ANI_FACEDOWN
-     212 00001390     801b          .word   ANI_SETFACING
-     213 000013a0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     214 000013c0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     215 000013e0     8049          .word   ANI_END
-     216                    
-     217 000013f0           ltqgfireball
-     218 000013f0     4dab          move    a13,a11
-     219                            .ref    und_spirit_pull
-     220 00001400                   CREATE0 und_spirit_pull
-     221 00001470     0960          rets
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:36 2023
+     211                    
+     212 00001070                   WL      2,U3MS3B+FR7
+     213 000010a0                   WL      2,U3MS3B+FR8
+     214 000010d0                   WL      ANI_CODE,dukafireball
+     215 00001100                   WL      2,U3MS3B+FR9
+     216 00001130                   WL      1,U3MS3B+FR10
+     217 00001160                   WL      2,U3MS3B+FR11
+     218                    
+     219                    ;       WL      1,U3MS3B+FR4
+     220                    ;       WL      2,U3MS3B+FR5
+     221                    ;;      WL      ANI_CODE,dukafireball
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Undertaker animation sequences                                       PAGE    5
 
-     222                    
-     223                    
-     224 00001480            SUBR   und_spirit_push_anim
-     225                    
-     226 00001480     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     227 000014a0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     228 000014c0     8026          .word   ANI_SETSPEED,100h
-     229 000014e0     8003          .word   ANI_ZEROVELS
-     230                    
-     231 000014f0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     232 00001500     805f          .word   ANI_SET_WRESTLER_XFLIP
-     233                    
-     234 00001510     801a          .word   ANI_SOUND,0ceH                  ;spirits
-     235                    
-     236 00001530     8075          .word   ANI_STARTATTACK,AT_MSL,80
-     237                    
-     238 00001560                   WL      2,U3MS3B+FR2
-     239 00001590                   WL      2,U3MS3B+FR3
-     240                    
-     241 000015c0                   WL      1,U3MS3B+FR4
-     242 000015f0                   WL      2,U3MS3B+FR5
-     243 00001620                   WL      ANI_CODE,iyvnfireball
-     244 00001650                   WL      1,U3MS3B+FR6
-     245                    
-     246                    
-     247 00001680                   WL      2,U3MS3B+FR7
-     248 000016b0                   WL      1,U3MS3B+FR8
-     249 000016e0                   WL      2,U3MS3B+FR9
-     250 00001710                   WL      1,U3MS3B+FR10
-     251 00001740                   WL      2,U3MS3B+FR11
-     252                    
-     253 00001770                   WL      1,U3MS3B+FR4
-     254 000017a0                   WL      2,U3MS3B+FR5
-     255 000017d0                   WL      ANI_CODE,iyvnfireball
-     256 00001800                   WL      1,U3MS3B+FR6
-     257 00001830                   WL      2,U3MS3B+FR7
-     258 00001860                   WL      1,U3MS3B+FR8
-     259 00001890                   WL      2,U3MS3B+FR9
-     260 000018c0                   WL      1,U3MS3B+FR10
-     261 000018f0                   WL      2,U3MS3B+FR11
-     262                    
-     263 00001920                   WL      1,U3MS3B+FR4
-     264 00001950                   WL      2,U3MS3B+FR5
-     265 00001980                   WL      ANI_CODE,iyvnfireball
-     266 000019b0                   WL      1,U3MS3B+FR6
-     267 000019e0                   WL      2,U3MS3B+FR7
-     268 00001a10                   WL      1,U3MS3B+FR8
-     269 00001a40                   WL      2,U3MS3B+FR9
-     270 00001a70                   WL      1,U3MS3B+FR10
-     271 00001aa0                   WL      2,U3MS3B+FR11
-     272                    
-     273 00001ad0                   WL      1,U3MS3B+FR4
-     274 00001b00                   WL      2,U3MS3B+FR5
-     275 00001b30                   WL      ANI_CODE,iyvnfireball
+     222                    ;       WL      1,U3MS3B+FR6
+     223                    ;       WL      2,U3MS3B+FR7
+     224                    ;       WL      1,U3MS3B+FR8
+     225                    ;       WL      2,U3MS3B+FR9
+     226                    ;       WL      1,U3MS3B+FR10
+     227                    ;       WL      2,U3MS3B+FR11
+     228                    ;
+     229                    ;       WL      1,U3MS3B+FR4
+     230                    ;       WL      2,U3MS3B+FR5
+     231                    ;;      WL      ANI_CODE,dukafireball
+     232                    ;       WL      1,U3MS3B+FR6
+     233                    ;       WL      2,U3MS3B+FR7
+     234                    ;       WL      1,U3MS3B+FR8
+     235                    ;       WL      2,U3MS3B+FR9
+     236                    ;       WL      1,U3MS3B+FR10
+     237                    ;       WL      2,U3MS3B+FR11
+     238                    
+     239 00001190                   WL      1,U3MS3B+FR4
+     240 000011c0                   WL      2,U3MS3B+FR5
+     241                    ;       WL      ANI_CODE,dukafireball
+     242                    
+     243                    ;       .word   ANI_SETMODE,MODE_NOAUTOFLIP     ;uninterruptable
+     244                    
+     245 000011f0                   WL      1,U3MS3B+FR6
+     246 00001220                   WL      2,U3MS3B+FR7
+     247 00001250                   WL      1,U3MS3B+FR8
+     248                    ;       WL      2,U3MS3B+FR9
+     249                    ;       WL      1,U3MS3B+FR10
+     250                    ;       WL      2,U3MS3B+FR11
+     251                    
+     252 00001280                   WL      3,U3MS3B+FR8
+     253                    
+     254 000012b0     8015          .word   ANI_OFFSET,-15,0,0                      ;x,y,z
+     255 000012f0                   WL      2,U4FT3A+FR9
+     256 00001320                   WL      2,U4FT3A+FR10
+     257 00001350                   WL      2,U4FT3A+FR11
+     258                    
+     259 00001380     8022          .word   ANI_FACEDOWN
+     260 00001390     801b          .word   ANI_SETFACING
+     261 000013a0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     262 000013c0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     263 000013e0     8049          .word   ANI_END
+     264                    
+     265 000013f0           dukafireball
+     266 000013f0     4dab          move    a13,a11
+     267                            .ref    und_spirit_pull
+     268 00001400                   CREATE0 und_spirit_pull
+     269 00001470     0960          rets
+     270                    
+     271                    *****************************************************************************
+     272                    *
+     273                    * SHOOT SPIRITS - Push away opponent
+     274                    
+     275 00001480            SUBR   und_spirit_push_anim
      276                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:36 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Undertaker animation sequences                                       PAGE    6
 
-     277                    
-     278 00001b60                   WL      1,U3MS3B+FR6
-     279 00001b90                   WL      2,U3MS3B+FR7
-     280 00001bc0                   WL      1,U3MS3B+FR8
+     277 00001480     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     278 000014a0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     279 000014c0     8026          .word   ANI_SETSPEED,100h
+     280 000014e0     8003          .word   ANI_ZEROVELS
      281                    
-     282 00001bf0     8015          .word   ANI_OFFSET,-15,0,0                      ;x,y,z
-     283 00001c30                   WL      2,U4FT3A+FR9
-     284 00001c60                   WL      2,U4FT3A+FR10
-     285 00001c90                   WL      2,U4FT3A+FR11
+     282 000014f0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     283 00001500     805f          .word   ANI_SET_WRESTLER_XFLIP
+     284                    
+     285 00001510     801a          .word   ANI_SOUND,0ceH                  ;spirits
      286                    
-     287 00001cc0     8022          .word   ANI_FACEDOWN
-     288 00001cd0     801b          .word   ANI_SETFACING
-     289 00001ce0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     290 00001d00     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     291 00001d20     8049          .word   ANI_END
-     292                    
-     293 00001d30           iyvnfireball
-     294 00001d30     4dab          move    a13,a11
-     295                            .ref    und_spirit_push
-     296 00001d40                   CREATE0 und_spirit_push
-     297 00001db0     0960          rets
-     298                    
-     299                    
-     300 00001dc0            SUBR   und_arm_broken_anim
-     301                    
-     302 00001dc0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
-     303 00001de0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     304 00001e00     8026          .word   ANI_SETSPEED,100h
-     305                    
-     306 00001e20                   WL      ANI_SET_YVEL,40000h
-     307 00001e50                   WLW     ANI_SET_XVEL,-38000h,AM_HIT_REL
-     308 00001e90                   WLW     ANI_SET_ZVEL,10000h,AM_HIT_REL
-     309                    
-     310 00001ed0                   WL      ANI_CODE,DO_SCREAM
-     311 00001f00     800b          .word   ANI_WAITHITGND
-     312 00001f10     8003          .word   ANI_ZEROVELS
+     287 00001530     8075          .word   ANI_STARTATTACK,AT_MSL,80
+     288                    
+     289 00001560                   WL      2,U3MS3B+FR2
+     290 00001590                   WL      2,U3MS3B+FR3
+     291                    
+     292 000015c0                   WL      1,U3MS3B+FR4
+     293 000015f0                   WL      2,U3MS3B+FR5
+     294 00001620                   WL      ANI_CODE,hzttfireball
+     295 00001650                   WL      1,U3MS3B+FR6
+     296                    
+     297                    
+     298 00001680                   WL      2,U3MS3B+FR7
+     299 000016b0                   WL      1,U3MS3B+FR8
+     300 000016e0                   WL      2,U3MS3B+FR9
+     301 00001710                   WL      1,U3MS3B+FR10
+     302 00001740                   WL      2,U3MS3B+FR11
+     303                    
+     304 00001770                   WL      1,U3MS3B+FR4
+     305 000017a0                   WL      2,U3MS3B+FR5
+     306 000017d0                   WL      ANI_CODE,hzttfireball
+     307 00001800                   WL      1,U3MS3B+FR6
+     308 00001830                   WL      2,U3MS3B+FR7
+     309 00001860                   WL      1,U3MS3B+FR8
+     310 00001890                   WL      2,U3MS3B+FR9
+     311 000018c0                   WL      1,U3MS3B+FR10
+     312 000018f0                   WL      2,U3MS3B+FR11
      313                    
-     314 00001f20                   WL      4,U4AH3A+FR3
-     315 00001f50                   WL      4,U4AH3A+FR4
-     316 00001f80                   WL      4,U4AH3A+FR5
-     317 00001fb0                   WL      4,U4AH3A+FR6
-     318                    
-     319 00001fe0                   WL      1,U4ST4D+FR5
-     320                    
-     321                            .ref    am_I_dead
-     322 00002010                   WL      ANI_CODE,am_I_dead
-     323 00002040                   WL      ANI_IFNOTSTATUS2,redfnodead
-     324                    
-     325                            .ref    und_fall_back_anim
-     326                    
-     327 00002070                   WL      ANI_CHANGEANIM,und_fall_back_anim
-     328 000020a0     8049          .word   ANI_END
+     314 00001920                   WL      1,U3MS3B+FR4
+     315 00001950                   WL      2,U3MS3B+FR5
+     316 00001980                   WL      ANI_CODE,hzttfireball
+     317 000019b0                   WL      1,U3MS3B+FR6
+     318 000019e0                   WL      2,U3MS3B+FR7
+     319 00001a10                   WL      1,U3MS3B+FR8
+     320 00001a40                   WL      2,U3MS3B+FR9
+     321 00001a70                   WL      1,U3MS3B+FR10
+     322 00001aa0                   WL      2,U3MS3B+FR11
+     323                    
+     324 00001ad0                   WL      1,U3MS3B+FR4
+     325 00001b00                   WL      2,U3MS3B+FR5
+     326 00001b30                   WL      ANI_CODE,hzttfireball
+     327                    
+     328                    ;       .word   ANI_SETMODE,MODE_NOAUTOFLIP
      329                    
-     330 000020b0           redfnodead
-     331 000020b0     8022          .word   ANI_FACEDOWN
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:36 2023
+     330 00001b60                   WL      1,U3MS3B+FR6
+     331 00001b90                   WL      2,U3MS3B+FR7
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 Undertaker animation sequences                                       PAGE    7
 
-     332 000020c0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     333 000020e0     8049          .word   ANI_END
-     334                    
-     335                    
-     336                            .end
+     332 00001bc0                   WL      1,U3MS3B+FR8
+     333                    ;       WL      2,U3MS3B+FR9
+     334                    ;       WL      1,U3MS3B+FR10
+     335                    ;       WL      2,U3MS3B+FR11
+     336                    
+     337 00001bf0     8015          .word   ANI_OFFSET,-15,0,0                      ;x,y,z
+     338 00001c30                   WL      2,U4FT3A+FR9
+     339 00001c60                   WL      2,U4FT3A+FR10
+     340 00001c90                   WL      2,U4FT3A+FR11
+     341                    
+     342 00001cc0     8022          .word   ANI_FACEDOWN
+     343 00001cd0     801b          .word   ANI_SETFACING
+     344 00001ce0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     345 00001d00     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     346 00001d20     8049          .word   ANI_END
+     347                    
+     348 00001d30           hzttfireball
+     349 00001d30     4dab          move    a13,a11
+     350                            .ref    und_spirit_push
+     351 00001d40                   CREATE0 und_spirit_push
+     352 00001db0     0960          rets
+     353                    
+     354                    *****************************************************************************
+     355                    
+     356 00001dc0            SUBR   und_arm_broken_anim
+     357                    
+     358 00001dc0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+     359 00001de0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     360 00001e00     8026          .word   ANI_SETSPEED,100h
+     361                    
+     362 00001e20                   WL      ANI_SET_YVEL,40000h
+     363 00001e50                   WLW     ANI_SET_XVEL,-38000h,AM_HIT_REL
+     364 00001e90                   WLW     ANI_SET_ZVEL,10000h,AM_HIT_REL
+     365                    
+     366 00001ed0                   WL      ANI_CODE,DO_SCREAM
+     367 00001f00     800b          .word   ANI_WAITHITGND
+     368 00001f10     8003          .word   ANI_ZEROVELS
+     369                    
+     370 00001f20                   WL      4,U4AH3A+FR3
+     371 00001f50                   WL      4,U4AH3A+FR4
+     372 00001f80                   WL      4,U4AH3A+FR5
+     373 00001fb0                   WL      4,U4AH3A+FR6
+     374                    
+     375 00001fe0                   WL      1,U4ST4D+FR5
+     376                    
+     377                            .ref    am_I_dead
+     378 00002010                   WL      ANI_CODE,am_I_dead
+     379                    ;If I'm dead, goto fall back
+     380 00002040                   WL      ANI_IFNOTSTATUS2,ccpdnodead
+     381                    
+     382                            .ref    und_fall_back_anim
+     383                    
+     384 00002070                   WL      ANI_CHANGEANIM,und_fall_back_anim
+     385 000020a0     8049          .word   ANI_END
+     386                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:16:09 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+Undertaker animation sequences                                       PAGE    8
+
+     387 000020b0           ccpdnodead
+     388 000020b0     8022          .word   ANI_FACEDOWN
+     389 000020c0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     390 000020e0     8049          .word   ANI_END
+     391                    
+     392                    ******************************************************************************
+     393                    
+     394                            .end
 
  No Errors,  No Warnings

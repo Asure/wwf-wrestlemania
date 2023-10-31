@@ -1,235 +1,322 @@
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:28 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:00 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
                                                                      PAGE    1
 
-       1                    
-       2                            .file   "react8.asm"
-       4                            .width  132
-       5                            .option b,d,l,t
-       6                            .mnolist
-       7                    
-       8                    
-       9                            .include        "macros.h"
-      10                            .include        "mproc.equ"             ;Mproc equates
-      11                            .include        "display.equ"           ;Display proc equates
-      12                            .include        "gsp.equ"               ;Gsp asm equates
-      13                            .include        "sys.equ"
-      14                            .include        "game.equ"
-      15                            .include        "plyr.equ"
-      16                            .include        "anim.equ"
-      17                            .include        "audit.equ"
-      18                            .include        "sound.h"
-      19                            .include        "ring.equ"
-      20                            .include        "lifebar.h"
-      21                    
-      22                    
-      23                    
-      24                            .ref    bam_2_head_hit_anim,bam_4_head_hit_anim
-      25                            .ref    bam_head_hit_dizzy_anim
-      26                    
-      27                            .ref    dnk_fall_back_anim,dnk_2_head_hit_anim
-      28                            .ref    dnk_head_hit_dizzy_anim,dnk_4_head_hit_anim
+       1                    **************************************************************
+       2                    *
+       3                    * Software:             Jamie Rivett
+       4                    * Initiated:            8/8/94
+       5                    *
+       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "react8.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "macros.h"
+      18                            .include        "mproc.equ"             ;Mproc equates
+      19                            .include        "display.equ"           ;Display proc equates
+      20                            .include        "gsp.equ"               ;Gsp asm equates
+      21                            .include        "sys.equ"
+      22                            .include        "game.equ"
+      23                            .include        "plyr.equ"
+      24                            .include        "anim.equ"
+      25                            .include        "audit.equ"
+      26                            .include        "sound.h"
+      27                            .include        "ring.equ"
+      28                            .include        "lifebar.h"
       29                    
-      30                            .ref    hrt_fall_back_anim,hrt_4_head_hit_dizzy_anim
-      31                            .ref    hrt_4_head_hit_anim,hrt_2_head_hit_anim
-      32                    
-      33                            .ref    lex_fall_back_anim,lex_2_head_hit_anim
-      34                            .ref    lex_4_head_hit_anim,lex_head_hit_dizzy_anim
-      35                    
-      36                            .ref    rzr_fall_back_anim,rzr_2_head_hit_anim
-      37                            .ref    rzr_4_head_hit_dizzy_anim,rzr_4_head_hit_anim
-      38                    
-      39                            .ref    shn_fall_back_anim,shn_4_head_hit_dizzy_anim
-      40                            .ref    shn_2_head_hit_anim,shn_4_head_hit_anim
+      30                    
+      31                    ******************************************************************************
+      32                    * EXTERNAL REFERENCES
+      33                    
+      34                    ;BAM BAM
+      35                            .ref    bam_2_head_hit_anim,bam_4_head_hit_anim
+      36                            .ref    bam_head_hit_dizzy_anim
+      37                    
+      38                    ;DOINK
+      39                            .ref    dnk_fall_back_anim,dnk_2_head_hit_anim
+      40                            .ref    dnk_head_hit_dizzy_anim,dnk_4_head_hit_anim
       41                    
-      42                            .ref    und_fall_back_anim,und_head_hit_dizzy_anim
-      43                            .ref    und_2_head_hit_anim,und_4_head_hit_anim
-      44                    
-      45                            .ref    yok_fall_back_anim,yok_2_head_hit_anim
-      46                            .ref    yok_4_head_hit_dizzy_anim,yok_4_head_hit_anim
-      47                    
-      48                            .ref    block_hit_flail
-      49                            .ref    change_anim1a,wres_collis_off,block_hit,CALL_NASTY_MOVE
-      50                            .ref    set_getup_time
-      51                            .ref    wres_slave_anim,hit_flykick,hit_damage_pending
-      52                    
+      42                    ;BRET
+      43                            .ref    hrt_fall_back_anim,hrt_4_head_hit_dizzy_anim
+      44                            .ref    hrt_4_head_hit_anim,hrt_2_head_hit_anim
+      45                    
+      46                    ;LEX
+      47                            .ref    lex_fall_back_anim,lex_2_head_hit_anim
+      48                            .ref    lex_4_head_hit_anim,lex_head_hit_dizzy_anim
+      49                    
+      50                    ;RAZOR
+      51                            .ref    rzr_fall_back_anim,rzr_2_head_hit_anim
+      52                            .ref    rzr_4_head_hit_dizzy_anim,rzr_4_head_hit_anim
       53                    
-      54                    
-      55                    
-      56                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:28 2023
+      54                    ;SHAWN
+      55                            .ref    shn_fall_back_anim,shn_4_head_hit_dizzy_anim
+      56                            .ref    shn_2_head_hit_anim,shn_4_head_hit_anim
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:00 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    2
 
-      57 00000000            SUBR   hit_shnbfkik
-      58                    
-      59                            ;This has to be a separate attack mode so damage can be different,
-      60                            ; but the reaction is same as for a flying kick.
+      57                    
+      58                    ;TAKER
+      59                            .ref    und_fall_back_anim,und_head_hit_dizzy_anim
+      60                            .ref    und_2_head_hit_anim,und_4_head_hit_anim
       61                    
-      62 00000000     c080          jauc    hit_flykick
-         00000010 00000000! 
-      63                    
-      64 00000030            SUBR   hit_shnspdkik
+      62                    ;YOKO
+      63                            .ref    yok_fall_back_anim,yok_2_head_hit_anim
+      64                            .ref    yok_4_head_hit_dizzy_anim,yok_4_head_hit_anim
       65                    
-      66 00000030     b5a1          move    *a13(PLYRMODE),a1
-         00000040     05c0  
-      67 00000050     0b41          cmpi    MODE_BLOCK,a1
-         00000060     fff8  
-      68 00000070     cb04          jrnz    lxkcnoblock
-      69                    
-      70                    
-      71 00000080     0d5f          calla   block_hit_flail
-         00000090 00000000! 
-      72 000000b0     0960          rets
-      73                    
-      74 000000c0           lxkcnoblock
+      66                    ;MISC
+      67                            .ref    block_hit_flail
+      68                            .ref    change_anim1a,wres_collis_off,block_hit,CALL_NASTY_MOVE
+      69                            .ref    set_getup_time
+      70                    ;,check_dizzy
+      71                            .ref    wres_slave_anim,hit_flykick,hit_damage_pending
+      72                    
+      73                    ******************************************************************************
+      74                    * SYMBOLS DEFINED IN THIS FILE
       75                    
-      76 000000c0                   GETLIFE
-      77 00000110     ca4f          jrz     lxkcisdead
+      76                    ******************************************************************************
+      77                    * EQUATES FOR THIS FILE
       78                    
-      79                    
-      80 00000120                   WRSNDX  KICK_L1,KICK_L2
+      79                    *****************************************************************************
+      80                    
       81                    
-      82                    
-      83 00000460                   SETMODE NORMAL
-      84                    
-      85 00000510           lxkcdo_hit
-      86 00000510                   FACE24TBL lxkchead_hit
-      87 000005e0     0d5f          calla   change_anim1a
-         000005f0 00000000! 
-      88 00000610           lxkcisdead
-      89 00000610     0d5f          calla   wres_collis_off
-         00000620 00000000! 
-      90 00000640     0960          rets
-      91                    
-      92 00000650           lxkchead_hit
-      93 00000650 00000000!         .long   hrt_2_head_hit_anim,hrt_4_head_hit_anim                 ;0 Bret Hart
-      94 00000690 00000000!         .long   rzr_2_head_hit_anim,rzr_4_head_hit_anim                 ;1 Razor Ramon
-      95 000006d0 00000000!         .long   und_2_head_hit_anim,und_4_head_hit_anim                 ;2 Undertaker
-      96 00000710 00000000!         .long   yok_2_head_hit_anim,yok_4_head_hit_anim                 ;3 Yokozuna
-      97 00000750 00000000!         .long   shn_2_head_hit_anim,shn_4_head_hit_anim                 ;4 Shawn Michaels
-      98 00000790 00000000!         .long   bam_2_head_hit_anim,bam_4_head_hit_anim                 ;5 Bam Bam
-      99 000007d0 00000000!         .long   dnk_2_head_hit_anim,dnk_4_head_hit_anim                 ;6 Doink
-     100 00000810 00000000!         .long   dnk_2_head_hit_anim,dnk_4_head_hit_anim                 ;7 spare
-     101 00000850 00000000!         .long   lex_2_head_hit_anim,lex_4_head_hit_anim                 ;8 Lex Luger
-     102 00000890 00000000!         .long   dnk_2_head_hit_anim,dnk_4_head_hit_anim                 ;9 Referee
-     103                    
+      82                    *****************************************************************************
+      83                    ;AMODE_ATT35    35
+      84 00000000            SUBR   hit_shnbfkik
+      85                    
+      86                            ;This has to be a separate attack mode so damage can be different,
+      87                            ; but the reaction is same as for a flying kick.
+      88                    
+      89 00000000     c080          jauc    hit_flykick
+         00000010 00000000! 
+      90                    
+      91                    *****************************************************************************
+      92                    ;AMODE_SHNSPDKIK        36      (shawn speedkick)
+      93 00000030            SUBR   hit_shnspdkik
+      94                    
+      95 00000030     b5a1          move    *a13(PLYRMODE),a1
+         00000040     05c0  
+      96 00000050     0b41          cmpi    MODE_BLOCK,a1
+         00000060     fff8  
+      97 00000070     cb04          jrnz    mhcanoblock
+      98                    
+      99                    ;       move    *a13(FACING_DIR),a0             ;check for hit
+     100                    ;       move    *a13(NEW_FACING_DIR),a1         ;from behind
+     101                    ;       and     a0,a1
+     102                    ;       andi    MOVE_LEFT|MOVE_RIGHT,a1
+     103                    ;       jrz     mhcanoblock
      104                    
-     105 000008d0            SUBR   hit_shnspdkik2
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:28 2023
+     105 00000080     0d5f          calla   block_hit_flail
+         00000090 00000000! 
+     106 000000b0     0960          rets
+     107                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:00 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    3
 
-     106                    
-     107 000008d0     b5a1          move    *a13(PLYRMODE),a1
-         000008e0     05c0  
-     108 000008f0     0b41          cmpi    MODE_BLOCK,a1
-         00000900     fff8  
-     109 00000910     cb04          jrnz    afspnoblock
-     110                    
-     111 00000920     0d5f          calla   block_hit_flail
-         00000930 00000000! 
-     112 00000950     0960          rets
-     113                    
-     114 00000960           afspnoblock
-     115                    
+     108 000000c0           mhcanoblock
+     109                    
+     110 000000c0                   GETLIFE
+     111 00000110     ca4f          jrz     mhcaisdead
+     112                    
+     113                    ;       calla   create_damage_points
+     114                    
+     115 00000120                   WRSNDX  KICK_L1,KICK_L2
      116                    
-     117 00000960                   WRSNDX  FLYKICK_L1,FLYKICK_L2
-     118 00000ca0                   GETLIFE
-     119 00000cf0     ca0b          jrz     afspskip
-     120                    
-     121                    
-     122                    
-     123 00000d00                   SETMODE NORMAL
-     124 00000db0           afspskip
-     125 00000db0     5600          clr     a0
-     126 00000dc0     b20a          move    a0,*a10(OBJ_ZVEL),L     ;Zero zvel after collis
-         00000dd0     0310  
-     127                    
-     128 00000de0     b00d          move    a0,*a13(ROLL_POS)
-         00000df0     0450  
-     129 00000e00     0d5f          calla   set_getup_time
-         00000e10 00000000! 
-     130                    
-     131 00000e30                   FACETBL afspfall_back
-     132 00000ea0     0d5f          calla   change_anim1a
-         00000eb0 00000000! 
-     133                    
-     134                    
-     135 00000ed0     09e2          movi    [4,0],a2
-         00000ee0 00040000  
-     136 00000f00     b540          move    *a10(OBJ_XPOSINT),a0
-         00000f10     0110  
-     137 00000f20     b5a1          move    *a13(OBJ_XPOSINT),a1
-         00000f30     0110  
-     138 00000f40     4801          cmp     a0,a1                   ;offx - defx
-     139 00000f50     c701          jrgt    afspfall_right          ;attacker on left
-     140 00000f60     03a2          neg     a2
-     141 00000f70           afspfall_right
-     142 00000f70     b24d          move    a2,*a13(OBJ_XVEL),L
-         00000f80     02d0  
-     143                    
-     144 00000f90           afspisdead
-     145 00000f90     0d5f          calla   wres_collis_off
-         00000fa0 00000000! 
-     146 00000fc0     0960          rets
-     147                    
-     148 00000fd0           afspfall_back
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:55:28 2023
+     117                    ;       move    *a13(PLYR_DIZZY),a0
+     118                    ;       jrnz    mhcadiz
+     119                    ;
+     120                    ;       calla   check_dizzy
+     121                    ;       jrz     mhcanot_dizzy
+     122                    ;
+     123                    ;       movi    5*TSEC,a0
+     124                    ;       move    a0,*a13(GETUP_TIME)
+     125                    ;
+     126                    ;mhcadiz
+     127                    ;       FACE24TBL mhcahead_hit_dizzy
+     128                    ;       calla   change_anim1a
+     129                    ;
+     130                    ;mhcaisdead
+     131                    ;       calla   wres_collis_off
+     132                    ;
+     133                    ;       rets
+     134                    ;
+     135                    ;mhcanot_dizzy
+     136                    
+     137                    ;       calla   inc_burnout
+     138 00000460                   SETMODE NORMAL
+     139                    
+     140 00000510           mhcado_hit
+     141 00000510                   FACE24TBL mhcahead_hit
+     142 000005e0     0d5f          calla   change_anim1a
+         000005f0 00000000! 
+     143 00000610           mhcaisdead
+     144 00000610     0d5f          calla   wres_collis_off
+         00000620 00000000! 
+     145 00000640     0960          rets
+     146                    
+     147 00000650           mhcahead_hit
+     148 00000650 00000000!         .long   hrt_2_head_hit_anim,hrt_4_head_hit_anim                 ;0 Bret Hart
+     149 00000690 00000000!         .long   rzr_2_head_hit_anim,rzr_4_head_hit_anim                 ;1 Razor Ramon
+     150 000006d0 00000000!         .long   und_2_head_hit_anim,und_4_head_hit_anim                 ;2 Undertaker
+     151 00000710 00000000!         .long   yok_2_head_hit_anim,yok_4_head_hit_anim                 ;3 Yokozuna
+     152 00000750 00000000!         .long   shn_2_head_hit_anim,shn_4_head_hit_anim                 ;4 Shawn Michaels
+     153 00000790 00000000!         .long   bam_2_head_hit_anim,bam_4_head_hit_anim                 ;5 Bam Bam
+     154 000007d0 00000000!         .long   dnk_2_head_hit_anim,dnk_4_head_hit_anim                 ;6 Doink
+     155 00000810 00000000!         .long   dnk_2_head_hit_anim,dnk_4_head_hit_anim                 ;7 spare
+     156 00000850 00000000!         .long   lex_2_head_hit_anim,lex_4_head_hit_anim                 ;8 Lex Luger
+     157 00000890 00000000!         .long   dnk_2_head_hit_anim,dnk_4_head_hit_anim                 ;9 Referee
+     158                    
+     159                    ;mhcahead_hit_dizzy
+     160                    ;       .long   hrt_4_head_hit_dizzy_anim,hrt_4_head_hit_dizzy_anim     ;0 Bret Hart
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:00 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 meters, names, messages, and scores                                  PAGE    4
 
-     149 00000fd0 00000000!         .long   hrt_fall_back_anim              ;0 Bret Hart
-     150 00000ff0 00000000!         .long   rzr_fall_back_anim              ;1 Razor Ramon
-     151 00001010 00000000!         .long   und_fall_back_anim              ;2 Undertaker
-     152 00001030 00000000!         .long   yok_fall_back_anim              ;3 Yokozuna
-     153 00001050 00000000!         .long   shn_fall_back_anim              ;4 Shawn Michaels
-     154                            .ref    bam_fall_back_anim
-     155 00001070 00000000!         .long   bam_fall_back_anim              ;5 Bam Bam
-     156 00001090 00000000!         .long   dnk_fall_back_anim              ;6 Doink
-     157 000010b0 00000000!         .long   dnk_fall_back_anim              ;7 spare
-     158 000010d0 00000000!         .long   lex_fall_back_anim              ;8 Lex Luger
-     159 000010f0 00000000!         .long   dnk_fall_back_anim              ;9 Referee
-     160                    
-     161                    
-     162 00001110            SUBR   hit_hitcheck
-     163                    
-     164                            ;clear hit_damage_pending, just to be safe.
-     165 00001110     57ce          clr     a14
-     166 00001120     058e          move    a14,@hit_damage_pending
-         00001130 00000000! 
-     167                    
-     168 00001150     0d5f          calla   wres_collis_off
-         00001160 00000000! 
-     169 00001180     0960          rets
+     161                    ;       .long   rzr_4_head_hit_dizzy_anim,rzr_4_head_hit_dizzy_anim             ;1 Razor Ramon
+     162                    ;       .long   und_head_hit_dizzy_anim,und_head_hit_dizzy_anim         ;2 Undertaker
+     163                    ;       .long   yok_4_head_hit_dizzy_anim,yok_4_head_hit_dizzy_anim             ;3 Yokozuna
+     164                    ;       .long   shn_4_head_hit_dizzy_anim,shn_4_head_hit_dizzy_anim     ;4 Shawn Michaels
+     165                    ;       .long   bam_head_hit_dizzy_anim,bam_head_hit_dizzy_anim         ;5 Bam Bam
+     166                    ;       .long   dnk_head_hit_dizzy_anim,dnk_head_hit_dizzy_anim         ;6 Doink
+     167                    ;       .long   dnk_head_hit_dizzy_anim,dnk_head_hit_dizzy_anim         ;7 spare
+     168                    ;       .long   lex_head_hit_dizzy_anim,lex_head_hit_dizzy_anim         ;8 Lex Luger
+     169                    ;       .long   dnk_head_hit_dizzy_anim,dnk_head_hit_dizzy_anim         ;9 Referee
      170                    
-     171                    
-     172 00001190            SUBR   hit_flyelbow
-     173                    
-     174                            ;do a normal hit_flykick.  It'll return carry if the victim was
-     175                            ; blocking, or clear carry if hit hit normally, in which case
-     176                            ; it will also muck about with our x velocity, which we'll want
-     177                            ; to undo.
-     178 00001190     0d5f          calla   hit_flykick
-         000011a0 00000000! 
-     179 000011c0     c805          jrc     qyafdone
-     180                    
-     181                            ;okay, we've hit, done all that stuff, and had our velocity
-     182                            ; negated and halfed.  negate it again, 'cuz we don't want to
-     183                            ; bounce off with a flying elbow.  it looks goofy.
-     184 000011d0     b74e          move    *a10(OBJ_XVEL),a14,L
-         000011e0     02d0  
-     185 000011f0     03ae          neg     a14
-     186 00001200     b3ca          move    a14,*a10(OBJ_XVEL),L
-         00001210     02d0  
+     171                    *****************************************************************************
+     172                    ;AMODE_ATT37    37 (shawn speed kick, third hit)
+     173 000008d0            SUBR   hit_shnspdkik2
+     174                    
+     175 000008d0     b5a1          move    *a13(PLYRMODE),a1
+         000008e0     05c0  
+     176 000008f0     0b41          cmpi    MODE_BLOCK,a1
+         00000900     fff8  
+     177 00000910     cb04          jrnz    hdqrnoblock
+     178                    
+     179 00000920     0d5f          calla   block_hit_flail
+         00000930 00000000! 
+     180 00000950     0960          rets
+     181                    
+     182 00000960           hdqrnoblock
+     183                    
+     184                    ;Any hit mode which does a fall back sequence onto the ground
+     185                    ;will not check dizzy at the start.
+     186                    ;The check dizzy happens in the sequence.
      187                    
-     188 00001220     0960  qyafdone        rets
-     189                    
-     190                    
-     191                            .end
+     188 00000960                   WRSNDX  FLYKICK_L1,FLYKICK_L2
+     189 00000ca0                   GETLIFE
+     190 00000cf0     ca0b          jrz     hdqrskip
+     191                    
+     192                    
+     193                    ;       calla   inc_burnout
+     194                    
+     195 00000d00                   SETMODE NORMAL
+     196 00000db0           hdqrskip
+     197 00000db0     5600          clr     a0
+     198 00000dc0     b20a          move    a0,*a10(OBJ_ZVEL),L     ;Zero zvel after collis
+         00000dd0     0310  
+     199                    
+     200 00000de0     b00d          move    a0,*a13(ROLL_POS)
+         00000df0     0450  
+     201 00000e00     0d5f          calla   set_getup_time
+         00000e10 00000000! 
+     202                    
+     203 00000e30                   FACETBL hdqrfall_back
+     204 00000ea0     0d5f          calla   change_anim1a
+         00000eb0 00000000! 
+     205                    
+     206                    
+     207 00000ed0     09e2          movi    [4,0],a2
+         00000ee0 00040000  
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:00 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    5
+
+     208 00000f00     b540          move    *a10(OBJ_XPOSINT),a0
+         00000f10     0110  
+     209 00000f20     b5a1          move    *a13(OBJ_XPOSINT),a1
+         00000f30     0110  
+     210 00000f40     4801          cmp     a0,a1                   ;offx - defx
+     211 00000f50     c701          jrgt    hdqrfall_right          ;attacker on left
+     212 00000f60     03a2          neg     a2
+     213 00000f70           hdqrfall_right
+     214 00000f70     b24d          move    a2,*a13(OBJ_XVEL),L
+         00000f80     02d0  
+     215                    
+     216 00000f90           hdqrisdead
+     217 00000f90     0d5f          calla   wres_collis_off
+         00000fa0 00000000! 
+     218 00000fc0     0960          rets
+     219                    
+     220 00000fd0           hdqrfall_back
+     221 00000fd0 00000000!         .long   hrt_fall_back_anim              ;0 Bret Hart
+     222 00000ff0 00000000!         .long   rzr_fall_back_anim              ;1 Razor Ramon
+     223 00001010 00000000!         .long   und_fall_back_anim              ;2 Undertaker
+     224 00001030 00000000!         .long   yok_fall_back_anim              ;3 Yokozuna
+     225 00001050 00000000!         .long   shn_fall_back_anim              ;4 Shawn Michaels
+     226                            .ref    bam_fall_back_anim
+     227 00001070 00000000!         .long   bam_fall_back_anim              ;5 Bam Bam
+     228 00001090 00000000!         .long   dnk_fall_back_anim              ;6 Doink
+     229 000010b0 00000000!         .long   dnk_fall_back_anim              ;7 spare
+     230 000010d0 00000000!         .long   lex_fall_back_anim              ;8 Lex Luger
+     231 000010f0 00000000!         .long   dnk_fall_back_anim              ;9 Referee
+     232                    
+     233                    
+     234                    *****************************************************************************
+     235                    ;AMODE_ATT38    38
+     236 00001110            SUBR   hit_hitcheck
+     237                    
+     238                            ;clear hit_damage_pending, just to be safe.
+     239 00001110     57ce          clr     a14
+     240 00001120     058e          move    a14,@hit_damage_pending
+         00001130 00000000! 
+     241                    
+     242 00001150     0d5f          calla   wres_collis_off
+         00001160 00000000! 
+     243 00001180     0960          rets
+     244                    
+     245                    
+     246                    *****************************************************************************
+     247                    ;AMODE_FLYELBOW 39
+     248 00001190            SUBR   hit_flyelbow
+     249                    
+     250                            ;do a normal hit_flykick.  It'll return carry if the victim was
+     251                            ; blocking, or clear carry if hit hit normally, in which case
+     252                            ; it will also muck about with our x velocity, which we'll want
+     253                            ; to undo.
+     254 00001190     0d5f          calla   hit_flykick
+         000011a0 00000000! 
+     255 000011c0     c805          jrc     nkcedone
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:00 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+meters, names, messages, and scores                                  PAGE    6
+
+     256                    
+     257                            ;okay, we've hit, done all that stuff, and had our velocity
+     258                            ; negated and halfed.  negate it again, 'cuz we don't want to
+     259                            ; bounce off with a flying elbow.  it looks goofy.
+     260 000011d0     b74e          move    *a10(OBJ_XVEL),a14,L
+         000011e0     02d0  
+     261 000011f0     03ae          neg     a14
+     262 00001200     b3ca          move    a14,*a10(OBJ_XVEL),L
+         00001210     02d0  
+     263                    
+     264 00001220     0960  nkcedone        rets
+     265                    
+     266                    ******************************************************************************
+     267                    
+     268                            .end
 
  No Errors,  No Warnings

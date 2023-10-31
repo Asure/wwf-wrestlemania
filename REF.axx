@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		4/16/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"ref.asm"
 	.title	"referee specific game code"
@@ -21,6 +29,8 @@
 	.include	"fontsimg.glo"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	wres_get_but_val_up,wres_get_but_val_down,wres_get_but_val_cur
 	.ref	wres_get_stick_val_cur
@@ -61,6 +71,7 @@
 	.ref	get_rope_x,calc_line_pt
 	.ref	set_turbo_status
 
+;animation sequence
 
 	.ref	ref_stand2_anim,ref_stand4_anim
 	.ref	ref_torso2_anim,ref_torso4_anim
@@ -87,6 +98,8 @@
 	.ref	ref_2_head_hit_anim,ref_4_head_hit_anim,ref_head_hit2_anim
 	.ref	ref_2_body_hit_anim,ref_4_body_hit_anim
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
 
 	.bss	uhgrid,9*20h
 
@@ -99,6 +112,8 @@
 	BSSX	last_move,10h
 	BSSX	last_holdstill,10h
 
+******************************************************************************
+* EQUATES FOR THIS FILE
 
 MAX_UNHAPPINESS	equ	7FFFFFFFh
 UHGRID_X	equ	4
@@ -116,6 +131,7 @@ BRAIN_FREQ	equ	3	;update move grid every X ticks
 	BSSX	grid_mode,10h
  .endif
 
+*****************************************************************************
 
  SUBR	ref_ani_init
 
@@ -138,21 +154,28 @@ BRAIN_FREQ	equ	3	;update move grid every X ticks
 	rets
 
 
+*****************************************************************************
+*
+* REF CONTROL CODE
+*
+* a13 = * ref process
 
  SUBR	move_ref
 
+;	movi	100h,a0			;temp fix!
+;	move	a0,*a13(ANI_SPEED)
 
 	clr	a0
 	move	a0,*a13(MOVE_DIR)
 
 	move	*a13(PLYRMODE),a0
 	sll	5,a0			;x 32
-	addi	olxqmode_table,a0
+	addi	olewmode_table,a0
 	move	*a0,a0,L
 	call	a0
 	rets
 
-olxqmode_table
+olewmode_table
 	.long	mode_normal		;0
 	.long	mode_running		;1
 	.long	mode_inair		;2
@@ -171,19 +194,21 @@ olxqmode_table
 	.long	mode_x8			;15
 	.long	mode_x9			;16
 
+*****************************************************************************
+*
 
 mode_normal	;0
 
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_UNINT_BIT,a0
-	jrnz	gascno_interrupt
+	jrnz	szgwno_interrupt
 
 	callr	calc_walk_dir
 
 	calla	execute_walk
 
-gascno_interrupt
+szgwno_interrupt
 	rets
 
 
@@ -194,13 +219,17 @@ gascno_interrupt
 	rets
 
 
+*****************************************************************************
+* Brain process.  Continuously updates refmove_dir to show the direction to
+* minimize unhappiness.
+* 0a8H = ref proc
 
 	STRUCTPD
-	LONG		qcsyREFPROC		;UHL ref process
+	LONG		mkxoREFPROC		;UHL ref process
 
  SUBR	ref_brain
 
-	move	a8,*a13(qcsyREFPROC),L
+	move	a8,*a13(mkxoREFPROC),L
 
 	movi	10,a14
 	move	a14,@motion_threshhold
@@ -208,7 +237,7 @@ gascno_interrupt
 	move	a14,@last_move
 	move	a14,@last_holdstill
 
-qcsymain_loop
+mkxomain_loop
 	SLEEPK	BRAIN_FREQ
 
 	;update the motion threshhold
@@ -218,14 +247,14 @@ qcsymain_loop
 	move	@last_holdstill,a1
 	sub	a1,a0
 	cmpi	20,a0
-	jrlt	qcsyno_inc
+	jrlt	mkxono_inc
 
 	move	@motion_threshhold,a14
 	inc	a14
 	move	a14,@motion_threshhold
 	move	@PCNT,a14
 	move	a14,@last_holdstill
-qcsyno_inc
+mkxono_inc
 
 	;if he's been holding still continuously for 20 ticks, decrement
 	; the threshhold.
@@ -233,16 +262,16 @@ qcsyno_inc
 	move	@last_move,a1
 	sub	a1,a0
 	cmpi	20,a0
-	jrlt	qcsyno_dec
+	jrlt	mkxono_dec
 
 	move	@motion_threshhold,a14
-	dsj	a14,qcsydmt_inrange
+	dsj	a14,mkxodmt_inrange
 	clr	a14
-qcsydmt_inrange
+mkxodmt_inrange
 	move	a14,@motion_threshhold
 	move	@PCNT,a14
 	move	a14,@last_move
-qcsyno_dec
+mkxono_dec
 
 
 	;update move_dir
@@ -255,8 +284,8 @@ qcsyno_dec
 	movi	4,a3
 	movi	8,a4
 
-qcsysearch_loop
-	move	*a13(qcsyREFPROC),a5,L
+mkxosearch_loop
+	move	*a13(mkxoREFPROC),a5,L
 	move	*a5(OBJ_XPOSINT),a0
 	move	*a5(OBJ_ZPOSINT),a1
 	move	a4,a5
@@ -270,31 +299,31 @@ qcsysearch_loop
 	add	a14,a1
 	calla	calc_unhappiness
 	cmpi	4,a4
-	jrne	qcsyskip_refupdate
+	jrne	mkxoskip_refupdate
 	move	a0,@ref_unhap,L
-qcsyskip_refupdate
+mkxoskip_refupdate
 	
  .if REF_DEBUG
 	move	@grid_mode,a14
 	cmpi	GRID_UNHAP,a14
-	jrne	qcsyno_grid_unhap
+	jrne	mkxono_grid_unhap
 
 	move	a4,a14
 	X32	a14
 	addi	uhgrid,a14
 	move	a0,*a14,L
-qcsyno_grid_unhap
+mkxono_grid_unhap
  .endif
 
 	cmp	a2,a0
-	jrge	qcsytoo_high
+	jrge	mkxotoo_high
 
 	move	a0,a2
 	move	a4,a3
 
-qcsytoo_high
+mkxotoo_high
 	dec	a4
-	jrnn	qcsysearch_loop
+	jrnn	mkxosearch_loop
 
 	;all done.  ref_unhap holds unhappiness at ref's current position.
 	; a2 holds unhappiness at lowest position.  If the best unhappiness
@@ -302,108 +331,133 @@ qcsytoo_high
 	move	@ref_unhap,a1,L
 	sub	a2,a1
  .if DEBUG
-	jrnn	qcsyno_bug
+	jrnn	mkxono_bug
 	LOCKUP		;a2 should never be less than ref_unhap
-qcsyno_bug
+mkxono_bug
  .endif
 	move	@motion_threshhold,a0
 	sub	a0,a1
-	jrnn	qcsymove_off
+	jrnn	mkxomove_off
 
 	;not enough of a difference to make moving worthwhile
 	movk	4,a3
 
-qcsymove_off
+mkxomove_off
 	movi	last_holdstill,a0
 	cmpi	4,a3
-	jreq	qcsyholdstill
+	jreq	mkxoholdstill
 	movi	last_move,a0
-qcsyholdstill
+mkxoholdstill
 	move	@PCNT,a14
 	move	a14,*a0
 	X16	a3
-	addi	qcsymove_table,a3
+	addi	mkxomove_table,a3
 	move	*a3,a3,W
 	move	a3,@refmove_dir
 
-	jruc	qcsymain_loop
+	jruc	mkxomain_loop
 
-qcsyno_ref
+mkxono_ref
 	DIE
 
-qcsymove_table
+mkxomove_table
 	.word	MOVE_UP_LEFT,MOVE_UP,MOVE_UP_RIGHT
 	.word	MOVE_LEFT,MOVE_ZIP,MOVE_RIGHT
 	.word	MOVE_DOWN_LEFT,MOVE_DOWN,MOVE_DOWN_RIGHT
 
 
+*****************************************************************************
+*
 
 mode_running	;1
 	rets
 
+*****************************************************************************
+*
 
 mode_inair	;2
 
 	rets
 
+*****************************************************************************
+*
 
 mode_attached	;3
 
 	rets
 
+*****************************************************************************
 
 mode_onground	;4
 
 	rets
 
+*****************************************************************************
+*
+* bouncing off ropes while running
 
 mode_bouncing	;5
 
 	rets
 
+*****************************************************************************
+*
+* STANDING ON TOP OF TURNBUCKLE
 
 mode_onturnbkl	;6
 
 	rets
 
+*****************************************************************************
+* blocking
 
 mode_block	;7
 	rets
 
+*****************************************************************************
+* doink with zero health
 
 mode_dizzy	;8
 
 	rets
 
+*****************************************************************************
 mode_dead	;9
 
 	rets
 
+*****************************************************************************
+* opponent held overhead
 
 mode_oppoverhead ;10
 
 	rets
 
+*****************************************************************************
+*
+* CLIMBING UP OR DOWN THE TURNBUCKLE
 
 mode_climbturnbkl	;11
 
 	rets
 
 
+*****************************************************************************
 
 mode_waitanim	;12
 
 	move	*a13(ANIMODE),a0
 	btst	MODE_END_BIT,a0
-	jrz	pvdqnot_ended
+	jrz	tsobnot_ended
 
 	move	*a13(CODE_ADDR),a0,L
 	call	a0
 
-pvdqnot_ended
+tsobnot_ended
 	rets
 
 
+*****************************************************************************
 
 mode_x6		;13
 mode_x7		;14
@@ -412,59 +466,66 @@ mode_x9		;16
 	rets
 
 
+*****************************************************************************
 
-kpwgVEL	equ	30000h
-kpwgDVEL	equ	21f0eh
+tghoVEL	equ	30000h
+tghoDVEL	equ	21f0eh
 
 
  SUBR ref_velocity_table
 
+;		X,	Z
 
-	.long	0,	-kpwgVEL	;0 UP
+	.long	0,	-tghoVEL	;0 UP
 
-	.long	kpwgDVEL,	-kpwgDVEL	;1 UP-RIGHT
+	.long	tghoDVEL,	-tghoDVEL	;1 UP-RIGHT
 
-	.long	kpwgVEL,	0	;2 RIGHT
+	.long	tghoVEL,	0	;2 RIGHT
 
-	.long	kpwgDVEL,	kpwgDVEL	;3 DOWN-RIGHT
+	.long	tghoDVEL,	tghoDVEL	;3 DOWN-RIGHT
 
-	.long	0,	kpwgVEL	;4 DOWN
+	.long	0,	tghoVEL	;4 DOWN
 
-	.long	-kpwgDVEL,	kpwgDVEL	;5 DOWN-LEFT
+	.long	-tghoDVEL,	tghoDVEL	;5 DOWN-LEFT
 
-	.long	-kpwgVEL,	0	;6 LEFT
+	.long	-tghoVEL,	0	;6 LEFT
 
-	.long	-kpwgDVEL,	-kpwgDVEL	;7 UP-LEFT
+	.long	-tghoDVEL,	-tghoDVEL	;7 UP-LEFT
 
 
  SUBRP	brain_grid
-	.long	-kpwgDVEL*BRAIN_FREQ,-kpwgDVEL*BRAIN_FREQ	;up-left
-	.long	0,-kpwgVEL*BRAIN_FREQ			;up
-	.long	kpwgDVEL*BRAIN_FREQ,-kpwgDVEL*BRAIN_FREQ	;up-right
-	.long	-kpwgVEL*BRAIN_FREQ,0			;left
+	.long	-tghoDVEL*BRAIN_FREQ,-tghoDVEL*BRAIN_FREQ	;up-left
+	.long	0,-tghoVEL*BRAIN_FREQ			;up
+	.long	tghoDVEL*BRAIN_FREQ,-tghoDVEL*BRAIN_FREQ	;up-right
+	.long	-tghoVEL*BRAIN_FREQ,0			;left
 	.long	0,0					;zip
-	.long	kpwgVEL*BRAIN_FREQ,0			;right
-	.long	-kpwgDVEL*BRAIN_FREQ,kpwgDVEL*BRAIN_FREQ	;down-left
-	.long	0,kpwgVEL*BRAIN_FREQ			;down
-	.long	kpwgDVEL*BRAIN_FREQ,kpwgDVEL*BRAIN_FREQ	;down-right
+	.long	tghoVEL*BRAIN_FREQ,0			;right
+	.long	-tghoDVEL*BRAIN_FREQ,tghoDVEL*BRAIN_FREQ	;down-left
+	.long	0,tghoVEL*BRAIN_FREQ			;down
+	.long	tghoDVEL*BRAIN_FREQ,tghoDVEL*BRAIN_FREQ	;down-right
 
+*****************************************************************************
 
  SUBR ref_rotate_anims_table
+; old = up right
 	.long	ref_stand2_anim		;new = up right
 	.long	ref_2_to_4_turn_anim	;    = down right
 	.long	ref_2_to_6_turn_anim	;    = down left ***
 	.long	ref_2_to_8_turn_anim	;    = up left
 
+; old = down right
 	.long	ref_4_to_2_turn_anim	;new = up right
 	.long	ref_stand4_anim		;    = down right
 	.long	ref_4_to_6_turn_anim	;    = down left
 	.long	ref_4_to_8_turn_anim	;    = up left ***
 
+; old = down left
 	.long	ref_6_to_2_turn_anim	;new = up right ***
 	.long	ref_6_to_4_turn_anim	;    = down right
 	.long	ref_stand4_anim		;    = down left
 	.long	ref_6_to_8_turn_anim	;    = up left
 
+; old = up left
 	.long	ref_8_to_2_turn_anim	;new = up right
 	.long	ref_8_to_4_turn_anim	;    = down right ***
 	.long	ref_8_to_6_turn_anim	;    = down left
@@ -472,6 +533,8 @@ kpwgDVEL	equ	21f0eh
 
 
  SUBR ref_leg_anims_table
+;  MOVE
+;(gwcv1 - UP)				FACING
 	.long	ref_walk1_f2_anim	;1 (UP)
 	.long	ref_walk1_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk1_f4_anim	;3 (RIGHT)
@@ -481,6 +544,7 @@ kpwgDVEL	equ	21f0eh
 	.long	ref_walk1_f2_anim	;7 (LEFT)
 	.long	ref_walk1_f2_anim	;8 (UP-LEFT)
 
+;(gwcv2 - UP-RIGHT)
 	.long	ref_walk2_f2_anim	;1 (UP)
 	.long	ref_walk2_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk2_f2_anim	;3 (RIGHT)
@@ -490,6 +554,7 @@ kpwgDVEL	equ	21f0eh
 	.long	ref_walk4_f2_anim	;7 (LEFT)
 	.long	ref_walk4_f2_anim	;8 (UP-LEFT)
 
+;(gwcv3 - RIGHT)
 	.long	ref_walk2_f2_anim	;1 (UP)
 	.long	ref_walk2_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk2_f2_anim	;3 (RIGHT)
@@ -500,6 +565,7 @@ kpwgDVEL	equ	21f0eh
 	.long	ref_walk6_f2_anim	;8 (UP-LEFT)
 
 
+;(gwcv4 - DOWN-RIGHT)
 	.long	ref_walk2_f2_anim	;1 (UP)
 	.long	ref_walk8_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk4_f4_anim	;3 (RIGHT)
@@ -509,6 +575,7 @@ kpwgDVEL	equ	21f0eh
 	.long	ref_walk2_f2_anim	;7 (LEFT)
 	.long	ref_walk6_f2_anim	;8 (UP-LEFT)
 
+;(gwcv5 - DOWN)
 	.long	ref_walk5_f2_anim	;1 (UP)
 	.long	ref_walk5_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk5_f4_anim	;3 (RIGHT)
@@ -518,6 +585,7 @@ kpwgDVEL	equ	21f0eh
 	.long	ref_walk5_f2_anim	;7 (LEFT)
 	.long	ref_walk5_f2_anim	;8 (UP-LEFT)
 
+;(gwcv6 - DOWN-LEFT)
 	.long	ref_walk2_f2_anim	;1 (UP)
 	.long	ref_walk6_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk2_f2_anim	;3 (RIGHT)
@@ -527,6 +595,7 @@ kpwgDVEL	equ	21f0eh
 	.long	ref_walk2_f2_anim	;7 (LEFT)
 	.long	ref_walk8_f2_anim	;8 (UP-LEFT)
 
+;(gwcv7 - LEFT)
 	.long	ref_walk2_f2_anim	;1 (UP)
 	.long	ref_walk6_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk6_f2_anim	;3 (RIGHT)
@@ -536,6 +605,7 @@ kpwgDVEL	equ	21f0eh
 	.long	ref_walk2_f2_anim	;7 (LEFT)
 	.long	ref_walk2_f2_anim	;8 (UP-LEFT)
 
+;(gwcv8 - UP-LEFT)
 	.long	ref_walk2_f2_anim	;1 (UP)
 	.long	ref_walk4_f2_anim	;2 (UP_RIGHT)
 	.long	ref_walk6_f2_anim	;3 (RIGHT)
@@ -547,41 +617,50 @@ kpwgDVEL	equ	21f0eh
 
 
  SUBR ref_torso_anims_table
+; old = up right
 	.long	ref_torso2_anim		;new = up right
 	.long	ref_2_to_4_turn2_anim	;    = down right
 	.long	ref_2_to_8_turn2_anim	;    = down left ***
 	.long	ref_2_to_8_turn2_anim	;    = up left
 
+; old = down right
 	.long	ref_4_to_2_turn2_anim	;new = up right
 	.long	ref_torso4_anim		;    = down right
 	.long	ref_4_to_6_turn2_anim	;    = down left
 	.long	ref_4_to_6_turn2_anim	;    = up left ***
 
+; old = down left
 	.long	ref_6_to_4_turn2_anim	;new = up right ***
 	.long	ref_6_to_4_turn2_anim	;    = down right
 	.long	ref_torso4_anim		;    = down left
 	.long	ref_4_to_2_turn2_anim	;    = up left
 
+; old = up left
 	.long	ref_8_to_2_turn2_anim	;new = up right
 	.long	ref_8_to_2_turn2_anim	;    = down right ***
 	.long	ref_2_to_4_turn2_anim	;    = down left
 	.long	ref_torso2_anim		;    = up left
 
+; *** should not happen
 
 
+*****************************************************************************
+* REFEREE HAS JUST BEEN HIT
+* a10 = * offensive process
+* a13 = * defensive process (REF)
 
  SUBR	ref_hit
 
 	move	*a10(ATTACK_MODE),a0	;type of attack that hit the ref
 	move	a0,a1
 	sll	5,a1			;x 32
-	addi	emethit_table,a1
+	addi	qovchit_table,a1
 	move	*a1,a1,L		;appropriate routine
 	call	a1
 
 	rets
 
-emethit_table
+qovchit_table
 	.long	_punch		;0
 	.long	_hdbutt		;1
 	.long	_kick		;2
@@ -600,6 +679,8 @@ emethit_table
 	.long	_15		;15
 	.long	_16		;16
 
+************************
+;AMODE_PUNCH	0
 _punch
 
 	WRSND	W_REF,PUNCH_L1
@@ -609,14 +690,16 @@ _punch
 	movi	ref_2_head_hit_anim,a0
 	move	*a13(FACING_DIR),a1
 	btst	MOVE_UP_BIT,a1
-	jrnz	amou2_hit
+	jrnz	umgw2_hit
 	movi	ref_4_head_hit_anim,a0
-amou2_hit
+umgw2_hit
 	calla	change_anim1a
 	calla	wres_collis_off
 
 	rets
 
+************************
+;AMODE_HDBUTT	1
 _hdbutt
 	WRSND	W_REF,HDBUTT_L1
 	WRSND	W_REF,HDBUTT_L2
@@ -630,15 +713,17 @@ _hdbutt
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	simhgo_rgt			;attacker on left
+	jrgt	fkodgo_rgt			;attacker on left
 	neg	a2
-simhgo_rgt
+fkodgo_rgt
 	move	a2,*a13(OBJ_XVEL),L
 
 	calla	wres_collis_off
 
 	rets
 
+************************
+;AMODE_KICK	2
 _kick
 
 	WRSND	W_REF,KICK_L1
@@ -649,67 +734,93 @@ _kick
 	movi	ref_2_body_hit_anim,a0
 	move	*a13(FACING_DIR),a1
 	btst	MOVE_UP_BIT,a1
-	jrnz	szih2_hit
+	jrnz	mvio2_hit
 	movi	ref_4_body_hit_anim,a0
-szih2_hit
+mvio2_hit
 	calla	change_anim1a
 
+;Drift back away from attacker
 	movi	20000h,a1
  	move	*a10(OBJ_XPOSINT),a0
  	move	*a13(OBJ_XPOSINT),a14
 	cmp	a0,a14
-	jrgt	szihsetxv
+	jrgt	mviosetxv
 	movi	-20000h,a1
-szihsetxv
+mviosetxv
 	move	a1,*a13(OBJ_XVEL),L
 
 	calla	wres_collis_off
 	rets
 
+************************
+;AMODE_FLYKICK	3
 _flykick
 	rets
 
+************************
+;AMODE_GRABTHROW 4
 _grabthrow
 
 	rets
 
+************************
+;AMODE_UPRCUT	5
 _uprcut
 	rets
 
+************************
+;AMODE_LBOWDROP	6
 _lbowdrop
 
 	rets
 	
+************************
+;AMODE_GRABHOLD	7
 _grabhold
 
 	rets
 
+************************
+;AMODE_GRABFLING 8
 _grabfling
 
 	rets
 
+************************
+;AMODE_PUSH	9
 _push
 
 	rets
 
+************************
+;AMODE_HIPTOSS	10
 _hiptoss
 
 	rets
 
+************************
+;AMODE_BIGBOOT	11
 _bigboot
 
 	rets
 
+************************
+;AMODE_KNEE	12
 _knee
 
 	rets
 
+************************
 
 _13		;13
 _14		;14
 _15		;15
 _16		;16
 
+*****************************************************************************
+* calculates the 2D distance between two points
+* 0a0H=x1 0a1H=y1 0a2H=x2 0a3H=y2
+* <a0=distance (a1-a3 left intact)
 
  SUBR	distance_2D
 
@@ -733,6 +844,10 @@ _16		;16
 
 	rets
 
+*****************************************************************************
+* calculates the unhappiness value of a given point in the XZ plane.
+* 0a0H=x 0a1H=z
+* <a0=unhappiness(UHL)
 
  SUBR	calc_unhappiness
 
@@ -743,32 +858,32 @@ _16		;16
 
 	;return MAX_UNHAPPINESS if the point lies outside the ring
 	cmpi	RING_TOP,a3
-	jrlt	xinmout_of_ring
+	jrlt	skxpout_of_ring
 	cmpi	RING_BOT,a3
-	jrgt	xinmout_of_ring
+	jrgt	skxpout_of_ring
 
 	cmpi	RING_X_CENTER,a0
-	jrlt	xinmcheck_left
+	jrlt	skxpcheck_left
 
 	movi	vln_right_rope,a6
 	move	a3,a1
 	calla	calc_line_pt
-	jrz	xinmout_of_ring
+	jrz	skxpout_of_ring
 	subi	4,a0			;don't get within 4 of rope
 	cmp	a0,a2
-	jrge	xinmout_of_ring
-	jruc	xinmin_ring
+	jrge	skxpout_of_ring
+	jruc	skxpin_ring
 
-xinmcheck_left
+skxpcheck_left
 	movi	vln_left_rope,a6
 	move	a3,a1
 	calla	calc_line_pt
-	jrz	xinmout_of_ring
+	jrz	skxpout_of_ring
 	addi	4,a0			;don't get within 4 of rope
 	cmp	a0,a2
-	jrle	xinmout_of_ring
+	jrle	skxpout_of_ring
 
-xinmin_ring
+skxpin_ring
 
 	;reg use - main
 	; a2 = point x
@@ -799,13 +914,13 @@ xinmin_ring
  .if REF_DEBUG
 	move	@grid_mode,a14
 	cmpi	GRID_D1,a14
-	jrne	xinmd2
+	jrne	skxpd2
 	move	@grid_index,a14
 	X32	a14
 	addi	uhgrid,a14
 	move	a8,*a14,W
 
-xinmd2	
+skxpd2	
  .endif
 	;get dist2
 	move	a6,a0
@@ -816,13 +931,13 @@ xinmd2
  .if REF_DEBUG
 	move	@grid_mode,a14
 	cmpi	GRID_D2,a14
-	jrne	xinmd12
+	jrne	skxpd12
 	move	@grid_index,a14
 	X32	a14
 	addi	uhgrid,a14
 	move	a9,*a14,W
 
-xinmd12
+skxpd12
  .endif
 	;get dist12
 	PUSH	a2,a3
@@ -856,7 +971,7 @@ xinmd12
 	add	a7,a1	;(z2-z1)(x-x1)/(x2-x1)+z1
 
 	cmp	a1,a3
-	jrlt	xinmnot_between
+	jrlt	skxpnot_between
 
 	move	a4,a14
 	add	a6,a14
@@ -873,7 +988,7 @@ xinmd12
 	sub	a2,a1
 	abs	a1			;a1 = dist from point to mdpt
 	cmp	a0,a1
-	jrgt	xinmnot_between
+	jrgt	skxpnot_between
 
 	;in between.  assign some whine points based on how close
 	sub	a1,a0
@@ -881,7 +996,7 @@ xinmd12
 	addi	100,a0
 	add	a0,a11
 
-xinmnot_between
+skxpnot_between
 	;EQUIDISTANT - Unhappiness is the difference between d1 and d2.
 	move	a9,a1
 	sub	a8,a1
@@ -889,61 +1004,69 @@ xinmnot_between
 
 	;hack - don't worry about a difference of less than 200.
 	cmpi	200,a1
-	jrle	xinmskip_eq
+	jrle	skxpskip_eq
 	X8	a1
 	add	a1,a11
-xinmskip_eq
+skxpskip_eq
 
 	;ELLIPSE - Unhappiness is the difference between d1+d2 and (d12+160)
 	; times 8 if too far or times 32 if too close.
 	; if d12+80 < 200, use 200 instead.
 	PUSH	a10
 	cmpi	200,a10
-	jrge	xinma10_ok
+	jrge	skxpa10_ok
 	movi	160,a10
-xinma10_ok
+skxpa10_ok
 	move	a8,a1
 	add	a9,a1
 	sub	a10,a1
 	subi	160,a1
-	jrnn	xinmel_too_far
+	jrnn	skxpel_too_far
 
+;	abs	a1			;no unhappiness if too far...
+;	X4	a1
+;skxpel_too_far
+;	X8	a1
+;	add	a1,a11
 
 	abs	a1
 	X32	a1
 	add	a1,a11
-xinmel_too_far
+skxpel_too_far
 	PULL	a10
 
 	;DUMMY - And whatever else, do NOT get within 80 pixels of a wrestler.
 	cmpi	80,a8
-	jrgt	xinmtc_ok1
+	jrgt	skxptc_ok1
 	movi	80,a14
 	sub	a8,a14
 	X16	a14
 	add	a14,a11
-xinmtc_ok1
+skxptc_ok1
 	cmpi	80,a9
-	jrgt	xinmtc_ok2
+	jrgt	skxptc_ok2
 	movi	80,a14
 	sub	a9,a14
 	X128	a14
 	add	a14,a11
-xinmtc_ok2
+skxptc_ok2
 	
 	move	a11,a0
-	jrnn	xinmdone
+	jrnn	skxpdone
 	LOCKUP		;unhap shouldn't ever be negative!
 	clr	a0
-	jruc	xinmdone
+	jruc	skxpdone
 
-xinmout_of_ring
+skxpout_of_ring
 	movi	MAX_UNHAPPINESS,a0
-xinmdone
+skxpdone
 	PULL	a1,a2,a3,a4,a5,a6,a7,a8
 	rets
 
  .if REF_DEBUG
+*****************************************************************************
+* displays the unhappiness values
+*
 
 	.bss	grid_digit_objects,9*4*20h
 	.bss	grid_digit_values,9*4*10h
@@ -956,8 +1079,8 @@ GRID_TLY	equ	200
 
  SUBR	grid_display
 
-	TBL_OBJ	ojexttt_grid
-	TBL_OBJ	ojexgrid_title
+	TBL_OBJ	otiittt_grid
+	TBL_OBJ	otiigrid_title
 	move	a8,@grid_title,L
 
 	;reg use
@@ -979,14 +1102,14 @@ GRID_TLY	equ	200
 
 
 	movi	3,b4
-ojexouter_loop
+otiiouter_loop
 
 	movi	GRID_TLX<<16,a0
 	movi	3,b3
-ojexmiddle_loop
+otiimiddle_loop
 
 	movi	4,b2
-ojexinside_loop
+otiiinside_loop
 	;create the object
 	PUSH	a0,a1,a2,a3,a4,a5,a6,a7
 	calla	BEGINOBJ
@@ -995,27 +1118,27 @@ ojexinside_loop
 	move	a8,*a10+,L
 
 	addi	[5,0],a0
-	dsj	b2,ojexinside_loop
+	dsj	b2,otiiinside_loop
 
 	addi	[6,0],a0
-	dsj	b3,ojexmiddle_loop
+	dsj	b3,otiimiddle_loop
 
 	addi	[9,0],a1
-	dsj	b4,ojexouter_loop
+	dsj	b4,otiiouter_loop
 	
-ojexmain_loop
+otiimain_loop
 	SLEEP	6
 	callr	update_grid
-	jruc	ojexmain_loop
+	jruc	otiimain_loop
 
-ojexttt_grid
+otiittt_grid
 	.word	GRID_TLX-2,GRID_TLY-2,299
 	.long	ttt_grid
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
 	.long	0,0
 	
-ojexgrid_title
+otiigrid_title
 	.word	GRID_TLX+35,GRID_TLY-12,299
 	.long	g_unhap
 	.word	DMAWNZ|M_3D|M_SCRNREL
@@ -1023,6 +1146,7 @@ ojexgrid_title
 	.long	0,0
 	
 
+*****************************************************************************
 
  SUBR	update_grid
 
@@ -1040,21 +1164,21 @@ ojexgrid_title
 	movi	grid_digit_values,a11
 	movi	9,b3
 
-ygxtouter_loop
+cmblouter_loop
 
 	movi	4,b2
 	move	*a9+,a0,L
 	calla	BINBCD
 
-ygxtinner_loop
+cmblinner_loop
 	move	a0,a14
 	sla	4,a0
 	andi	0F000H,a14
 	sra	12,a14
 	move	a14,*a11+,W
-	dsj	b2,ygxtinner_loop
+	dsj	b2,cmblinner_loop
 
-	dsj	b3,ygxtouter_loop
+	dsj	b3,cmblouter_loop
 
 
 	;update the digit objects
@@ -1063,45 +1187,46 @@ ygxtinner_loop
 	movi	grid_digit_values,a11
 	movi	9*4,b2
 
-ygxtloop
+cmblloop
 	move	*a11+,a0,W
 	X32	a0
-	addi	ygxtdigit_table,a0
+	addi	cmbldigit_table,a0
 	move	*a0,a0,L
 	move	*a10+,a8,L
 	move	*a8(OIMG),a2,L
 	cmp	a0,a2
-	jreq	ygxtmatch
+	jreq	cmblmatch
 
 	;animate
 	calla	civanic
 
-ygxtmatch
-	dsj	b2,ygxtloop
+cmblmatch
+	dsj	b2,cmblloop
 	
 
 	;update the title
 	move	@grid_mode,a0
 	X32	a0
-	addi	ygxtgrid_modes,a0
+	addi	cmblgrid_modes,a0
 	move	*a0,a0,L
 	move	@grid_title,a8,L
 	move	*a8(OIMG),a14,L
 	cmp	a14,a0
-	jreq	ygxtdone
+	jreq	cmbldone
 	calla	civanic
 
-ygxtdone
+cmbldone
 	rets
 
-ygxtdigit_table
+cmbldigit_table
 	.long	font60,font61,font62,font63,font64
 	.long	font65,font66,font67,font68,font69
 
-ygxtgrid_modes
+cmblgrid_modes
 	.long	g_unhap,g_d1,g_d2
 
  .endif
+******************************************************************************
 
 	.end
 

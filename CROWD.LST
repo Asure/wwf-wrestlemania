@@ -1,1319 +1,1417 @@
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
                                                                      PAGE    1
 
-       1                    
-       2                            .file   "crowd.asm"
-       4                            .width  132
-       5                            .option b,d,l,t
-       6                            .mnolist
-       7                    
-       8                    
-       9                            .include        "mproc.equ"             ;Mproc equates
-      10                            .include        "display.equ"           ;Display proc equates
-      11                            .include        "gsp.equ"               ;Gsp asm equates
-      12                            .include        "sys.equ"
-      13                            .include        "game.equ"
-      14                            .include        "audit.equ"
-      15                            .include        "macros.h"
-      16                            .include        "link.equ"
-      17                            .include        "sound.h"
-      18                    
-      19                            .INCLUDE        "SOUND.EQU"
-      20                            .include        "crowdimg.tbl"
-      21                            .include        "crowdimg.glo"
-      22                            .include        "bgndtbl.glo"
-      23                            .include        "imgtbl.glo"
-      24                    
-      25                    
-      26                            .ref    BAKLST,RNDRNG0,RNDPER,START_FLASHES,no_debris,reduce_bog
+       1                    **************************************************************
+       2                    *
+       3                    * Software:     Jason Skiles
+       4                    * Initiated:    28 Apr 94
+       5                    *
+       6                    * COPYRIGHT (C) 1993 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    *.Last mod - 4/28/94 22:12
+       9                    **************************************************************
+      10                    
+      11                            .file   "crowd.asm"
+      13                            .width  132
+      14                            .option b,d,l,t
+      15                            .mnolist
+      16                    
+      17                    
+      18                            .include        "mproc.equ"             ;Mproc equates
+      19                            .include        "display.equ"           ;Display proc equates
+      20                            .include        "gsp.equ"               ;Gsp asm equates
+      21                            .include        "sys.equ"
+      22                            .include        "game.equ"
+      23                            .include        "audit.equ"
+      24                            .include        "macros.h"
+      25                            .include        "link.equ"
+      26                            .include        "sound.h"
       27                    
-      28                    
-      29              0008  DEF_ANISPD      equ     8
-      30              7fff  SPD_FOREVER     equ     7FFFh
-      31                    
-      32              0000  CROWD_OBJS      equ     0h
-      33              0020  CROWD_NORMANIM  equ     20h
-      34              0040  CROWD_CHEERANIM equ     40h
+      28                            .INCLUDE        "SOUND.EQU"
+      29                            .include        "crowdimg.tbl"
+      30                            .include        "crowdimg.glo"
+      31                            .include        "bgndtbl.glo"
+      32                            .include        "imgtbl.glo"
+      33                    
+      34                    *****************************************************************************
       35                    
-      36              8000  CANI_GOTO       equ     0 + 8000h
-      37              8001  CANI_RNDWAIT    equ     1 + 8000h
-      38              8002  CANI_END                equ     2 + 8000H
-      39              8003  CANI_CODE       EQU     3 + 8000H
-      40              8004  CANI_REPEAT     EQU     4 + 8000H
-      41              8005  CANI_SHOULD_REPEAT EQU  5 + 8000H
+      36                            .ref    BAKLST,RNDRNG0,RNDPER,START_FLASHES,no_debris,reduce_bog
+      37                    
+      38                    *****************************************************************************
+      39                    
+      40              0008  DEF_ANISPD      equ     8
+      41              7fff  SPD_FOREVER     equ     7FFFh
       42                    
-      43              0000  SCPTR   .set    000     ;UHL script pointer (next instruction)
-      44              0020  TIME    .set    020h    ;UHW time to hold
-      45              0030  FRAME   .set    030h    ;UHL current obj
-      46              0050  CHEER1  .set    050h    ;UHL cheer1 jump point
-      47              0070  CHEER2  .set    070h    ;UHL cheer2 jump point
-      48              0090  REPEAT_P .SET   090H    ;UHL REPEAT POINT TO JUMP BACK TO
-      49              00b0  REPEAT_N .SET   0B0H    ;UHW REPEAT THIS NUMBER OF TIMES
-      50              00c0  BSIZE           equ     REPEAT_N+10h
-      51                    
-      52              001e  NUMCROWD        equ     30
+      43              0000  CROWD_OBJS      equ     0h
+      44              0020  CROWD_NORMANIM  equ     20h
+      45              0040  CROWD_CHEERANIM equ     40h
+      46                    
+      47              8000  CANI_GOTO       equ     0 + 8000h
+      48              8001  CANI_RNDWAIT    equ     1 + 8000h
+      49              8002  CANI_END                equ     2 + 8000H
+      50              8003  CANI_CODE       EQU     3 + 8000H
+      51              8004  CANI_REPEAT     EQU     4 + 8000H
+      52              8005  CANI_SHOULD_REPEAT EQU  5 + 8000H
       53                    
-      54              001d  HICROWDZ        equ     58/2            ;high z (after shift)
-      55                    
-      56 00000000                   BSSX    CROWDDATA,(NUMCROWD+1)*BSIZE
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+      54                    *STRUCT BOBJANIM
+      55              0000  SCPTR   .set    000     ;UHL script pointer (next instruction)
+      56              0020  TIME    .set    020h    ;UHW time to hold
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    2
 
-      57                    
-      58 00000000                   BSSX    crowd_process,32
-      59                    
-      60                    
-      61                    
-      62 00000000            SUBR   crowd_anim
-      63                    
-      64 00000000     078d          move    a13,@crowd_process,L
+      57              0030  FRAME   .set    030h    ;UHL current obj
+      58              0050  CHEER1  .set    050h    ;UHL cheer1 jump point
+      59              0070  CHEER2  .set    070h    ;UHL cheer2 jump point
+      60              0090  REPEAT_P .SET   090H    ;UHL REPEAT POINT TO JUMP BACK TO
+      61              00b0  REPEAT_N .SET   0B0H    ;UHW REPEAT THIS NUMBER OF TIMES
+      62                    *ENDSTRUCT
+      63              00c0  BSIZE           equ     REPEAT_N+10h
+      64                    
+      65              001e  NUMCROWD        equ     30
+      66                    
+      67              001d  HICROWDZ        equ     58/2            ;high z (after shift)
+      68                    
+      69 00000000                   BSSX    CROWDDATA,(NUMCROWD+1)*BSIZE
+      70                    
+      71 00000000                   BSSX    crowd_process,32
+      72                    
+      73                    *****************************************************************************
+      74                    * Main crowd control process
+      75                    *
+      76                    
+      77                    ;NOTE:  The background stuff is doing SOMETHING with ODXOFF and ODYOFF, so
+      78                    ;       I'm storing anim points in OXVEL and OYVEL instead.  Those seem safe.
+      79                    
+      80 00000000            SUBR   crowd_anim
+      81                    
+      82 00000000     078d          move    a13,@crowd_process,L
          00000010 00001740- 
-      65                    
-      66                            ;initialize
-      67 00000030     09c0          movi    NUMCROWD,a0
+      83                    
+      84                            ;initialize
+      85 00000030     09c0          movi    NUMCROWD,a0
          00000040     001e  
-      68 00000050     09e1          movi    CROWD_ANIMS,a1
+      86 00000050     09e1          movi    CROWD_ANIMS,a1
          00000060 00000ea0' 
-      69 00000080     09e2          movi    CROWDDATA,a2
+      87 00000080     09e2          movi    CROWDDATA,a2
          00000090 00000000- 
-      70 000000b0           yzfxinitloop
-      71 000000b0     9623          move    *a1+,a3,L
-      72 000000c0     946e          move    *a3+,a14,W
-      73 000000d0     b1c2          move    a14,*a2(TIME),W
+      88 000000b0           fpclinitloop
+      89 000000b0     9623          move    *a1+,a3,L
+      90 000000c0     946e          move    *a3+,a14,W
+      91 000000d0     b1c2          move    a14,*a2(TIME),W
          000000e0     0020  
-      74 000000f0     966e          move    *a3+,a14,L
-      75 00000100     b3c2          move    a14,*a2(FRAME),L
+      92 000000f0     966e          move    *a3+,a14,L
+      93 00000100     b3c2          move    a14,*a2(FRAME),L
          00000110     0030  
-      76 00000120     b262          move    a3,*a2(SCPTR),L
+      94 00000120     b262          move    a3,*a2(SCPTR),L
          00000130     0000  
-      77 00000140     962e          move    *a1+,a14,L
-      78 00000150     b3c2          move    a14,*a2(CHEER1),L
+      95 00000140     962e          move    *a1+,a14,L
+      96 00000150     b3c2          move    a14,*a2(CHEER1),L
          00000160     0050  
-      79 00000170     962e          move    *a1+,a14,L
-      80 00000180     b3c2          move    a14,*a2(CHEER2),L
+      97 00000170     962e          move    *a1+,a14,L
+      98 00000180     b3c2          move    a14,*a2(CHEER2),L
          00000190     0070  
-      81 000001a0     57ce          CLR     A14
-      82 000001b0     b3c2          MOVE    A14,*A2(REPEAT_P),L
+      99 000001a0     57ce          CLR     A14
+     100 000001b0     b3c2          MOVE    A14,*A2(REPEAT_P),L
          000001c0     0090  
-      83 000001d0     b1c2          MOVE    A14,*A2(REPEAT_N)
-         000001e0     00b0  
-      84 000001f0     0b02          addi    BSIZE,a2
-         00000200     00c0  
-      85 00000210     3ee0          dsj     a0,yzfxinitloop
-      86                    
-      87 00000220     57ce          clr     a14
-      88 00000230     b3c2          move    a14,*a2(SCPTR),L
-         00000240     0000  
-      89                    
-      90 00000250           yzfxmain_loop
-      91                            ;if we're in reduce_bog mode, sleep until someone wakes us up.
-      92 00000250     1820          movk    1,a0
-      93 00000260     05ae          move    @reduce_bog,a14
-         00000270 00000000! 
-      94 00000290     ca02          jrz     yzfxslp
-      95 000002a0     09c0          movi    7FFFh,a0
-         000002b0     7fff  
-      96 000002c0           yzfxslp SLEEPR  a0
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     101 000001d0     b1c2          MOVE    A14,*A2(REPEAT_N)
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    3
 
-      97                    
-      98                            ;update CROWDDATA
-      99 00000300     09e4          movi    CROWDDATA-BSIZE,a4
-         00000310 ffffff40- 
-     100 00000330           yzfxcd_loop
-     101 00000330     0b04          addi    BSIZE,a4
-         00000340     00c0  
-     102 00000350     b68e          move    *a4(SCPTR),a14,L
-         00000360     0000  
-     103 00000370     ca5f          jrz     yzfxcd_done
-     104 00000380     0d3f          callr   animate_back
-         00000390     0001  
-     105 000003a0     c0f8          jruc    yzfxcd_loop
-     106                    
+         000001e0     00b0  
+     102 000001f0     0b02          addi    BSIZE,a2
+         00000200     00c0  
+     103 00000210     3ee0          dsj     a0,fpclinitloop
+     104                    
+     105 00000220     57ce          clr     a14
+     106 00000230     b3c2          move    a14,*a2(SCPTR),L
+         00000240     0000  
      107                    
-     108 000003b0            SUBR   animate_back
-     109 000003b0     b48e          move    *a4(TIME),a14,W
-         000003c0     0020  
-     110 000003d0     142e          dec     a14
-     111 000003e0     ca04          jrz     yzfxnext_command
-     112 000003f0     b1c4          move    a14,*a4(TIME),W
-         00000400     0020  
-     113 00000410     182e          MOVK    1,A14
-     114 00000420     0960          rets
+     108 00000250           fpclmain_loop
+     109                            ;if we're in reduce_bog mode, sleep until someone wakes us up.
+     110 00000250     1820          movk    1,a0
+     111 00000260     05ae          move    @reduce_bog,a14
+         00000270 00000000! 
+     112 00000290     ca02          jrz     fpclslp
+     113 000002a0     09c0          movi    7FFFh,a0
+         000002b0     7fff  
+     114 000002c0           fpclslp SLEEPR  a0
      115                    
-     116                    
-     117 00000430           yzfxnext_command
-     118 00000430     b685          move    *a4(SCPTR),a5,L
+     116                            ;update CROWDDATA
+     117 00000300     09e4          movi    CROWDDATA-BSIZE,a4
+         00000310 ffffff40- 
+     118 00000330           fpclcd_loop
+     119 00000330     0b04          addi    BSIZE,a4
+         00000340     00c0  
+     120 00000350     b68e          move    *a4(SCPTR),a14,L
+         00000360     0000  
+     121 00000370     ca5f          jrz     fpclcd_done
+     122 00000380     0d3f          callr   animate_back
+         00000390     0001  
+     123 000003a0     c0f8          jruc    fpclcd_loop
+     124                    
+     125                    
+     126 000003b0            SUBR   animate_back
+     127 000003b0     b48e          move    *a4(TIME),a14,W
+         000003c0     0020  
+     128 000003d0     142e          dec     a14
+     129 000003e0     ca04          jrz     fpclnext_command
+     130 000003f0     b1c4          move    a14,*a4(TIME),W
+         00000400     0020  
+     131 00000410     182e          MOVK    1,A14
+     132 00000420     0960          rets
+     133                    
+     134                    
+     135 00000430           fpclnext_command
+     136 00000430     b685          move    *a4(SCPTR),a5,L
          00000440     0000  
-     119 00000450           yzfxnext_in_the_QUEUE
-     120 00000450     94ae          move    *a5+,a14,W
-     121 00000460     ce0a          jrn     yzfxcani_command
-     122 00000470     b1c4          move    a14,*a4(TIME),W
+     137 00000450           fpclnext_in_the_QUEUE
+     138 00000450     94ae          move    *a5+,a14,W
+     139 00000460     ce0a          jrn     fpclcani_command
+     140 00000470     b1c4          move    a14,*a4(TIME),W
          00000480     0020  
-     123 00000490     96ae          move    *a5+,a14,L
-     124 000004a0     b3c4          move    a14,*a4(FRAME),L
+     141 00000490     96ae          move    *a5+,a14,L
+     142 000004a0     b3c4          move    a14,*a4(FRAME),L
          000004b0     0030  
-     125 000004c0     b2a4          move    a5,*a4(SCPTR),L
-         000004d0     0000  
-     126                    
-     127                            ;You think a simple CLR would do the job here?  Try it.  I dare you.
-     128 000004e0     182e          MOVK    1,A14
-     129 000004f0     142e          DEC     A14
-     130 00000500     0960          rets
-     131                    
-     132 00000510           yzfxcani_command
-     133 00000510     0b8e          andi    7FFFh,a14
-         00000520 ffff8000  
-     134 00000540                   X32     a14
-     135 00000550     0b2e          addi    yzfxcani_commands,a14
-         00000560 000005a0' 
-     136 00000580     87ce          move    *a14,a14,L
-     137 00000590     016e          jump    a14
-     138                    
-     139 000005a0           yzfxcani_commands
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    4
 
-     140 000005a0 00000700'         .long   yzfx_goto
-     141 000005c0 00000740'         .long   yzfx_rndwait
-     142 000005e0 000006d0'         .LONG   yzfx_END_ANIM
-     143 00000600 00000660'         .LONG   yzfx_CODE
-     144 00000620 000007d0'         .LONG   yzfx_RANDOM_REPEAT
-     145 00000640 00000860'         .LONG   yzfx_SHOULD_WE_WE_REPEAT
-     146                    
-     147 00000660           yzfx_CODE
-     148 00000660     96a0          MOVE    *A5+,A0,L
-     149 00000670     098f          MMTM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A14
+     143 000004c0     b2a4          move    a5,*a4(SCPTR),L
+         000004d0     0000  
+     144                    
+     145                            ;You think a simple CLR would do the job here?  Try it.  I dare you.
+     146 000004e0     182e          MOVK    1,A14
+     147 000004f0     142e          DEC     A14
+     148 00000500     0960          rets
+     149                    
+     150 00000510           fpclcani_command
+     151 00000510     0b8e          andi    7FFFh,a14
+         00000520 ffff8000  
+     152 00000540                   X32     a14
+     153 00000550     0b2e          addi    fpclcani_commands,a14
+         00000560 000005a0' 
+     154 00000580     87ce          move    *a14,a14,L
+     155 00000590     016e          jump    a14
+     156                    
+     157 000005a0           fpclcani_commands
+     158 000005a0 00000700'         .long   fpcl_goto
+     159 000005c0 00000740'         .long   fpcl_rndwait
+     160 000005e0 000006d0'         .LONG   fpcl_END_ANIM
+     161 00000600 00000660'         .LONG   fpcl_CODE
+     162 00000620 000007d0'         .LONG   fpcl_RANDOM_REPEAT
+     163 00000640 00000860'         .LONG   fpcl_SHOULD_WE_WE_REPEAT
+     164                    
+     165                    **********
+     166 00000660           fpcl_CODE
+     167 00000660     96a0          MOVE    *A5+,A0,L
+     168 00000670     098f          MMTM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A14
          00000680     fff2  
-     150 00000690     0920          CALL    A0
-     151 000006a0     09af          MMFM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A14
+     169 00000690     0920          CALL    A0
+     170 000006a0     09af          MMFM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A14
          000006b0     4fff  
-     152 000006c0     c0d8          jruc    yzfxnext_in_the_QUEUE
-     153                    
-     154                    
-     155 000006d0           yzfx_END_ANIM
-     156 000006d0     09ce          MOVI    -1,A14
+     171 000006c0     c0d8          jruc    fpclnext_in_the_QUEUE
+     172                    
+     173                    
+     174 000006d0           fpcl_END_ANIM
+     175 000006d0     09ce          MOVI    -1,A14
          000006e0     ffff  
-     157 000006f0     0960          RETS
-     158                    
-     159 00000700           yzfx_goto
-     160 00000700     96a5          move    *a5+,a5,L
-     161 00000710     b2a4          move    a5,*a4(SCPTR),L
-         00000720     0000  
-     162 00000730     c0cf          jruc    yzfxnext_command
-     163                    
-     164 00000740           yzfx_rndwait
-     165 00000740     94a0          move    *a5+,a0,W
-     166 00000750     0d5f          calla   RNDRNG0
-         00000760 00000000! 
-     167 00000780     b004          move    a0,*a4(TIME),W
-         00000790     0020  
-     168 000007a0     b2a4          move    a5,*a4(SCPTR),L
-         000007b0     0000  
-     169 000007c0     0960          rets
-     170                    
-     171 000007d0           yzfx_RANDOM_REPEAT
-     172 000007d0     94a0          MOVE    *A5+,A0
-     173 000007e0     b2a4          MOVE    A5,*A4(REPEAT_P),L
-         000007f0     0090  
-     174 00000800     0d5f          CALLA   RNDRNG0
-         00000810 00000000! 
-     175 00000830     b004          MOVE    A0,*A4(REPEAT_N)
-         00000840     00b0  
-     176 00000850     c0bf          jruc    yzfxnext_in_the_QUEUE
+     176 000006f0     0960          RETS
      177                    
-     178 00000860           yzfx_SHOULD_WE_WE_REPEAT
-     179 00000860     b480          MOVE    *A4(REPEAT_N),A0
-         00000870     00b0  
-     180 00000880     1420          DEC     A0
-     181 00000890     b004          MOVE    A0,*A4(REPEAT_N)
-         000008a0     00b0  
-     182 000008b0     ca07          JRZ     REACHED_LAST_LOOP
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     178 00000700           fpcl_goto
+     179 00000700     96a5          move    *a5+,a5,L
+     180 00000710     b2a4          move    a5,*a4(SCPTR),L
+         00000720     0000  
+     181 00000730     c0cf          jruc    fpclnext_command
+     182                    
+     183                    **********
+     184 00000740           fpcl_rndwait
+     185 00000740     94a0          move    *a5+,a0,W
+     186 00000750     0d5f          calla   RNDRNG0
+         00000760 00000000! 
+     187 00000780     b004          move    a0,*a4(TIME),W
+         00000790     0020  
+     188 000007a0     b2a4          move    a5,*a4(SCPTR),L
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    5
 
-     183 000008c0     ce06          JRN     REACHED_LAST_LOOP
-     184 000008d0     ba84          MOVE    *A4(REPEAT_P),*A4(SCPTR),L
+         000007b0     0000  
+     189 000007c0     0960          rets
+     190                    
+     191 000007d0           fpcl_RANDOM_REPEAT
+     192 000007d0     94a0          MOVE    *A5+,A0
+     193 000007e0     b2a4          MOVE    A5,*A4(REPEAT_P),L
+         000007f0     0090  
+     194 00000800     0d5f          CALLA   RNDRNG0
+         00000810 00000000! 
+     195 00000830     b004          MOVE    A0,*A4(REPEAT_N)
+         00000840     00b0  
+     196 00000850     c0bf          jruc    fpclnext_in_the_QUEUE
+     197                    
+     198 00000860           fpcl_SHOULD_WE_WE_REPEAT
+     199 00000860     b480          MOVE    *A4(REPEAT_N),A0
+         00000870     00b0  
+     200 00000880     1420          DEC     A0
+     201 00000890     b004          MOVE    A0,*A4(REPEAT_N)
+         000008a0     00b0  
+     202 000008b0     ca07          JRZ     REACHED_LAST_LOOP
+     203 000008c0     ce06          JRN     REACHED_LAST_LOOP
+     204 000008d0     ba84          MOVE    *A4(REPEAT_P),*A4(SCPTR),L
          000008e0     0090  
          000008f0     0000  
-     185 00000900     b685          MOVE    *A4(REPEAT_P),A5,L
+     205 00000900     b685          MOVE    *A4(REPEAT_P),A5,L
          00000910     0090  
-     186 00000920     c0b2          jruc    yzfxnext_in_the_QUEUE
-     187 00000930           REACHED_LAST_LOOP
-     188 00000930     5600          CLR     A0
-     189 00000940     b004          MOVE    A0,*A4(REPEAT_N)
+     206 00000920     c0b2          jruc    fpclnext_in_the_QUEUE
+     207 00000930           REACHED_LAST_LOOP
+     208 00000930     5600          CLR     A0
+     209 00000940     b004          MOVE    A0,*A4(REPEAT_N)
          00000950     00b0  
-     190 00000960     c0ae          jruc    yzfxnext_in_the_QUEUE
-     191                    
-     192                    
-     193                    
-     194 00000970           yzfxcd_done
-     195                            .ref    PCNT
-     196 00000970     05ae          move    @PCNT,a14
+     210 00000960     c0ae          jruc    fpclnext_in_the_QUEUE
+     211                    
+     212                    
+     213                    
+     214 00000970           fpclcd_done
+     215                            .ref    PCNT
+     216 00000970     05ae          move    @PCNT,a14
          00000980 00000000! 
-     197 000009a0     1fee          btst    0,a14
-     198 000009b0     ca89          jrz     yzfxmain_loop
-     199                    
-     200                    
-     201                            ;update BAKLST
-     202 000009c0     07a8          move    @BAKLST,a8,L
+     217 000009a0     1fee          btst    0,a14
+     218 000009b0     ca89          jrz     fpclmain_loop
+     219                    
+     220                    
+     221                            ;update BAKLST
+     222 000009c0     07a8          move    @BAKLST,a8,L
          000009d0 00000000! 
-     203                    
-     204 000009f0           yzfxbakloop
-     205 000009f0     b500          move    *a8(OZPOS),a0,W
-         00000a00     00d0  
-     206 00000a10     2fe0          srl     1,a0
-     207 00000a20     c843          jrc     yzfxbakskip
-     208 00000a30     0b40          cmpi    HICROWDZ,a0
-         00000a40     ffe2  
-     209 00000a50     c740          jrgt    yzfxbakskip
-     210                    
-     211 00000a60     4c01          move    a0,a1
-     212 00000a70                   X64     a1
-     213 00000a80                   X128    a0
-     214 00000a90     4020          add     a1,a0
-     215                    
-     216 00000aa0     0b20          addi    CROWDDATA,a0
-         00000ab0 00000000- 
-     217 00000ad0     b600          move    *a0(FRAME),a0,L
-         00000ae0     0030  
-     218 00000af0     b701          move    *a8(OIMG),a1,L
-         00000b00     0170  
-     219 00000b10     4801          cmp     a0,a1
-     220 00000b20     ca33          jreq    yzfxbakskip
-     221                    
-     222 00000b30     b501          move    *a8(OCTRL),a1,W
-         00000b40     00f0  
      223                    
-     224 00000b50     b502          move    *a8(OXPOS),a2,W
-         00000b60     0090  
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     224 000009f0           fpclbakloop
+     225 000009f0     b500          move    *a8(OZPOS),a0,W
+         00000a00     00d0  
+     226 00000a10     2fe0          srl     1,a0
+     227 00000a20     c843          jrc     fpclbakskip
+     228 00000a30     0b40          cmpi    HICROWDZ,a0
+         00000a40     ffe2  
+     229 00000a50     c740          jrgt    fpclbakskip
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    6
 
-     225 00000b70     b503          move    *a8(OXVEL),a3,W
-         00000b80     0020  
-     226 00000b90     b404          move    *a0(IANIOFFX),a4,W
-         00000ba0     0020  
-     227 00000bb0     56a5          clr     a5
-     228 00000bc0     1f61          btst    B_FLIPH,a1
-     229 00000bd0     ca06          jrz     yzfxnoflip
      230                    
-     231                            ;obj is horz-flipped.  negate the Xanim point and adjust X pos
-     232                            ; by XSZold-XSZnew
-     233 00000be0     03a4          neg     a4
-     234 00000bf0     b505          move    *a8(OSIZEX),a5,W
-         00000c00     0130  
-     235 00000c10     b40e          move    *a0(ISIZEX),a14,W
-         00000c20     0000  
-     236 00000c30     45c5          sub     a14,a5
-     237 00000c40           yzfxnoflip
-     238 00000c40     4062          add     a3,a2
-     239 00000c50     4482          sub     a4,a2
-     240 00000c60     40a2          add     a5,a2
-     241 00000c70     b048          move    a2,*a8(OXPOS),W
-         00000c80     0090  
-     242 00000c90     b088          move    a4,*a8(OXVEL),W
-         00000ca0     0020  
-     243                    
+     231 00000a60     4c01          move    a0,a1
+     232 00000a70                   X64     a1
+     233 00000a80                   X128    a0
+     234 00000a90     4020          add     a1,a0
+     235                    
+     236 00000aa0     0b20          addi    CROWDDATA,a0
+         00000ab0 00000000- 
+     237 00000ad0     b600          move    *a0(FRAME),a0,L
+         00000ae0     0030  
+     238 00000af0     b701          move    *a8(OIMG),a1,L
+         00000b00     0170  
+     239 00000b10     4801          cmp     a0,a1
+     240 00000b20     ca33          jreq    fpclbakskip
+     241                    
+     242                    ;       callr   anibobj
+     243 00000b30     b501          move    *a8(OCTRL),a1,W
+         00000b40     00f0  
      244                    
-     245 00000cb0     b502          move    *a8(OYPOS),a2,W
+     245 00000b50     b502          move    *a8(OXPOS),a2,W
+         00000b60     0090  
+     246 00000b70     b503          move    *a8(OXVEL),a3,W
+         00000b80     0020  
+     247 00000b90     b404          move    *a0(IANIOFFX),a4,W
+         00000ba0     0020  
+     248 00000bb0     56a5          clr     a5
+     249 00000bc0     1f61          btst    B_FLIPH,a1
+     250 00000bd0     ca06          jrz     fpclnoflip
+     251                    
+     252                            ;obj is horz-flipped.  negate the Xanim point and adjust X pos
+     253                            ; by XSZold-XSZnew
+     254 00000be0     03a4          neg     a4
+     255 00000bf0     b505          move    *a8(OSIZEX),a5,W
+         00000c00     0130  
+     256 00000c10     b40e          move    *a0(ISIZEX),a14,W
+         00000c20     0000  
+     257 00000c30     45c5          sub     a14,a5
+     258 00000c40           fpclnoflip
+     259 00000c40     4062          add     a3,a2
+     260 00000c50     4482          sub     a4,a2
+     261 00000c60     40a2          add     a5,a2
+     262 00000c70     b048          move    a2,*a8(OXPOS),W
+         00000c80     0090  
+     263 00000c90     b088          move    a4,*a8(OXVEL),W
+         00000ca0     0020  
+     264                    
+     265                    
+     266 00000cb0     b502          move    *a8(OYPOS),a2,W
          00000cc0     00b0  
-     246 00000cd0     b503          move    *a8(OYVEL),a3,W
+     267 00000cd0     b503          move    *a8(OYVEL),a3,W
          00000ce0     0040  
-     247 00000cf0     b404          move    *a0(IANIOFFY),a4,W
+     268 00000cf0     b404          move    *a0(IANIOFFY),a4,W
          00000d00     0030  
-     248 00000d10     4062          add     a3,a2
-     249 00000d20     4482          sub     a4,a2
-     250 00000d30     b048          move    a2,*a8(OYPOS),W
-         00000d40     00b0  
-     251 00000d50     b088          move    a4,*a8(OYVEL),W
-         00000d60     0040  
-     252                    
-     253 00000d70     4c02          move    a0,a2
-     254 00000d80     4c23          move    a1,a3
-     255                    
-     256 00000d90     b248          move    a2,*a8(OIMG),L
-         00000da0     0170  
-     257 00000db0     ba48          move    *a2(0),*a8(OSIZE),L
-         00000dc0     0000  
-         00000dd0     0130  
-     258 00000de0     ba48          move    *a2(ISAG),*a8(OSAG),L
-         00000df0     0040  
-         00000e00     0110  
-     259                    
-     260 00000e10     0545          setf    5,0,0
-     261 00000e20     b848          move    *a2(ICTRL+7),*a8(OCTRL+7) ;Write 5 z comp bits
-         00000e30     0067  
-         00000e40     00f7  
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     269 00000d10     4062          add     a3,a2
+     270 00000d20     4482          sub     a4,a2
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    7
 
-     262 00000e50     0570          setf    16,1,0
-     263 00000e60           yzfxbakskip
-     264 00000e60     8708          move    *a8,a8,L
-     265 00000e70     cbb7          jrnz    yzfxbakloop
-     266                    
-     267                    
-     268 00000e80     c000          jruc    yzfxmain_loop
-         00000e90     ff3b  
-     269                    
-     270                    
-     271 00000ea0           CROWD_ANIMS
-     272 00000ea0 00004540'         .long   yzfxjasoncrd_norm, yzfxjasoncrd_cheer1,yzfxjasoncrd_cheer2
-     273 00000f00 00006a50'         .long   yzfxtonycrd_norm,  yzfxtonycrd_cheer1 ,yzfxtonycrd_cheer1
-     274 00000f60 00006ba0'         .long   yzfxvogel_norm,    yzfxvogel_cheer1      ,yzfxvogel_cheer2
-     275 00000fc0 00006330'         .long   yzfxtobias_norm,   yzfxtobias_cheer1     ,yzfxtobias_cheer2
-     276 00001020 00002c40'         .long   yzfxalex_norm,     yzfxalex_cheer1       ,yzfxalex_cheer2
-     277                    
-     278 00001080 00004fc0'         .long   yzfxmarine_norm,   yzfxmarine_cheer1     ,yzfxmarine_cheer2
-     279 000010e0 00003c70'         .long   yzfxjake_norm,     yzfxjake_cheer1       ,yzfxjake_cheer2
-     280 00001140 000047b0'         .long   yzfxjohnc_norm,    yzfxjohnc_cheer1      ,yzfxjohnc_cheer2
-     281 000011a0 00003480'         .long   yzfxdewey_norm,    yzfxdewey_cheer1      ,yzfxdewey_cheer2
-     282 00001200 000041b0'         .long   yzfxjason_norm,    yzfxjason_cheer1      ,yzfxjason_cheer2
-     283                    
-     284 00001260 00003ee0'         .long   yzfxjamie_norm,    yzfxjamie_cheer1      ,yzfxjamie_cheer2
-     285 000012c0 000059e0'         .long   yzfxsheridan_norm, yzfxsheridan_cheer1,yzfxsheridan_cheer2
-     286 00001320 000056e0'         .long   yzfxsal_norm,      yzfxsal_cheer1        ,yzfxsal_cheer2
-     287 00001380 00004ab0'         .long   yzfxjosh_norm,     yzfxjosh_cheer1       ,yzfxjosh_cheer2
-     288 000013e0 00005260'         .long   yzfxmark_norm,     yzfxmark_cheer1       ,yzfxmark_cheer1
+     271 00000d30     b048          move    a2,*a8(OYPOS),W
+         00000d40     00b0  
+     272 00000d50     b088          move    a4,*a8(OYVEL),W
+         00000d60     0040  
+     273                    
+     274 00000d70     4c02          move    a0,a2
+     275 00000d80     4c23          move    a1,a3
+     276                    
+     277 00000d90     b248          move    a2,*a8(OIMG),L
+         00000da0     0170  
+     278 00000db0     ba48          move    *a2(0),*a8(OSIZE),L
+         00000dc0     0000  
+         00000dd0     0130  
+     279 00000de0     ba48          move    *a2(ISAG),*a8(OSAG),L
+         00000df0     0040  
+         00000e00     0110  
+     280                    
+     281 00000e10     0545          setf    5,0,0
+     282 00000e20     b848          move    *a2(ICTRL+7),*a8(OCTRL+7) ;Write 5 z comp bits
+         00000e30     0067  
+         00000e40     00f7  
+     283                    ;       setf    6,0,0
+     284                    ;       move    a3,*a8(OCTRL)           ;Write 6 low bits
+     285 00000e50     0570          setf    16,1,0
+     286 00000e60           fpclbakskip
+     287 00000e60     8708          move    *a8,a8,L
+     288 00000e70     cbb7          jrnz    fpclbakloop
      289                    
-     290 00001440 000065a0'         .long   yzfxtony_norm,     yzfxtony_cheer1       ,yzfxtony_cheer2
-     291 000014a0 00002ee0'         .long   yzfxcarlos_norm,   yzfxcarlos_cheer1     ,yzfxcarlos_cheer2
-     292 00001500 000053e0'         .long   yzfxnewc_norm,     yzfxnewc_cheer1       ,yzfxnewc_cheer2
-     293 00001560 00004de0'         .long   yzfxjoy_norm,      yzfxjoy_cheer1        ,yzfxjoy_cheer1
-     294 000015c0 00005eb0'         .long   yzfxside1_norm,    yzfxside1_cheer1      ,yzfxside1_cheer1
-     295                    
-     296 00001620 00006030'         .long   yzfxside2_norm,    yzfxside2_cheer1      ,yzfxside2_cheer1
-     297 00001680 000061b0'         .long   yzfxside3_norm,    yzfxside3_cheer1      ,yzfxside3_cheer1
-     298 000016e0 00003980'         .long   yzfxgeorge_norm,   yzfxgeorge_cheer1     ,yzfxgeorge_cheer1
-     299 00001740 000031b0'         .long   yzfxdave_norm,     yzfxdave_cheer1       ,yzfxdave_cheer1
-     300 000017a0 000019e0'         .long   yzfxsophia_norm,   yzfxsophia_cheer1     ,yzfxsophia_cheer2
+     290                    
+     291 00000e80     c000          jruc    fpclmain_loop
+         00000e90     ff3b  
+     292                    
+     293                    
+     294                    ;crowd anim starting points
+     295 00000ea0           CROWD_ANIMS
+     296 00000ea0 00004540'         .long   fpcljasoncrd_norm, fpcljasoncrd_cheer1,fpcljasoncrd_cheer2
+     297 00000f00 00006a50'         .long   fpcltonycrd_norm,  fpcltonycrd_cheer1 ,fpcltonycrd_cheer1
+     298 00000f60 00006ba0'         .long   fpclvogel_norm,    fpclvogel_cheer1      ,fpclvogel_cheer2
+     299 00000fc0 00006330'         .long   fpcltobias_norm,   fpcltobias_cheer1     ,fpcltobias_cheer2
+     300 00001020 00002c40'         .long   fpclalex_norm,     fpclalex_cheer1       ,fpclalex_cheer2
      301                    
-     302 00001800 00001cb0'         .long   yzfxmancow_norm,   yzfxmancow_cheer1     ,yzfxmancow_cheer2
-     303 00001860 00002040'         .long   yzfxjak2_norm,  yzfxjak2_cheer1  ,yzfxjak2_cheer2
-     304 000018c0 000023d0'         .long   yzfxeugene_norm,        yzfxeugene_cheer1        ,yzfxeugene_cheer2
-     305 00001920 00002970'         .long   yzfxpenacho_norm,       yzfxpenacho_cheer1 ,yzfxpenacho_cheer2
-     306 00001980 000026a0'         .long   yzfxjenni_norm, yzfxjenni_cheer1         ,yzfxjenni_cheer2
+     302 00001080 00004fc0'         .long   fpclmarine_norm,   fpclmarine_cheer1     ,fpclmarine_cheer2
+     303 000010e0 00003c70'         .long   fpcljake_norm,     fpcljake_cheer1       ,fpcljake_cheer2
+     304 00001140 000047b0'         .long   fpcljohnc_norm,    fpcljohnc_cheer1      ,fpcljohnc_cheer2
+     305 000011a0 00003480'         .long   fpcldewey_norm,    fpcldewey_cheer1      ,fpcldewey_cheer2
+     306 00001200 000041b0'         .long   fpcljason_norm,    fpcljason_cheer1      ,fpcljason_cheer2
      307                    
-     308                    
-     309                    
-     310              0007  yzfxSOPHIA_SPD  equ     7
-     311                    
-     312 000019e0           yzfxsophia_norm
-     313 000019e0                   WL      SPD_FOREVER,SOFI1
-     314 00001a10                   WL      CANI_GOTO,yzfxsophia_norm
-     315                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     308 00001260 00003ee0'         .long   fpcljamie_norm,    fpcljamie_cheer1      ,fpcljamie_cheer2
+     309 000012c0 000059e0'         .long   fpclsheridan_norm, fpclsheridan_cheer1,fpclsheridan_cheer2
+     310 00001320 000056e0'         .long   fpclsal_norm,      fpclsal_cheer1        ,fpclsal_cheer2
+     311 00001380 00004ab0'         .long   fpcljosh_norm,     fpcljosh_cheer1       ,fpcljosh_cheer2
+     312 000013e0 00005260'         .long   fpclmark_norm,     fpclmark_cheer1       ,fpclmark_cheer1
+     313                    
+     314 00001440 000065a0'         .long   fpcltony_norm,     fpcltony_cheer1       ,fpcltony_cheer2
+     315 000014a0 00002ee0'         .long   fpclcarlos_norm,   fpclcarlos_cheer1     ,fpclcarlos_cheer2
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    8
 
-     316 00001a40           yzfxsophia_cheer1
-     317 00001a40                   WL      yzfxSOPHIA_SPD,SOFI2
-     318 00001a70                   WL      yzfxSOPHIA_SPD,SOFI3
-     319 00001aa0                   WL      yzfxSOPHIA_SPD,SOFI4
-     320 00001ad0                   WL      yzfxSOPHIA_SPD,SOFI3
-     321 00001b00                   WL      yzfxSOPHIA_SPD,SOFI2
-     322 00001b30                   WL      CANI_GOTO,yzfxsophia_norm
-     323                    
-     324 00001b60           yzfxsophia_cheer2
-     325 00001b60                   WL      yzfxSOPHIA_SPD,SOFI2
-     326 00001b90     8004          .WORD   CANI_REPEAT,4
-     327 00001bb0                   WL      yzfxSOPHIA_SPD,SOFI3
-     328 00001be0                   WL      yzfxSOPHIA_SPD,SOFI4
-     329 00001c10     8005          .WORD   CANI_SHOULD_REPEAT
-     330 00001c20                   WL      yzfxSOPHIA_SPD,SOFI3
-     331 00001c50                   WL      yzfxSOPHIA_SPD,SOFI2
-     332 00001c80                   WL      CANI_GOTO,yzfxsophia_norm
-     333                    
-     334                    
-     335              0006  yzfxMANCOW_SPD  equ     6
-     336                    
-     337 00001cb0           yzfxmancow_norm
-     338 00001cb0                   WL      SPD_FOREVER,MANC1
-     339 00001ce0                   WL      CANI_GOTO,yzfxmancow_norm
-     340                    
-     341 00001d10           yzfxmancow_cheer1
-     342 00001d10                   WL      yzfxMANCOW_SPD,MANC2
-     343 00001d40                   WL      yzfxMANCOW_SPD,MANC3
-     344 00001d70                   WL      yzfxMANCOW_SPD,MANC4
-     345 00001da0                   WL      yzfxMANCOW_SPD,MANC5
-     346 00001dd0                   WL      yzfxMANCOW_SPD,MANC4
-     347 00001e00                   WL      yzfxMANCOW_SPD,MANC3
-     348 00001e30                   WL      yzfxMANCOW_SPD,MANC2
-     349 00001e60                   WL      CANI_GOTO,yzfxmancow_norm
-     350                    
-     351 00001e90           yzfxmancow_cheer2
-     352 00001e90                   WL      yzfxMANCOW_SPD,MANC2
-     353 00001ec0     8004          .WORD   CANI_REPEAT,6
-     354 00001ee0                   WL      yzfxMANCOW_SPD,MANC3
-     355 00001f10                   WL      yzfxMANCOW_SPD,MANC4
-     356 00001f40                   WL      yzfxMANCOW_SPD,MANC5
-     357 00001f70                   WL      yzfxMANCOW_SPD,MANC4
-     358 00001fa0     8005          .WORD   CANI_SHOULD_REPEAT
-     359 00001fb0                   WL      yzfxMANCOW_SPD,MANC3
-     360 00001fe0                   WL      yzfxMANCOW_SPD,MANC2
-     361 00002010                   WL      CANI_GOTO,yzfxmancow_norm
+     316 00001500 000053e0'         .long   fpclnewc_norm,     fpclnewc_cheer1       ,fpclnewc_cheer2
+     317 00001560 00004de0'         .long   fpcljoy_norm,      fpcljoy_cheer1        ,fpcljoy_cheer1
+     318 000015c0 00005eb0'         .long   fpclside1_norm,    fpclside1_cheer1      ,fpclside1_cheer1
+     319                    
+     320 00001620 00006030'         .long   fpclside2_norm,    fpclside2_cheer1      ,fpclside2_cheer1
+     321 00001680 000061b0'         .long   fpclside3_norm,    fpclside3_cheer1      ,fpclside3_cheer1
+     322 000016e0 00003980'         .long   fpclgeorge_norm,   fpclgeorge_cheer1     ,fpclgeorge_cheer1
+     323 00001740 000031b0'         .long   fpcldave_norm,     fpcldave_cheer1       ,fpcldave_cheer1
+     324 000017a0 000019e0'         .long   fpclsophia_norm,   fpclsophia_cheer1     ,fpclsophia_cheer2
+     325                    
+     326 00001800 00001cb0'         .long   fpclmancow_norm,   fpclmancow_cheer1     ,fpclmancow_cheer2
+     327 00001860 00002040'         .long   fpcljak2_norm,  fpcljak2_cheer1  ,fpcljak2_cheer2
+     328 000018c0 000023d0'         .long   fpcleugene_norm,        fpcleugene_cheer1        ,fpcleugene_cheer2
+     329 00001920 00002970'         .long   fpclpenacho_norm,       fpclpenacho_cheer1 ,fpclpenacho_cheer2
+     330 00001980 000026a0'         .long   fpcljenni_norm, fpcljenni_cheer1         ,fpcljenni_cheer2
+     331                    
+     332                    
+     333                    **********
+     334                    * SOPHIA
+     335                    
+     336              0007  fpclSOPHIA_SPD  equ     7
+     337                    
+     338 000019e0           fpclsophia_norm
+     339 000019e0                   WL      SPD_FOREVER,SOFI1
+     340 00001a10                   WL      CANI_GOTO,fpclsophia_norm
+     341                    
+     342 00001a40           fpclsophia_cheer1
+     343 00001a40                   WL      fpclSOPHIA_SPD,SOFI2
+     344 00001a70                   WL      fpclSOPHIA_SPD,SOFI3
+     345 00001aa0                   WL      fpclSOPHIA_SPD,SOFI4
+     346 00001ad0                   WL      fpclSOPHIA_SPD,SOFI3
+     347 00001b00                   WL      fpclSOPHIA_SPD,SOFI2
+     348 00001b30                   WL      CANI_GOTO,fpclsophia_norm
+     349                    
+     350 00001b60           fpclsophia_cheer2
+     351 00001b60                   WL      fpclSOPHIA_SPD,SOFI2
+     352 00001b90     8004          .WORD   CANI_REPEAT,4
+     353 00001bb0                   WL      fpclSOPHIA_SPD,SOFI3
+     354 00001be0                   WL      fpclSOPHIA_SPD,SOFI4
+     355 00001c10     8005          .WORD   CANI_SHOULD_REPEAT
+     356 00001c20                   WL      fpclSOPHIA_SPD,SOFI3
+     357 00001c50                   WL      fpclSOPHIA_SPD,SOFI2
+     358 00001c80                   WL      CANI_GOTO,fpclsophia_norm
+     359                    
+     360                    **********
+     361                    * MANCOW
      362                    
-     363                    
-     364              0007  yzfxJAK_SPD     equ     7
-     365                    
-     366 00002040           yzfxjak2_norm
-     367 00002040                   WL      SPD_FOREVER,JAK1
-     368 00002070                   WL      CANI_GOTO,yzfxjak2_norm
-     369                    
-     370 000020a0           yzfxjak2_cheer1
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     363              0006  fpclMANCOW_SPD  equ     6
+     364                    
+     365 00001cb0           fpclmancow_norm
+     366 00001cb0                   WL      SPD_FOREVER,MANC1
+     367 00001ce0                   WL      CANI_GOTO,fpclmancow_norm
+     368                    
+     369 00001d10           fpclmancow_cheer1
+     370 00001d10                   WL      fpclMANCOW_SPD,MANC2
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE    9
 
-     371 000020a0                   WL      yzfxJAK_SPD,JAK2
-     372 000020d0                   WL      yzfxJAK_SPD,JAK3
-     373 00002100                   WL      yzfxJAK_SPD,JAK4
-     374 00002130                   WL      yzfxJAK_SPD+3,JAK5
-     375 00002160                   WL      yzfxJAK_SPD,JAK4
-     376 00002190                   WL      yzfxJAK_SPD,JAK3
-     377 000021c0                   WL      yzfxJAK_SPD,JAK2
-     378 000021f0                   WL      CANI_GOTO,yzfxjak2_norm
-     379                    
-     380 00002220           yzfxjak2_cheer2
-     381 00002220                   WL      yzfxJAK_SPD,JAK2
-     382 00002250     8004          .WORD   CANI_REPEAT,7
-     383 00002270                   WL      yzfxJAK_SPD,JAK3
-     384 000022a0                   WL      yzfxJAK_SPD,JAK4
-     385 000022d0                   WL      yzfxJAK_SPD+3,JAK5
-     386 00002300                   WL      yzfxJAK_SPD,JAK4
-     387 00002330     8005          .WORD   CANI_SHOULD_REPEAT
-     388 00002340                   WL      yzfxJAK_SPD,JAK3
-     389 00002370                   WL      yzfxJAK_SPD,JAK2
-     390 000023a0                   WL      CANI_GOTO,yzfxjak2_norm
-     391                    
-     392                    
+     371 00001d40                   WL      fpclMANCOW_SPD,MANC3
+     372 00001d70                   WL      fpclMANCOW_SPD,MANC4
+     373 00001da0                   WL      fpclMANCOW_SPD,MANC5
+     374 00001dd0                   WL      fpclMANCOW_SPD,MANC4
+     375 00001e00                   WL      fpclMANCOW_SPD,MANC3
+     376 00001e30                   WL      fpclMANCOW_SPD,MANC2
+     377 00001e60                   WL      CANI_GOTO,fpclmancow_norm
+     378                    
+     379 00001e90           fpclmancow_cheer2
+     380 00001e90                   WL      fpclMANCOW_SPD,MANC2
+     381 00001ec0     8004          .WORD   CANI_REPEAT,6
+     382 00001ee0                   WL      fpclMANCOW_SPD,MANC3
+     383 00001f10                   WL      fpclMANCOW_SPD,MANC4
+     384 00001f40                   WL      fpclMANCOW_SPD,MANC5
+     385 00001f70                   WL      fpclMANCOW_SPD,MANC4
+     386 00001fa0     8005          .WORD   CANI_SHOULD_REPEAT
+     387 00001fb0                   WL      fpclMANCOW_SPD,MANC3
+     388 00001fe0                   WL      fpclMANCOW_SPD,MANC2
+     389 00002010                   WL      CANI_GOTO,fpclmancow_norm
+     390                    
+     391                    **********
+     392                    * JAK
      393                    
-     394              0007  yzfxEUGENE_SPD  equ     7
+     394              0007  fpclJAK_SPD     equ     7
      395                    
-     396 000023d0           yzfxeugene_norm
-     397 000023d0                   WL      SPD_FOREVER,EUG1
-     398 00002400                   WL      CANI_GOTO,yzfxeugene_norm
+     396 00002040           fpcljak2_norm
+     397 00002040                   WL      SPD_FOREVER,JAK1
+     398 00002070                   WL      CANI_GOTO,fpcljak2_norm
      399                    
-     400 00002430           yzfxeugene_cheer1
-     401 00002430                   WL      yzfxEUGENE_SPD,EUG2
-     402 00002460                   WL      yzfxEUGENE_SPD,EUG3
-     403 00002490                   WL      yzfxEUGENE_SPD,EUG4
-     404 000024c0                   WL      yzfxEUGENE_SPD,EUG3
-     405 000024f0                   WL      yzfxEUGENE_SPD,EUG2
-     406 00002520                   WL      CANI_GOTO,yzfxeugene_norm
-     407                    
-     408 00002550           yzfxeugene_cheer2
-     409 00002550                   WL      yzfxEUGENE_SPD,EUG2
-     410 00002580     8004          .WORD   CANI_REPEAT,3
-     411 000025a0                   WL      yzfxEUGENE_SPD,EUG3
-     412 000025d0                   WL      yzfxEUGENE_SPD,EUG4
-     413 00002600     8005          .WORD   CANI_SHOULD_REPEAT
-     414 00002610                   WL      yzfxEUGENE_SPD,EUG3
-     415 00002640                   WL      yzfxEUGENE_SPD,EUG2
-     416 00002670                   WL      CANI_GOTO,yzfxeugene_norm
-     417                    
-     418                    
-     419              0007  yzfxJENNI_SPD   equ     7
-     420                    
-     421 000026a0           yzfxjenni_norm
-     422 000026a0                   WL      SPD_FOREVER,JENI1
-     423 000026d0                   WL      CANI_GOTO,yzfxjenni_norm
-     424                    
-     425 00002700           yzfxjenni_cheer1
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     400 000020a0           fpcljak2_cheer1
+     401 000020a0                   WL      fpclJAK_SPD,JAK2
+     402 000020d0                   WL      fpclJAK_SPD,JAK3
+     403 00002100                   WL      fpclJAK_SPD,JAK4
+     404 00002130                   WL      fpclJAK_SPD+3,JAK5
+     405 00002160                   WL      fpclJAK_SPD,JAK4
+     406 00002190                   WL      fpclJAK_SPD,JAK3
+     407 000021c0                   WL      fpclJAK_SPD,JAK2
+     408 000021f0                   WL      CANI_GOTO,fpcljak2_norm
+     409                    
+     410 00002220           fpcljak2_cheer2
+     411 00002220                   WL      fpclJAK_SPD,JAK2
+     412 00002250     8004          .WORD   CANI_REPEAT,7
+     413 00002270                   WL      fpclJAK_SPD,JAK3
+     414 000022a0                   WL      fpclJAK_SPD,JAK4
+     415 000022d0                   WL      fpclJAK_SPD+3,JAK5
+     416 00002300                   WL      fpclJAK_SPD,JAK4
+     417 00002330     8005          .WORD   CANI_SHOULD_REPEAT
+     418 00002340                   WL      fpclJAK_SPD,JAK3
+     419 00002370                   WL      fpclJAK_SPD,JAK2
+     420 000023a0                   WL      CANI_GOTO,fpcljak2_norm
+     421                    
+     422                    
+     423                    **********
+     424                    * EUGENE
+     425                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   10
 
-     426 00002700                   WL      yzfxJENNI_SPD,JENI2
-     427 00002730                   WL      yzfxJENNI_SPD,JENI3
-     428 00002760                   WL      yzfxJENNI_SPD,JENI4
-     429 00002790                   WL      yzfxJENNI_SPD,JENI3
-     430 000027c0                   WL      yzfxJENNI_SPD,JENI2
-     431 000027f0                   WL      CANI_GOTO,yzfxjenni_norm
-     432                    
-     433 00002820           yzfxjenni_cheer2
-     434 00002820                   WL      yzfxJENNI_SPD,JENI2
-     435 00002850     8004          .WORD   CANI_REPEAT,3
-     436 00002870                   WL      yzfxJENNI_SPD,JENI3
-     437 000028a0                   WL      yzfxJENNI_SPD,JENI4
-     438 000028d0     8005          .WORD   CANI_SHOULD_REPEAT
-     439 000028e0                   WL      yzfxJENNI_SPD,JENI3
-     440 00002910                   WL      yzfxJENNI_SPD,JENI2
-     441 00002940                   WL      CANI_GOTO,yzfxjenni_norm
-     442                    
-     443                    
-     444              0007  yzfxPENACHO_SPD equ     7
-     445                    
-     446 00002970           yzfxpenacho_norm
-     447 00002970                   WL      SPD_FOREVER,PENA1
-     448 000029a0                   WL      CANI_GOTO,yzfxpenacho_norm
+     426              0007  fpclEUGENE_SPD  equ     7
+     427                    
+     428 000023d0           fpcleugene_norm
+     429 000023d0                   WL      SPD_FOREVER,EUG1
+     430 00002400                   WL      CANI_GOTO,fpcleugene_norm
+     431                    
+     432 00002430           fpcleugene_cheer1
+     433 00002430                   WL      fpclEUGENE_SPD,EUG2
+     434 00002460                   WL      fpclEUGENE_SPD,EUG3
+     435 00002490                   WL      fpclEUGENE_SPD,EUG4
+     436 000024c0                   WL      fpclEUGENE_SPD,EUG3
+     437 000024f0                   WL      fpclEUGENE_SPD,EUG2
+     438 00002520                   WL      CANI_GOTO,fpcleugene_norm
+     439                    
+     440 00002550           fpcleugene_cheer2
+     441 00002550                   WL      fpclEUGENE_SPD,EUG2
+     442 00002580     8004          .WORD   CANI_REPEAT,3
+     443 000025a0                   WL      fpclEUGENE_SPD,EUG3
+     444 000025d0                   WL      fpclEUGENE_SPD,EUG4
+     445 00002600     8005          .WORD   CANI_SHOULD_REPEAT
+     446 00002610                   WL      fpclEUGENE_SPD,EUG3
+     447 00002640                   WL      fpclEUGENE_SPD,EUG2
+     448 00002670                   WL      CANI_GOTO,fpcleugene_norm
      449                    
-     450 000029d0           yzfxpenacho_cheer1
-     451 000029d0                   WL      yzfxPENACHO_SPD,PENA2
-     452 00002a00                   WL      yzfxPENACHO_SPD,PENA3
-     453 00002a30                   WL      yzfxPENACHO_SPD,PENA4
-     454 00002a60                   WL      yzfxPENACHO_SPD,PENA3
-     455 00002a90                   WL      yzfxPENACHO_SPD,PENA2
-     456 00002ac0                   WL      CANI_GOTO,yzfxpenacho_norm
-     457                    
-     458 00002af0           yzfxpenacho_cheer2
-     459 00002af0     8004          .WORD   CANI_REPEAT,4
-     460 00002b10                   WL      yzfxPENACHO_SPD,PENA2
-     461 00002b40                   WL      yzfxPENACHO_SPD,PENA3
-     462 00002b70                   WL      yzfxPENACHO_SPD,PENA4
-     463 00002ba0                   WL      yzfxPENACHO_SPD,PENA3
-     464 00002bd0     8005          .WORD   CANI_SHOULD_REPEAT
-     465 00002be0                   WL      yzfxPENACHO_SPD,PENA2
-     466 00002c10                   WL      CANI_GOTO,yzfxpenacho_norm
-     467                    
-     468                    
-     469                    
-     470                    
-     471                    
-     472              0006  yzfxALEX_SPD    equ     6
-     473                    
-     474 00002c40           yzfxalex_norm
-     475 00002c40                   WL      SPD_FOREVER,ALEX1
-     476 00002c70                   WL      CANI_GOTO,yzfxalex_norm
-     477                    
-     478 00002ca0           yzfxalex_cheer1
-     479 00002ca0                   WL      yzfxALEX_SPD,ALEX2
-     480 00002cd0                   WL      yzfxALEX_SPD,ALEX3
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     450                    **********
+     451                    * JENNI
+     452                    
+     453              0007  fpclJENNI_SPD   equ     7
+     454                    
+     455 000026a0           fpcljenni_norm
+     456 000026a0                   WL      SPD_FOREVER,JENI1
+     457 000026d0                   WL      CANI_GOTO,fpcljenni_norm
+     458                    
+     459 00002700           fpcljenni_cheer1
+     460 00002700                   WL      fpclJENNI_SPD,JENI2
+     461 00002730                   WL      fpclJENNI_SPD,JENI3
+     462 00002760                   WL      fpclJENNI_SPD,JENI4
+     463 00002790                   WL      fpclJENNI_SPD,JENI3
+     464 000027c0                   WL      fpclJENNI_SPD,JENI2
+     465 000027f0                   WL      CANI_GOTO,fpcljenni_norm
+     466                    
+     467 00002820           fpcljenni_cheer2
+     468 00002820                   WL      fpclJENNI_SPD,JENI2
+     469 00002850     8004          .WORD   CANI_REPEAT,3
+     470 00002870                   WL      fpclJENNI_SPD,JENI3
+     471 000028a0                   WL      fpclJENNI_SPD,JENI4
+     472 000028d0     8005          .WORD   CANI_SHOULD_REPEAT
+     473 000028e0                   WL      fpclJENNI_SPD,JENI3
+     474 00002910                   WL      fpclJENNI_SPD,JENI2
+     475 00002940                   WL      CANI_GOTO,fpcljenni_norm
+     476                    
+     477                    **********
+     478                    * PENACHO
+     479                    
+     480              0007  fpclPENACHO_SPD equ     7
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   11
 
-     481 00002d00                   WL      yzfxALEX_SPD,ALEX4
-     482 00002d30                   WL      yzfxALEX_SPD,ALEX2
-     483 00002d60                   WL      CANI_GOTO,yzfxalex_norm
-     484 00002d90           yzfxalex_cheer2
-     485 00002d90                   WL      yzfxALEX_SPD,ALEX2
-     486 00002dc0                   WL      yzfxALEX_SPD,ALEX3
-     487 00002df0     8004          .WORD   CANI_REPEAT,7
-     488 00002e10                   WL      yzfxALEX_SPD,ALEX4
-     489 00002e40                   WL      yzfxALEX_SPD,ALEX3
-     490 00002e70     8005          .WORD   CANI_SHOULD_REPEAT
-     491 00002e80                   WL      yzfxALEX_SPD,ALEX2
-     492 00002eb0                   WL      CANI_GOTO,yzfxalex_norm
+     481                    
+     482 00002970           fpclpenacho_norm
+     483 00002970                   WL      SPD_FOREVER,PENA1
+     484 000029a0                   WL      CANI_GOTO,fpclpenacho_norm
+     485                    
+     486 000029d0           fpclpenacho_cheer1
+     487 000029d0                   WL      fpclPENACHO_SPD,PENA2
+     488 00002a00                   WL      fpclPENACHO_SPD,PENA3
+     489 00002a30                   WL      fpclPENACHO_SPD,PENA4
+     490 00002a60                   WL      fpclPENACHO_SPD,PENA3
+     491 00002a90                   WL      fpclPENACHO_SPD,PENA2
+     492 00002ac0                   WL      CANI_GOTO,fpclpenacho_norm
      493                    
-     494                    
-     495              0007  yzfxCARLOS_SPD  equ     7
-     496                    
-     497 00002ee0           yzfxcarlos_norm
-     498 00002ee0                   WL      SPD_FOREVER,CARLO1
-     499 00002f10                   WL      CANI_GOTO,yzfxcarlos_norm
-     500                    
-     501 00002f40           yzfxcarlos_cheer1
-     502 00002f40                   WL      yzfxCARLOS_SPD,CARLO2
-     503 00002f70                   WL      yzfxCARLOS_SPD,CARLO3
-     504 00002fa0                   WL      yzfxCARLOS_SPD,CARLO4
-     505 00002fd0                   WL      yzfxCARLOS_SPD,CARLO2
-     506 00003000                   WL      CANI_GOTO,yzfxcarlos_norm
-     507                    
-     508 00003030           yzfxcarlos_cheer2
-     509 00003030                   WL      yzfxCARLOS_SPD,CARLO2
-     510 00003060                   WL      yzfxCARLOS_SPD,CARLO3
-     511 00003090                   WL      yzfxCARLOS_SPD,CARLO4
-     512 000030c0     8004          .WORD   CANI_REPEAT,7
-     513 000030e0                   WL      yzfxCARLOS_SPD,CARLO3
-     514 00003110                   WL      yzfxCARLOS_SPD,CARLO4
-     515 00003140     8005          .WORD   CANI_SHOULD_REPEAT
-     516 00003150                   WL      yzfxCARLOS_SPD,CARLO2
-     517 00003180                   WL      CANI_GOTO,yzfxcarlos_norm
-     518                    
-     519                    
-     520              0008  yzfxDAVE_SPD    equ     8
-     521                    
-     522 000031b0           yzfxdave_norm
-     523 000031b0                   WL      SPD_FOREVER,DAVEMSK1
-     524 000031e0                   WL      CANI_GOTO,yzfxdave_norm
-     525                    
-     526 00003210           yzfxdave_cheer1
-     527 00003210                   WL      yzfxDAVE_SPD,DAVEMSK2
-     528 00003240                   WL      yzfxDAVE_SPD,DAVEMSK3
-     529 00003270                   WL      yzfxDAVE_SPD,DAVEMSK4
-     530 000032a0                   WL      yzfxDAVE_SPD,DAVEMSK3
-     531 000032d0                   WL      yzfxDAVE_SPD,DAVEMSK2
-     532 00003300                   WL      CANI_GOTO,yzfxdave_norm
-     533                    
-     534 00003330           yzfxdave_cheer2
-     535 00003330     8004          .WORD   CANI_REPEAT,7
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     494 00002af0           fpclpenacho_cheer2
+     495 00002af0     8004          .WORD   CANI_REPEAT,4
+     496 00002b10                   WL      fpclPENACHO_SPD,PENA2
+     497 00002b40                   WL      fpclPENACHO_SPD,PENA3
+     498 00002b70                   WL      fpclPENACHO_SPD,PENA4
+     499 00002ba0                   WL      fpclPENACHO_SPD,PENA3
+     500 00002bd0     8005          .WORD   CANI_SHOULD_REPEAT
+     501 00002be0                   WL      fpclPENACHO_SPD,PENA2
+     502 00002c10                   WL      CANI_GOTO,fpclpenacho_norm
+     503                    
+     504                    
+     505                    
+     506                    
+     507                    **********
+     508                    * Alex
+     509                    
+     510              0006  fpclALEX_SPD    equ     6
+     511                    
+     512 00002c40           fpclalex_norm
+     513 00002c40                   WL      SPD_FOREVER,ALEX1
+     514 00002c70                   WL      CANI_GOTO,fpclalex_norm
+     515                    
+     516 00002ca0           fpclalex_cheer1
+     517 00002ca0                   WL      fpclALEX_SPD,ALEX2
+     518 00002cd0                   WL      fpclALEX_SPD,ALEX3
+     519 00002d00                   WL      fpclALEX_SPD,ALEX4
+     520 00002d30                   WL      fpclALEX_SPD,ALEX2
+     521 00002d60                   WL      CANI_GOTO,fpclalex_norm
+     522 00002d90           fpclalex_cheer2
+     523 00002d90                   WL      fpclALEX_SPD,ALEX2
+     524 00002dc0                   WL      fpclALEX_SPD,ALEX3
+     525 00002df0     8004          .WORD   CANI_REPEAT,7
+     526 00002e10                   WL      fpclALEX_SPD,ALEX4
+     527 00002e40                   WL      fpclALEX_SPD,ALEX3
+     528 00002e70     8005          .WORD   CANI_SHOULD_REPEAT
+     529 00002e80                   WL      fpclALEX_SPD,ALEX2
+     530 00002eb0                   WL      CANI_GOTO,fpclalex_norm
+     531                    
+     532                    **********
+     533                    * Carlos
+     534                    
+     535              0007  fpclCARLOS_SPD  equ     7
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   12
 
-     536 00003350                   WL      yzfxDAVE_SPD,DAVEMSK2
-     537 00003380                   WL      yzfxDAVE_SPD,DAVEMSK3
-     538 000033b0     8005          .WORD   CANI_SHOULD_REPEAT
-     539 000033c0                   WL      yzfxDAVE_SPD,DAVEMSK4
-     540 000033f0                   WL      yzfxDAVE_SPD,DAVEMSK3
-     541 00003420                   WL      yzfxDAVE_SPD,DAVEMSK2
-     542 00003450                   WL      CANI_GOTO,yzfxdave_norm
-     543                    
-     544                    
-     545              0007  yzfxDEWEY_SPD   equ     7
-     546                    
-     547 00003480           yzfxdewey_norm
-     548 00003480                   WL      yzfxDEWEY_SPD,DEWY1
-     549 000034b0     8001          .word   CANI_RNDWAIT,TSEC*10
-     550 000034d0                   WL      yzfxDEWEY_SPD,DEWY2
-     551 00003500                   WL      yzfxDEWEY_SPD,DEWY3
-     552 00003530                   WL      yzfxDEWEY_SPD,DEWY4
-     553 00003560                   WL      yzfxDEWEY_SPD,DEWY3
-     554 00003590                   WL      yzfxDEWEY_SPD,DEWY2
-     555 000035c0                   WL      CANI_GOTO,yzfxdewey_norm
-     556                    
-     557 000035f0           yzfxdewey_cheer1
-     558 000035f0                   WL      yzfxDEWEY_SPD,DEWY1
-     559 00003620                   WL      yzfxDEWEY_SPD,DEWY2
-     560 00003650                   WL      yzfxDEWEY_SPD,DEWY3
-     561 00003680                   WL      yzfxDEWEY_SPD,DEWY4
-     562 000036b0                   WL      yzfxDEWEY_SPD,DEWY3
-     563 000036e0                   WL      yzfxDEWEY_SPD,DEWY2
-     564 00003710                   WL      CANI_GOTO,yzfxdewey_norm
-     565                    
-     566 00003740           yzfxdewey_cheer2
-     567 00003740                   WL      yzfxDEWEY_SPD,DEWY1
-     568 00003770     8004          .WORD   CANI_REPEAT,7
-     569 00003790                   WL      yzfxDEWEY_SPD,DEWY2
-     570 000037c0                   WL      yzfxDEWEY_SPD,DEWY3
-     571 000037f0                   WL      yzfxDEWEY_SPD,DEWY4
-     572 00003820                   WL      yzfxDEWEY_SPD,DEWY3
-     573 00003850                   WL      yzfxDEWEY_SPD,DEWY2
-     574 00003880                   WL      yzfxDEWEY_SPD,DEWY3
-     575 000038b0                   WL      yzfxDEWEY_SPD,DEWY4
-     576 000038e0                   WL      yzfxDEWEY_SPD,DEWY3
-     577 00003910     8005          .WORD   CANI_SHOULD_REPEAT
-     578 00003920                   WL      yzfxDEWEY_SPD,DEWY2
-     579 00003950                   WL      CANI_GOTO,yzfxdewey_norm
-     580                    
-     581                    
-     582              0008  yzfxGEORGE_SPD  equ     8
-     583                    
-     584 00003980           yzfxgeorge_norm
-     585 00003980                   WL      yzfxGEORGE_SPD,GEORGE1
-     586 000039b0     8001          .word   CANI_RNDWAIT,TSEC*4
-     587 000039d0                   WL      yzfxGEORGE_SPD,GEORGE2
-     588 00003a00                   WL      yzfxGEORGE_SPD,GEORGE3
-     589 00003a30                   WL      yzfxGEORGE_SPD,GEORGE4
-     590 00003a60                   WL      yzfxGEORGE_SPD,GEORGE3
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     536                    
+     537 00002ee0           fpclcarlos_norm
+     538 00002ee0                   WL      SPD_FOREVER,CARLO1
+     539 00002f10                   WL      CANI_GOTO,fpclcarlos_norm
+     540                    
+     541 00002f40           fpclcarlos_cheer1
+     542 00002f40                   WL      fpclCARLOS_SPD,CARLO2
+     543 00002f70                   WL      fpclCARLOS_SPD,CARLO3
+     544 00002fa0                   WL      fpclCARLOS_SPD,CARLO4
+     545 00002fd0                   WL      fpclCARLOS_SPD,CARLO2
+     546 00003000                   WL      CANI_GOTO,fpclcarlos_norm
+     547                    
+     548 00003030           fpclcarlos_cheer2
+     549 00003030                   WL      fpclCARLOS_SPD,CARLO2
+     550 00003060                   WL      fpclCARLOS_SPD,CARLO3
+     551 00003090                   WL      fpclCARLOS_SPD,CARLO4
+     552 000030c0     8004          .WORD   CANI_REPEAT,7
+     553 000030e0                   WL      fpclCARLOS_SPD,CARLO3
+     554 00003110                   WL      fpclCARLOS_SPD,CARLO4
+     555 00003140     8005          .WORD   CANI_SHOULD_REPEAT
+     556 00003150                   WL      fpclCARLOS_SPD,CARLO2
+     557 00003180                   WL      CANI_GOTO,fpclcarlos_norm
+     558                    
+     559                    **********
+     560                    * Dave
+     561                    
+     562              0008  fpclDAVE_SPD    equ     8
+     563                    
+     564 000031b0           fpcldave_norm
+     565 000031b0                   WL      SPD_FOREVER,DAVEMSK1
+     566 000031e0                   WL      CANI_GOTO,fpcldave_norm
+     567                    
+     568 00003210           fpcldave_cheer1
+     569 00003210                   WL      fpclDAVE_SPD,DAVEMSK2
+     570 00003240                   WL      fpclDAVE_SPD,DAVEMSK3
+     571 00003270                   WL      fpclDAVE_SPD,DAVEMSK4
+     572 000032a0                   WL      fpclDAVE_SPD,DAVEMSK3
+     573 000032d0                   WL      fpclDAVE_SPD,DAVEMSK2
+     574 00003300                   WL      CANI_GOTO,fpcldave_norm
+     575                    
+     576 00003330           fpcldave_cheer2
+     577 00003330     8004          .WORD   CANI_REPEAT,7
+     578 00003350                   WL      fpclDAVE_SPD,DAVEMSK2
+     579 00003380                   WL      fpclDAVE_SPD,DAVEMSK3
+     580 000033b0     8005          .WORD   CANI_SHOULD_REPEAT
+     581 000033c0                   WL      fpclDAVE_SPD,DAVEMSK4
+     582 000033f0                   WL      fpclDAVE_SPD,DAVEMSK3
+     583 00003420                   WL      fpclDAVE_SPD,DAVEMSK2
+     584 00003450                   WL      CANI_GOTO,fpcldave_norm
+     585                    
+     586                    **********
+     587                    * Dewey
+     588                    
+     589              0007  fpclDEWEY_SPD   equ     7
+     590                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   13
 
-     591 00003a90                   WL      yzfxGEORGE_SPD,GEORGE2
-     592 00003ac0                   WL      CANI_GOTO,yzfxgeorge_norm
-     593                    
-     594 00003af0           yzfxgeorge_cheer1
-     595 00003af0     8004          .WORD   CANI_REPEAT,2
-     596 00003b10                   WL      yzfxGEORGE_SPD,GEORGE1
-     597 00003b40                   WL      yzfxGEORGE_SPD,GEORGE2
-     598 00003b70                   WL      yzfxGEORGE_SPD,GEORGE3
-     599 00003ba0                   WL      yzfxGEORGE_SPD,GEORGE4
-     600 00003bd0                   WL      yzfxGEORGE_SPD,GEORGE3
-     601 00003c00                   WL      yzfxGEORGE_SPD,GEORGE2
-     602 00003c30     8005          .WORD   CANI_SHOULD_REPEAT
-     603 00003c40                   WL      CANI_GOTO,yzfxgeorge_norm
-     604                    
-     605                    
-     606              0008  yzfxJAKE_SPD    equ     8
-     607                    
-     608 00003c70           yzfxjake_norm
-     609 00003c70                   WL      SPD_FOREVER,JAKE1
-     610 00003ca0                   WL      CANI_GOTO,yzfxjake_norm
-     611                    
-     612 00003cd0           yzfxjake_cheer1
-     613 00003cd0                   WL      yzfxJAKE_SPD,JAKE2
-     614 00003d00                   WL      yzfxJAKE_SPD,JAKE3
-     615 00003d30                   WL      yzfxJAKE_SPD,JAKE4
-     616 00003d60                   WL      yzfxJAKE_SPD,JAKE2
-     617 00003d90                   WL      CANI_GOTO,yzfxjake_norm
-     618                    
-     619 00003dc0           yzfxjake_cheer2
-     620 00003dc0                   WL      yzfxJAKE_SPD,JAKE2
-     621 00003df0     8004          .WORD   CANI_REPEAT,4
-     622 00003e10                   WL      yzfxJAKE_SPD,JAKE3
-     623 00003e40                   WL      yzfxJAKE_SPD,JAKE4
-     624 00003e70     8005          .WORD   CANI_SHOULD_REPEAT
-     625 00003e80                   WL      yzfxJAKE_SPD,JAKE2
-     626 00003eb0                   WL      CANI_GOTO,yzfxjake_norm
+     591 00003480           fpcldewey_norm
+     592 00003480                   WL      fpclDEWEY_SPD,DEWY1
+     593 000034b0     8001          .word   CANI_RNDWAIT,TSEC*10
+     594 000034d0                   WL      fpclDEWEY_SPD,DEWY2
+     595 00003500                   WL      fpclDEWEY_SPD,DEWY3
+     596 00003530                   WL      fpclDEWEY_SPD,DEWY4
+     597 00003560                   WL      fpclDEWEY_SPD,DEWY3
+     598 00003590                   WL      fpclDEWEY_SPD,DEWY2
+     599 000035c0                   WL      CANI_GOTO,fpcldewey_norm
+     600                    
+     601 000035f0           fpcldewey_cheer1
+     602 000035f0                   WL      fpclDEWEY_SPD,DEWY1
+     603 00003620                   WL      fpclDEWEY_SPD,DEWY2
+     604 00003650                   WL      fpclDEWEY_SPD,DEWY3
+     605 00003680                   WL      fpclDEWEY_SPD,DEWY4
+     606 000036b0                   WL      fpclDEWEY_SPD,DEWY3
+     607 000036e0                   WL      fpclDEWEY_SPD,DEWY2
+     608 00003710                   WL      CANI_GOTO,fpcldewey_norm
+     609                    
+     610 00003740           fpcldewey_cheer2
+     611 00003740                   WL      fpclDEWEY_SPD,DEWY1
+     612 00003770     8004          .WORD   CANI_REPEAT,7
+     613 00003790                   WL      fpclDEWEY_SPD,DEWY2
+     614 000037c0                   WL      fpclDEWEY_SPD,DEWY3
+     615 000037f0                   WL      fpclDEWEY_SPD,DEWY4
+     616 00003820                   WL      fpclDEWEY_SPD,DEWY3
+     617 00003850                   WL      fpclDEWEY_SPD,DEWY2
+     618 00003880                   WL      fpclDEWEY_SPD,DEWY3
+     619 000038b0                   WL      fpclDEWEY_SPD,DEWY4
+     620 000038e0                   WL      fpclDEWEY_SPD,DEWY3
+     621 00003910     8005          .WORD   CANI_SHOULD_REPEAT
+     622 00003920                   WL      fpclDEWEY_SPD,DEWY2
+     623 00003950                   WL      CANI_GOTO,fpcldewey_norm
+     624                    
+     625                    **********
+     626                    * George
      627                    
-     628                    
-     629              0005  yzfxJAMIE_SPD   equ     5
-     630                    
-     631 00003ee0           yzfxjamie_norm
-     632 00003ee0                   WL      SPD_FOREVER,JAMIE1
-     633 00003f10                   WL      CANI_GOTO,yzfxjamie_norm
-     634                    
-     635 00003f40           yzfxjamie_cheer1
-     636 00003f40                   WL      yzfxJAMIE_SPD,JAMIE2
-     637 00003f70                   WL      yzfxJAMIE_SPD,JAMIE3
-     638 00003fa0                   WL      yzfxJAMIE_SPD,JAMIE4
-     639 00003fd0                   WL      yzfxJAMIE_SPD,JAMIE5
-     640 00004000                   WL      yzfxJAMIE_SPD,JAMIE6
-     641 00004030                   WL      CANI_GOTO,yzfxjamie_norm
-     642                    
-     643 00004060           yzfxjamie_cheer2
-     644 00004060     8004          .WORD   CANI_REPEAT,7
-     645 00004080                   WL      yzfxJAMIE_SPD,JAMIE2
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     628              0008  fpclGEORGE_SPD  equ     8
+     629                    
+     630 00003980           fpclgeorge_norm
+     631 00003980                   WL      fpclGEORGE_SPD,GEORGE1
+     632 000039b0     8001          .word   CANI_RNDWAIT,TSEC*4
+     633 000039d0                   WL      fpclGEORGE_SPD,GEORGE2
+     634 00003a00                   WL      fpclGEORGE_SPD,GEORGE3
+     635 00003a30                   WL      fpclGEORGE_SPD,GEORGE4
+     636 00003a60                   WL      fpclGEORGE_SPD,GEORGE3
+     637 00003a90                   WL      fpclGEORGE_SPD,GEORGE2
+     638 00003ac0                   WL      CANI_GOTO,fpclgeorge_norm
+     639                    
+     640 00003af0           fpclgeorge_cheer1
+     641 00003af0     8004          .WORD   CANI_REPEAT,2
+     642 00003b10                   WL      fpclGEORGE_SPD,GEORGE1
+     643 00003b40                   WL      fpclGEORGE_SPD,GEORGE2
+     644 00003b70                   WL      fpclGEORGE_SPD,GEORGE3
+     645 00003ba0                   WL      fpclGEORGE_SPD,GEORGE4
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   14
 
-     646 000040b0                   WL      yzfxJAMIE_SPD,JAMIE3
-     647 000040e0     8005          .WORD   CANI_SHOULD_REPEAT
-     648 000040f0                   WL      yzfxJAMIE_SPD,JAMIE4
-     649 00004120                   WL      yzfxJAMIE_SPD,JAMIE5
-     650 00004150                   WL      yzfxJAMIE_SPD,JAMIE6
-     651 00004180                   WL      CANI_GOTO,yzfxjamie_norm
-     652                    
+     646 00003bd0                   WL      fpclGEORGE_SPD,GEORGE3
+     647 00003c00                   WL      fpclGEORGE_SPD,GEORGE2
+     648 00003c30     8005          .WORD   CANI_SHOULD_REPEAT
+     649 00003c40                   WL      CANI_GOTO,fpclgeorge_norm
+     650                    
+     651                    **********
+     652                    * Jake
      653                    
-     654              0006  yzfxJASON_SPD   equ     6
+     654              0008  fpclJAKE_SPD    equ     8
      655                    
-     656 000041b0           yzfxjason_norm
-     657 000041b0                   WL      SPD_FOREVER,SERG1
-     658 000041e0                   WL      CANI_GOTO,yzfxjason_norm
+     656 00003c70           fpcljake_norm
+     657 00003c70                   WL      SPD_FOREVER,JAKE1
+     658 00003ca0                   WL      CANI_GOTO,fpcljake_norm
      659                    
-     660 00004210           yzfxjason_cheer1
-     661 00004210                   WL      yzfxJASON_SPD,SERG2
-     662 00004240                   WL      yzfxJASON_SPD,SERG3
-     663 00004270                   WL      yzfxJASON_SPD,SERG4
-     664 000042a0                   WL      yzfxJASON_SPD,SERG5
-     665 000042d0                   WL      yzfxJASON_SPD,SERG4
-     666 00004300                   WL      yzfxJASON_SPD,SERG3
-     667 00004330                   WL      yzfxJASON_SPD,SERG2
-     668 00004360                   WL      CANI_GOTO,yzfxjason_norm
-     669                    
-     670 00004390           yzfxjason_cheer2
-     671 00004390                   WL      yzfxJASON_SPD,SERG2
-     672 000043c0                   WL      yzfxJASON_SPD,SERG3
-     673 000043f0     8004          .WORD   CANI_REPEAT,7
-     674 00004410                   WL      yzfxJASON_SPD,SERG4
-     675 00004440                   WL      yzfxJASON_SPD,SERG5
-     676 00004470                   WL      yzfxJASON_SPD,SERG4
-     677 000044a0                   WL      yzfxJASON_SPD,SERG3
-     678 000044d0     8005          .WORD   CANI_SHOULD_REPEAT
-     679 000044e0                   WL      yzfxJASON_SPD,SERG2
-     680 00004510                   WL      CANI_GOTO,yzfxjason_norm
-     681                    
-     682                    
-     683                    
-     684              0008  yzfxJCROWD_SPD  equ     8
-     685                    
-     686 00004540           yzfxjasoncrd_norm
-     687 00004540                   WL      SPD_FOREVER,JASONCRD1
-     688 00004570                   WL      CANI_GOTO,yzfxjasoncrd_norm
-     689                    
-     690 000045a0           yzfxjasoncrd_cheer1
-     691 000045a0                   WL      yzfxJCROWD_SPD,JASONCRD2
-     692 000045d0                   WL      yzfxJCROWD_SPD,JASONCRD3
-     693 00004600                   WL      yzfxJCROWD_SPD,JASONCRD4
-     694 00004630                   WL      yzfxJCROWD_SPD,JASONCRD5
-     695 00004660                   WL      CANI_GOTO,yzfxjasoncrd_norm
-     696                    
-     697 00004690           yzfxjasoncrd_cheer2
-     698 00004690                   WL      yzfxJCROWD_SPD,JASONCRD2
-     699 000046c0                   WL      yzfxJCROWD_SPD,JASONCRD3
-     700 000046f0     8004          .WORD   CANI_REPEAT,7
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     660 00003cd0           fpcljake_cheer1
+     661 00003cd0                   WL      fpclJAKE_SPD,JAKE2
+     662 00003d00                   WL      fpclJAKE_SPD,JAKE3
+     663 00003d30                   WL      fpclJAKE_SPD,JAKE4
+     664 00003d60                   WL      fpclJAKE_SPD,JAKE2
+     665 00003d90                   WL      CANI_GOTO,fpcljake_norm
+     666                    
+     667 00003dc0           fpcljake_cheer2
+     668 00003dc0                   WL      fpclJAKE_SPD,JAKE2
+     669 00003df0     8004          .WORD   CANI_REPEAT,4
+     670 00003e10                   WL      fpclJAKE_SPD,JAKE3
+     671 00003e40                   WL      fpclJAKE_SPD,JAKE4
+     672 00003e70     8005          .WORD   CANI_SHOULD_REPEAT
+     673 00003e80                   WL      fpclJAKE_SPD,JAKE2
+     674 00003eb0                   WL      CANI_GOTO,fpcljake_norm
+     675                    
+     676                    **********
+     677                    * Jamie
+     678                    
+     679              0005  fpclJAMIE_SPD   equ     5
+     680                    
+     681 00003ee0           fpcljamie_norm
+     682 00003ee0                   WL      SPD_FOREVER,JAMIE1
+     683 00003f10                   WL      CANI_GOTO,fpcljamie_norm
+     684                    
+     685 00003f40           fpcljamie_cheer1
+     686 00003f40                   WL      fpclJAMIE_SPD,JAMIE2
+     687 00003f70                   WL      fpclJAMIE_SPD,JAMIE3
+     688 00003fa0                   WL      fpclJAMIE_SPD,JAMIE4
+     689 00003fd0                   WL      fpclJAMIE_SPD,JAMIE5
+     690 00004000                   WL      fpclJAMIE_SPD,JAMIE6
+     691 00004030                   WL      CANI_GOTO,fpcljamie_norm
+     692                    
+     693 00004060           fpcljamie_cheer2
+     694 00004060     8004          .WORD   CANI_REPEAT,7
+     695 00004080                   WL      fpclJAMIE_SPD,JAMIE2
+     696 000040b0                   WL      fpclJAMIE_SPD,JAMIE3
+     697 000040e0     8005          .WORD   CANI_SHOULD_REPEAT
+     698 000040f0                   WL      fpclJAMIE_SPD,JAMIE4
+     699 00004120                   WL      fpclJAMIE_SPD,JAMIE5
+     700 00004150                   WL      fpclJAMIE_SPD,JAMIE6
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   15
 
-     701 00004710                   WL      yzfxJCROWD_SPD,JASONCRD4
-     702 00004740                   WL      yzfxJCROWD_SPD,JASONCRD5
-     703 00004770     8005          .WORD   CANI_SHOULD_REPEAT
-     704 00004780                   WL      CANI_GOTO,yzfxjasoncrd_norm
+     701 00004180                   WL      CANI_GOTO,fpcljamie_norm
+     702                    
+     703                    **********
+     704                    * Jason
      705                    
-     706                    
+     706              0006  fpclJASON_SPD   equ     6
      707                    
-     708              0008  yzfxJOHNC_SPD   equ     8
-     709                    
-     710 000047b0           yzfxjohnc_norm
-     711 000047b0                   WL      SPD_FOREVER,JOHNC1
-     712 000047e0                   WL      CANI_GOTO,yzfxjohnc_norm
-     713                    
-     714 00004810           yzfxjohnc_cheer1
-     715 00004810                   WL      yzfxJOHNC_SPD,JOHNC2
-     716 00004840                   WL      yzfxJOHNC_SPD,JOHNC3
-     717 00004870                   WL      yzfxJOHNC_SPD*3,JOHNC4
-     718 000048a0                   WL      yzfxJOHNC_SPD,JOHNC3
-     719 000048d0                   WL      yzfxJOHNC_SPD,JOHNC2
-     720 00004900                   WL      CANI_GOTO,yzfxjohnc_norm
+     708 000041b0           fpcljason_norm
+     709 000041b0                   WL      SPD_FOREVER,SERG1
+     710 000041e0                   WL      CANI_GOTO,fpcljason_norm
+     711                    
+     712 00004210           fpcljason_cheer1
+     713 00004210                   WL      fpclJASON_SPD,SERG2
+     714 00004240                   WL      fpclJASON_SPD,SERG3
+     715 00004270                   WL      fpclJASON_SPD,SERG4
+     716 000042a0                   WL      fpclJASON_SPD,SERG5
+     717 000042d0                   WL      fpclJASON_SPD,SERG4
+     718 00004300                   WL      fpclJASON_SPD,SERG3
+     719 00004330                   WL      fpclJASON_SPD,SERG2
+     720 00004360                   WL      CANI_GOTO,fpcljason_norm
      721                    
-     722 00004930           yzfxjohnc_cheer2
-     723 00004930                   WL      yzfxJOHNC_SPD,JOHNC2
-     724 00004960                   WL      yzfxJOHNC_SPD,JOHNC3
-     725 00004990                   WL      yzfxJOHNC_SPD,JOHNC4
-     726 000049c0                   WL      yzfxJOHNC_SPD,JOHNC3
-     727 000049f0                   WL      yzfxJOHNC_SPD*3,JOHNC4
-     728 00004a20                   WL      yzfxJOHNC_SPD,JOHNC3
-     729 00004a50                   WL      yzfxJOHNC_SPD,JOHNC2
-     730 00004a80                   WL      CANI_GOTO,yzfxjohnc_norm
-     731                    
-     732                    
-     733              0007  yzfxJOSH_SPD    equ     7
+     722 00004390           fpcljason_cheer2
+     723 00004390                   WL      fpclJASON_SPD,SERG2
+     724 000043c0                   WL      fpclJASON_SPD,SERG3
+     725 000043f0     8004          .WORD   CANI_REPEAT,7
+     726 00004410                   WL      fpclJASON_SPD,SERG4
+     727 00004440                   WL      fpclJASON_SPD,SERG5
+     728 00004470                   WL      fpclJASON_SPD,SERG4
+     729 000044a0                   WL      fpclJASON_SPD,SERG3
+     730 000044d0     8005          .WORD   CANI_SHOULD_REPEAT
+     731 000044e0                   WL      fpclJASON_SPD,SERG2
+     732 00004510                   WL      CANI_GOTO,fpcljason_norm
+     733                    
      734                    
-     735 00004ab0           yzfxjosh_norm
-     736 00004ab0                   WL      SPD_FOREVER,JOSH1
-     737 00004ae0                   WL      CANI_GOTO,yzfxjosh_norm
-     738                    
-     739 00004b10           yzfxjosh_cheer1
-     740 00004b10                   WL      yzfxJOSH_SPD,JOSH2
-     741 00004b40                   WL      yzfxJOSH_SPD,JOSH3
-     742 00004b70                   WL      yzfxJOSH_SPD,JOSH4
-     743 00004ba0                   WL      yzfxJOSH_SPD,JOSH3
-     744 00004bd0                   WL      yzfxJOSH_SPD,JOSH4
-     745 00004c00                   WL      yzfxJOSH_SPD,JOSH2
-     746 00004c30                   WL      CANI_GOTO,yzfxjosh_norm
-     747                    
-     748 00004c60           yzfxjosh_cheer2
-     749 00004c60                   WL      yzfxJOSH_SPD,JOSH2
-     750 00004c90                   WL      yzfxJOSH_SPD,JOSH3
-     751 00004cc0                   WL      yzfxJOSH_SPD,JOSH4
-     752 00004cf0     8004          .WORD   CANI_REPEAT,6
-     753 00004d10                   WL      yzfxJOSH_SPD,JOSH3
-     754 00004d40                   WL      yzfxJOSH_SPD,JOSH4
-     755 00004d70     8005          .WORD   CANI_SHOULD_REPEAT
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     735                    **********
+     736                    * Jason crowd
+     737                    
+     738              0008  fpclJCROWD_SPD  equ     8
+     739                    
+     740 00004540           fpcljasoncrd_norm
+     741 00004540                   WL      SPD_FOREVER,JASONCRD1
+     742 00004570                   WL      CANI_GOTO,fpcljasoncrd_norm
+     743                    
+     744 000045a0           fpcljasoncrd_cheer1
+     745 000045a0                   WL      fpclJCROWD_SPD,JASONCRD2
+     746 000045d0                   WL      fpclJCROWD_SPD,JASONCRD3
+     747 00004600                   WL      fpclJCROWD_SPD,JASONCRD4
+     748 00004630                   WL      fpclJCROWD_SPD,JASONCRD5
+     749 00004660                   WL      CANI_GOTO,fpcljasoncrd_norm
+     750                    
+     751 00004690           fpcljasoncrd_cheer2
+     752 00004690                   WL      fpclJCROWD_SPD,JASONCRD2
+     753 000046c0                   WL      fpclJCROWD_SPD,JASONCRD3
+     754 000046f0     8004          .WORD   CANI_REPEAT,7
+     755 00004710                   WL      fpclJCROWD_SPD,JASONCRD4
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   16
 
-     756 00004d80                   WL      yzfxJOSH_SPD,JOSH2
-     757 00004db0                   WL      CANI_GOTO,yzfxjosh_norm
-     758                    
+     756 00004740                   WL      fpclJCROWD_SPD,JASONCRD5
+     757 00004770     8005          .WORD   CANI_SHOULD_REPEAT
+     758 00004780                   WL      CANI_GOTO,fpcljasoncrd_norm
      759                    
      760                    
-     761              0008  yzfxJOY_SPD     equ     8
-     762                    
-     763 00004de0           yzfxjoy_norm
-     764 00004de0                   WL      SPD_FOREVER,JOY1
-     765 00004e10                   WL      CANI_GOTO,yzfxjoy_norm
-     766 00004e40           yzfxjoy_cheer1
-     767 00004e40                   WL      yzfxJOY_SPD,JOY1
-     768 00004e70                   WL      yzfxJOY_SPD,JOY2
-     769 00004ea0                   WL      yzfxJOY_SPD,JOY3
-     770 00004ed0                   WL      yzfxJOY_SPD,JOY4
-     771 00004f00                   WL      yzfxJOY_SPD,JOY5
-     772 00004f30                   WL      yzfxJOY_SPD,JOY4
-     773 00004f60                   WL      yzfxJOY_SPD,JOY3
-     774 00004f90                   WL      CANI_GOTO,yzfxjoy_norm
-     775                    
-     776                    
-     777              0008  yzfxMARINE_SPD  equ     8
-     778                    
-     779 00004fc0           yzfxmarine_norm
-     780 00004fc0                   WL      SPD_FOREVER,MARINE1
-     781 00004ff0                   WL      CANI_GOTO,yzfxmarine_norm
-     782                    
-     783 00005020           yzfxmarine_cheer1
-     784 00005020                   WL      yzfxMARINE_SPD,MARINE2
-     785 00005050                   WL      yzfxMARINE_SPD,MARINE3
-     786 00005080                   WL      yzfxMARINE_SPD,MARINE4
-     787 000050b0                   WL      yzfxMARINE_SPD,MARINE2
-     788 000050e0                   WL      CANI_GOTO,yzfxmarine_norm
-     789                    
-     790 00005110           yzfxmarine_cheer2
-     791 00005110                   WL      yzfxMARINE_SPD,MARINE2
-     792 00005140     8004          .WORD   CANI_REPEAT,6
-     793 00005160                   WL      yzfxMARINE_SPD,MARINE3
-     794 00005190                   WL      yzfxMARINE_SPD,MARINE4
-     795 000051c0     8005          .WORD   CANI_SHOULD_REPEAT
-     796 000051d0                   WL      yzfxMARINE_SPD,MARINE3
-     797 00005200                   WL      yzfxMARINE_SPD,MARINE2
-     798 00005230                   WL      CANI_GOTO,yzfxmarine_norm
-     799                    
-     800                    
-     801              0008  yzfxMARK_SPD    equ     8
-     802                    
-     803 00005260           yzfxmark_norm
-     804 00005260                   WL      SPD_FOREVER,TURMEL1
-     805 00005290                   WL      CANI_GOTO,yzfxmark_norm
-     806                    
-     807 000052c0           yzfxmark_cheer1
-     808 000052c0                   WL      yzfxMARK_SPD,TURMEL2
-     809 000052f0                   WL      yzfxMARK_SPD,TURMEL3
-     810 00005320                   WL      20,TURMEL4
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     761                    **********
+     762                    * JohnC
+     763                    
+     764              0008  fpclJOHNC_SPD   equ     8
+     765                    
+     766 000047b0           fpcljohnc_norm
+     767 000047b0                   WL      SPD_FOREVER,JOHNC1
+     768 000047e0                   WL      CANI_GOTO,fpcljohnc_norm
+     769                    
+     770 00004810           fpcljohnc_cheer1
+     771 00004810                   WL      fpclJOHNC_SPD,JOHNC2
+     772 00004840                   WL      fpclJOHNC_SPD,JOHNC3
+     773 00004870                   WL      fpclJOHNC_SPD*3,JOHNC4
+     774 000048a0                   WL      fpclJOHNC_SPD,JOHNC3
+     775 000048d0                   WL      fpclJOHNC_SPD,JOHNC2
+     776 00004900                   WL      CANI_GOTO,fpcljohnc_norm
+     777                    
+     778 00004930           fpcljohnc_cheer2
+     779 00004930                   WL      fpclJOHNC_SPD,JOHNC2
+     780 00004960                   WL      fpclJOHNC_SPD,JOHNC3
+     781 00004990                   WL      fpclJOHNC_SPD,JOHNC4
+     782 000049c0                   WL      fpclJOHNC_SPD,JOHNC3
+     783 000049f0                   WL      fpclJOHNC_SPD*3,JOHNC4
+     784 00004a20                   WL      fpclJOHNC_SPD,JOHNC3
+     785 00004a50                   WL      fpclJOHNC_SPD,JOHNC2
+     786 00004a80                   WL      CANI_GOTO,fpcljohnc_norm
+     787                    
+     788                    **********
+     789                    * Josh
+     790                    
+     791              0007  fpclJOSH_SPD    equ     7
+     792                    
+     793 00004ab0           fpcljosh_norm
+     794 00004ab0                   WL      SPD_FOREVER,JOSH1
+     795 00004ae0                   WL      CANI_GOTO,fpcljosh_norm
+     796                    
+     797 00004b10           fpcljosh_cheer1
+     798 00004b10                   WL      fpclJOSH_SPD,JOSH2
+     799 00004b40                   WL      fpclJOSH_SPD,JOSH3
+     800 00004b70                   WL      fpclJOSH_SPD,JOSH4
+     801 00004ba0                   WL      fpclJOSH_SPD,JOSH3
+     802 00004bd0                   WL      fpclJOSH_SPD,JOSH4
+     803 00004c00                   WL      fpclJOSH_SPD,JOSH2
+     804 00004c30                   WL      CANI_GOTO,fpcljosh_norm
+     805                    
+     806 00004c60           fpcljosh_cheer2
+     807 00004c60                   WL      fpclJOSH_SPD,JOSH2
+     808 00004c90                   WL      fpclJOSH_SPD,JOSH3
+     809 00004cc0                   WL      fpclJOSH_SPD,JOSH4
+     810 00004cf0     8004          .WORD   CANI_REPEAT,6
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   17
 
-     811 00005350                   WL      yzfxMARK_SPD,TURMEL3
-     812 00005380                   WL      yzfxMARK_SPD,TURMEL2
-     813 000053b0                   WL      CANI_GOTO,yzfxmark_norm
-     814                    
-     815                    
-     816              0009  yzfxNEWC_SPD    equ     9
+     811 00004d10                   WL      fpclJOSH_SPD,JOSH3
+     812 00004d40                   WL      fpclJOSH_SPD,JOSH4
+     813 00004d70     8005          .WORD   CANI_SHOULD_REPEAT
+     814 00004d80                   WL      fpclJOSH_SPD,JOSH2
+     815 00004db0                   WL      CANI_GOTO,fpcljosh_norm
+     816                    
      817                    
-     818 000053e0           yzfxnewc_norm
-     819 000053e0                   WL      SPD_FOREVER,NEWCOM1
-     820 00005410                   WL      CANI_GOTO,yzfxnewc_norm
-     821                    
-     822 00005440           yzfxnewc_cheer1
-     823 00005440                   WL      yzfxNEWC_SPD,NEWCOM2
-     824 00005470                   WL      yzfxNEWC_SPD,NEWCOM3
-     825 000054a0                   WL      yzfxNEWC_SPD,NEWCOM4
-     826 000054d0                   WL      yzfxNEWC_SPD,NEWCOM3
-     827 00005500                   WL      yzfxNEWC_SPD,NEWCOM4
-     828 00005530                   WL      yzfxNEWC_SPD,NEWCOM3
-     829 00005560                   WL      yzfxNEWC_SPD,NEWCOM2
-     830 00005590                   WL      CANI_GOTO,yzfxnewc_norm
-     831                    
-     832 000055c0           yzfxnewc_cheer2
-     833 000055c0                   WL      yzfxNEWC_SPD,NEWCOM2
-     834 000055f0     8004          .WORD   CANI_REPEAT,6
-     835 00005610                   WL      yzfxNEWC_SPD,NEWCOM3
-     836 00005640                   WL      yzfxNEWC_SPD,NEWCOM4
-     837 00005670     8005          .WORD   CANI_SHOULD_REPEAT
-     838 00005680                   WL      yzfxNEWC_SPD,NEWCOM2
-     839 000056b0                   WL      CANI_GOTO,yzfxnewc_norm
+     818                    **********
+     819                    * Joy (side crowd)
+     820                    
+     821              0008  fpclJOY_SPD     equ     8
+     822                    
+     823 00004de0           fpcljoy_norm
+     824 00004de0                   WL      SPD_FOREVER,JOY1
+     825 00004e10                   WL      CANI_GOTO,fpcljoy_norm
+     826 00004e40           fpcljoy_cheer1
+     827 00004e40                   WL      fpclJOY_SPD,JOY1
+     828 00004e70                   WL      fpclJOY_SPD,JOY2
+     829 00004ea0                   WL      fpclJOY_SPD,JOY3
+     830 00004ed0                   WL      fpclJOY_SPD,JOY4
+     831 00004f00                   WL      fpclJOY_SPD,JOY5
+     832 00004f30                   WL      fpclJOY_SPD,JOY4
+     833 00004f60                   WL      fpclJOY_SPD,JOY3
+     834 00004f90                   WL      CANI_GOTO,fpcljoy_norm
+     835                    
+     836                    **********
+     837                    * Marine
+     838                    
+     839              0008  fpclMARINE_SPD  equ     8
      840                    
-     841                    
-     842              0008  yzfxSAL_SPD     equ     8
-     843                    
-     844 000056e0           yzfxsal_norm
-     845 000056e0                   WL      SPD_FOREVER,SAL1
-     846 00005710                   WL      CANI_GOTO,yzfxsal_norm
-     847                    
-     848 00005740           yzfxsal_cheer1
-     849 00005740                   WL      yzfxSAL_SPD,SAL2
-     850 00005770                   WL      yzfxSAL_SPD,SAL3
-     851 000057a0                   WL      yzfxSAL_SPD,SAL4
-     852 000057d0                   WL      yzfxSAL_SPD,SAL3
-     853 00005800                   WL      yzfxSAL_SPD,SAL4
-     854 00005830                   WL      yzfxSAL_SPD,SAL3
-     855 00005860                   WL      yzfxSAL_SPD,SAL2
-     856 00005890                   WL      CANI_GOTO,yzfxsal_norm
-     857                    
-     858 000058c0           yzfxsal_cheer2
-     859 000058c0                   WL      yzfxSAL_SPD,SAL2
-     860 000058f0     8004          .WORD   CANI_REPEAT,7
-     861 00005910                   WL      yzfxSAL_SPD,SAL3
-     862 00005940                   WL      yzfxSAL_SPD,SAL4
-     863 00005970     8005          .WORD   CANI_SHOULD_REPEAT
-     864 00005980                   WL      yzfxSAL_SPD,SAL2
-     865 000059b0                   WL      CANI_GOTO,yzfxsal_norm
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     841 00004fc0           fpclmarine_norm
+     842 00004fc0                   WL      SPD_FOREVER,MARINE1
+     843 00004ff0                   WL      CANI_GOTO,fpclmarine_norm
+     844                    
+     845 00005020           fpclmarine_cheer1
+     846 00005020                   WL      fpclMARINE_SPD,MARINE2
+     847 00005050                   WL      fpclMARINE_SPD,MARINE3
+     848 00005080                   WL      fpclMARINE_SPD,MARINE4
+     849 000050b0                   WL      fpclMARINE_SPD,MARINE2
+     850 000050e0                   WL      CANI_GOTO,fpclmarine_norm
+     851                    
+     852 00005110           fpclmarine_cheer2
+     853 00005110                   WL      fpclMARINE_SPD,MARINE2
+     854 00005140     8004          .WORD   CANI_REPEAT,6
+     855 00005160                   WL      fpclMARINE_SPD,MARINE3
+     856 00005190                   WL      fpclMARINE_SPD,MARINE4
+     857 000051c0     8005          .WORD   CANI_SHOULD_REPEAT
+     858 000051d0                   WL      fpclMARINE_SPD,MARINE3
+     859 00005200                   WL      fpclMARINE_SPD,MARINE2
+     860 00005230                   WL      CANI_GOTO,fpclmarine_norm
+     861                    
+     862                    **********
+     863                    * Mark
+     864                    
+     865              0008  fpclMARK_SPD    equ     8
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   18
 
      866                    
-     867                    
-     868              0008  yzfxSHERIDAN_SPD        equ     8
-     869                    
-     870 000059e0           yzfxsheridan_norm
-     871 000059e0                   WL      1,SHERID1
-     872 00005a10     8001          .word   CANI_RNDWAIT,TSEC*20
-     873 00005a30                   WL      yzfxSHERIDAN_SPD,SHERID6
-     874 00005a60                   WL      yzfxSHERIDAN_SPD,SHERID7
-     875 00005a90                   WL      yzfxSHERIDAN_SPD*2,SHERID8
-     876 00005ac0                   WL      yzfxSHERIDAN_SPD,SHERID7
-     877 00005af0                   WL      yzfxSHERIDAN_SPD,SHERID6
-     878 00005b20                   WL      CANI_GOTO,yzfxsheridan_norm
-     879                    
-     880 00005b50           yzfxsheridan_cheer1
-     881 00005b50                   WL      yzfxSHERIDAN_SPD,SHERID1
-     882 00005b80                   WL      yzfxSHERIDAN_SPD,SHERID2
-     883 00005bb0                   WL      yzfxSHERIDAN_SPD,SHERID3
-     884 00005be0                   WL      yzfxSHERIDAN_SPD,SHERID4
-     885 00005c10                   WL      yzfxSHERIDAN_SPD,SHERID5
-     886 00005c40                   WL      yzfxSHERIDAN_SPD,SHERID6
-     887 00005c70                   WL      yzfxSHERIDAN_SPD,SHERID7
-     888 00005ca0                   WL      yzfxSHERIDAN_SPD*2,SHERID8
-     889 00005cd0                   WL      yzfxSHERIDAN_SPD,SHERID7
-     890 00005d00                   WL      yzfxSHERIDAN_SPD,SHERID6
-     891 00005d30                   WL      CANI_GOTO,yzfxsheridan_norm
-     892                    
-     893 00005d60           yzfxsheridan_cheer2
-     894 00005d60                   WL      yzfxSHERIDAN_SPD,SHERID1
-     895 00005d90                   WL      yzfxSHERIDAN_SPD,SHERID2
-     896 00005dc0                   WL      yzfxSHERIDAN_SPD,SHERID3
-     897 00005df0     8004          .WORD   CANI_REPEAT,3
-     898 00005e10                   WL      yzfxSHERIDAN_SPD,SHERID4
-     899 00005e40                   WL      yzfxSHERIDAN_SPD,SHERID5
-     900 00005e70     8005          .WORD   CANI_SHOULD_REPEAT
-     901 00005e80                   WL      CANI_GOTO,yzfxsheridan_norm
-     902                    
-     903                    
-     904              0008  yzfxSDCRD_SPD   equ     8
-     905                    
-     906 00005eb0           yzfxside1_norm
-     907 00005eb0                   WL      SPD_FOREVER,SDCRD1A
-     908 00005ee0                   WL      CANI_GOTO,yzfxside1_norm
+     867 00005260           fpclmark_norm
+     868 00005260                   WL      SPD_FOREVER,TURMEL1
+     869 00005290                   WL      CANI_GOTO,fpclmark_norm
+     870                    
+     871 000052c0           fpclmark_cheer1
+     872 000052c0                   WL      fpclMARK_SPD,TURMEL2
+     873 000052f0                   WL      fpclMARK_SPD,TURMEL3
+     874 00005320                   WL      20,TURMEL4
+     875 00005350                   WL      fpclMARK_SPD,TURMEL3
+     876 00005380                   WL      fpclMARK_SPD,TURMEL2
+     877 000053b0                   WL      CANI_GOTO,fpclmark_norm
+     878                    
+     879                    **********
+     880                    * Newc
+     881                    
+     882              0009  fpclNEWC_SPD    equ     9
+     883                    
+     884 000053e0           fpclnewc_norm
+     885 000053e0                   WL      SPD_FOREVER,NEWCOM1
+     886 00005410                   WL      CANI_GOTO,fpclnewc_norm
+     887                    
+     888 00005440           fpclnewc_cheer1
+     889 00005440                   WL      fpclNEWC_SPD,NEWCOM2
+     890 00005470                   WL      fpclNEWC_SPD,NEWCOM3
+     891 000054a0                   WL      fpclNEWC_SPD,NEWCOM4
+     892 000054d0                   WL      fpclNEWC_SPD,NEWCOM3
+     893 00005500                   WL      fpclNEWC_SPD,NEWCOM4
+     894 00005530                   WL      fpclNEWC_SPD,NEWCOM3
+     895 00005560                   WL      fpclNEWC_SPD,NEWCOM2
+     896 00005590                   WL      CANI_GOTO,fpclnewc_norm
+     897                    
+     898 000055c0           fpclnewc_cheer2
+     899 000055c0                   WL      fpclNEWC_SPD,NEWCOM2
+     900 000055f0     8004          .WORD   CANI_REPEAT,6
+     901 00005610                   WL      fpclNEWC_SPD,NEWCOM3
+     902 00005640                   WL      fpclNEWC_SPD,NEWCOM4
+     903 00005670     8005          .WORD   CANI_SHOULD_REPEAT
+     904 00005680                   WL      fpclNEWC_SPD,NEWCOM2
+     905 000056b0                   WL      CANI_GOTO,fpclnewc_norm
+     906                    
+     907                    **********
+     908                    * Sal
      909                    
-     910 00005f10           yzfxside1_cheer1
-     911 00005f10                   WL      yzfxSDCRD_SPD,SDCRD2A
-     912 00005f40                   WL      yzfxSDCRD_SPD,SDCRD3A
-     913 00005f70                   WL      yzfxSDCRD_SPD,SDCRD4A
-     914 00005fa0                   WL      yzfxSDCRD_SPD,SDCRD3A
-     915 00005fd0                   WL      yzfxSDCRD_SPD,SDCRD2A
-     916 00006000                   WL      CANI_GOTO,yzfxside1_norm
-     917                    
-     918 00006030           yzfxside2_norm
-     919 00006030                   WL      SPD_FOREVER,SDCRD1B
-     920 00006060                   WL      CANI_GOTO,yzfxside2_norm
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     910              0008  fpclSAL_SPD     equ     8
+     911                    
+     912 000056e0           fpclsal_norm
+     913 000056e0                   WL      SPD_FOREVER,SAL1
+     914 00005710                   WL      CANI_GOTO,fpclsal_norm
+     915                    
+     916 00005740           fpclsal_cheer1
+     917 00005740                   WL      fpclSAL_SPD,SAL2
+     918 00005770                   WL      fpclSAL_SPD,SAL3
+     919 000057a0                   WL      fpclSAL_SPD,SAL4
+     920 000057d0                   WL      fpclSAL_SPD,SAL3
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   19
 
-     921                    
-     922 00006090           yzfxside2_cheer1
-     923 00006090                   WL      yzfxSDCRD_SPD,SDCRD2B
-     924 000060c0                   WL      yzfxSDCRD_SPD,SDCRD3B
-     925 000060f0                   WL      yzfxSDCRD_SPD,SDCRD4B
-     926 00006120                   WL      yzfxSDCRD_SPD,SDCRD3B
-     927 00006150                   WL      yzfxSDCRD_SPD,SDCRD2B
-     928 00006180                   WL      CANI_GOTO,yzfxside2_norm
-     929                    
-     930 000061b0           yzfxside3_norm
-     931 000061b0                   WL      SPD_FOREVER,SDCRD1C
-     932 000061e0                   WL      CANI_GOTO,yzfxside3_norm
-     933                    
-     934 00006210           yzfxside3_cheer1
-     935 00006210                   WL      yzfxSDCRD_SPD,SDCRD2C
-     936 00006240                   WL      yzfxSDCRD_SPD,SDCRD3C
-     937 00006270                   WL      yzfxSDCRD_SPD,SDCRD4C
-     938 000062a0                   WL      yzfxSDCRD_SPD,SDCRD3C
-     939 000062d0                   WL      yzfxSDCRD_SPD,SDCRD2C
-     940 00006300                   WL      CANI_GOTO,yzfxside3_norm
-     941                    
-     942                    
-     943              0007  yzfxTOBIAS_SPD  equ     7
-     944                    
-     945 00006330           yzfxtobias_norm
-     946 00006330                   WL      SPD_FOREVER,TOBIAS1
-     947 00006360                   WL      CANI_GOTO,yzfxtobias_norm
-     948                    
-     949 00006390           yzfxtobias_cheer1
-     950 00006390                   WL      yzfxTOBIAS_SPD,TOBIAS2
-     951 000063c0                   WL      yzfxTOBIAS_SPD,TOBIAS3
-     952 000063f0                   WL      yzfxTOBIAS_SPD,TOBIAS4
-     953 00006420                   WL      yzfxTOBIAS_SPD,TOBIAS2
-     954 00006450                   WL      CANI_GOTO,yzfxtobias_norm
-     955                    
-     956 00006480           yzfxtobias_cheer2
-     957 00006480                   WL      yzfxTOBIAS_SPD,TOBIAS2
-     958 000064b0     8004          .WORD   CANI_REPEAT,7
-     959 000064d0                   WL      yzfxTOBIAS_SPD,TOBIAS3
-     960 00006500                   WL      yzfxTOBIAS_SPD,TOBIAS4
-     961 00006530     8005          .WORD   CANI_SHOULD_REPEAT
-     962 00006540                   WL      yzfxTOBIAS_SPD,TOBIAS2
-     963 00006570                   WL      CANI_GOTO,yzfxtobias_norm
-     964                    
-     965                    
-     966              0007  yzfxTONY_SPD    equ     7
-     967                    
-     968 000065a0           yzfxtony_norm
-     969 000065a0                   WL      SPD_FOREVER,CRAZY1
-     970 000065d0                   WL      CANI_GOTO,yzfxtony_norm
-     971                    
-     972 00006600           yzfxtony_cheer1
-     973 00006600                   WL      yzfxTONY_SPD,CRAZY2
-     974 00006630                   WL      yzfxTONY_SPD,CRAZY3
-     975 00006660                   WL      yzfxTONY_SPD,CRAZY4
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+     921 00005800                   WL      fpclSAL_SPD,SAL4
+     922 00005830                   WL      fpclSAL_SPD,SAL3
+     923 00005860                   WL      fpclSAL_SPD,SAL2
+     924 00005890                   WL      CANI_GOTO,fpclsal_norm
+     925                    
+     926 000058c0           fpclsal_cheer2
+     927 000058c0                   WL      fpclSAL_SPD,SAL2
+     928 000058f0     8004          .WORD   CANI_REPEAT,7
+     929 00005910                   WL      fpclSAL_SPD,SAL3
+     930 00005940                   WL      fpclSAL_SPD,SAL4
+     931 00005970     8005          .WORD   CANI_SHOULD_REPEAT
+     932 00005980                   WL      fpclSAL_SPD,SAL2
+     933 000059b0                   WL      CANI_GOTO,fpclsal_norm
+     934                    
+     935                    **********
+     936                    * Sheridan
+     937                    
+     938              0008  fpclSHERIDAN_SPD        equ     8
+     939                    
+     940 000059e0           fpclsheridan_norm
+     941 000059e0                   WL      1,SHERID1
+     942 00005a10     8001          .word   CANI_RNDWAIT,TSEC*20
+     943 00005a30                   WL      fpclSHERIDAN_SPD,SHERID6
+     944 00005a60                   WL      fpclSHERIDAN_SPD,SHERID7
+     945 00005a90                   WL      fpclSHERIDAN_SPD*2,SHERID8
+     946 00005ac0                   WL      fpclSHERIDAN_SPD,SHERID7
+     947 00005af0                   WL      fpclSHERIDAN_SPD,SHERID6
+     948 00005b20                   WL      CANI_GOTO,fpclsheridan_norm
+     949                    
+     950 00005b50           fpclsheridan_cheer1
+     951 00005b50                   WL      fpclSHERIDAN_SPD,SHERID1
+     952 00005b80                   WL      fpclSHERIDAN_SPD,SHERID2
+     953 00005bb0                   WL      fpclSHERIDAN_SPD,SHERID3
+     954 00005be0                   WL      fpclSHERIDAN_SPD,SHERID4
+     955 00005c10                   WL      fpclSHERIDAN_SPD,SHERID5
+     956 00005c40                   WL      fpclSHERIDAN_SPD,SHERID6
+     957 00005c70                   WL      fpclSHERIDAN_SPD,SHERID7
+     958 00005ca0                   WL      fpclSHERIDAN_SPD*2,SHERID8
+     959 00005cd0                   WL      fpclSHERIDAN_SPD,SHERID7
+     960 00005d00                   WL      fpclSHERIDAN_SPD,SHERID6
+     961 00005d30                   WL      CANI_GOTO,fpclsheridan_norm
+     962                    
+     963 00005d60           fpclsheridan_cheer2
+     964 00005d60                   WL      fpclSHERIDAN_SPD,SHERID1
+     965 00005d90                   WL      fpclSHERIDAN_SPD,SHERID2
+     966 00005dc0                   WL      fpclSHERIDAN_SPD,SHERID3
+     967 00005df0     8004          .WORD   CANI_REPEAT,3
+     968 00005e10                   WL      fpclSHERIDAN_SPD,SHERID4
+     969 00005e40                   WL      fpclSHERIDAN_SPD,SHERID5
+     970 00005e70     8005          .WORD   CANI_SHOULD_REPEAT
+     971 00005e80                   WL      CANI_GOTO,fpclsheridan_norm
+     972                    
+     973                    **********
+     974                    * Side crowd
+     975                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   20
 
-     976 00006690                   WL      yzfxTONY_SPD,CRAZY5
-     977 000066c0                   WL      yzfxTONY_SPD,CRAZY4
-     978 000066f0                   WL      yzfxTONY_SPD,CRAZY5
-     979 00006720                   WL      yzfxTONY_SPD,CRAZY4
-     980 00006750                   WL      yzfxTONY_SPD,CRAZY3
-     981 00006780                   WL      yzfxTONY_SPD,CRAZY2
-     982 000067b0                   WL      CANI_GOTO,yzfxtony_norm
-     983                    
-     984 000067e0           yzfxtony_cheer2
-     985 000067e0                   WL      yzfxTONY_SPD,CRAZY2
-     986 00006810                   WL      yzfxTONY_SPD,CRAZY3
-     987 00006840     8004          .WORD   CANI_REPEAT,4
-     988 00006860                   WL      yzfxTONY_SPD,CRAZY4
-     989 00006890                   WL      yzfxTONY_SPD,CRAZY5
-     990 000068c0                   WL      yzfxTONY_SPD,CRAZY4
-     991 000068f0                   WL      yzfxTONY_SPD,CRAZY3
-     992 00006920                   WL      yzfxTONY_SPD,CRAZY4
-     993 00006950                   WL      yzfxTONY_SPD,CRAZY5
-     994 00006980     8005          .WORD   CANI_SHOULD_REPEAT
-     995 00006990                   WL      yzfxTONY_SPD,CRAZY4
-     996 000069c0                   WL      yzfxTONY_SPD,CRAZY3
-     997 000069f0                   WL      yzfxTONY_SPD,CRAZY2
-     998 00006a20                   WL      CANI_GOTO,yzfxtony_norm
-     999                    
-    1000                    
+     976              0008  fpclSDCRD_SPD   equ     8
+     977                    
+     978 00005eb0           fpclside1_norm
+     979 00005eb0                   WL      SPD_FOREVER,SDCRD1A
+     980 00005ee0                   WL      CANI_GOTO,fpclside1_norm
+     981                    
+     982 00005f10           fpclside1_cheer1
+     983 00005f10                   WL      fpclSDCRD_SPD,SDCRD2A
+     984 00005f40                   WL      fpclSDCRD_SPD,SDCRD3A
+     985 00005f70                   WL      fpclSDCRD_SPD,SDCRD4A
+     986 00005fa0                   WL      fpclSDCRD_SPD,SDCRD3A
+     987 00005fd0                   WL      fpclSDCRD_SPD,SDCRD2A
+     988 00006000                   WL      CANI_GOTO,fpclside1_norm
+     989                    
+     990 00006030           fpclside2_norm
+     991 00006030                   WL      SPD_FOREVER,SDCRD1B
+     992 00006060                   WL      CANI_GOTO,fpclside2_norm
+     993                    
+     994 00006090           fpclside2_cheer1
+     995 00006090                   WL      fpclSDCRD_SPD,SDCRD2B
+     996 000060c0                   WL      fpclSDCRD_SPD,SDCRD3B
+     997 000060f0                   WL      fpclSDCRD_SPD,SDCRD4B
+     998 00006120                   WL      fpclSDCRD_SPD,SDCRD3B
+     999 00006150                   WL      fpclSDCRD_SPD,SDCRD2B
+    1000 00006180                   WL      CANI_GOTO,fpclside2_norm
     1001                    
-    1002              0008  yzfxTONYC_SPD   equ     8
-    1003                    
-    1004 00006a50           yzfxtonycrd_norm
-    1005 00006a50                   WL      SPD_FOREVER,TONYCRD1
-    1006 00006a80                   WL      CANI_GOTO,yzfxtonycrd_norm
-    1007                    
-    1008 00006ab0           yzfxtonycrd_cheer1
-    1009 00006ab0                   WL      yzfxTONYC_SPD,TONYCRD2
-    1010 00006ae0                   WL      yzfxTONYC_SPD,TONYCRD3
-    1011 00006b10                   WL      yzfxTONYC_SPD,TONYCRD4
-    1012 00006b40                   WL      yzfxTONYC_SPD,TONYCRD5
-    1013 00006b70                   WL      CANI_GOTO,yzfxtonycrd_norm
-    1014                    
-    1015                    
-    1016              0008  yzfxVOGEL_SPD   equ     8
-    1017                    
-    1018 00006ba0           yzfxvogel_norm
-    1019 00006ba0                   WL      SPD_FOREVER,VOGEL1
-    1020 00006bd0                   WL      CANI_GOTO,yzfxvogel_norm
-    1021                    
-    1022 00006c00           yzfxvogel_cheer1
-    1023 00006c00                   WL      yzfxVOGEL_SPD,VOGEL2
-    1024 00006c30                   WL      yzfxVOGEL_SPD,VOGEL3
-    1025 00006c60                   WL      yzfxVOGEL_SPD,VOGEL4
-    1026 00006c90                   WL      yzfxVOGEL_SPD,VOGEL3
-    1027 00006cc0                   WL      yzfxVOGEL_SPD,VOGEL2
-    1028 00006cf0                   WL      CANI_GOTO,yzfxvogel_norm
+    1002 000061b0           fpclside3_norm
+    1003 000061b0                   WL      SPD_FOREVER,SDCRD1C
+    1004 000061e0                   WL      CANI_GOTO,fpclside3_norm
+    1005                    
+    1006 00006210           fpclside3_cheer1
+    1007 00006210                   WL      fpclSDCRD_SPD,SDCRD2C
+    1008 00006240                   WL      fpclSDCRD_SPD,SDCRD3C
+    1009 00006270                   WL      fpclSDCRD_SPD,SDCRD4C
+    1010 000062a0                   WL      fpclSDCRD_SPD,SDCRD3C
+    1011 000062d0                   WL      fpclSDCRD_SPD,SDCRD2C
+    1012 00006300                   WL      CANI_GOTO,fpclside3_norm
+    1013                    
+    1014                    **********
+    1015                    * Tobias
+    1016                    
+    1017              0007  fpclTOBIAS_SPD  equ     7
+    1018                    
+    1019 00006330           fpcltobias_norm
+    1020 00006330                   WL      SPD_FOREVER,TOBIAS1
+    1021 00006360                   WL      CANI_GOTO,fpcltobias_norm
+    1022                    
+    1023 00006390           fpcltobias_cheer1
+    1024 00006390                   WL      fpclTOBIAS_SPD,TOBIAS2
+    1025 000063c0                   WL      fpclTOBIAS_SPD,TOBIAS3
+    1026 000063f0                   WL      fpclTOBIAS_SPD,TOBIAS4
+    1027 00006420                   WL      fpclTOBIAS_SPD,TOBIAS2
+    1028 00006450                   WL      CANI_GOTO,fpcltobias_norm
     1029                    
-    1030 00006d20           yzfxvogel_cheer2
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+    1030 00006480           fpcltobias_cheer2
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   21
 
-    1031 00006d20                   WL      yzfxVOGEL_SPD,VOGEL2
-    1032 00006d50     8004          .WORD   CANI_REPEAT,7
-    1033 00006d70                   WL      yzfxVOGEL_SPD,VOGEL3
-    1034 00006da0                   WL      yzfxVOGEL_SPD,VOGEL4
-    1035 00006dd0     8005          .WORD   CANI_SHOULD_REPEAT
-    1036 00006de0                   WL      yzfxVOGEL_SPD,VOGEL2
-    1037 00006e10                   WL      CANI_GOTO,yzfxvogel_norm
+    1031 00006480                   WL      fpclTOBIAS_SPD,TOBIAS2
+    1032 000064b0     8004          .WORD   CANI_REPEAT,7
+    1033 000064d0                   WL      fpclTOBIAS_SPD,TOBIAS3
+    1034 00006500                   WL      fpclTOBIAS_SPD,TOBIAS4
+    1035 00006530     8005          .WORD   CANI_SHOULD_REPEAT
+    1036 00006540                   WL      fpclTOBIAS_SPD,TOBIAS2
+    1037 00006570                   WL      CANI_GOTO,fpcltobias_norm
     1038                    
-    1039 00006e40            SUBR   DO_CROWD_CHEER
-    1040 00006e40     1863          MOVK    C_OVERIDE|C_LONG,A3
-    1041 00006e50     5684          CLR     A4
-    1042                    
+    1039                    **********
+    1040                    * Tony
+    1041                    
+    1042              0007  fpclTONY_SPD    equ     7
     1043                    
-    1044 00006e60            SUBR   crowd_cheer
-    1045                                       
-    1046 00006e60     56e7          CLR     A7
-    1047 00006e70     1fa3          BTST    B_RANDOM,A3
-    1048 00006e80     ca01          JRZ     NO_RANDOMNESS
-    1049 00006e90     4c87          MOVE    A4,A7
-    1050 00006ea0           NO_RANDOMNESS
-    1051 00006ea0     09e4          movi    CROWDDATA,a4
-         00006eb0 00000000- 
-    1052 00006ed0     09c5          movi    NUMCROWD,a5
-         00006ee0     001e  
-    1053 00006ef0     1826          movk    1,a6
-    1054 00006f00           yzfxloop
-    1055 00006f00     b681          MOVE    *A4(CHEER1),A1,L
-         00006f10     0050  
-    1056 00006f20     0b61          CMPI    yzfxside2_cheer1,A1
-         00006f30 ffff9f6f' 
-    1057 00006f50     ca3c          JREQ    DO_NEXT_PERSON
-    1058 00006f60     0b61          CMPI    yzfxside3_cheer1,A1
-         00006f70 ffff9def' 
-    1059 00006f90     ca38          JREQ    DO_NEXT_PERSON
-    1060 00006fa0     0b61          CMPI    yzfxdave_cheer1,A1
-         00006fb0 ffffcdef' 
-    1061 00006fd0     ca34          JREQ    DO_NEXT_PERSON
-    1062 00006fe0     4ce0          MOVE    A7,A0
-    1063 00006ff0     ca04          JRZ     DO_THEM_ALL
-    1064 00007000     0d5f          CALLA   RNDPER
-         00007010 00000000! 
-    1065 00007030     c22e          JRLS    DO_NEXT_PERSON
-    1066 00007040           DO_THEM_ALL
-    1067 00007040     1fc3          BTST    B_OVERRIDE,A3
-    1068 00007050     cb06          JRNZ    JUST_DO_IT_ANYWAY
-    1069 00007060     b688          MOVE    *A4(CHEER1),A8,L
-         00007070     0050  
-    1070 00007080     b689          MOVE    *A4(SCPTR),A9,L
-         00007090     0000  
-    1071 000070a0     4909          CMP     A8,A9
-    1072 000070b0     c526          JRGE    DO_NEXT_PERSON
-    1073 000070c0           JUST_DO_IT_ANYWAY
-    1074 000070c0     ba84          move    *a4(CHEER1),*a4(SCPTR),L
-         000070d0     0050  
-         000070e0     0000  
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:54:02 2023
+    1044 000065a0           fpcltony_norm
+    1045 000065a0                   WL      SPD_FOREVER,CRAZY1
+    1046 000065d0                   WL      CANI_GOTO,fpcltony_norm
+    1047                    
+    1048 00006600           fpcltony_cheer1
+    1049 00006600                   WL      fpclTONY_SPD,CRAZY2
+    1050 00006630                   WL      fpclTONY_SPD,CRAZY3
+    1051 00006660                   WL      fpclTONY_SPD,CRAZY4
+    1052 00006690                   WL      fpclTONY_SPD,CRAZY5
+    1053 000066c0                   WL      fpclTONY_SPD,CRAZY4
+    1054 000066f0                   WL      fpclTONY_SPD,CRAZY5
+    1055 00006720                   WL      fpclTONY_SPD,CRAZY4
+    1056 00006750                   WL      fpclTONY_SPD,CRAZY3
+    1057 00006780                   WL      fpclTONY_SPD,CRAZY2
+    1058 000067b0                   WL      CANI_GOTO,fpcltony_norm
+    1059                    
+    1060 000067e0           fpcltony_cheer2
+    1061 000067e0                   WL      fpclTONY_SPD,CRAZY2
+    1062 00006810                   WL      fpclTONY_SPD,CRAZY3
+    1063 00006840     8004          .WORD   CANI_REPEAT,4
+    1064 00006860                   WL      fpclTONY_SPD,CRAZY4
+    1065 00006890                   WL      fpclTONY_SPD,CRAZY5
+    1066 000068c0                   WL      fpclTONY_SPD,CRAZY4
+    1067 000068f0                   WL      fpclTONY_SPD,CRAZY3
+    1068 00006920                   WL      fpclTONY_SPD,CRAZY4
+    1069 00006950                   WL      fpclTONY_SPD,CRAZY5
+    1070 00006980     8005          .WORD   CANI_SHOULD_REPEAT
+    1071 00006990                   WL      fpclTONY_SPD,CRAZY4
+    1072 000069c0                   WL      fpclTONY_SPD,CRAZY3
+    1073 000069f0                   WL      fpclTONY_SPD,CRAZY2
+    1074 00006a20                   WL      CANI_GOTO,fpcltony_norm
+    1075                    
+    1076                    
+    1077                    **********
+    1078                    * Tony crowd
+    1079                    
+    1080              0008  fpclTONYC_SPD   equ     8
+    1081                    
+    1082 00006a50           fpcltonycrd_norm
+    1083 00006a50                   WL      SPD_FOREVER,TONYCRD1
+    1084 00006a80                   WL      CANI_GOTO,fpcltonycrd_norm
+    1085                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 crowd stuff                                                          PAGE   22
 
-    1075 000070f0     1fe3          BTST    B_L_OR_S,A3
-    1076 00007100     ca03          JRZ     OKAY_DO_SHORT
-    1077 00007110     ba84          move    *a4(CHEER2),*a4(SCPTR),L
+    1086 00006ab0           fpcltonycrd_cheer1
+    1087 00006ab0                   WL      fpclTONYC_SPD,TONYCRD2
+    1088 00006ae0                   WL      fpclTONYC_SPD,TONYCRD3
+    1089 00006b10                   WL      fpclTONYC_SPD,TONYCRD4
+    1090 00006b40                   WL      fpclTONYC_SPD,TONYCRD5
+    1091 00006b70                   WL      CANI_GOTO,fpcltonycrd_norm
+    1092                    
+    1093                    **********
+    1094                    * Vogel
+    1095                    
+    1096              0008  fpclVOGEL_SPD   equ     8
+    1097                    
+    1098 00006ba0           fpclvogel_norm
+    1099 00006ba0                   WL      SPD_FOREVER,VOGEL1
+    1100 00006bd0                   WL      CANI_GOTO,fpclvogel_norm
+    1101                    
+    1102 00006c00           fpclvogel_cheer1
+    1103 00006c00                   WL      fpclVOGEL_SPD,VOGEL2
+    1104 00006c30                   WL      fpclVOGEL_SPD,VOGEL3
+    1105 00006c60                   WL      fpclVOGEL_SPD,VOGEL4
+    1106 00006c90                   WL      fpclVOGEL_SPD,VOGEL3
+    1107 00006cc0                   WL      fpclVOGEL_SPD,VOGEL2
+    1108 00006cf0                   WL      CANI_GOTO,fpclvogel_norm
+    1109                    
+    1110 00006d20           fpclvogel_cheer2
+    1111 00006d20                   WL      fpclVOGEL_SPD,VOGEL2
+    1112 00006d50     8004          .WORD   CANI_REPEAT,7
+    1113 00006d70                   WL      fpclVOGEL_SPD,VOGEL3
+    1114 00006da0                   WL      fpclVOGEL_SPD,VOGEL4
+    1115 00006dd0     8005          .WORD   CANI_SHOULD_REPEAT
+    1116 00006de0                   WL      fpclVOGEL_SPD,VOGEL2
+    1117 00006e10                   WL      CANI_GOTO,fpclvogel_norm
+    1118                    
+    1119 00006e40            SUBR   DO_CROWD_CHEER
+    1120 00006e40     1863          MOVK    C_OVERIDE|C_LONG,A3
+    1121 00006e50     5684          CLR     A4
+    1122                    
+    1123                    *****************************************************************************
+    1124                    * Causes the crowd to cheer.
+    1125                    
+    1126                    ;INPUT A3 = BIT 0 1=LONG OR 0=SHORT TYPE OF ANIMATION
+    1127                    ;           BIT 1 1=OVERRIDE WHAT IS ALREADY GOING ON OR NOT
+    1128                    ;          BIT 2 1=DO RANDOM NUMBER OF PEOPLE IN AUDIENCE 
+    1129                    ;      A4 = RNDPER VALUE IF BIT 2 SET IN A3
+    1130 00006e60            SUBR   crowd_cheer
+    1131                                       
+    1132 00006e60     56e7          CLR     A7
+    1133 00006e70     1fa3          BTST    B_RANDOM,A3
+    1134 00006e80     ca01          JRZ     NO_RANDOMNESS
+    1135 00006e90     4c87          MOVE    A4,A7
+    1136 00006ea0           NO_RANDOMNESS
+    1137 00006ea0     09e4          movi    CROWDDATA,a4
+         00006eb0 00000000- 
+    1138 00006ed0     09c5          movi    NUMCROWD,a5
+         00006ee0     001e  
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+crowd stuff                                                          PAGE   23
+
+    1139 00006ef0     1826          movk    1,a6
+    1140 00006f00           fpclloop
+    1141 00006f00     b681          MOVE    *A4(CHEER1),A1,L
+         00006f10     0050  
+    1142 00006f20     0b61          CMPI    fpclside2_cheer1,A1
+         00006f30 ffff9f6f' 
+    1143 00006f50     ca3c          JREQ    DO_NEXT_PERSON
+    1144 00006f60     0b61          CMPI    fpclside3_cheer1,A1
+         00006f70 ffff9def' 
+    1145 00006f90     ca38          JREQ    DO_NEXT_PERSON
+    1146 00006fa0     0b61          CMPI    fpcldave_cheer1,A1
+         00006fb0 ffffcdef' 
+    1147 00006fd0     ca34          JREQ    DO_NEXT_PERSON
+    1148 00006fe0     4ce0          MOVE    A7,A0
+    1149 00006ff0     ca04          JRZ     DO_THEM_ALL
+    1150 00007000     0d5f          CALLA   RNDPER
+         00007010 00000000! 
+    1151 00007030     c22e          JRLS    DO_NEXT_PERSON
+    1152 00007040           DO_THEM_ALL
+    1153 00007040     1fc3          BTST    B_OVERRIDE,A3
+    1154 00007050     cb06          JRNZ    JUST_DO_IT_ANYWAY
+    1155 00007060     b688          MOVE    *A4(CHEER1),A8,L
+         00007070     0050  
+    1156 00007080     b689          MOVE    *A4(SCPTR),A9,L
+         00007090     0000  
+    1157 000070a0     4909          CMP     A8,A9
+    1158 000070b0     c526          JRGE    DO_NEXT_PERSON
+    1159 000070c0           JUST_DO_IT_ANYWAY
+    1160 000070c0     ba84          move    *a4(CHEER1),*a4(SCPTR),L
+         000070d0     0050  
+         000070e0     0000  
+    1161 000070f0     1fe3          BTST    B_L_OR_S,A3
+    1162 00007100     ca03          JRZ     OKAY_DO_SHORT
+    1163 00007110     ba84          move    *a4(CHEER2),*a4(SCPTR),L
          00007120     0070  
          00007130     0000  
-    1078 00007140           OKAY_DO_SHORT
-    1079 00007140     b0c4          move    a6,*a4(TIME),W
+    1164 00007140           OKAY_DO_SHORT
+    1165 00007140     b0c4          move    a6,*a4(TIME),W
          00007150     0020  
-    1080                    
-    1081 00007160     b681          move    *a4(CHEER1),A1,L
+    1166                    
+    1167                    ;MAKE SURE WE DO ALL THE SIDE CROWD AT ONCE
+    1168 00007160     b681          move    *a4(CHEER1),A1,L
          00007170     0050  
-    1082 00007180     0b61          CMPI    yzfxside1_cheer1,A1
+    1169 00007180     0b61          CMPI    fpclside1_cheer1,A1
          00007190 ffffa0ef' 
-    1083 000071b0     cb16          JRNE    DO_NEXT_PERSON
-    1084 000071c0     0b04          addi    BSIZE,a4
+    1170 000071b0     cb16          JRNE    DO_NEXT_PERSON
+    1171 000071c0     0b04          addi    BSIZE,a4
          000071d0     00c0  
-    1085 000071e0     ba84          move    *a4(CHEER1),*a4(SCPTR),L
+    1172 000071e0     ba84          move    *a4(CHEER1),*a4(SCPTR),L
          000071f0     0050  
          00007200     0000  
-    1086 00007210     b0c4          move    a6,*a4(TIME),W
+    1173 00007210     b0c4          move    a6,*a4(TIME),W
          00007220     0020  
-    1087 00007230     0b04          addi    BSIZE,a4
+    1174 00007230     0b04          addi    BSIZE,a4
          00007240     00c0  
-    1088 00007250     ba84          move    *a4(CHEER1),*a4(SCPTR),L
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:05:17 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+crowd stuff                                                          PAGE   24
+
+    1175 00007250     ba84          move    *a4(CHEER1),*a4(SCPTR),L
          00007260     0050  
          00007270     0000  
-    1089 00007280     b0c4          move    a6,*a4(TIME),W
+    1176 00007280     b0c4          move    a6,*a4(TIME),W
          00007290     0020  
-    1090 000072a0     0b04          addi    BSIZE*2,a4
+    1177 000072a0     0b04          addi    BSIZE*2,a4
          000072b0     0180  
-    1091 000072c0     ba84          move    *a4(CHEER1),*a4(SCPTR),L
+    1178 000072c0     ba84          move    *a4(CHEER1),*a4(SCPTR),L
          000072d0     0050  
          000072e0     0000  
-    1092 000072f0     b0c4          move    a6,*a4(TIME),W
+    1179 000072f0     b0c4          move    a6,*a4(TIME),W
          00007300     0020  
-    1093                    
-    1094                            ;a5 is the loop counter...gotta dec it any time we add to a4.
-    1095 00007310     1485          subk    4,a5
-    1096 00007320           DO_NEXT_PERSON
-    1097 00007320     0b04          addi    BSIZE,a4
+    1180                    
+    1181                            ;a5 is the loop counter...gotta dec it any time we add to a4.
+    1182 00007310     1485          subk    4,a5
+    1183 00007320           DO_NEXT_PERSON
+    1184 00007320     0b04          addi    BSIZE,a4
          00007330     00c0  
-    1098 00007340     0d85          dsj     a5,yzfxloop
+    1185 00007340     0d85          dsj     a5,fpclloop
          00007350     ffba  
-    1099                            
-    1100 00007360     0d5f          CALLA   START_FLASHES
+    1186                            
+    1187 00007360     0d5f          CALLA   START_FLASHES
          00007370 00000000! 
-    1101                    
-    1102 00007390     0960          rets
-    1103                    
-    1104                    
-    1105                    
-    1106                            .end
+    1188                    
+    1189 00007390     0960          rets
+    1190                    
+    1191                    
+    1192                    ******************************************************************************
+    1193                    
+    1194                            .end
 
  No Errors,  No Warnings

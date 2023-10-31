@@ -1,3 +1,14 @@
+****************************************************************
+*
+* Software:	Jamie Rivett
+* Initiated:	
+*
+* Modified:
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 10/9/92 23:07
+****************************************************************
 	.file	"string.asm"
 	.title	"string printing stuff"
 	.width	132
@@ -22,10 +33,14 @@
 	.include	"fontsimg.tbl"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	BINBCD
 
+******************************************************************************
 
+;symbols defined in this file
 
 	.def	message_palette
 	.def	mess_space_width
@@ -57,6 +72,7 @@
 
 MBUFF_SIZE	equ	40
 
+;ram
 	.bss	message_ascii,	32	;* ascii lookup table
 	.bss	message_palette,32	;* palette
 	.bss	message_buffer,	16*MBUFF_SIZE ;null terminated string
@@ -74,6 +90,7 @@ MBUFF_SIZE	equ	40
 	BSSX	IGNORE_CHAR_WIDTH,16
 	.text
 
+*****************************************************************************
 
  SUBRP	clear_buffers
 
@@ -85,28 +102,36 @@ clear_buffer
 	movi	MBUFF_SIZE,a2
 	clr	a0
 	movi	message_buffer,a1
-vdrlclear_loop1
+tlwgclear_loop1
 	move	a0,*a1+
-	dsj	a2,vdrlclear_loop1
+	dsj	a2,tlwgclear_loop1
 	rets
 
 clear_buffer2
 	movi	MBUFF_SIZE,a2
 	clr	a0
 	movi	message_buffer2,a1
-vdrlclear_loop2
+tlwgclear_loop2
 	move	a0,*a1+
-	dsj	a2,vdrlclear_loop2
+	dsj	a2,tlwgclear_loop2
 	rets
 
 
+*****************************************************************************
+*
+* INPUT:	a0 = number to convert
+*		a1 = max value
+* converts value in A0 to an decimal ASCII string in message_buffer2
+* - removes leading spaces
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	dec_to_asc
 
 	cmp	a0,a1			;a1-a0
-	jrhi	ebhunot_max
+	jrhi	urtjnot_max
 	move	a1,a0			;set num to max
-ebhunot_max
+urtjnot_max
 
 	calla	BINBCD			;dec number in A0
 	move	a0,a1
@@ -118,82 +143,82 @@ dec_to_asc_new_entry
 
 	andi	0f000000h,a0
 	srl	6*4,a0
-	jrnz	ebhuno_zero_n3
+	jrnz	urtjno_zero_n3
 	move	a3,a3			;leading zero
-	jrz	ebhuskip_zero_n3
-ebhuno_zero_n3
+	jrz	urtjskip_zero_n3
+urtjno_zero_n3
 	inc	a3
 	addi	'0',a0
 	movb	a0,*a2
 	addk	8,a2
-ebhuskip_zero_n3
+urtjskip_zero_n3
 
 	move	a1,a0
 	andi	0f00000h,a0
 	srl	5*4,a0
-	jrnz	ebhuno_zero_n2
+	jrnz	urtjno_zero_n2
 	move	a3,a3			;leading zero
-	jrz	ebhuskip_zero_n2
-ebhuno_zero_n2
+	jrz	urtjskip_zero_n2
+urtjno_zero_n2
 	inc	a3
 	addi	'0',a0
 	movb	a0,*a2
 	addk	8,a2
-ebhuskip_zero_n2
+urtjskip_zero_n2
 
 	move	a1,a0
 	andi	0f0000h,a0
 	srl	4*4,a0
-	jrnz	ebhuno_zero_n1
+	jrnz	urtjno_zero_n1
 	move	a3,a3			;leading zero
-	jrz	ebhuskip_zero_n1
-ebhuno_zero_n1
+	jrz	urtjskip_zero_n1
+urtjno_zero_n1
 	inc	a3
 	addi	'0',a0
 	movb	a0,*a2
 	addk	8,a2
-ebhuskip_zero_n1
+urtjskip_zero_n1
 
 	move	a1,a0
 
 
 	andi	0f000h,a0
 	srl	3*4,a0
-	jrnz	ebhuno_zero0
+	jrnz	urtjno_zero0
 	move	a3,a3			;leading zero
-	jrz	ebhuskip_zero0
-ebhuno_zero0
+	jrz	urtjskip_zero0
+urtjno_zero0
 	inc	a3
 	addi	'0',a0
 	movb	a0,*a2
 	addk	8,a2
-ebhuskip_zero0
+urtjskip_zero0
 
 	move	a1,a0
 	andi	0f00h,a0
 	srl	2*4,a0
-	jrnz	ebhuno_zero1
+	jrnz	urtjno_zero1
 	move	a3,a3			;leading zero
-	jrz	ebhuskip_zero1
-ebhuno_zero1
+	jrz	urtjskip_zero1
+urtjno_zero1
 	inc	a3
 	addi	'0',a0
 	movb	a0,*a2
 	addk	8,a2
-ebhuskip_zero1
+urtjskip_zero1
 
 	move	a1,a0
 	andi	0f0h,a0
 	srl	1*4,a0
-	jrnz	ebhuno_zero2
+	jrnz	urtjno_zero2
 	move	a3,a3			;leading zero
-	jrz	ebhuskip_zero2
-ebhuno_zero2
+	jrz	urtjskip_zero2
+urtjno_zero2
 	inc	a3
 	addi	'0',a0
 	movb	a0,*a2
 	addk	8,a2
-ebhuskip_zero2
+urtjskip_zero2
 
 	move	a1,a0
 	andi	0fh,a0
@@ -206,6 +231,13 @@ ebhuskip_zero2
 	rets
 
 
+*****************************************************************************
+*
+* INPUT:	a0 = number to convert
+* converts value in A0 to an decimal ASCII % string in message_buffer2
+* range 000-999
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	dec_to_pct
 
@@ -237,41 +269,58 @@ ebhuskip_zero2
 	rets
 
 
+*****************************************************************************
+*
+* copies string in message_buffer2 to message_buffer
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	copy_string
 
 	movi	message_buffer-8,a2
 	movi	message_buffer2-8,a3
 
-hswfnext_char
+tqednext_char
 	addk	8,a2
 	addk	8,a3
 	movb	*a3,*a2
 	movb	*a3,a0				;NULL?
-	jrnz	hswfnext_char
+	jrnz	tqednext_char
 
 	rets
 
+*****************************************************************************
+*
+* concatenates string in message_buffer2 to string in message_buffer
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	concat_string
 
 	movi	message_buffer-8,a2
 	movi	message_buffer2-8,a3
-ztohnext_char
+wnsgnext_char
 	addk	8,a2
 	movb	*a2,a0
-	jrnz	ztohnext_char
+	jrnz	wnsgnext_char
 	subk	8,a2
 
-ztohnext_char2
+wnsgnext_char2
 	addk	8,a2
 	addk	8,a3
 	movb	*a3,*a2
 	movb	*a3,a0				;NULL?
-	jrnz	ztohnext_char2
+	jrnz	wnsgnext_char2
 
 	rets
 
+*****************************************************************************
+*
+* INPUT:	a4 = * null terminated rom string
+*
+* copies string in rom to message_buffer
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	copy_rom_string
 
@@ -279,36 +328,50 @@ ztohnext_char2
 
 	subk	8,a4
 
-cudinext_char
+skrwnext_char
 	addk	8,a1
 	addk	8,a4
 	movb	*a4,*a1
 	movb	*a4,a0				;NULL ?
-	jrnz	cudinext_char
+	jrnz	skrwnext_char
 
 	rets
 
+*****************************************************************************
+*
+* INPUT:	a4 = * null terminated rom string
+*
+* concatenates string in rom to string in message_buffer
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	concat_rom_string
 
 	movi	message_buffer-8,a1
-vghqnext_char
+bwfknext_char
 	addk	8,a1
 	movb	*a1,a0
-	jrnz	vghqnext_char
+	jrnz	bwfknext_char
 
 	subk	8,a1
 	subk	8,a4
 
-vghqnext_char2
+bwfknext_char2
 	addk	8,a1
 	addk	8,a4
 	movb	*a4,*a1
 	movb	*a4,a0				;NULL ?
-	jrnz	vghqnext_char2
+	jrnz	bwfknext_char2
 
 	rets
 
+*****************************************************************************
+*
+* INPUT:	a4 = * NULL terminated ASCII string (print_string2)
+*
+* RETURN:	a2 = width of string in pixels
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	get_string_len
 
@@ -316,64 +379,70 @@ vghqnext_char2
 get_string_len2
 	clr	a2
 	subk	8,a4
-sjmdnext_char
+xwkonext_char
 	addk	8,a4
 	movb	*a4,a0
 	andi	0ffh,a0
-	jrz	sjmddone
+	jrz	xwkodone
 	cmpi	1,a0
-	jreq	sjmddone
+	jreq	xwkodone
 	cmpi	32,a0
-	jrne	sjmdno_space
+	jrne	xwkono_space
 	move	@mess_space_width,a0
 	add	a0,a2
-	jruc	sjmdnext_char
-sjmdno_space
+	jruc	xwkonext_char
+xwkono_space
 	sll	5,a0			;x 32 bits
 	move	@message_ascii,a1,L
 	add	a1,a0
 	move	*a0,a1,L		;* image
-	jrz	sjmdnext_char
+	jrz	xwkonext_char
 	MOVE	@IGNORE_CHAR_WIDTH,A0
-	JRNZ	sjmdIGNORE_IT
+	JRNZ	xwkoIGNORE_IT
 	move	*a1,a0			;image width
 	add	a0,a2
-sjmdIGNORE_IT
+xwkoIGNORE_IT
 	move	@mess_spacing,a0
 	add	a0,a2
-	jruc	sjmdnext_char
+	jruc	xwkonext_char
 
-sjmddone
+xwkodone
 	move	@mess_spacing,a0
 	sub	a0,a2
 	rets
 
+*****************************************************************************
+*
+* INPUT:	a4 = * NULL terminated ASCII string (print_string_C2)
+*		centers & prints a text string
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	print_string_C
 
 	movi	message_buffer,a4
-	movi	lzjicenter_justify,a0
+	movi	frbpcenter_justify,a0
 	move	a0,@mess_justify,L	;justification method
-	callr	lzjicenter_justify
+	callr	frbpcenter_justify
 	callr	print_string2b
 	rets
 
 print_string_C2
-	movi	lzjicenter_justify,a0
+	movi	frbpcenter_justify,a0
 	move	a0,@mess_justify,L	;justification method
-	callr	lzjicenter_justify
+	callr	frbpcenter_justify
 	callr	print_string2b
 	rets
 
  SUBR    print_string_Z2
 	movi	message_buffer,a4
-	movi	lzjicenter_justify,a0
+	movi	frbpcenter_justify,a0
 	move	a0,@mess_justify,L	;justification method
-	callr	lzjicenter_justify
+	callr	frbpcenter_justify
 	callr	print_string_with_zb
 	rets
 
-lzjicenter_justify
+frbpcenter_justify
 	PUSH	a2,a4
 	callr	get_string_len2
 	srl	1,a2			;/2
@@ -383,24 +452,30 @@ lzjicenter_justify
 	PULL	a2,a4
 	rets
 
+*****************************************************************************
+*
+* INPUT:	a4 = * NULL terminated ASCII string (print_string_C2)
+*		right justifies & prints a text string
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	print_string_R
 
 	movi	message_buffer,a4
-	movi	hjrkright_justify,a0
+	movi	awvdright_justify,a0
 	move	a0,@mess_justify,L	;justification method
-	callr	hjrkright_justify
+	callr	awvdright_justify
 	callr	print_string2b
 	rets
 
 print_string_R2
-	movi	hjrkright_justify,a0
+	movi	awvdright_justify,a0
 	move	a0,@mess_justify,L	;justification method
-	callr	hjrkright_justify
+	callr	awvdright_justify
 	callr	print_string2b
 	rets
 
-hjrkright_justify
+awvdright_justify
 	PUSH	a2,a4
 	callr	get_string_len2
 	move	@mess_cursx,a0
@@ -409,8 +484,13 @@ hjrkright_justify
 	PULL	a2,a4
 	rets
 
+*****************************************************************************
+*
+* INPUT:	a4 = * NULL terminated ASCII string (print_string2)
+*
+*-----------------------------------------------------------------------------
 
-ffygleft_justify
+zujcleft_justify
 	move	@mess_cursx,a0
 	move	a0,@mess_cursx2
 	rets
@@ -420,20 +500,21 @@ ffygleft_justify
 	movi	message_buffer,a4
 
 print_string2
-	movi	ffygleft_justify,a0
+	movi	zujcleft_justify,a0
 	move	a0,@mess_justify,L	;justification method
 	move	@mess_cursx,a0
 	move	a0,@mess_cursx2
 print_string2b
 
 	subk	8,a4
-ffygnext_char
+zujcnext_char
 	addk	8,a4
 	movb	*a4,a0
 	andi	0ffh,a0
-	jrz	ffygdone
+	jrz	zujcdone
 	cmpi	1,a0
-	jrne	ffygno_newline
+	jrne	zujcno_newline
+;newline
 	move	@mess_line_spacing,a0
 	move	@mess_cursy,a1
 	add	a0,a1
@@ -443,21 +524,22 @@ ffygnext_char
 	addi	8,a4			;skip newline char
 	call	a0
 	subi	8,a4
-	jruc	ffygnext_char
-ffygno_newline
+	jruc	zujcnext_char
+zujcno_newline
 	cmpi	32,a0
-	jrne	ffygno_space
+	jrne	zujcno_space
+;space
 	move	@mess_space_width,a0
 	move	@mess_cursx2,a1
 	add	a0,a1
 	move	a1,@mess_cursx2
-	jruc	ffygnext_char
-ffygno_space
+	jruc	zujcnext_char
+zujcno_space
 	sll	5,a0			;x 32 bits
 	move	@message_ascii,a1,L
 	add	a1,a0
 	move	*a0,a2,L		;* image
-	jrz	ffygnext_char
+	jrz	zujcnext_char
 
 	PUSH	a4,a8
 	move	@message_palette,b0,L	;* palette
@@ -465,6 +547,7 @@ ffygno_space
 	sll	16,a0			;x val
 	move	@mess_cursy,a1
 	sll	16,a1			;y val
+;	movi	120,a3			;z pos
 	movi	20000,a3		;Z
 	movi	DMAWNZ|M_SCRNREL,a4	;DMA flags
 	move	@mess_objid,a5		;object ID
@@ -473,19 +556,21 @@ ffygno_space
 	calla	BEGINOBJP
 	move	@mess_cursx2,a1
 	MOVE	@IGNORE_CHAR_WIDTH,A0
-	JRNZ	ffygIGNORE_IT
+	JRNZ	zujcIGNORE_IT
 	move	*a8(OSIZEX),a0
 	add	a0,a1
-ffygIGNORE_IT
+zujcIGNORE_IT
 	move	@mess_spacing,a0
 	add	a0,a1
 	move	a1,@mess_cursx2
 	PULL	a4,a8
-	jruc	ffygnext_char
+	jruc	zujcnext_char
 
-ffygdone
+zujcdone
 	rets
-smudleft_justify
+****
+* do something
+pvhaleft_justify
 	move	@mess_cursx,a0
 	move	a0,@mess_cursx2
 	rets
@@ -494,20 +579,21 @@ smudleft_justify
 
 	movi	message_buffer,a4
 
-	movi	smudleft_justify,a0
+	movi	pvhaleft_justify,a0
 	move	a0,@mess_justify,L	;justification method
 	move	@mess_cursx,a0
 	move	a0,@mess_cursx2
  SUBRP	print_string_with_zb
 
 	subk	8,a4
-smudnext_char
+pvhanext_char
 	addk	8,a4
 	movb	*a4,a0
 	andi	0ffh,a0
-	jrz	smuddone
+	jrz	pvhadone
 	cmpi	1,a0
-	jrne	smudno_newline
+	jrne	pvhano_newline
+;newline
 	move	@mess_line_spacing,a0
 	move	@mess_cursy,a1
 	add	a0,a1
@@ -517,21 +603,22 @@ smudnext_char
 	addi	8,a4			;skip newline char
 	call	a0
 	subi	8,a4
-	jruc	smudnext_char
-smudno_newline
+	jruc	pvhanext_char
+pvhano_newline
 	cmpi	32,a0
-	jrne	smudno_space
+	jrne	pvhano_space
+;space
 	move	@mess_space_width,a0
 	move	@mess_cursx2,a1
 	add	a0,a1
 	move	a1,@mess_cursx2
-	jruc	smudnext_char
-smudno_space
+	jruc	pvhanext_char
+pvhano_space
 	sll	5,a0			;x 32 bits
 	move	@message_ascii,a1,L
 	add	a1,a0
 	move	*a0,a2,L		;* image
-	jrz	smudnext_char
+	jrz	pvhanext_char
 
 	PUSH	a4,a8
 	move	@message_palette,b0,L	;* palette
@@ -539,6 +626,8 @@ smudno_space
 	sll	16,a0			;x val
 	move	@mess_cursy,a1
 	sll	16,a1			;y val
+;	movi	120,a3			;z pos
+;	movi	20000,a3		;Z
 	move	@mess_z,a3,L
 	movi	DMAWNZ|M_SCRNREL,a4	;DMA flags
 	move	@mess_objid,a5		;object ID
@@ -547,19 +636,24 @@ smudno_space
 	calla	BEGINOBJP
 	move	@mess_cursx2,a1
 	MOVE	@IGNORE_CHAR_WIDTH,A0
-	JRNZ	smudIGNORE_IT
+	JRNZ	pvhaIGNORE_IT
 	move	*a8(OSIZEX),a0
 	add	a0,a1
-smudIGNORE_IT
+pvhaIGNORE_IT
 	move	@mess_spacing,a0
 	add	a0,a1
 	move	a1,@mess_cursx2
 	PULL	a4,a8
-	jruc	smudnext_char
+	jruc	pvhanext_char
 
-smuddone
+pvhadone
 	rets
 
+*****************************************************************************
+* end2
+* INPUT	:	a2 = * to message
+*
+*-----------------------------------------------------------------------------
 
  SUBRP	setup_message
 
@@ -578,11 +672,14 @@ smuddone
 	move	a0,@mess_cursy		;
 	move	*a2+,a0,L
 	move	a0,@message_palette,L
-	movi	iksqrets,a0
+	movi	pwxbrets,a0
 	move	a0,@mess_justify,L	;justification method
-iksqrets
+pwxbrets
 	rets
 
+********************************************************************************
+* END3
+* INPUT	:	a2 = * to message
 
  SUBRP	print_message
 
@@ -613,12 +710,16 @@ iksqrets
 	rets
 
 
+*****************************************************************************
+* end4
 init_convert_table
 	.word	'A','B','C','D','E','F','G','H'
 	.word	'I','J','K','L','M','N','O','P'
 	.word	'Q','R','S','T','U','V','W','X'
 	.word	'Y','Z',' '
 
+*****************************************************************************
+*****
 font9_ascii
  .long 0,0,0,0,0,0,0,0							;$00
  .long 0,0,0,0,0,0,0,0							;$08
@@ -679,6 +780,7 @@ osgemd_ascii
  .long 0,0,0,0,0,0,0,0								;$08
  .long OSGEMD_SPC,OSGEMD_DEL,OSGEMD_END,0,0,0,0,0				;$10	SPC,BAK,END
  .long 0,0,0,0,0,0,0,0								;$18
+; .long 0,OSGEMD_EXP,0,OSGEMD_NUM,OSGEMD_DOL,0,OSGEMD_AND,OSGEMD_APO		;$20	SP! " # $ % & '
  .long 0,OSGEMD_EXP,0,OSGEMD_NUM,OSGEMD_DOL,OSGEMD_PCT,OSGEMD_AND,OSGEMD_APO		;$20	SP! " # $ % & '
  .long OSGEMD_OBR,OSGEMD_CBR,0,0,0,OSGEMD_DAS,OSGEMD_DOT,OSGEMD_SLS		;$28	( ) * + , - . /
  .long OSGEMD_0,OSGEMD_1,OSGEMD_2,OSGEMD_3,OSGEMD_4,OSGEMD_5,OSGEMD_6,OSGEMD_7	;$30	0 1 2 3 4 5 6 7
@@ -692,6 +794,23 @@ osgemd_ascii
  .long OSGEMD_P,OSGEMD_Q,OSGEMD_R,OSGEMD_S,OSGEMD_T,OSGEMD_U,OSGEMD_V,OSGEMD_W	;$70	p q r s t u v w
  .long OSGEMD_X,OSGEMD_Y,OSGEMD_Z,0,0,0,0,0					;$78	x y z { | } ~
 
+;sgmd8_ascii
+; .long 0,0,0,0,0,0,0,0								;$00
+; .long 0,0,0,0,0,0,0,0								;$08
+; .long 0,0,0,0,0,0,0,0								;$10
+; .long 0,0,0,0,0,0,0,0								;$18
+; .long 0,SGMD8_EXP,0,SGMD8_NUM,0,SGMD8_PCT,SGMD8_AND,SGMD8_APO			;$20	SP! " # $ % & '
+; .long SGMD8_OBR,SGMD8_CBR,0,0,SGMD8_COM,SGMD8_DAS,SGMD8_DOT,SGMD8_SLS		;$28	( ) * + , - . /
+; .long SGMD8_0,SGMD8_1,SGMD8_2,SGMD8_3,SGMD8_4,SGMD8_5,SGMD8_6,SGMD8_7		;$30	0 1 2 3 4 5 6 7
+; .long SGMD8_8,SGMD8_9,SGMD8_COL,0,0,0,0,0					;$38	8 9 : ; < - > ?
+; .long 0,SGMD8_A,SGMD8_B,SGMD8_C,SGMD8_D,SGMD8_E,SGMD8_F,SGMD8_G		;$40	@ A B C D E F G
+; .long SGMD8_H,SGMD8_I,SGMD8_J,SGMD8_K,SGMD8_L,SGMD8_M,SGMD8_N,SGMD8_O		;$48	H I J K L M N O
+; .long SGMD8_P,SGMD8_Q,SGMD8_R,SGMD8_S,SGMD8_T,SGMD8_U,SGMD8_V,SGMD8_W		;$50	P Q R S T U V W
+; .long SGMD8_X,SGMD8_Y,SGMD8_Z,0,0,0,0,0					;$58	X Y Z [ \ ] ^ _
+; .long 0,SGMD8_A,SGMD8_B,SGMD8_C,SGMD8_D,SGMD8_E,SGMD8_F,SGMD8_G		;$60	` a b c d e f g
+; .long SGMD8_H,SGMD8_I,SGMD8_J,SGMD8_K,SGMD8_L,SGMD8_M,SGMD8_N,SGMD8_O		;$68	h i j k l m n o
+; .long SGMD8_P,SGMD8_Q,SGMD8_R,SGMD8_S,SGMD8_T,SGMD8_U,SGMD8_V,SGMD8_W		;$70	p q r s t u v w
+; .long SGMD8_X,SGMD8_Y,SGMD8_Z,0,0,0,0,0					;$78	x y z { | } ~
 
 osgmd8_ascii
  .long 0,0,0,0,0,0,0,0								;$00
@@ -802,5 +921,7 @@ win_ascii
  .long osgmd10_X,osgmd10_Y,osgmd10_Z,0,0,0,0,0						;$78	x y z { | } ~
 
 
+******************************************************************************
+* end
 	.end
 

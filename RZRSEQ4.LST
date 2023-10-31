@@ -1,1547 +1,1699 @@
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
                                                                      PAGE    1
 
-       1                    
-       2                            .file   "rzrseq4.asm"
-       4                            .width  132
-       5                            .option b,d,l,t
-       6                            .mnolist
-       7                    
-       8                    
-       9                            .include        "macros.h"
-      10                            .include        "mproc.equ"             ;Mproc equates
-      11                            .include        "sys.equ"
-      12                            .include        "game.equ"
-      13                            .include        "plyr.equ"
-      14                            .include        "anim.equ"
-      15                            .include        "sound.h"
-      16                            .include        "razorimg.h"
-      17                            .include        "display.equ"
-      18                            .include        "ring.equ"
-      19                            .include        "damage.equ"
-      20                            .INCLUDE        "SWEAT.EQU"
-      21                    
-      22                    
-      23                            ;RAZOR
-      24                            .ref    rzr_3_head_held_anim
-      25                    
-      26                            ;MISC
-      27                            .ref    HIT_THE_MAT,SMALL_BOUNCE,ckzpos
-      28                            .ref    DO_RAZOR_PUSH
-      29                            .ref    DO_WAIL
-      30                            .ref    DO_BLOCKED
-      31                            .ref    DO_SCREAM
-      32                            .ref    free_toss_check,setup_freetoss,rzr_4_hiptoss_anim
-      33                    
-      34                    
+       1                    **************************************************************
+       2                    *
+       3                    * Software:             Jason Skiles
+       4                    * Initiated:            26 Aug 94
+       5                    *
+       6                    * COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+       7                    *
+       8                    **************************************************************
+       9                    
+      10                            .file   "rzrseq4.asm"
+      12                            .width  132
+      13                            .option b,d,l,t
+      14                            .mnolist
+      15                    
+      16                    
+      17                            .include        "macros.h"
+      18                            .include        "mproc.equ"             ;Mproc equates
+      19                            .include        "sys.equ"
+      20                            .include        "game.equ"
+      21                            .include        "plyr.equ"
+      22                            .include        "anim.equ"
+      23                            .include        "sound.h"
+      24                            .include        "razorimg.h"
+      25                            .include        "display.equ"
+      26                            .include        "ring.equ"
+      27                            .include        "damage.equ"
+      28                            .INCLUDE        "SWEAT.EQU"
+      29                    
+      30                    ******************************************************************************
+      31                    * EXTERNAL REFERENCES
+      32                    
+      33                            ;RAZOR
+      34                            .ref    rzr_3_head_held_anim
       35                    
-      36                    
-      37 00000000            SUBR   rzr_2_block_anim
-      38                    
-      39 00000000     8002          .word   ANI_SETMODE,MODE_UNINT
-      40 00000020     8003          .word   ANI_ZEROVELS
-      41 00000030     8026          .word   ANI_SETSPEED,100h
-      42 00000050     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-      43 00000060     805f          .word   ANI_SET_WRESTLER_XFLIP
-      44                    
-      45 00000070     8004          .word   ANI_SETPLYRMODE,MODE_BLOCK
-      46 00000090                   WL      2,R2BK3E+FR1
-      47 000000c0                   WL      1,R4BK3D+FR1
-      48 000000f0                   WL      1,R4BK3D+FR1
-      49 00000120                   WL      1,R4BK3D+FR2
-      50 00000150                   WL      ANI_GOTO,kkbghold_block
-      51                    
-      52                    
+      36                            ;MISC
+      37                            .ref    HIT_THE_MAT,SMALL_BOUNCE,ckzpos
+      38                            .ref    DO_RAZOR_PUSH
+      39                            .ref    DO_WAIL
+      40                            .ref    DO_BLOCKED
+      41                            .ref    DO_SCREAM
+      42                            .ref    free_toss_check,setup_freetoss,rzr_4_hiptoss_anim
+      43                    
+      44                    ******************************************************************************
+      45                    * SYMBOLS DEFINED IN THIS FILE
+      46                    
+      47                    ******************************************************************************
+      48                    * EQUATES FOR THIS FILE
+      49                    
+      50                    *****************************************************************************
+      51                    *
+      52                    * bzfo2 BLOCK + HITBLOCK
       53                    
-      54 00000180            SUBR   rzr_4_block_anim
+      54 00000000            SUBR   rzr_2_block_anim
       55                    
-      56 00000180     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+      56 00000000     8002          .word   ANI_SETMODE,MODE_UNINT
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    2
 
-      57 000001a0     8003          .word   ANI_ZEROVELS
-      58 000001b0     8026          .word   ANI_SETSPEED,100h
-      59 000001d0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-      60 000001e0     805f          .word   ANI_SET_WRESTLER_XFLIP
-      61                    
-      62 000001f0     8004          .word   ANI_SETPLYRMODE,MODE_BLOCK
-      63 00000210                   WL      2,R4BK3D+FR1
-      64 00000240                   WL      1,R4BK3D+FR2
-      65 00000270                   WL      1,R4BK3D+FR2
-      66 000002a0           kkbghold_block
-      67 000002a0                   WL      2,R4BK3D+FR3
-      68 000002d0     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT|MODE_FRICTION
-      69 000002f0     8014          .word   ANI_WAITRELEASE,PLAYER_BLOCK_BIT
-      70 00000310     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP     ;uninterruptable
-      71 00000330     801b          .word   ANI_SETFACING
-      72 00000340                   WL      2,R4BK3D+FR2
-      73 00000370                   WL      2,R4BK3D+FR1
-      74 000003a0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-      75                    
-      76 000003c0     8049          .word   ANI_END
-      77                    
+      57 00000020     8003          .word   ANI_ZEROVELS
+      58 00000030     8026          .word   ANI_SETSPEED,100h
+      59 00000050     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+      60 00000060     805f          .word   ANI_SET_WRESTLER_XFLIP
+      61                    ;Rotate toward opponent if needed!
+      62                    
+      63                    ;       WL      ANI_CODE,block_if_safe
+      64 00000070     8004          .word   ANI_SETPLYRMODE,MODE_BLOCK
+      65 00000090                   WL      2,R2BK3E+FR1
+      66 000000c0                   WL      1,R4BK3D+FR1
+      67                    ;       .word   ANI_SETPLYRMODE,MODE_BLOCK
+      68 000000f0                   WL      1,R4BK3D+FR1
+      69 00000120                   WL      1,R4BK3D+FR2
+      70 00000150                   WL      ANI_GOTO,bzfohold_block
+      71                    
+      72                    
+      73                    ************
+      74                    *
+      75                    * bzfo4 BLOCK + HITBLOCK
+      76                    
+      77 00000180            SUBR   rzr_4_block_anim
       78                    
-      79 000003d0            SUBR   rzr_4_hitblock_anim
-      80                    
-      81 000003d0     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
-      82 000003f0     8016          .word   ANI_FRICTION,5000h
-      83 00000410     8026          .word   ANI_SETSPEED,100h
+      79 00000180     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
+      80 000001a0     8003          .word   ANI_ZEROVELS
+      81 000001b0     8026          .word   ANI_SETSPEED,100h
+      82 000001d0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+      83 000001e0     805f          .word   ANI_SET_WRESTLER_XFLIP
       84                    
-      85 00000430                   WL      ANI_CODE,DO_BLOCKED
-      86                    
-      87 00000460                   WL      1,R4BK3D+FR5
-      88 00000490                   WL      2,R4BK3D+FR6
-      89 000004c0                   WL      1,R4BK3D+FR5
-      90                    
-      91 000004f0                   WL      ANI_GOTO,kkbghold_block
-      92                    
-      93 00000520            SUBR   rzr_4_hitblock2_anim
-      94                    
-      95 00000520     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
-      96 00000540     8016          .word   ANI_FRICTION,4000h
-      97 00000560     8026          .word   ANI_SETSPEED,100h
-      98                    
-      99 00000580                   WL      ANI_CODE,DO_BLOCKED
-     100 000005b0                   WL      ANI_SET_YVEL,38000h
-     101                    
-     102 000005e0                   WL      3,R4BK3D+FR5
-     103 00000610                   WL      3,R4BK3D+FR6
-     104 00000640                   WL      3,R4BK3D+FR5
-     105 00000670                   WL      3,R4BK3D+FR6
-     106 000006a0                   WL      3,R4BK3D+FR5
-     107 000006d0                   WL      3,R4BK3D+FR6
-     108                    
-     109 00000700                   WL      ANI_GOTO,kkbghold_block
-     110                    
+      85                    ;Rotate toward opponent if needed!
+      86                    ;       WL      ANI_CODE,block_if_safe
+      87 000001f0     8004          .word   ANI_SETPLYRMODE,MODE_BLOCK
+      88 00000210                   WL      2,R4BK3D+FR1
+      89 00000240                   WL      1,R4BK3D+FR2
+      90                    ;       .word   ANI_SETPLYRMODE,MODE_BLOCK
+      91 00000270                   WL      1,R4BK3D+FR2
+      92 000002a0           bzfohold_block
+      93 000002a0                   WL      2,R4BK3D+FR3
+      94 000002d0     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT|MODE_FRICTION
+      95                    ;       .word   ANI_ZERO_XZVELS
+      96 000002f0     8014          .word   ANI_WAITRELEASE,PLAYER_BLOCK_BIT
+      97 00000310     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP     ;uninterruptable
+      98 00000330     801b          .word   ANI_SETFACING
+      99 00000340                   WL      2,R4BK3D+FR2
+     100 00000370                   WL      2,R4BK3D+FR1
+     101 000003a0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     102                    
+     103 000003c0     8049          .word   ANI_END
+     104                    
+     105                    
+     106 000003d0            SUBR   rzr_4_hitblock_anim
+     107                    
+     108 000003d0     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
+     109 000003f0     8016          .word   ANI_FRICTION,5000h
+     110 00000410     8026          .word   ANI_SETSPEED,100h
      111                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    3
 
-     112                    
-     113              3000  xueiFRICTION_VAL        equ     3000h
-     114                    
-     115 00000730            SUBR   rzr_4_losebal_anim
-     116                    
-     117 00000730     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
-     118 00000750     8003          .word   ANI_ZEROVELS
-     119 00000760     8016          .word   ANI_FRICTION,xueiFRICTION_VAL
-     120 00000780     8026          .word   ANI_SETSPEED,100h
-     121 000007a0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     122 000007b0     805f          .word   ANI_SET_WRESTLER_XFLIP
-     123 000007c0                   WLW     ANI_SET_XVEL,-60000h,AM_HIT_REL
-     124                    
-     125 00000800     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
-     126 00000860                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     127                    
-     128 000008d0                   WL      ANI_CODE,DO_RAZOR_PUSH
-     129 00000900                   WL      3,R4LB4Z+FR1
-     130 00000930                   WL      3,R4LB4Z+FR2
-     131 00000960                   WL      3,R4LB4Z+FR3
-     132 00000990                   WL      3,R4LB4Z+FR4
-     133 000009c0     800b          .word   ANI_WAITHITGND
-     134 000009d0                   WL      3,R4LB4Z+FR4
+     112 00000430                   WL      ANI_CODE,DO_BLOCKED
+     113                    
+     114 00000460                   WL      1,R4BK3D+FR5
+     115 00000490                   WL      2,R4BK3D+FR6
+     116 000004c0                   WL      1,R4BK3D+FR5
+     117                    
+     118 000004f0                   WL      ANI_GOTO,bzfohold_block
+     119                    
+     120 00000520            SUBR   rzr_4_hitblock2_anim
+     121                    
+     122 00000520     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
+     123 00000540     8016          .word   ANI_FRICTION,4000h
+     124 00000560     8026          .word   ANI_SETSPEED,100h
+     125                    
+     126 00000580                   WL      ANI_CODE,DO_BLOCKED
+     127 000005b0                   WL      ANI_SET_YVEL,38000h
+     128                    
+     129 000005e0                   WL      3,R4BK3D+FR5
+     130 00000610                   WL      3,R4BK3D+FR6
+     131 00000640                   WL      3,R4BK3D+FR5
+     132 00000670                   WL      3,R4BK3D+FR6
+     133 000006a0                   WL      3,R4BK3D+FR5
+     134 000006d0                   WL      3,R4BK3D+FR6
      135                    
-     136 00000a00     8022          .word   ANI_FACEDOWN
-     137 00000a10     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     138 00000a30     8002          .word   ANI_SETMODE,MODE_NORMAL
-     139 00000a50     8049          .word   ANI_END
-     140                    
-     141                    
+     136 00000700                   WL      ANI_GOTO,bzfohold_block
+     137                    
+     138                    
+     139                    *****************************************************************************
+     140                    *
+     141                    * vads4 LOSE BALANCE
      142                    
-     143 00000a60            SUBR   rzr_2_head_hit_anim
-     144 00000a60     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     145 00000a80     8003          .word   ANI_ZEROVELS
-     146 00000a90     8026          .word   ANI_SETSPEED,100h
-     147 00000ab0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     148 00000ac0     805f          .word   ANI_SET_WRESTLER_XFLIP
-     149                    
-     150 00000ad0     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
-     151 00000b30                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     152 00000ba0                   WL      3,R2AH2D+FR3
-     153 00000bd0                   WL      3,R2AH2D+FR5
-     154 00000c00                   WL      3,R2AH2D+FR6
-     155 00000c30                   WL      3,R2AH2D+FR7
-     156                    
-     157 00000c60     8002          .word   ANI_SETMODE,MODE_NORMAL
-     158 00000c80     8049          .word   ANI_END
-     159                    
-     160                    
-     161                    
-     162 00000c90            SUBR   rzr_4_head_hit_anim
-     163 00000c90     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     164 00000cb0     8003          .word   ANI_ZEROVELS
-     165 00000cc0     8026          .word   ANI_SETSPEED,100h
-     166 00000ce0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     143              3000  vadsFRICTION_VAL        equ     3000h
+     144                    
+     145 00000730            SUBR   rzr_4_losebal_anim
+     146                    
+     147 00000730     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+     148 00000750     8003          .word   ANI_ZEROVELS
+     149 00000760     8016          .word   ANI_FRICTION,vadsFRICTION_VAL
+     150 00000780     8026          .word   ANI_SETSPEED,100h
+     151 000007a0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     152 000007b0     805f          .word   ANI_SET_WRESTLER_XFLIP
+     153 000007c0                   WLW     ANI_SET_XVEL,-60000h,AM_HIT_REL
+     154                    
+     155 00000800     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
+     156 00000860                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     157                    
+     158 000008d0                   WL      ANI_CODE,DO_RAZOR_PUSH
+     159 00000900                   WL      3,R4LB4Z+FR1
+     160 00000930                   WL      3,R4LB4Z+FR2
+     161 00000960                   WL      3,R4LB4Z+FR3
+     162 00000990                   WL      3,R4LB4Z+FR4
+     163 000009c0     800b          .word   ANI_WAITHITGND
+     164 000009d0                   WL      3,R4LB4Z+FR4
+     165                    
+     166 00000a00     8022          .word   ANI_FACEDOWN
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    4
 
-     167 00000cf0     805f          .word   ANI_SET_WRESTLER_XFLIP
-     168                    
-     169 00000d00     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
-     170 00000d60                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     171 00000dd0                   WL      3,R4AH4C+FR3
-     172 00000e00                   WL      3,R4AH4C+FR4
-     173 00000e30                   WL      3,R4AH4C+FR5
-     174 00000e60                   WL      3,R4AH4C+FR6
-     175 00000e90                   WL      3,R4AH4C+FR7
-     176 00000ec0                   WL      3,R4AH4C+FR8
-     177                    
-     178 00000ef0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     179 00000f10     8049          .word   ANI_END
-     180                    
-     181 00000f20            SUBR   rzr_2_head_hit3_anim
+     167 00000a10     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     168 00000a30     8002          .word   ANI_SETMODE,MODE_NORMAL
+     169 00000a50     8049          .word   ANI_END
+     170                    
+     171                    
+     172                    *****************************************************************************
+     173                    *
+     174                    * ykmo2 HEAD HIT
+     175                    
+     176 00000a60            SUBR   rzr_2_head_hit_anim
+     177 00000a60     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     178 00000a80     8003          .word   ANI_ZEROVELS
+     179 00000a90     8026          .word   ANI_SETSPEED,100h
+     180 00000ab0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     181 00000ac0     805f          .word   ANI_SET_WRESTLER_XFLIP
      182                    
-     183 00000f20     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     184 00000f40     8003          .word   ANI_ZEROVELS
-     185 00000f50     8026          .word   ANI_SETSPEED,100h
-     186 00000f70     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     187 00000f80     805f          .word   ANI_SET_WRESTLER_XFLIP
-     188                    
-     189 00000f90                   WLW     ANI_SET_XVEL,-28000h,AM_HIT_REL
-     190 00000fd0                   WLW     ANI_SET_ZVEL,20000h,AM_HIT_REL
-     191 00001010                   WL      ANI_SET_YVEL,40000h
+     183 00000ad0     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
+     184 00000b30                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     185 00000ba0                   WL      3,R2AH2D+FR3
+     186 00000bd0                   WL      3,R2AH2D+FR5
+     187 00000c00                   WL      3,R2AH2D+FR6
+     188 00000c30                   WL      3,R2AH2D+FR7
+     189                    
+     190 00000c60     8002          .word   ANI_SETMODE,MODE_NORMAL
+     191 00000c80     8049          .word   ANI_END
      192                    
-     193 00001040                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     194 000010b0                   WL      3,R2AH2D+FR3
-     195 000010e0     805e          .word   ANI_DEBRIS,100,2,-21,100,0      ;%chance, tbl index, x,y,z off
-     196 00001140                   WL      3,R2AH2D+FR5
-     197 00001170     800b          .word   ANI_WAITHITGND
-     198 00001180     8003          .word   ANI_ZEROVELS
-     199 00001190                   WL      3,R2AH2D+FR6
-     200 000011c0                   WL      3,R2AH2D+FR7
-     201                    
-     202 000011f0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     203 00001210     8049          .word   ANI_END
-     204                    
-     205                    
-     206                    
-     207 00001220            SUBR   rzr_4_head_hit3_anim
-     208                    
-     209 00001220     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     210 00001240     8003          .word   ANI_ZEROVELS
-     211 00001250     8026          .word   ANI_SETSPEED,100h
-     212 00001270     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     213 00001280     805f          .word   ANI_SET_WRESTLER_XFLIP
+     193                    
+     194                    * ykmo4 HEAD HIT
+     195                    
+     196 00000c90            SUBR   rzr_4_head_hit_anim
+     197 00000c90     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     198 00000cb0     8003          .word   ANI_ZEROVELS
+     199 00000cc0     8026          .word   ANI_SETSPEED,100h
+     200 00000ce0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     201 00000cf0     805f          .word   ANI_SET_WRESTLER_XFLIP
+     202                    
+     203 00000d00     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
+     204 00000d60                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     205 00000dd0                   WL      3,R4AH4C+FR3
+     206 00000e00                   WL      3,R4AH4C+FR4
+     207 00000e30                   WL      3,R4AH4C+FR5
+     208 00000e60                   WL      3,R4AH4C+FR6
+     209 00000e90                   WL      3,R4AH4C+FR7
+     210 00000ec0                   WL      3,R4AH4C+FR8
+     211                    
+     212 00000ef0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     213 00000f10     8049          .word   ANI_END
      214                    
-     215 00001290                   WLW     ANI_SET_XVEL,-28000h,AM_HIT_REL
-     216 000012d0                   WLW     ANI_SET_ZVEL,-20000h,AM_ABS
-     217 00001310                   WL      ANI_SET_YVEL,40000h
-     218                    
-     219 00001340                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     220 000013b0                   WL      3,R4AH4C+FR3
-     221 000013e0     805e          .word   ANI_DEBRIS,300,2,-21,100,0      ;%chance, tbl index, x,y,z off
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     215 00000f20            SUBR   rzr_2_head_hit3_anim
+     216                    
+     217 00000f20     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     218 00000f40     8003          .word   ANI_ZEROVELS
+     219 00000f50     8026          .word   ANI_SETSPEED,100h
+     220 00000f70     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     221 00000f80     805f          .word   ANI_SET_WRESTLER_XFLIP
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    5
 
-     222 00001440                   WL      3,R4AH4C+FR4
-     223 00001470                   WL      3,R4AH4C+FR5
-     224 000014a0     800b          .word   ANI_WAITHITGND
-     225 000014b0     8003          .word   ANI_ZEROVELS
-     226 000014c0                   WL      3,R4AH4C+FR6
-     227 000014f0                   WL      3,R4AH4C+FR7
-     228 00001520                   WL      3,R4AH4C+FR8
-     229                    
-     230 00001550     8022          .word   ANI_FACEDOWN
-     231 00001560     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     232 00001580     8002          .word   ANI_SETMODE,MODE_NORMAL
-     233 000015a0     8049          .word   ANI_END
-     234                    
-     235 000015b0            SUBR   rzr_4_head_hit4_anim
-     236                    
-     237 000015b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     238 000015d0     8003          .word   ANI_ZEROVELS
-     239 000015e0     8026          .word   ANI_SETSPEED,100h
-     240 00001600     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     241 00001610     805f          .word   ANI_SET_WRESTLER_XFLIP
-     242                    
-     243 00001620                   WL      ANI_SET_YVEL,40000h
-     244                    
-     245 00001650                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     246 000016c0                   WL      4,R4AH4C+FR4
-     247 000016f0                   WL      4,R4AH4C+FR5
-     248 00001720                   WL      4,R4AH4C+FR6
-     249 00001750                   WL      4,R4AH4C+FR7
-     250 00001780                   WL      4,R4AH4C+FR8
-     251                    
-     252 000017b0     8022          .word   ANI_FACEDOWN
-     253 000017c0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     254 000017e0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     255 00001800     8049          .word   ANI_END
-     256                    
-     257                    
-     258 00001810            SUBR   rzr_2_bncoff_anim
-     259                    
-     260 00001810     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     261 00001830     8026          .word   ANI_SETSPEED,100h
-     262 00001850     8016          .word   ANI_FRICTION,3000h
-     263                    
-     264 00001870                   WL      3,R2AH2D+FR3
-     265 000018a0                   WL      15,R2AH2D+FR5
-     266 000018d0                   WL      4,R2AH2D+FR6
-     267                    
-     268 00001900     8002          .word   ANI_SETMODE,MODE_NORMAL
-     269 00001920     8049          .word   ANI_END
-     270                    
+     222                    
+     223 00000f90                   WLW     ANI_SET_XVEL,-28000h,AM_HIT_REL
+     224 00000fd0                   WLW     ANI_SET_ZVEL,20000h,AM_HIT_REL
+     225 00001010                   WL      ANI_SET_YVEL,40000h
+     226                    
+     227 00001040                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     228 000010b0                   WL      3,R2AH2D+FR3
+     229 000010e0     805e          .word   ANI_DEBRIS,100,2,-21,100,0      ;%chance, tbl index, x,y,z off
+     230 00001140                   WL      3,R2AH2D+FR5
+     231 00001170     800b          .word   ANI_WAITHITGND
+     232 00001180     8003          .word   ANI_ZEROVELS
+     233 00001190                   WL      3,R2AH2D+FR6
+     234 000011c0                   WL      3,R2AH2D+FR7
+     235                    
+     236 000011f0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     237 00001210     8049          .word   ANI_END
+     238                    
+     239                    
+     240                    * ykmo4 HEAD HIT
+     241                    
+     242 00001220            SUBR   rzr_4_head_hit3_anim
+     243                    
+     244 00001220     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     245 00001240     8003          .word   ANI_ZEROVELS
+     246 00001250     8026          .word   ANI_SETSPEED,100h
+     247 00001270     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     248 00001280     805f          .word   ANI_SET_WRESTLER_XFLIP
+     249                    
+     250 00001290                   WLW     ANI_SET_XVEL,-28000h,AM_HIT_REL
+     251 000012d0                   WLW     ANI_SET_ZVEL,-20000h,AM_ABS
+     252 00001310                   WL      ANI_SET_YVEL,40000h
+     253                    
+     254 00001340                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     255 000013b0                   WL      3,R4AH4C+FR3
+     256 000013e0     805e          .word   ANI_DEBRIS,300,2,-21,100,0      ;%chance, tbl index, x,y,z off
+     257 00001440                   WL      3,R4AH4C+FR4
+     258 00001470                   WL      3,R4AH4C+FR5
+     259 000014a0     800b          .word   ANI_WAITHITGND
+     260 000014b0     8003          .word   ANI_ZEROVELS
+     261 000014c0                   WL      3,R4AH4C+FR6
+     262 000014f0                   WL      3,R4AH4C+FR7
+     263 00001520                   WL      3,R4AH4C+FR8
+     264                    
+     265 00001550     8022          .word   ANI_FACEDOWN
+     266 00001560     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     267 00001580     8002          .word   ANI_SETMODE,MODE_NORMAL
+     268 000015a0     8049          .word   ANI_END
+     269                    
+     270 000015b0            SUBR   rzr_4_head_hit4_anim
      271                    
-     272 00001930            SUBR   rzr_4_bncoff_anim
-     273                    
-     274 00001930     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     275 00001950     8026          .word   ANI_SETSPEED,100h
-     276 00001970     8016          .word   ANI_FRICTION,3000h
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     272                    ;From earslap
+     273 000015b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     274 000015d0     8003          .word   ANI_ZEROVELS
+     275 000015e0     8026          .word   ANI_SETSPEED,100h
+     276 00001600     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    6
 
-     277                    
-     278 00001990                   WL      3,R4AH4C+FR3
-     279 000019c0                   WL      3,R4AH4C+FR4
-     280 000019f0                   WL      14,R4AH4C+FR5
-     281 00001a20                   WL      2,R4AH4C+FR6
+     277 00001610     805f          .word   ANI_SET_WRESTLER_XFLIP
+     278                    
+     279                    ;       WLW     ANI_SET_XVEL,-28000h,AM_HIT_REL
+     280                    ;       WLW     ANI_SET_ZVEL,-20000h,AM_ABS
+     281 00001620                   WL      ANI_SET_YVEL,40000h
      282                    
-     283 00001a50     8002          .word   ANI_SETMODE,MODE_NORMAL
-     284 00001a70     8049          .word   ANI_END
-     285                    
-     286                    
-     287                    
-     288                    
-     289 00001a80            SUBR   rzr_4_bncoff_dizzy_anim
-     290                    
-     291 00001a80     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     292 00001aa0     8026          .word   ANI_SETSPEED,100h
-     293 00001ac0     8016          .word   ANI_FRICTION,3000h
-     294 00001ae0     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
-     295                    
-     296 00001b00                   WL      3,R4AH4C+FR3
-     297 00001b30                   WL      3,R4AH4C+FR4
-     298 00001b60                   WL      14,R4AH4C+FR5
-     299 00001b90                   WL      2,R4AH4C+FR6
+     283 00001650                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     284 000016c0                   WL      4,R4AH4C+FR4
+     285 000016f0                   WL      4,R4AH4C+FR5
+     286                    ;       .word   ANI_WAITHITGND
+     287                    ;       .word   ANI_ZEROVELS
+     288 00001720                   WL      4,R4AH4C+FR6
+     289 00001750                   WL      4,R4AH4C+FR7
+     290 00001780                   WL      4,R4AH4C+FR8
+     291                    
+     292 000017b0     8022          .word   ANI_FACEDOWN
+     293 000017c0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     294 000017e0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     295 00001800     8049          .word   ANI_END
+     296                    
+     297                    ******************************************************************************
+     298                    *
+     299                    * ykmo2 RUNNING BOUNCE OFF OF OPPONENT
      300                    
-     301 00001bc0                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
+     301 00001810            SUBR   rzr_2_bncoff_anim
      302                    
-     303                    
-     304                    
-     305 00001bf0            SUBR   rzr_2_head_hit2_anim
-     306 00001bf0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     307 00001c10     8003          .word   ANI_ZEROVELS
-     308 00001c20     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     309 00001c30     805f          .word   ANI_SET_WRESTLER_XFLIP
-     310 00001c40                   WLW     ANI_SET_XVEL,-50000h,AM_HIT_REL
-     311 00001c80     8016          .word   ANI_FRICTION,3000h
-     312 00001ca0     8026          .word   ANI_SETSPEED,100h
+     303 00001810     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     304 00001830     8026          .word   ANI_SETSPEED,100h
+     305 00001850     8016          .word   ANI_FRICTION,3000h
+     306                    
+     307 00001870                   WL      3,R2AH2D+FR3
+     308 000018a0                   WL      15,R2AH2D+FR5
+     309 000018d0                   WL      4,R2AH2D+FR6
+     310                    
+     311 00001900     8002          .word   ANI_SETMODE,MODE_NORMAL
+     312 00001920     8049          .word   ANI_END
      313                    
-     314 00001cc0     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
+     314                    * ykmo4 RUNNING BOUNCE OFF OF OPPONENT
      315                    
-     316 00001d20                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     317 00001d90                   WL      3,R2AE2A+FR1
-     318 00001dc0                   WL      3,R2AE2A+FR2
-     319 00001df0                   WL      3,R2AE2A+FR3
-     320 00001e20                   WL      3,R2AE2A+FR4
-     321 00001e50                   WL      3,R2AE2A+FR5
-     322 00001e80                   WL      3,R2AE2A+FR6
-     323 00001eb0                   WL      3,R2AE2A+FR7
-     324 00001ee0                   WL      3,R2AE2A+FR8
-     325                    
-     326 00001f10     8002          .word   ANI_SETMODE,MODE_NORMAL
-     327 00001f30     8049          .word   ANI_END
-     328                    
+     316 00001930            SUBR   rzr_4_bncoff_anim
+     317                    
+     318 00001930     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     319 00001950     8026          .word   ANI_SETSPEED,100h
+     320 00001970     8016          .word   ANI_FRICTION,3000h
+     321                    
+     322 00001990                   WL      3,R4AH4C+FR3
+     323 000019c0                   WL      3,R4AH4C+FR4
+     324 000019f0                   WL      14,R4AH4C+FR5
+     325 00001a20                   WL      2,R4AH4C+FR6
+     326                    
+     327 00001a50     8002          .word   ANI_SETMODE,MODE_NORMAL
+     328 00001a70     8049          .word   ANI_END
      329                    
      330                    
-     331                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     331                    * ykmo4 RUNNING BOUNCE OFF OF OPPONENT
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    7
 
-     332 00001f40            SUBR   rzr_4_head_hit2_anim
-     333 00001f40     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     334 00001f60     8003          .word   ANI_ZEROVELS
-     335 00001f70     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     336 00001f80     805f          .word   ANI_SET_WRESTLER_XFLIP
-     337 00001f90                   WLW     ANI_SET_XVEL,-50000h,AM_HIT_REL
-     338 00001fd0     8016          .word   ANI_FRICTION,3000h
-     339 00001ff0     8026          .word   ANI_SETSPEED,100h
-     340                    
-     341 00002010     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
-     342                    
-     343 00002070                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
-     344 000020e0                   WL      3,R4AE4B+FR1
-     345 00002110                   WL      3,R4AE4B+FR2
-     346 00002140                   WL      3,R4AE4B+FR3
-     347 00002170                   WL      3,R4AE4B+FR4
-     348 000021a0                   WL      3,R4AE4B+FR5
-     349 000021d0                   WL      3,R4AE4B+FR6
-     350 00002200                   WL      2,R4AE4B+FR7
-     351 00002230                   WL      2,R4AE4B+FR8
-     352 00002260                   WL      2,R4AE4B+FR9
-     353 00002290                   WL      2,R4AE4B+FR10
-     354 000022c0                   WL      2,R4AE4B+FR11
-     355 000022f0                   WL      2,R4AE4B+FR12
-     356                    
-     357 00002320                   WL      ANI_CODE,am_I_dead
-     358 00002350                   WL      ANI_IFNOTSTATUS2,iomfnodead
-     359                    
-     360 00002380                   WL      ANI_CHANGEANIM,rzr_fall_back_anim
-     361                    
-     362 000023b0           iomfnodead
-     363 000023b0     8022          .word   ANI_FACEDOWN
-     364 000023c0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     365 000023e0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     366 00002400     8049          .word   ANI_END
-     367                    
-     368 00002410            SUBR   rzr_4_head_hit2s_anim
-     369                    
-     370 00002410     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     371 00002430     8003          .word   ANI_ZEROVELS
-     372 00002440     8026          .word   ANI_SETSPEED,100h
-     373 00002460     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-     374 00002470     805f          .word   ANI_SET_WRESTLER_XFLIP
-     375                    
-     376                            .ref    create_impact_salt
-     377 00002480                   WL      ANI_CODE,create_impact_salt
-     378                    
-     379 000024b0                   WL      4,R4AE4B+FR1
-     380 000024e0                   WL      4,R4AE4B+FR2
-     381 00002510                   WL      4,R4AE4B+FR3
-     382 00002540                   WL      4,R4AE4B+FR4
-     383 00002570                   WL      4,R4AE4B+FR5
-     384 000025a0                   WL      3,R4AE4B+FR6
-     385 000025d0                   WL      3,R4AE4B+FR7
-     386 00002600     800b          .word   ANI_WAITHITGND
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     332                    
+     333                    ;Bounce off but stay dizzy!
+     334                    
+     335 00001a80            SUBR   rzr_4_bncoff_dizzy_anim
+     336                    
+     337 00001a80     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     338 00001aa0     8026          .word   ANI_SETSPEED,100h
+     339 00001ac0     8016          .word   ANI_FRICTION,3000h
+     340 00001ae0     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
+     341                    
+     342 00001b00                   WL      3,R4AH4C+FR3
+     343 00001b30                   WL      3,R4AH4C+FR4
+     344 00001b60                   WL      14,R4AH4C+FR5
+     345 00001b90                   WL      2,R4AH4C+FR6
+     346                    
+     347                    ;       .word   ANI_SETPLYRMODE,MODE_DIZZY
+     348 00001bc0                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
+     349                    ;       .word   ANI_END
+     350                    
+     351                    
+     352                    *****************************************************************************
+     353                    *
+     354                    * trvy2 HEAD HIT2 (hands on face)
+     355                    
+     356 00001bf0            SUBR   rzr_2_head_hit2_anim
+     357 00001bf0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     358 00001c10     8003          .word   ANI_ZEROVELS
+     359 00001c20     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     360 00001c30     805f          .word   ANI_SET_WRESTLER_XFLIP
+     361 00001c40                   WLW     ANI_SET_XVEL,-50000h,AM_HIT_REL
+     362 00001c80     8016          .word   ANI_FRICTION,3000h
+     363 00001ca0     8026          .word   ANI_SETSPEED,100h
+     364                    
+     365 00001cc0     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
+     366                    
+     367 00001d20                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     368 00001d90                   WL      3,R2AE2A+FR1
+     369 00001dc0                   WL      3,R2AE2A+FR2
+     370 00001df0                   WL      3,R2AE2A+FR3
+     371 00001e20                   WL      3,R2AE2A+FR4
+     372 00001e50                   WL      3,R2AE2A+FR5
+     373 00001e80                   WL      3,R2AE2A+FR6
+     374 00001eb0                   WL      3,R2AE2A+FR7
+     375 00001ee0                   WL      3,R2AE2A+FR8
+     376                    
+     377 00001f10     8002          .word   ANI_SETMODE,MODE_NORMAL
+     378 00001f30     8049          .word   ANI_END
+     379                    
+     380                    
+     381                    *************
+     382                    *
+     383                    * golu4 HEAD HIT2 (hands on face)
+     384                    
+     385                    ;TODO (JS) This seq takes too long.  Cut something.
+     386                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    8
 
-     387 00002610     8016          .word   ANI_FRICTION,4000h
-     388 00002630                   WL      50,R4AE4B+FR7
-     389 00002660     8003          .word   ANI_ZEROVELS
-     390 00002670                   WL      3,R4AE4B+FR8
-     391 000026a0                   WL      3,R4AE4B+FR9
-     392 000026d0                   WL      3,R4AE4B+FR10
-     393 00002700                   WL      3,R4AE4B+FR11
-     394 00002730                   WL      3,R4AE4B+FR12
+     387 00001f40            SUBR   rzr_4_head_hit2_anim
+     388 00001f40     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     389 00001f60     8003          .word   ANI_ZEROVELS
+     390 00001f70     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     391 00001f80     805f          .word   ANI_SET_WRESTLER_XFLIP
+     392 00001f90                   WLW     ANI_SET_XVEL,-50000h,AM_HIT_REL
+     393 00001fd0     8016          .word   ANI_FRICTION,3000h
+     394 00001ff0     8026          .word   ANI_SETSPEED,100h
      395                    
-     396 00002760     8022          .word   ANI_FACEDOWN
-     397 00002770     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     398 00002790     8002          .word   ANI_SETMODE,MODE_NORMAL
-     399 000027b0     8049          .word   ANI_END
-     400                    
-     401                    
-     402 000027c0            SUBR   rzr_4_head_hit_dizzy_anim
-     403 000027c0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     404 000027e0     8003          .word   ANI_ZEROVELS
-     405                    
-     406 000027f0     8026          .word   ANI_SETSPEED,100h
-     407 00002810                   WLW     ANI_SET_XVEL,-50000h,AM_HIT_REL
-     408 00002850     8016          .word   ANI_FRICTION,3000h
-     409                    
-     410 00002870     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
-     411 00002890     805e          .word   ANI_DEBRIS,300,3,-21,100,0      ;%chance, tbl index, x,y,z off
-     412                    
-     413 000028f0                   WL      3,R4AE4B+FR1
-     414 00002920                   WL      3,R4AE4B+FR2
-     415 00002950                   WL      3,R4AE4B+FR3
-     416 00002980                   WL      3,R4AE4B+FR4
-     417 000029b0                   WL      3,R4AE4B+FR5
-     418 000029e0                   WL      3,R4AE4B+FR6
-     419 00002a10                   WL      3,R4AE4B+FR7
-     420 00002a40                   WL      3,R4AE4B+FR8
-     421 00002a70                   WL      4,R4AE4B+FR9
-     422 00002aa0                   WL      4,R4AE4B+FR10
-     423 00002ad0                   WL      4,R4AE4B+FR11
-     424 00002b00                   WL      4,R4AE4B+FR12
-     425                    
-     426 00002b30                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
+     396 00002010     805e          .word   ANI_DEBRIS,150,3,-21,100,0      ;%chance, tbl index, x,y,z off
+     397                    
+     398 00002070                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYA_SWEAT,SWEAT_PER,0
+     399 000020e0                   WL      3,R4AE4B+FR1
+     400 00002110                   WL      3,R4AE4B+FR2
+     401 00002140                   WL      3,R4AE4B+FR3
+     402 00002170                   WL      3,R4AE4B+FR4
+     403 000021a0                   WL      3,R4AE4B+FR5
+     404 000021d0                   WL      3,R4AE4B+FR6
+     405 00002200                   WL      2,R4AE4B+FR7
+     406 00002230                   WL      2,R4AE4B+FR8
+     407 00002260                   WL      2,R4AE4B+FR9
+     408 00002290                   WL      2,R4AE4B+FR10
+     409 000022c0                   WL      2,R4AE4B+FR11
+     410 000022f0                   WL      2,R4AE4B+FR12
+     411                    
+     412 00002320                   WL      ANI_CODE,am_I_dead
+     413                    ;If I'm dead, goto fall back
+     414 00002350                   WL      ANI_IFNOTSTATUS2,golunodead
+     415                    
+     416 00002380                   WL      ANI_CHANGEANIM,rzr_fall_back_anim
+     417                    ;       .word   ANI_END
+     418                    
+     419 000023b0           golunodead
+     420 000023b0     8022          .word   ANI_FACEDOWN
+     421 000023c0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     422 000023e0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     423 00002400     8049          .word   ANI_END
+     424                    
+     425 00002410            SUBR   rzr_4_head_hit2s_anim
+     426                    ;Salt hits me in face
      427                    
-     428                    
-     429                    
-     430 00002b60            SUBR   rzr_2_body_hit_anim
-     431                    
-     432 00002b60     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     433 00002b80     8003          .word   ANI_ZEROVELS
-     434 00002b90     8026          .word   ANI_SETSPEED,100h
-     435 00002bb0                   WL      ANI_SET_YVEL,40000h
-     436 00002be0                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
-     437                    
-     438 00002c20     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
-     439 00002c80                   WL      3,R4AM3X+FR1
-     440 00002cb0                   WL      1,R4AM3X+FR2
-     441 00002ce0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     428 00002410     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     429 00002430     8003          .word   ANI_ZEROVELS
+     430 00002440     8026          .word   ANI_SETSPEED,100h
+     431 00002460     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+     432 00002470     805f          .word   ANI_SET_WRESTLER_XFLIP
+     433                    
+     434                            .ref    create_impact_salt
+     435 00002480                   WL      ANI_CODE,create_impact_salt
+     436                    
+     437 000024b0                   WL      4,R4AE4B+FR1
+     438 000024e0                   WL      4,R4AE4B+FR2
+     439 00002510                   WL      4,R4AE4B+FR3
+     440 00002540                   WL      4,R4AE4B+FR4
+     441 00002570                   WL      4,R4AE4B+FR5
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE    9
 
-     442 00002d50     800b          .word   ANI_WAITHITGND
-     443 00002d60     8003          .word   ANI_ZEROVELS
-     444                    
-     445 00002d70                   WL      3,R4AM3X+FR3
-     446 00002da0                   WL      2,R4AM3X+FR4
-     447 00002dd0                   WL      3,R4AM3X+FR5
-     448 00002e00                   WL      2,R4AM3X+FR6
-     449 00002e30                   WL      3,R4AM3X+FR7
-     450 00002e60                   WL      2,R1TT5Z+FR2
-     451                    
-     452 00002e90     8021          .word   ANI_FACEUP
-     453 00002ea0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     454 00002ec0     8049          .word   ANI_END
-     455                    
-     456 00002ed0            SUBR   rzr_2_knee_hit_anim
-     457                    
-     458 00002ed0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     459 00002ef0     8003          .word   ANI_ZEROVELS
-     460 00002f00     8026          .word   ANI_SETSPEED,100h
-     461 00002f20                   WL      ANI_SET_YVEL,78000h
-     462 00002f50                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
-     463 00002f90                   WLW     ANI_SET_ZVEL,8000h,AM_ABS
-     464                    
-     465 00002fd0     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
-     466 00003030                   WL      3,R4AM3X+FR1
-     467 00003060                   WL      1,R4AM3X+FR2
-     468 00003090                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
-     469 00003100     800b          .word   ANI_WAITHITGND
-     470 00003110     8003          .word   ANI_ZEROVELS
-     471                    
-     472 00003120                   WL      3,R4AM3X+FR3
-     473 00003150                   WL      3,R4AM3X+FR4
-     474 00003180                   WL      3,R4AM3X+FR5
-     475 000031b0                   WL      3,R4AM3X+FR6
-     476 000031e0                   WL      3,R4AM3X+FR7
-     477 00003210                   WL      3,R1TT5Z+FR2
-     478                    
-     479 00003240     8021          .word   ANI_FACEUP
-     480 00003250     8002          .word   ANI_SETMODE,MODE_NORMAL
-     481 00003270     8049          .word   ANI_END
-     482                    
-     483                    
-     484                    
-     485 00003280            SUBR   rzr_4_body_hit_anim
+     442 000025a0                   WL      3,R4AE4B+FR6
+     443 000025d0                   WL      3,R4AE4B+FR7
+     444 00002600     800b          .word   ANI_WAITHITGND
+     445 00002610     8016          .word   ANI_FRICTION,4000h
+     446 00002630                   WL      50,R4AE4B+FR7
+     447 00002660     8003          .word   ANI_ZEROVELS
+     448 00002670                   WL      3,R4AE4B+FR8
+     449 000026a0                   WL      3,R4AE4B+FR9
+     450 000026d0                   WL      3,R4AE4B+FR10
+     451 00002700                   WL      3,R4AE4B+FR11
+     452 00002730                   WL      3,R4AE4B+FR12
+     453                    
+     454 00002760     8022          .word   ANI_FACEDOWN
+     455 00002770     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     456 00002790     8002          .word   ANI_SETMODE,MODE_NORMAL
+     457 000027b0     8049          .word   ANI_END
+     458                    
+     459                    ************
+     460                    *
+     461                    * kzjg4 HEAD HIT (ends in dizzy)
+     462                    
+     463 000027c0            SUBR   rzr_4_head_hit_dizzy_anim
+     464 000027c0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     465 000027e0     8003          .word   ANI_ZEROVELS
+     466                    
+     467 000027f0     8026          .word   ANI_SETSPEED,100h
+     468 00002810                   WLW     ANI_SET_XVEL,-50000h,AM_HIT_REL
+     469 00002850     8016          .word   ANI_FRICTION,3000h
+     470                    
+     471 00002870     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
+     472 00002890     805e          .word   ANI_DEBRIS,300,3,-21,100,0      ;%chance, tbl index, x,y,z off
+     473                    
+     474 000028f0                   WL      3,R4AE4B+FR1
+     475 00002920                   WL      3,R4AE4B+FR2
+     476 00002950                   WL      3,R4AE4B+FR3
+     477 00002980                   WL      3,R4AE4B+FR4
+     478 000029b0                   WL      3,R4AE4B+FR5
+     479 000029e0                   WL      3,R4AE4B+FR6
+     480 00002a10                   WL      3,R4AE4B+FR7
+     481 00002a40                   WL      3,R4AE4B+FR8
+     482 00002a70                   WL      4,R4AE4B+FR9
+     483 00002aa0                   WL      4,R4AE4B+FR10
+     484 00002ad0                   WL      4,R4AE4B+FR11
+     485 00002b00                   WL      4,R4AE4B+FR12
      486                    
-     487 00003280     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     488 000032a0     8003          .word   ANI_ZEROVELS
-     489 000032b0     8026          .word   ANI_SETSPEED,100h
-     490 000032d0                   WL      ANI_SET_YVEL,40000h
-     491 00003300                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
-     492                    
-     493 00003340     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
-     494 000033a0                   WL      3,R4AM3X+FR1
-     495 000033d0                   WL      1,R4AM3X+FR2
-     496 00003400                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     487                    ;       .word   ANI_SETPLYRMODE,MODE_DIZZY
+     488 00002b30                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
+     489                    
+     490                    
+     491                    *****************************************************************************
+     492                    *
+     493                    * zbdm2 BODY HIT
+     494                    
+     495 00002b60            SUBR   rzr_2_body_hit_anim
+     496                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   10
 
-     497 00003470     800b          .word   ANI_WAITHITGND
-     498 00003480     8003          .word   ANI_ZEROVELS
-     499                    
-     500 00003490                   WL      3,R4AM3X+FR3
-     501 000034c0                   WL      2,R4AM3X+FR4
-     502 000034f0                   WL      3,R4AM3X+FR5
-     503 00003520                   WL      2,R4AM3X+FR6
-     504 00003550                   WL      3,R4AM3X+FR7
-     505 00003580                   WL      2,R4AM3X+FR8
-     506                    
-     507 000035b0     8031          .word   ANI_CHECKWORD,USR_VAR1
-     508 000035d0                   WL      ANI_IFNOTSTATUS2,hegxreg
+     497 00002b60     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     498 00002b80     8003          .word   ANI_ZEROVELS
+     499 00002b90     8026          .word   ANI_SETSPEED,100h
+     500 00002bb0                   WL      ANI_SET_YVEL,40000h
+     501 00002be0                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
+     502                    
+     503 00002c20     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
+     504 00002c80                   WL      3,R4AM3X+FR1
+     505 00002cb0                   WL      1,R4AM3X+FR2
+     506 00002ce0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
+     507 00002d50     800b          .word   ANI_WAITHITGND
+     508 00002d60     8003          .word   ANI_ZEROVELS
      509                    
-     510 00003600                   WL      8,R4WP5C+FR1
-     511 00003630                   WL      8,R4WP5C+FR2
-     512 00003660                   WL      8,R4WP5C+FR3
-     513 00003690                   WL      8,R4WP5C+FR4
-     514 000036c0                   WL      8,R4WP5C+FR5
-     515 000036f0                   WL      8,R4WP5C+FR6
-     516 00003720                   WL      8,R4WP5C+FR7
-     517 00003750                   WL      8,R4WP5C+FR8
-     518                    
-     519                    
-     520 00003780           hegxreg
-     521                    
-     522 00003780     8022          .word   ANI_FACEDOWN
-     523 00003790     8002          .word   ANI_SETMODE,MODE_NORMAL
-     524 000037b0     8049          .word   ANI_END
-     525                    
-     526 000037c0            SUBR   rzr_4_body_hit_dizzy_anim
-     527                    
-     528 000037c0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     529 000037e0     8003          .word   ANI_ZEROVELS
-     530 000037f0     8026          .word   ANI_SETSPEED,100h
-     531 00003810                   WL      ANI_SET_YVEL,48000h
-     532 00003840                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
-     533 00003880     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
-     534                    
-     535 000038a0     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
-     536 00003900                   WL      3,R4AM3X+FR1
-     537 00003930                   WL      1,R4AM3X+FR2
-     538 00003960                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
-     539 000039d0     800b          .word   ANI_WAITHITGND
-     540 000039e0     8003          .word   ANI_ZEROVELS
-     541                    
-     542 000039f0                   WL      3,R4AM3X+FR3
-     543 00003a20                   WL      3,R4AM3X+FR4
-     544 00003a50                   WL      3,R4AM3X+FR5
-     545 00003a80                   WL      3,R4AM3X+FR6
-     546 00003ab0                   WL      3,R4AM3X+FR7
-     547 00003ae0                   WL      3,R4AM3X+FR8
+     510 00002d70                   WL      3,R4AM3X+FR3
+     511 00002da0                   WL      2,R4AM3X+FR4
+     512 00002dd0                   WL      3,R4AM3X+FR5
+     513 00002e00                   WL      2,R4AM3X+FR6
+     514 00002e30                   WL      3,R4AM3X+FR7
+     515 00002e60                   WL      2,R1TT5Z+FR2
+     516                    
+     517 00002e90     8021          .word   ANI_FACEUP
+     518 00002ea0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     519 00002ec0     8049          .word   ANI_END
+     520                    
+     521 00002ed0            SUBR   rzr_2_knee_hit_anim
+     522                    
+     523 00002ed0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     524 00002ef0     8003          .word   ANI_ZEROVELS
+     525 00002f00     8026          .word   ANI_SETSPEED,100h
+     526 00002f20                   WL      ANI_SET_YVEL,78000h
+     527 00002f50                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
+     528 00002f90                   WLW     ANI_SET_ZVEL,8000h,AM_ABS
+     529                    
+     530 00002fd0     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
+     531 00003030                   WL      3,R4AM3X+FR1
+     532 00003060                   WL      1,R4AM3X+FR2
+     533 00003090                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
+     534 00003100     800b          .word   ANI_WAITHITGND
+     535 00003110     8003          .word   ANI_ZEROVELS
+     536                    
+     537 00003120                   WL      3,R4AM3X+FR3
+     538 00003150                   WL      3,R4AM3X+FR4
+     539 00003180                   WL      3,R4AM3X+FR5
+     540 000031b0                   WL      3,R4AM3X+FR6
+     541 000031e0                   WL      3,R4AM3X+FR7
+     542 00003210                   WL      3,R1TT5Z+FR2
+     543                    
+     544 00003240     8021          .word   ANI_FACEUP
+     545 00003250     8002          .word   ANI_SETMODE,MODE_NORMAL
+     546 00003270     8049          .word   ANI_END
+     547                    
      548                    
-     549 00003b10                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
-     550                    
-     551 00003b40     8049          .word   ANI_END
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     549                    ************
+     550                    *
+     551                    * ozpx4 BODY HIT
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   11
 
      552                    
-     553 00003b50            SUBR   rzr_4_knee_hit_anim
+     553 00003280            SUBR   rzr_4_body_hit_anim
      554                    
-     555 00003b50     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     556 00003b70     8003          .word   ANI_ZEROVELS
-     557 00003b80     8026          .word   ANI_SETSPEED,100h
-     558 00003ba0                   WL      ANI_SET_YVEL,78000h
-     559 00003bd0                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
-     560 00003c10                   WLW     ANI_SET_ZVEL,-8000h,AM_ABS
-     561                    
-     562 00003c50     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
-     563 00003cb0                   WL      3,R4AM3X+FR1
-     564 00003ce0                   WL      1,R4AM3X+FR2
-     565 00003d10                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
-     566 00003d80     800b          .word   ANI_WAITHITGND
-     567 00003d90     8003          .word   ANI_ZEROVELS
-     568                    
-     569 00003da0                   WL      3,R4AM3X+FR3
-     570 00003dd0                   WL      3,R4AM3X+FR4
-     571 00003e00                   WL      3,R4AM3X+FR5
-     572 00003e30                   WL      3,R4AM3X+FR6
-     573 00003e60                   WL      3,R4AM3X+FR7
-     574 00003e90                   WL      3,R4AM3X+FR8
-     575                    
-     576 00003ec0     8022          .word   ANI_FACEDOWN
-     577 00003ed0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     578 00003ef0     8049          .word   ANI_END
-     579                    
-     580 00003f00            SUBR   rzr_4_knee_hit_dizzy_anim
-     581                    
-     582 00003f00     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     583 00003f20     8003          .word   ANI_ZEROVELS
-     584 00003f30     8026          .word   ANI_SETSPEED,100h
-     585 00003f50                   WL      ANI_SET_YVEL,78000h
-     586 00003f80                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
-     587 00003fc0                   WLW     ANI_SET_ZVEL,-8000h,AM_ABS
-     588 00004000     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
-     589                    
-     590 00004020     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
-     591 00004080                   WL      3,R4AM3X+FR1
-     592 000040b0                   WL      1,R4AM3X+FR2
-     593 000040e0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
-     594 00004150     800b          .word   ANI_WAITHITGND
-     595 00004160     8003          .word   ANI_ZEROVELS
-     596                    
-     597 00004170                   WL      3,R4AM3X+FR3
-     598 000041a0                   WL      3,R4AM3X+FR4
-     599 000041d0                   WL      3,R4AM3X+FR5
-     600 00004200                   WL      3,R4AM3X+FR6
-     601 00004230                   WL      3,R4AM3X+FR7
-     602 00004260                   WL      3,R4AM3X+FR8
+     555 00003280     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     556 000032a0     8003          .word   ANI_ZEROVELS
+     557 000032b0     8026          .word   ANI_SETSPEED,100h
+     558 000032d0                   WL      ANI_SET_YVEL,40000h
+     559 00003300                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
+     560                    
+     561 00003340     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
+     562 000033a0                   WL      3,R4AM3X+FR1
+     563 000033d0                   WL      1,R4AM3X+FR2
+     564 00003400                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
+     565 00003470     800b          .word   ANI_WAITHITGND
+     566 00003480     8003          .word   ANI_ZEROVELS
+     567                    
+     568 00003490                   WL      3,R4AM3X+FR3
+     569 000034c0                   WL      2,R4AM3X+FR4
+     570 000034f0                   WL      3,R4AM3X+FR5
+     571 00003520                   WL      2,R4AM3X+FR6
+     572 00003550                   WL      3,R4AM3X+FR7
+     573 00003580                   WL      2,R4AM3X+FR8
+     574                    
+     575 000035b0     8031          .word   ANI_CHECKWORD,USR_VAR1
+     576 000035d0                   WL      ANI_IFNOTSTATUS2,ozpxreg
+     577                    
+     578 00003600                   WL      8,R4WP5C+FR1
+     579 00003630                   WL      8,R4WP5C+FR2
+     580 00003660                   WL      8,R4WP5C+FR3
+     581 00003690                   WL      8,R4WP5C+FR4
+     582 000036c0                   WL      8,R4WP5C+FR5
+     583 000036f0                   WL      8,R4WP5C+FR6
+     584 00003720                   WL      8,R4WP5C+FR7
+     585 00003750                   WL      8,R4WP5C+FR8
+     586                    
+     587                    ;       WL      8,R4WP5C+FR1
+     588                    ;       WL      8,R4WP5C+FR2
+     589                    ;       WL      8,R4WP5C+FR3
+     590                    ;       WL      8,R4WP5C+FR4
+     591                    ;       WL      8,R4WP5C+FR5
+     592                    ;       WL      8,R4WP5C+FR6
+     593                    ;       WL      8,R4WP5C+FR7
+     594                    ;       WL      8,R4WP5C+FR8
+     595                    
+     596 00003780           ozpxreg
+     597                    
+     598 00003780     8022          .word   ANI_FACEDOWN
+     599 00003790     8002          .word   ANI_SETMODE,MODE_NORMAL
+     600 000037b0     8049          .word   ANI_END
+     601                    
+     602 000037c0            SUBR   rzr_4_body_hit_dizzy_anim
      603                    
-     604                    
-     605 00004290                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
-     606                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     604 000037c0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     605 000037e0     8003          .word   ANI_ZEROVELS
+     606 000037f0     8026          .word   ANI_SETSPEED,100h
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   12
 
-     607 000042c0            SUBR   rzr_quick_knee_hit_anim
-     608                    
-     609 000042c0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     610 000042e0     8026          .word   ANI_SETSPEED,100h
-     611                    
-     612 00004300                   WL      3,R4AM3X+FR1
-     613 00004330                   WL      3,R4AM3X+FR2
-     614 00004360                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
-     615 000043d0                   WL      3,R4AM3X+FR3
-     616 00004400                   WL      3,R4AM3X+FR4
-     617 00004430                   WL      3,R4AM3X+FR5
-     618 00004460                   WL      3,R4AM3X+FR6
-     619 00004490                   WL      3,R4AM3X+FR7
-     620 000044c0                   WL      3,R4AM3X+FR8
-     621                    
-     622                            .ref    am_I_dead
-     623 000044f0                   WL      ANI_CODE,am_I_dead
-     624 00004520                   WL      ANI_IFNOTSTATUS2,hegxnodead
-     625                    
-     626 00004550                   WL      ANI_CHANGEANIM,rzr_fall_back_anim
+     607 00003810                   WL      ANI_SET_YVEL,48000h
+     608 00003840                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
+     609 00003880     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
+     610                    
+     611 000038a0     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
+     612 00003900                   WL      3,R4AM3X+FR1
+     613 00003930                   WL      1,R4AM3X+FR2
+     614 00003960                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
+     615 000039d0     800b          .word   ANI_WAITHITGND
+     616 000039e0     8003          .word   ANI_ZEROVELS
+     617                    
+     618 000039f0                   WL      3,R4AM3X+FR3
+     619 00003a20                   WL      3,R4AM3X+FR4
+     620 00003a50                   WL      3,R4AM3X+FR5
+     621 00003a80                   WL      3,R4AM3X+FR6
+     622 00003ab0                   WL      3,R4AM3X+FR7
+     623 00003ae0                   WL      3,R4AM3X+FR8
+     624                    
+     625                    ;       .word   ANI_SETPLYRMODE,MODE_DIZZY
+     626 00003b10                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
      627                    
-     628 00004580           hegxnodead
+     628 00003b40     8049          .word   ANI_END
      629                    
-     630 00004580                   WL      ANI_CHANGEANIM,rzr_3_head_held_anim
+     630 00003b50            SUBR   rzr_4_knee_hit_anim
      631                    
-     632                    
-     633 000045b0            SUBR   rzr_fall_back_anim
-     634                    
-     635 000045b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP|MODE_NOCOLLIS
-     636 000045d0     8026          .word   ANI_SETSPEED,100h
-     637 000045f0     8028          .word   ANI_ZERO_XZVELS
-     638 00004600                   WL      ANI_MIN_YVEL,50000h
-     639 00004630                   WLW     ANI_SET_ZVEL,10000h,AM_FACE_REL
-     640                    
-     641 00004670     807f          .word   ANI_SCROLL_CTRL,RZR_TBUKLY-60
-     642                    
-     643 00004690                   WL      ANI_CODE,ckzpos
-     644                    
-     645 000046c0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYC_SWEAT,SWEAT_PER,0
-     646 00004730                   WWL     ANI_SETLONG,DEBRIS_X,[105,-18]  ;Y,X of head
-     647 00004770                   WL      3,R3FD3B+FR1
-     648 000047a0                   WWL     ANI_SETLONG,DEBRIS_X,[99,-38]   ;Y,X of head
-     649 000047e0                   WL      3,R3FD3B+FR2
-     650 00004810     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
-     651 00004850                   WWL     ANI_SETLONG,DEBRIS_X,[36,-44]   ;Y,X of head
-     652 00004890                   WL      3,R3FD3B+FR3
-     653 000048c0                   WWL     ANI_SETLONG,DEBRIS_X,[31,-44]   ;Y,X of head
-     654 00004900                   WL      3,R3FD3B+FR4
-     655 00004930                   WWL     ANI_SETLONG,DEBRIS_X,[18,-48]   ;Y,X of head
-     656 00004970                   WL      3,R3FD3B+FR5
-     657 000049a0     800b          .word   ANI_WAITHITGND
+     632 00003b50     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     633 00003b70     8003          .word   ANI_ZEROVELS
+     634 00003b80     8026          .word   ANI_SETSPEED,100h
+     635 00003ba0                   WL      ANI_SET_YVEL,78000h
+     636 00003bd0                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
+     637 00003c10                   WLW     ANI_SET_ZVEL,-8000h,AM_ABS
+     638                    
+     639 00003c50     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
+     640 00003cb0                   WL      3,R4AM3X+FR1
+     641 00003ce0                   WL      1,R4AM3X+FR2
+     642 00003d10                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
+     643 00003d80     800b          .word   ANI_WAITHITGND
+     644 00003d90     8003          .word   ANI_ZEROVELS
+     645                    
+     646 00003da0                   WL      3,R4AM3X+FR3
+     647 00003dd0                   WL      3,R4AM3X+FR4
+     648 00003e00                   WL      3,R4AM3X+FR5
+     649 00003e30                   WL      3,R4AM3X+FR6
+     650 00003e60                   WL      3,R4AM3X+FR7
+     651 00003e90                   WL      3,R4AM3X+FR8
+     652                    
+     653 00003ec0     8022          .word   ANI_FACEDOWN
+     654 00003ed0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     655 00003ef0     8049          .word   ANI_END
+     656                    
+     657 00003f00            SUBR   rzr_4_knee_hit_dizzy_anim
      658                    
-     659 000049b0     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
-     660                    
-     661 00004a10                   WL      ANI_CODE,HIT_THE_MAT
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     659 00003f00     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     660 00003f20     8003          .word   ANI_ZEROVELS
+     661 00003f30     8026          .word   ANI_SETSPEED,100h
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   13
 
-     662 00004a40     8037          .word   ANI_SHAKEALL,1
-     663 00004a60     801f          .word   ANI_SHAKER,30
-     664                    
-     665 00004a80     8016          .word   ANI_FRICTION,3000h
+     662 00003f50                   WL      ANI_SET_YVEL,78000h
+     663 00003f80                   WLW     ANI_SET_XVEL,-30000h,AM_HIT_REL
+     664 00003fc0                   WLW     ANI_SET_ZVEL,-8000h,AM_ABS
+     665 00004000     8004          .word   ANI_SETPLYRMODE,MODE_DIZZY
      666                    
-     667 00004aa0                   WWL     ANI_SETLONG,DEBRIS_X,[11,-42]   ;Y,X of head
-     668 00004ae0                   WL      2,R3FD3B+FR6
-     669 00004b10     800d          .word   ANI_BOUNCE,5
-     670 00004b30                   WL      1,R3FD3B+FR6
-     671 00004b60                   WWL     ANI_SETLONG,DEBRIS_X,[11,-42]   ;Y,X of head
-     672 00004ba0                   WL      3,R3FD3B+FR7
-     673 00004bd0                   WWL     ANI_SETLONG,DEBRIS_X,[11,-42]   ;Y,X of head
-     674 00004c10                   WL      3,R3FD3B+FR8
-     675 00004c40                   WWL     ANI_SETLONG,DEBRIS_X,[16,-42]   ;Y,X of head
-     676 00004c80                   WL      3,R3FD3B+FR9
-     677 00004cb0     800b          .word   ANI_WAITHITGND
-     678 00004cc0                   WL      ANI_CODE,SMALL_BOUNCE
-     679 00004cf0     8003          .word   ANI_ZEROVELS
-     680 00004d00                   WWL     ANI_SETLONG,DEBRIS_X,0          ;Y,X of head
-     681                    
-     682 00004d40     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
-     683 00004d60     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-     684 00004d80     800c          .word   ANI_XFLIP
-     685 00004d90                   WL      3,R3GU2A+FR1
-     686                    
-     687 00004dc0     8054          .word   ANI_WAITROLL
-     688 00004dd0                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
-     689                    
+     667 00004020     805e          .word   ANI_DEBRIS,300,0,-4,71,0        ;%chance, tbl index, x,y,z off
+     668 00004080                   WL      3,R4AM3X+FR1
+     669 000040b0                   WL      1,R4AM3X+FR2
+     670 000040e0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
+     671 00004150     800b          .word   ANI_WAITHITGND
+     672 00004160     8003          .word   ANI_ZEROVELS
+     673                    
+     674 00004170                   WL      3,R4AM3X+FR3
+     675 000041a0                   WL      3,R4AM3X+FR4
+     676 000041d0                   WL      3,R4AM3X+FR5
+     677 00004200                   WL      3,R4AM3X+FR6
+     678 00004230                   WL      3,R4AM3X+FR7
+     679 00004260                   WL      3,R4AM3X+FR8
+     680                    
+     681                    ;       .word   ANI_SETPLYRMODE,MODE_DIZZY
+     682                    
+     683 00004290                   WL      ANI_CHANGEANIM,rzr_dizzy_anim
+     684                    ;       .word   ANI_END
+     685                    
+     686 000042c0            SUBR   rzr_quick_knee_hit_anim
+     687                    
+     688 000042c0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+     689 000042e0     8026          .word   ANI_SETSPEED,100h
      690                    
-     691                    
-     692 00004e00            SUBR   rzr_fall_back2_anim
-     693                    
-     694 00004e00     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
-     695 00004e20     8003          .word   ANI_ZEROVELS
-     696 00004e30     8026          .word   ANI_SETSPEED,100h
-     697 00004e50                   WL      ANI_SET_YVEL,20000h
-     698 00004e80                   WLW     ANI_SET_ZVEL,18000h,AM_ABS
-     699                    
-     700 00004ec0                   WL      ANI_CODE,ckzpos
-     701                    
-     702 00004ef0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYC_SWEAT,SWEAT_PER,0
-     703 00004f60                   WL      3,R3FD3B+FR1
-     704 00004f90                   WL      3,R3FD3B+FR2
-     705 00004fc0     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
-     706 00005000                   WL      3,R3FD3B+FR3
-     707 00005030                   WL      3,R3FD3B+FR4
-     708 00005060                   WL      3,R3FD3B+FR5
-     709 00005090                   WL      3,R3FD3B+FR8
-     710 000050c0     800b          .word   ANI_WAITHITGND
-     711                    
-     712 000050d0     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
+     691 00004300                   WL      3,R4AM3X+FR1
+     692 00004330                   WL      3,R4AM3X+FR2
+     693 00004360                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,COUGH_SWEAT,SWEAT_PER,0
+     694 000043d0                   WL      3,R4AM3X+FR3
+     695 00004400                   WL      3,R4AM3X+FR4
+     696 00004430                   WL      3,R4AM3X+FR5
+     697 00004460                   WL      3,R4AM3X+FR6
+     698 00004490                   WL      3,R4AM3X+FR7
+     699 000044c0                   WL      3,R4AM3X+FR8
+     700                    
+     701                            .ref    am_I_dead
+     702 000044f0                   WL      ANI_CODE,am_I_dead
+     703                    ;If I'm dead, goto fall back
+     704 00004520                   WL      ANI_IFNOTSTATUS2,ozpxnodead
+     705                    
+     706 00004550                   WL      ANI_CHANGEANIM,rzr_fall_back_anim
+     707                    ;       .word   ANI_END
+     708                    
+     709 00004580           ozpxnodead
+     710                    
+     711 00004580                   WL      ANI_CHANGEANIM,rzr_3_head_held_anim
+     712                    ;       .word   ANI_END
      713                    
-     714 00005130                   WL      ANI_CODE,HIT_THE_MAT
-     715 00005160     8037          .word   ANI_SHAKEALL,1
-     716 00005180     801f          .word   ANI_SHAKER,30
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     714                    *****************************************************************************
+     715                    *
+     716                    * FALL BACK
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   14
 
-     717 000051a0     8003          .word   ANI_ZEROVELS            
-     718 000051b0                   WLW     ANI_SET_ZVEL,18000h,AM_ABS
-     719 000051f0                   WLW     ANI_SET_XVEL,-30000h,AM_FACE_REL
-     720                    
-     721 00005230                   WL      3,R3HG3B+FR1
-     722 00005260     8015          .word   ANI_OFFSET,-25,0,0                      ;x,y,z
-     723 000052a0                   WL      3,R3GP3Z+FR8
-     724 000052d0                   WL      3,R3HG3B+FR3
-     725 00005300                   WL      3,R3HG3B+FR4
-     726 00005330                   WL      3,R3HG3B+FR5
-     727 00005360                   WL      3,R3HG3B+FR6
-     728 00005390     8003          .word   ANI_ZEROVELS
-     729 000053a0                   WL      ANI_CODE,HIT_THE_MAT
-     730 000053d0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-     731 000053f0                   WL      3,R3MS3Q+FR1
-     732 00005420                   WL      3,R3MS3Q+FR2
-     733 00005450                   WL      3,R3MS3Q+FR3
-     734 00005480                   WL      3,R3MS3Q+FR4
-     735 000054b0     800b          .word   ANI_WAITHITGND
-     736 000054c0                   WL      ANI_CODE,SMALL_BOUNCE
-     737 000054f0                   WL      30,R3RL1B+FR6           ;Face down
-     738                    
-     739 00005520     8054          .word   ANI_WAITROLL
-     740 00005530                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
-     741                    
-     742                    
-     743 00005560            SUBR   rzr_fall_back_tbukl_anim
+     717                    
+     718 000045b0            SUBR   rzr_fall_back_anim
+     719                    
+     720 000045b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP|MODE_NOCOLLIS
+     721                    ;       .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP
+     722 000045d0     8026          .word   ANI_SETSPEED,100h
+     723 000045f0     8028          .word   ANI_ZERO_XZVELS
+     724 00004600                   WL      ANI_MIN_YVEL,50000h
+     725 00004630                   WLW     ANI_SET_ZVEL,10000h,AM_FACE_REL
+     726                    
+     727 00004670     807f          .word   ANI_SCROLL_CTRL,RZR_TBUKLY-60
+     728                    
+     729 00004690                   WL      ANI_CODE,ckzpos
+     730                    
+     731 000046c0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYC_SWEAT,SWEAT_PER,0
+     732 00004730                   WWL     ANI_SETLONG,DEBRIS_X,[105,-18]  ;Y,X of head
+     733 00004770                   WL      3,R3FD3B+FR1
+     734 000047a0                   WWL     ANI_SETLONG,DEBRIS_X,[99,-38]   ;Y,X of head
+     735 000047e0                   WL      3,R3FD3B+FR2
+     736 00004810     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
+     737 00004850                   WWL     ANI_SETLONG,DEBRIS_X,[36,-44]   ;Y,X of head
+     738 00004890                   WL      3,R3FD3B+FR3
+     739 000048c0                   WWL     ANI_SETLONG,DEBRIS_X,[31,-44]   ;Y,X of head
+     740 00004900                   WL      3,R3FD3B+FR4
+     741 00004930                   WWL     ANI_SETLONG,DEBRIS_X,[18,-48]   ;Y,X of head
+     742 00004970                   WL      3,R3FD3B+FR5
+     743 000049a0     800b          .word   ANI_WAITHITGND
      744                    
-     745 00005560     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCONFINE
-     746 00005580     8004          .word   ANI_SETPLYRMODE,MODE_INAIR
-     747 000055a0     8026          .word   ANI_SETSPEED,100h
-     748                    
-     749 000055c0                   WL      3,R3FD3B+FR1
-     750 000055f0                   WL      3,R3FD3B+FR2
-     751 00005620     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
-     752 00005660                   WL      3,R3FD3B+FR3
-     753 00005690                   WL      3,R3FD3B+FR4
-     754 000056c0                   WL      3,R3FD3B+FR5
-     755 000056f0     800b          .word   ANI_WAITHITGND
-     756 00005700     8003          .word   ANI_ZEROVELS
-     757 00005710     8038          .word   ANI_DAMAGE,D_HITCONCRETE
-     758                    
-     759 00005730     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
-     760                    
-     761 00005790                   WL      ANI_CODE,HIT_THE_MAT
-     762 000057c0     8037          .word   ANI_SHAKEALL,1
-     763 000057e0     801f          .word   ANI_SHAKER,30
-     764                    
-     765 00005800     8016          .word   ANI_FRICTION,3000h
-     766                    
-     767 00005820                   WL      2,R3FD3B+FR6
-     768 00005850                   WL      1,R3FD3B+FR6
-     769 00005880                   WL      3,R3FD3B+FR7
-     770 000058b0                   WL      3,R3FD3B+FR8
-     771 000058e0                   WL      3,R3FD3B+FR9
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     745 000049b0     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
+     746                    
+     747 00004a10                   WL      ANI_CODE,HIT_THE_MAT
+     748 00004a40     8037          .word   ANI_SHAKEALL,1
+     749 00004a60     801f          .word   ANI_SHAKER,30
+     750                    
+     751 00004a80     8016          .word   ANI_FRICTION,3000h
+     752                    
+     753 00004aa0                   WWL     ANI_SETLONG,DEBRIS_X,[11,-42]   ;Y,X of head
+     754 00004ae0                   WL      2,R3FD3B+FR6
+     755 00004b10     800d          .word   ANI_BOUNCE,5
+     756 00004b30                   WL      1,R3FD3B+FR6
+     757 00004b60                   WWL     ANI_SETLONG,DEBRIS_X,[11,-42]   ;Y,X of head
+     758 00004ba0                   WL      3,R3FD3B+FR7
+     759 00004bd0                   WWL     ANI_SETLONG,DEBRIS_X,[11,-42]   ;Y,X of head
+     760 00004c10                   WL      3,R3FD3B+FR8
+     761 00004c40                   WWL     ANI_SETLONG,DEBRIS_X,[16,-42]   ;Y,X of head
+     762 00004c80                   WL      3,R3FD3B+FR9
+     763 00004cb0     800b          .word   ANI_WAITHITGND
+     764 00004cc0                   WL      ANI_CODE,SMALL_BOUNCE
+     765 00004cf0     8003          .word   ANI_ZEROVELS
+     766 00004d00                   WWL     ANI_SETLONG,DEBRIS_X,0          ;Y,X of head
+     767                    
+     768 00004d40     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+     769 00004d60     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+     770 00004d80     800c          .word   ANI_XFLIP
+     771 00004d90                   WL      3,R3GU2A+FR1
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   15
 
      772                    
-     773 00005910     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-     774 00005930     800c          .word   ANI_XFLIP
-     775 00005940                   WL      3,R3GU2A+FR1
+     773 00004dc0     8054          .word   ANI_WAITROLL
+     774 00004dd0                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+     775                    
      776                    
-     777 00005970     8054          .word   ANI_WAITROLL
-     778 00005980                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
-     779                    
+     777                    *****************************************************************************
+     778                    *
+     779                    * FALL BACK
      780                    
-     781                    
+     781 00004e00            SUBR   rzr_fall_back2_anim
      782                    
-     783 000059b0            SUBR   rzr_facedown_getup_anim
-     784                    
-     785 000059b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCOLLIS
-     786 000059d0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     787 000059f0     8026          .word   ANI_SETSPEED,100h
+     783 00004e00     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+     784 00004e20     8003          .word   ANI_ZEROVELS
+     785 00004e30     8026          .word   ANI_SETSPEED,100h
+     786 00004e50                   WL      ANI_SET_YVEL,20000h
+     787 00004e80                   WLW     ANI_SET_ZVEL,18000h,AM_ABS
      788                    
-     789 00005a10     800c          .word   ANI_XFLIP
-     790 00005a20                   WL      3,R3DC3C+FR10
-     791 00005a50     800c          .word   ANI_XFLIP
-     792 00005a60                   WL      ANI_CODE,choose_2or4
-     793 00005a90                   WL      ANI_IFSTATUS2,tjlkgetup_in_4
-     794                    
-     795 00005ac0           tjlkgetup_in_2
-     796 00005ac0                   WL      3,R3GU2A+FR7
-     797 00005af0                   WL      3,R3GU2A+FR8
-     798 00005b20                   WL      3,R3GU2A+FR9
-     799                    
-     800 00005b50     8068          .word   ANI_SAFE_TIME,50
-     801                    
-     802 00005b70                   WL      ANI_CODE,free_toss_check
-     803 00005ba0                   WL      ANI_IFNOTSTATUS2,tjlkno_freetoss
-     804 00005bd0     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
-     805 00005c30                   WL      1,R3GU2A+FR9
-     806 00005c60     8007          .word   ANI_ATTACK_OFF
-     807 00005c70                   WL      ANI_IFNOTSTATUS2,tjlkno_freetoss
-     808                    
-     809                            ;Opponent standing too close -- free toss
-     810 00005ca0                   WL      ANI_CODE,setup_freetoss
-     811                            .ref    rzr_4_push_anim
-     812 00005cd0                   WL      ANI_CHANGEANIM,rzr_4_push_anim
-     813 00005d00           tjlkno_freetoss
-     814                    
-     815 00005d00     8021          .word   ANI_FACEUP
-     816 00005d10     8002          .word   ANI_SETMODE,MODE_NORMAL
-     817 00005d30     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     818 00005d50     8049          .word   ANI_END
-     819                    
-     820                    
-     821 00005d60           tjlkgetup_in_4
-     822 00005d60                   WL      3,R3GU4A+FR6
-     823 00005d90                   WL      3,R3GU4A+FR7
-     824 00005dc0                   WL      3,R3GU4A+FR8
-     825 00005df0                   WL      3,R3GU4A+FR9
-     826                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     789 00004ec0                   WL      ANI_CODE,ckzpos
+     790                    
+     791 00004ef0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYC_SWEAT,SWEAT_PER,0
+     792 00004f60                   WL      3,R3FD3B+FR1
+     793 00004f90                   WL      3,R3FD3B+FR2
+     794 00004fc0     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
+     795 00005000                   WL      3,R3FD3B+FR3
+     796 00005030                   WL      3,R3FD3B+FR4
+     797 00005060                   WL      3,R3FD3B+FR5
+     798 00005090                   WL      3,R3FD3B+FR8
+     799 000050c0     800b          .word   ANI_WAITHITGND
+     800                    
+     801 000050d0     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
+     802                    
+     803 00005130                   WL      ANI_CODE,HIT_THE_MAT
+     804 00005160     8037          .word   ANI_SHAKEALL,1
+     805 00005180     801f          .word   ANI_SHAKER,30
+     806 000051a0     8003          .word   ANI_ZEROVELS            
+     807 000051b0                   WLW     ANI_SET_ZVEL,18000h,AM_ABS
+     808 000051f0                   WLW     ANI_SET_XVEL,-30000h,AM_FACE_REL
+     809                    
+     810 00005230                   WL      3,R3HG3B+FR1
+     811 00005260     8015          .word   ANI_OFFSET,-25,0,0                      ;x,y,z
+     812 000052a0                   WL      3,R3GP3Z+FR8
+     813 000052d0                   WL      3,R3HG3B+FR3
+     814 00005300                   WL      3,R3HG3B+FR4
+     815 00005330                   WL      3,R3HG3B+FR5
+     816 00005360                   WL      3,R3HG3B+FR6
+     817 00005390     8003          .word   ANI_ZEROVELS
+     818 000053a0                   WL      ANI_CODE,HIT_THE_MAT
+     819 000053d0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+     820 000053f0                   WL      3,R3MS3Q+FR1
+     821 00005420                   WL      3,R3MS3Q+FR2
+     822 00005450                   WL      3,R3MS3Q+FR3
+     823 00005480                   WL      3,R3MS3Q+FR4
+     824 000054b0     800b          .word   ANI_WAITHITGND
+     825 000054c0                   WL      ANI_CODE,SMALL_BOUNCE
+     826 000054f0                   WL      30,R3RL1B+FR6           ;Face down
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   16
 
-     827 00005e20     8068          .word   ANI_SAFE_TIME,50
-     828                    
-     829 00005e40                   WL      ANI_CODE,free_toss_check
-     830 00005e70                   WL      ANI_IFNOTSTATUS2,tjlkno_freetoss4
-     831 00005ea0     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
-     832 00005f00                   WL      1,R3GU4A+FR9
-     833 00005f30     8007          .word   ANI_ATTACK_OFF
-     834 00005f40                   WL      ANI_IFNOTSTATUS2,tjlkno_freetoss4
-     835                    
-     836                            ;Opponent standing too close -- free toss
-     837 00005f70                   WL      ANI_CODE,setup_freetoss
-     838 00005fa0                   WL      ANI_CHANGEANIM,rzr_4_push_anim
-     839 00005fd0           tjlkno_freetoss4
+     827                    
+     828 00005520     8054          .word   ANI_WAITROLL
+     829 00005530                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+     830                    
+     831                    *****************************************************************************
+     832                    *
+     833                    * FALL FROM TURNBUCKLE
+     834                    
+     835 00005560            SUBR   rzr_fall_back_tbukl_anim
+     836                    
+     837 00005560     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCONFINE
+     838 00005580     8004          .word   ANI_SETPLYRMODE,MODE_INAIR
+     839 000055a0     8026          .word   ANI_SETSPEED,100h
      840                    
-     841 00005fd0     8022          .word   ANI_FACEDOWN
-     842 00005fe0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     843 00006000     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     844 00006020     8049          .word   ANI_END
-     845                    
-     846                    
-     847                    
-     848                    
-     849 00006030            SUBR   rzr_faceup_getup_anim
+     841 000055c0                   WL      3,R3FD3B+FR1
+     842 000055f0                   WL      3,R3FD3B+FR2
+     843 00005620     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
+     844 00005660                   WL      3,R3FD3B+FR3
+     845 00005690                   WL      3,R3FD3B+FR4
+     846 000056c0                   WL      3,R3FD3B+FR5
+     847 000056f0     800b          .word   ANI_WAITHITGND
+     848 00005700     8003          .word   ANI_ZEROVELS
+     849 00005710     8038          .word   ANI_DAMAGE,D_HITCONCRETE
      850                    
-     851 00006030     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCOLLIS
-     852 00006050     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     853 00006070     8026          .word   ANI_SETSPEED,100h
-     854                    
-     855 00006090                   WL      2,R3GU2A+FR1
-     856 000060c0                   WL      3,R3GU2A+FR2
-     857 000060f0                   WL      ANI_CODE,choose_2or4
-     858 00006120                   WL      ANI_IFSTATUS2,wbzdgetup_in_4
-     859                    
-     860 00006150           wbzdgetup_in_2
-     861 00006150                   WL      2,R3GU2A+FR3
-     862 00006180                   WL      3,R3GU2A+FR4
-     863 000061b0                   WL      2,R3GU2A+FR5
-     864 000061e0                   WL      3,R3GU2A+FR6
-     865 00006210                   WL      2,R3GU2A+FR7
-     866 00006240                   WL      3,R3GU2A+FR8
-     867 00006270                   WL      2,R3GU2A+FR9
+     851 00005730     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
+     852                    
+     853 00005790                   WL      ANI_CODE,HIT_THE_MAT
+     854 000057c0     8037          .word   ANI_SHAKEALL,1
+     855 000057e0     801f          .word   ANI_SHAKER,30
+     856                    
+     857 00005800     8016          .word   ANI_FRICTION,3000h
+     858                    
+     859 00005820                   WL      2,R3FD3B+FR6
+     860                    ;       .word   ANI_BOUNCE,5
+     861 00005850                   WL      1,R3FD3B+FR6
+     862 00005880                   WL      3,R3FD3B+FR7
+     863 000058b0                   WL      3,R3FD3B+FR8
+     864 000058e0                   WL      3,R3FD3B+FR9
+     865                    ;       .word   ANI_WAITHITGND
+     866                    ;       WL      ANI_CODE,SMALL_BOUNCE
+     867                    ;       .word   ANI_ZEROVELS
      868                    
-     869 000062a0     8068          .word   ANI_SAFE_TIME,50
-     870                    
-     871 000062c0                   WL      ANI_CODE,free_toss_check
-     872 000062f0                   WL      ANI_IFNOTSTATUS2,wbzdno_freetoss
-     873 00006320     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
-     874 00006380                   WL      1,R3GU2A+FR9
-     875 000063b0     8007          .word   ANI_ATTACK_OFF
-     876 000063c0                   WL      ANI_IFNOTSTATUS2,wbzdno_freetoss
-     877                    
-     878                            ;Opponent standing too close -- free toss
-     879 000063f0                   WL      ANI_CODE,setup_freetoss
-     880 00006420                   WL      ANI_CHANGEANIM,rzr_4_push_anim
-     881 00006450           wbzdno_freetoss
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     869 00005910     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+     870 00005930     800c          .word   ANI_XFLIP
+     871 00005940                   WL      3,R3GU2A+FR1
+     872                    
+     873 00005970     8054          .word   ANI_WAITROLL
+     874 00005980                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+     875                    
+     876                    
+     877                    *****************************************************************************
+     878                    *
+     879                    * FACE DOWN GETUP
+     880                    
+     881                    ;FIX!!  add wrestler_xflip at the appropriate frame for all getups!
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   17
 
      882                    
-     883 00006450     8021          .word   ANI_FACEUP
-     884 00006460     8002          .word   ANI_SETMODE,MODE_NORMAL
-     885 00006480     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     886 000064a0     8049          .word   ANI_END
-     887                    
+     883 000059b0            SUBR   rzr_facedown_getup_anim
+     884                    
+     885 000059b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCOLLIS
+     886 000059d0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     887 000059f0     8026          .word   ANI_SETSPEED,100h
      888                    
-     889 000064b0           wbzdgetup_in_4
-     890 000064b0                   WL      2,R3GU4A+FR3
-     891 000064e0                   WL      3,R3GU4A+FR4
-     892 00006510                   WL      2,R3GU4A+FR5
-     893 00006540                   WL      3,R3GU4A+FR6
-     894 00006570                   WL      2,R3GU4A+FR7
-     895 000065a0                   WL      3,R3GU4A+FR8
-     896 000065d0                   WL      2,R3GU4A+FR9
-     897                    
-     898 00006600     8068          .word   ANI_SAFE_TIME,50
+     889 00005a10     800c          .word   ANI_XFLIP
+     890 00005a20                   WL      3,R3DC3C+FR10
+     891 00005a50     800c          .word   ANI_XFLIP
+     892 00005a60                   WL      ANI_CODE,choose_2or4
+     893 00005a90                   WL      ANI_IFSTATUS2,yycegetup_in_4
+     894                    
+     895 00005ac0           yycegetup_in_2
+     896 00005ac0                   WL      3,R3GU2A+FR7
+     897 00005af0                   WL      3,R3GU2A+FR8
+     898 00005b20                   WL      3,R3GU2A+FR9
      899                    
-     900 00006620                   WL      ANI_CODE,free_toss_check
-     901 00006650                   WL      ANI_IFNOTSTATUS2,wbzdno_freetoss2
-     902 00006680     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
-     903 000066e0                   WL      1,R3GU4A+FR9
-     904 00006710     8007          .word   ANI_ATTACK_OFF
-     905 00006720                   WL      ANI_IFNOTSTATUS2,wbzdno_freetoss2
-     906                    
-     907                            ;Opponent standing too close -- free toss
-     908 00006750                   WL      ANI_CODE,setup_freetoss
-     909 00006780                   WL      ANI_CHANGEANIM,rzr_4_push_anim
-     910 000067b0           wbzdno_freetoss2
-     911                    
-     912 000067b0     8022          .word   ANI_FACEDOWN
-     913 000067c0     8002          .word   ANI_SETMODE,MODE_NORMAL
-     914 000067e0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     915 00006800     8049          .word   ANI_END
-     916                    
-     917 00006810            SUBR   rzr_faceup_getup2_anim
-     918                    
-     919 00006810     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCOLLIS
-     920 00006830     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     921 00006850     8026          .word   ANI_SETSPEED,100h
-     922                    
-     923 00006870           wbzdcommon
-     924 00006870                   WL      3,R3GU4A+FR4
-     925 000068a0                   WL      2,R3GU4A+FR5
-     926 000068d0                   WL      3,R3GU4A+FR6
-     927 00006900                   WL      2,R3GU4A+FR7
-     928 00006930                   WL      3,R3GU4A+FR8
-     929 00006960                   WL      2,R3GU4A+FR9
-     930                    
-     931 00006990     8068          .word   ANI_SAFE_TIME,50
-     932                    
-     933 000069b0                   WL      ANI_CODE,free_toss_check
-     934 000069e0                   WL      ANI_IFNOTSTATUS2,wbzdno_freetoss3
-     935 00006a10     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
-     936 00006a70                   WL      1,R3GU4A+FR9
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     900 00005b50     8068          .word   ANI_SAFE_TIME,50
+     901                    
+     902 00005b70                   WL      ANI_CODE,free_toss_check
+     903 00005ba0                   WL      ANI_IFNOTSTATUS2,yyceno_freetoss
+     904 00005bd0     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
+     905 00005c30                   WL      1,R3GU2A+FR9
+     906 00005c60     8007          .word   ANI_ATTACK_OFF
+     907 00005c70                   WL      ANI_IFNOTSTATUS2,yyceno_freetoss
+     908                    
+     909                            ;Opponent standing too close -- free toss
+     910 00005ca0                   WL      ANI_CODE,setup_freetoss
+     911                            .ref    rzr_4_push_anim
+     912 00005cd0                   WL      ANI_CHANGEANIM,rzr_4_push_anim
+     913 00005d00           yyceno_freetoss
+     914                    
+     915 00005d00     8021          .word   ANI_FACEUP
+     916 00005d10     8002          .word   ANI_SETMODE,MODE_NORMAL
+     917 00005d30     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     918 00005d50     8049          .word   ANI_END
+     919                    
+     920                    
+     921 00005d60           yycegetup_in_4
+     922 00005d60                   WL      3,R3GU4A+FR6
+     923 00005d90                   WL      3,R3GU4A+FR7
+     924 00005dc0                   WL      3,R3GU4A+FR8
+     925 00005df0                   WL      3,R3GU4A+FR9
+     926                    
+     927 00005e20     8068          .word   ANI_SAFE_TIME,50
+     928                    
+     929 00005e40                   WL      ANI_CODE,free_toss_check
+     930 00005e70                   WL      ANI_IFNOTSTATUS2,yyceno_freetoss4
+     931 00005ea0     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
+     932 00005f00                   WL      1,R3GU4A+FR9
+     933 00005f30     8007          .word   ANI_ATTACK_OFF
+     934 00005f40                   WL      ANI_IFNOTSTATUS2,yyceno_freetoss4
+     935                    
+     936                            ;Opponent standing too close -- free toss
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   18
 
-     937 00006aa0     8007          .word   ANI_ATTACK_OFF
-     938 00006ab0                   WL      ANI_IFNOTSTATUS2,wbzdno_freetoss3
-     939                    
-     940                            ;Opponent standing too close -- free toss
-     941 00006ae0                   WL      ANI_CODE,setup_freetoss
-     942 00006b10                   WL      ANI_CHANGEANIM,rzr_4_push_anim
-     943 00006b40           wbzdno_freetoss3
-     944                    
-     945 00006b40     8022          .word   ANI_FACEDOWN
-     946 00006b50     8002          .word   ANI_SETMODE,MODE_NORMAL
-     947 00006b70     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-     948 00006b90     8049          .word   ANI_END
-     949                    
+     937 00005f70                   WL      ANI_CODE,setup_freetoss
+     938 00005fa0                   WL      ANI_CHANGEANIM,rzr_4_push_anim
+     939 00005fd0           yyceno_freetoss4
+     940                    
+     941 00005fd0     8022          .word   ANI_FACEDOWN
+     942 00005fe0     8002          .word   ANI_SETMODE,MODE_NORMAL
+     943 00006000     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     944 00006020     8049          .word   ANI_END
+     945                    
+     946                    
+     947                    *****************************************************************************
+     948                    *
+     949                    * FACE UP GETUP
      950                    
-     951 00006ba0           choose_2or4
-     952                    
-     953 00006ba0     b5a0          move    *a13(ANIMODE),a0
-         00006bb0     0660  
-     954 00006bc0     0b80          andni   MODE_STATUS2,a0
-         00006bd0 00000200  
-     955                    
-     956 00006bf0     b5ae          move    *a13(NEW_FACING_DIR),a14
-         00006c00     04d0  
-     957 00006c10     1fee          btst    MOVE_UP_BIT,a14
-     958 00006c20     cb03          jrnz    wbzdchoose_2
-     959 00006c30     0ba0          ori     MODE_STATUS2,a0
-         00006c40 00000200  
-     960 00006c60           wbzdchoose_2
-     961 00006c60     b00d          move    a0,*a13(ANIMODE)
-         00006c70     0660  
-     962 00006c80     0960          rets
-     963                    
-     964                    
-     965                    
-     966                    
-     967 00006c90            SUBR   rzr_up_anim
-     968                    
-     969 00006c90     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP
-     970 00006cb0     800c          .WORD   ANI_XFLIP
-     971 00006cc0     8003          .word   ANI_ZEROVELS
-     972 00006cd0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-     973                    
-     974 00006cf0                   WL      10,R3TD3A+FR4
-     975 00006d20     800b          .word   ANI_WAITHITGND
-     976 00006d30                   WL      ANI_CODE,SMALL_BOUNCE
-     977 00006d60     8003          .word   ANI_ZEROVELS
-     978 00006d70                   WL      3,R3AM3D+FR1
-     979 00006da0     8054          .word   ANI_WAITROLL
-     980 00006db0                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+     951                    
+     952 00006030            SUBR   rzr_faceup_getup_anim
+     953                    
+     954 00006030     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCOLLIS
+     955 00006050     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     956 00006070     8026          .word   ANI_SETSPEED,100h
+     957                    
+     958 00006090                   WL      2,R3GU2A+FR1
+     959 000060c0                   WL      3,R3GU2A+FR2
+     960 000060f0                   WL      ANI_CODE,choose_2or4
+     961 00006120                   WL      ANI_IFSTATUS2,hinngetup_in_4
+     962                    
+     963 00006150           hinngetup_in_2
+     964 00006150                   WL      2,R3GU2A+FR3
+     965 00006180                   WL      3,R3GU2A+FR4
+     966 000061b0                   WL      2,R3GU2A+FR5
+     967                    ;       .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+     968 000061e0                   WL      3,R3GU2A+FR6
+     969 00006210                   WL      2,R3GU2A+FR7
+     970 00006240                   WL      3,R3GU2A+FR8
+     971 00006270                   WL      2,R3GU2A+FR9
+     972                    
+     973 000062a0     8068          .word   ANI_SAFE_TIME,50
+     974                    
+     975 000062c0                   WL      ANI_CODE,free_toss_check
+     976 000062f0                   WL      ANI_IFNOTSTATUS2,hinnno_freetoss
+     977 00006320     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
+     978 00006380                   WL      1,R3GU2A+FR9
+     979 000063b0     8007          .word   ANI_ATTACK_OFF
+     980 000063c0                   WL      ANI_IFNOTSTATUS2,hinnno_freetoss
      981                    
-     982 00006de0            SUBR   rzr_hitonground_anim
-     983                    
-     984 00006de0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
-     985 00006e00     8003          .word   ANI_ZEROVELS
-     986 00006e10     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+     982                            ;Opponent standing too close -- free toss
+     983 000063f0                   WL      ANI_CODE,setup_freetoss
+     984 00006420                   WL      ANI_CHANGEANIM,rzr_4_push_anim
+     985 00006450           hinnno_freetoss
+     986                    
+     987 00006450     8021          .word   ANI_FACEUP
+     988 00006460     8002          .word   ANI_SETMODE,MODE_NORMAL
+     989 00006480     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+     990 000064a0     8049          .word   ANI_END
+     991                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   19
 
-     987                    
-     988 00006e30                   WL      ANI_CODE,ckzpos
-     989                    
-     990 00006e60                   WL      1,R3AM3D+FR2
-     991 00006e90                   WL      ANI_SET_YVEL,39000h
-     992 00006ec0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPITUP_SWEAT,SWEAT_PER,0
-     993 00006f30                   WL      2,R3AM3D+FR2
-     994                    
-     995 00006f60     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
-     996                    
-     997 00006fc0                   WL      3,R3AM3D+FR3
-     998 00006ff0                   WL      3,R3AM3D+FR4
-     999 00007020                   WL      3,R3AM3D+FR5
-    1000 00007050                   WL      3,R3AM3D+FR6
-    1001 00007080                   WL      3,R3AM3D+FR7
+     992                    
+     993 000064b0           hinngetup_in_4
+     994 000064b0                   WL      2,R3GU4A+FR3
+     995 000064e0                   WL      3,R3GU4A+FR4
+     996 00006510                   WL      2,R3GU4A+FR5
+     997                    ;       .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+     998 00006540                   WL      3,R3GU4A+FR6
+     999 00006570                   WL      2,R3GU4A+FR7
+    1000 000065a0                   WL      3,R3GU4A+FR8
+    1001 000065d0                   WL      2,R3GU4A+FR9
     1002                    
-    1003 000070b0     800b          .word   ANI_WAITHITGND
-    1004 000070c0                   WL      ANI_CODE,SMALL_BOUNCE
-    1005 000070f0     8003          .word   ANI_ZEROVELS
-    1006 00007100                   WL      2,R3AM3D+FR1
-    1007 00007130            SUBR   rzr_liedown_anim
-    1008 00007130                   WL      1,R3AM3D+FR1
-    1009 00007160     8054          .word   ANI_WAITROLL
-    1010 00007170                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+    1003 00006600     8068          .word   ANI_SAFE_TIME,50
+    1004                    
+    1005 00006620                   WL      ANI_CODE,free_toss_check
+    1006 00006650                   WL      ANI_IFNOTSTATUS2,hinnno_freetoss2
+    1007 00006680     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
+    1008 000066e0                   WL      1,R3GU4A+FR9
+    1009 00006710     8007          .word   ANI_ATTACK_OFF
+    1010 00006720                   WL      ANI_IFNOTSTATUS2,hinnno_freetoss2
     1011                    
-    1012                    
-    1013 000071a0            SUBR   rzr_dizzy_anim
-    1014                    
-    1015 000071a0     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP
-    1016 000071c0     8003          .word   ANI_ZEROVELS
-    1017 000071d0     8026          .word   ANI_SETSPEED,100h
-    1018 000071f0     8039          .word   ANI_START_DIZZY,0       ;0=Standing dizzy
-    1019 00007210     8032          .word   ANI_FACE,MOVE_RIGHT|MOVE_DOWN
-    1020                    
-    1021 00007230           bsuploop
-    1022 00007230                   WL      8,R4WP5C+FR1
-    1023 00007260                   WL      8,R4WP5C+FR2
-    1024 00007290                   WL      8,R4WP5C+FR3
-    1025 000072c0                   WL      8,R4WP5C+FR4
-    1026 000072f0                   WL      8,R4WP5C+FR5
-    1027 00007320                   WL      8,R4WP5C+FR6
-    1028 00007350                   WL      8,R4WP5C+FR7
-    1029 00007380                   WL      8,R4WP5C+FR8
-    1030 000073b0                   WL      ANI_GOTO,bsuploop
-    1031                    
-    1032                    
-    1033                    
-    1034 000073e0            SUBR   rzr_flyout_anim
+    1012                            ;Opponent standing too close -- free toss
+    1013 00006750                   WL      ANI_CODE,setup_freetoss
+    1014 00006780                   WL      ANI_CHANGEANIM,rzr_4_push_anim
+    1015 000067b0           hinnno_freetoss2
+    1016                    
+    1017 000067b0     8022          .word   ANI_FACEDOWN
+    1018 000067c0     8002          .word   ANI_SETMODE,MODE_NORMAL
+    1019 000067e0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+    1020 00006800     8049          .word   ANI_END
+    1021                    
+    1022 00006810            SUBR   rzr_faceup_getup2_anim
+    1023                    
+    1024 00006810     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCOLLIS
+    1025 00006830     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+    1026 00006850     8026          .word   ANI_SETSPEED,100h
+    1027                    
+    1028 00006870           hinncommon
+    1029 00006870                   WL      3,R3GU4A+FR4
+    1030 000068a0                   WL      2,R3GU4A+FR5
+    1031 000068d0                   WL      3,R3GU4A+FR6
+    1032 00006900                   WL      2,R3GU4A+FR7
+    1033 00006930                   WL      3,R3GU4A+FR8
+    1034 00006960                   WL      2,R3GU4A+FR9
     1035                    
-    1036 000073e0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCONFINE
-    1037 00007400     8004          .word   ANI_SETPLYRMODE,MODE_INAIR
-    1038 00007420     8026          .word   ANI_SETSPEED,100h
-    1039                    
-    1040 00007440                   WWL     ANI_SETLONG,OBJ_GRAVITY,0E000h
-    1041 00007480     807b          .word   ANI_SET_IDIOT
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+    1036 00006990     8068          .word   ANI_SAFE_TIME,50
+    1037                    
+    1038 000069b0                   WL      ANI_CODE,free_toss_check
+    1039 000069e0                   WL      ANI_IFNOTSTATUS2,hinnno_freetoss3
+    1040 00006a10     8006          .word   ANI_ATTACK_ON,AMODE_HITCHECK,25,98,68,14
+    1041 00006a70                   WL      1,R3GU4A+FR9
+    1042 00006aa0     8007          .word   ANI_ATTACK_OFF
+    1043 00006ab0                   WL      ANI_IFNOTSTATUS2,hinnno_freetoss3
+    1044                    
+    1045                            ;Opponent standing too close -- free toss
+    1046 00006ae0                   WL      ANI_CODE,setup_freetoss
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   20
 
-    1042 00007490                   WL      ANI_CODE,DO_WAIL
-    1043                    
-    1044 000074c0                   WL      7,R3TD3A+FR6
-    1045 000074f0                   WL      7,R3TD3A+FR7
-    1046 00007520                   WL      1,R3TD3A+FR8
-    1047 00007550     800b          .word   ANI_WAITHITGND
-    1048 00007560                   WL      ANI_CODE,HIT_THE_MAT
-    1049 00007590                   WWL     ANI_SETLONG,OBJ_GRAVITY,GRAVITY
-    1050 000075d0     8037          .word   ANI_SHAKEALL,2
-    1051 000075f0     801f          .word   ANI_SHAKER,60
-    1052 00007610     8015          .word   ANI_OFFSET,42,0,0
-    1053                    
-    1054 00007650     8038          .word   ANI_DAMAGE,D_HIPTOSS
+    1047 00006b10                   WL      ANI_CHANGEANIM,rzr_4_push_anim
+    1048 00006b40           hinnno_freetoss3
+    1049                    
+    1050 00006b40     8022          .word   ANI_FACEDOWN
+    1051 00006b50     8002          .word   ANI_SETMODE,MODE_NORMAL
+    1052 00006b70     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+    1053 00006b90     8049          .word   ANI_END
+    1054                    
     1055                    
-    1056 00007670     800c          .word   ANI_XFLIP
-    1057 00007680                   WL      ANI_CHANGEANIM,rzr_hitonground_anim
-    1058                    
+    1056                    *****
+    1057                    * set status bit for a getup in 4, clear for a 2.
+    1058 00006ba0           choose_2or4
     1059                    
-    1060 000076b0            SUBR   rzr_break_neck_anim
-    1061                    
-    1062 000076b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
-    1063 000076d0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
-    1064 000076e0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-    1065 00007700     8026          .word   ANI_SETSPEED,100h
-    1066                    
-    1067 00007720     8003          .word   ANI_ZEROVELS
-    1068                    
-    1069 00007730                   WWWL    ANI_IFROPE,RC_EITHER,100,binufall_back
+    1060 00006ba0     b5a0          move    *a13(ANIMODE),a0
+         00006bb0     0660  
+    1061 00006bc0     0b80          andni   MODE_STATUS2,a0
+         00006bd0 00000200  
+    1062                    
+    1063 00006bf0     b5ae          move    *a13(NEW_FACING_DIR),a14
+         00006c00     04d0  
+    1064 00006c10     1fee          btst    MOVE_UP_BIT,a14
+    1065 00006c20     cb03          jrnz    hinnchoose_2
+    1066 00006c30     0ba0          ori     MODE_STATUS2,a0
+         00006c40 00000200  
+    1067 00006c60           hinnchoose_2
+    1068 00006c60     b00d          move    a0,*a13(ANIMODE)
+         00006c70     0660  
+    1069 00006c80     0960          rets
     1070                    
-    1071                            ;roll over.
-    1072 00007780                   WL      3,R3HG3B+FR3
-    1073 000077b0     8015          .word   ANI_OFFSET,-10,0,0
-    1074 000077f0                   WL      3,R3HG3B+FR4
-    1075 00007820     8015          .word   ANI_OFFSET,-4,0,0
-    1076 00007860                   WL      3,R3HG3B+FR5
-    1077 00007890     8015          .word   ANI_OFFSET,-9,0,0
-    1078 000078d0                   WL      3,R3HG3B+FR6
-    1079 00007900     8015          .word   ANI_OFFSET,-23,0,0
-    1080 00007940                   WL      1,R3RL1B+FR6
-    1081 00007970     8054          .word   ANI_WAITROLL
-    1082 00007980                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
+    1071                    
+    1072                    
+    1073                    *****************************************************************************
+    1074                    *
+    1075                    * HITS ON GROUND
+    1076                    
+    1077 00006c90            SUBR   rzr_up_anim
+    1078                    
+    1079 00006c90     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_OVERLAP
+    1080 00006cb0     800c          .WORD   ANI_XFLIP
+    1081 00006cc0     8003          .word   ANI_ZEROVELS
+    1082 00006cd0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
     1083                    
-    1084 000079b0           binufall_back
-    1085                            ;no room.  fall back
-    1086 000079b0     8015          .word   ANI_OFFSET,-11,0,0
-    1087 000079f0                   WL      5,R3HG3B+FR1
-    1088 00007a20     8015          .word   ANI_OFFSET,19,0,0
-    1089 00007a60                   WL      5,R3TD3A+FR9
-    1090 00007a90     8015          .word   ANI_OFFSET,-28,0,0
-    1091 00007ad0     800c          .word   ANI_XFLIP
-    1092 00007ae0                   WL      3,R3GU2A+FR1
-    1093 00007b10     8054          .word   ANI_WAITROLL
-    1094 00007b20                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
-    1095                    
-    1096 00007b50            SUBR   rzr_break_neck2_anim
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+    1084 00006cf0                   WL      10,R3TD3A+FR4
+    1085 00006d20     800b          .word   ANI_WAITHITGND
+    1086 00006d30                   WL      ANI_CODE,SMALL_BOUNCE
+    1087 00006d60     8003          .word   ANI_ZEROVELS
+    1088 00006d70                   WL      3,R3AM3D+FR1
+    1089 00006da0     8054          .word   ANI_WAITROLL
+    1090 00006db0                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+    1091                    
+    1092 00006de0            SUBR   rzr_hitonground_anim
+    1093                    
+    1094 00006de0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP  ;uninterruptable
+    1095 00006e00     8003          .word   ANI_ZEROVELS
+    1096 00006e10     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   21
 
     1097                    
-    1098 00007b50     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+    1098 00006e30                   WL      ANI_CODE,ckzpos
     1099                    
-    1100 00007b70                   WLW     ANI_SET_XVEL,-20000h,AM_HIT_REL
-    1101 00007bb0                   WL      ANI_SET_YVEL,60000h
-    1102 00007be0                   WLW     ANI_SET_ZVEL,8000h,AM_ABS
-    1103                    
-    1104 00007c20                   WL      ANI_CODE,ckzpos
-    1105                    
-    1106 00007c50     800c          .word   ANI_XFLIP
-    1107 00007c60                   WL      5,R3HG3B+FR3
-    1108 00007c90                   WL      5,R3HG3B+FR4
-    1109 00007cc0                   WL      5,R3HG3B+FR5
-    1110 00007cf0                   WL      5,R3HG3B+FR6
-    1111 00007d20     800b          .word   ANI_WAITHITGND
+    1100 00006e60                   WL      1,R3AM3D+FR2
+    1101 00006e90                   WL      ANI_SET_YVEL,39000h
+    1102 00006ec0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPITUP_SWEAT,SWEAT_PER,0
+    1103 00006f30                   WL      2,R3AM3D+FR2
+    1104                    
+    1105 00006f60     805e          .word   ANI_DEBRIS,100,1,0,8,0          ;%chance, tbl index, x,y,z off
+    1106                    
+    1107 00006fc0                   WL      3,R3AM3D+FR3
+    1108 00006ff0                   WL      3,R3AM3D+FR4
+    1109 00007020                   WL      3,R3AM3D+FR5
+    1110 00007050                   WL      3,R3AM3D+FR6
+    1111 00007080                   WL      3,R3AM3D+FR7
     1112                    
-    1113                            ;hit.  stay.
-    1114 00007d30     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND   ;So we can stomp him!
-    1115 00007d50                   WL      ANI_CODE,SMALL_BOUNCE
-    1116 00007d80     8015          .word   ANI_OFFSET,-7,0,0
-    1117 00007dc0     8003          .word   ANI_ZEROVELS
-    1118                    
-    1119 00007dd0                   WL      10,R3RL1B+FR6   ;20
-    1120                    
-    1121 00007e00     8054          .word   ANI_WAITROLL
-    1122 00007e10                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
-    1123                    
-    1124 00007e40            SUBR   rzr_break_neck3_anim
+    1113 000070b0     800b          .word   ANI_WAITHITGND
+    1114 000070c0                   WL      ANI_CODE,SMALL_BOUNCE
+    1115 000070f0     8003          .word   ANI_ZEROVELS
+    1116 00007100                   WL      2,R3AM3D+FR1
+    1117 00007130            SUBR   rzr_liedown_anim
+    1118 00007130                   WL      1,R3AM3D+FR1
+    1119 00007160     8054          .word   ANI_WAITROLL
+    1120 00007170                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+    1121                    
+    1122                    *****************************************************************************
+    1123                    *
+    1124                    * DIZZY
     1125                    
-    1126 00007e40     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+    1126 000071a0            SUBR   rzr_dizzy_anim
     1127                    
-    1128 00007e60                   WLW     ANI_SET_XVEL,-20000h,AM_HIT_REL
-    1129 00007ea0                   WL      ANI_SET_YVEL,58000h
-    1130 00007ed0                   WLW     ANI_SET_ZVEL,18000h,AM_ABS
-    1131                    
-    1132 00007f10                   WL      ANI_CODE,ckzpos
+    1128 000071a0     8002          .word   ANI_SETMODE,MODE_NOAUTOFLIP
+    1129 000071c0     8003          .word   ANI_ZEROVELS
+    1130 000071d0     8026          .word   ANI_SETSPEED,100h
+    1131 000071f0     8039          .word   ANI_START_DIZZY,0       ;0=Standing dizzy
+    1132 00007210     8032          .word   ANI_FACE,MOVE_RIGHT|MOVE_DOWN
     1133                    
-    1134 00007f40     805e          .word   ANI_DEBRIS,300,5,0,-5,0 ;%chance, tbl index, x,y,z off
-    1135                    
-    1136 00007fa0                   WL      15,R4POGO+FR5
-    1137 00007fd0     800b          .word   ANI_WAITHITGND
-    1138 00007fe0                   WL      ANI_CODE,HIT_THE_MAT
-    1139                    
-    1140 00008010     800c          .word   ANI_XFLIP
-    1141 00008020                   WL      3,R3GP3Z+FR7
-    1142 00008050                   WL      3,R3GP3Z+FR8
-    1143                    
-    1144 00008080                   WL      3,R3HG3B+FR3
-    1145 000080b0                   WL      3,R3HG3B+FR4
-    1146 000080e0                   WL      3,R3HG3B+FR5
-    1147 00008110                   WL      3,R3HG3B+FR6
-    1148 00008140     800b          .word   ANI_WAITHITGND
+    1134 00007230           ngszloop
+    1135 00007230                   WL      8,R4WP5C+FR1
+    1136 00007260                   WL      8,R4WP5C+FR2
+    1137 00007290                   WL      8,R4WP5C+FR3
+    1138 000072c0                   WL      8,R4WP5C+FR4
+    1139 000072f0                   WL      8,R4WP5C+FR5
+    1140 00007320                   WL      8,R4WP5C+FR6
+    1141 00007350                   WL      8,R4WP5C+FR7
+    1142 00007380                   WL      8,R4WP5C+FR8
+    1143 000073b0                   WL      ANI_GOTO,ngszloop
+    1144                    
+    1145                    
+    1146                    *****************************************************************************
+    1147                    *
+    1148                    * THROWN FROM RING (shn_bslm, shn_frnk)
     1149                    
-    1150                            ;hit.  stay.
-    1151 00008150     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND   ;So we can stomp him!
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+    1150 000073e0            SUBR   rzr_flyout_anim
+    1151                    
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   22
 
-    1152 00008170     8015          .word   ANI_OFFSET,-7,0,0
-    1153 000081b0     8003          .word   ANI_ZEROVELS
-    1154                    
-    1155 000081c0                   WL      10,R3RL1B+FR6   ;20
-    1156                    
-    1157 000081f0     8054          .word   ANI_WAITROLL
-    1158 00008200                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
+    1152 000073e0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP|MODE_NOCONFINE
+    1153 00007400     8004          .word   ANI_SETPLYRMODE,MODE_INAIR
+    1154 00007420     8026          .word   ANI_SETSPEED,100h
+    1155                    
+    1156 00007440                   WWL     ANI_SETLONG,OBJ_GRAVITY,0E000h
+    1157 00007480     807b          .word   ANI_SET_IDIOT
+    1158 00007490                   WL      ANI_CODE,DO_WAIL
     1159                    
-    1160                    
-    1161 00008230            SUBR   rzr_break_neck4_anim
-    1162                    
-    1163 00008230     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
-    1164 00008250     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-    1165 00008270     8026          .word   ANI_SETSPEED,100h
-    1166                    
-    1167 00008290                   WL      ANI_SET_YVEL,60000h
-    1168 000082c0                   WLW     ANI_SET_XVEL,-28000h,AM_FACE_REL
+    1160 000074c0                   WL      7,R3TD3A+FR6
+    1161 000074f0                   WL      7,R3TD3A+FR7
+    1162 00007520                   WL      1,R3TD3A+FR8
+    1163 00007550     800b          .word   ANI_WAITHITGND
+    1164 00007560                   WL      ANI_CODE,HIT_THE_MAT
+    1165 00007590                   WWL     ANI_SETLONG,OBJ_GRAVITY,GRAVITY
+    1166 000075d0     8037          .word   ANI_SHAKEALL,2
+    1167 000075f0     801f          .word   ANI_SHAKER,60
+    1168 00007610     8015          .word   ANI_OFFSET,42,0,0
     1169                    
-    1170 00008300                   WL      6,R3HG3B+FR2
-    1171 00008330                   WWWL    ANI_IFROPE,RC_EITHER,100,binufall_back4
-    1172                    
-    1173                            ;roll over.
-    1174 00008380                   WL      3,R3HG3B+FR3
-    1175 000083b0     800b          .word   ANI_WAITHITGND
-    1176 000083c0     8003          .word   ANI_ZEROVELS
-    1177 000083d0                   WL      ANI_CODE,SMALL_BOUNCE
-    1178 00008400     8015          .word   ANI_OFFSET,10,0,0
-    1179 00008440                   WL      3,R3HG3B+FR4
-    1180 00008470     8015          .word   ANI_OFFSET,4,0,0
-    1181 000084b0                   WL      3,R3HG3B+FR5
-    1182 000084e0     8015          .word   ANI_OFFSET,9,0,0
-    1183 00008520                   WL      3,R3HG3B+FR6
-    1184 00008550     8015          .word   ANI_OFFSET,23,0,0
-    1185 00008590                   WL      1,R3RL1B+FR6
-    1186 000085c0     8054          .word   ANI_WAITROLL
-    1187 000085d0                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
+    1170 00007650     8038          .word   ANI_DAMAGE,D_HIPTOSS
+    1171                    ;       .word   ANI_SETWORD,DELAY_METER,0
+    1172                    ;       .word   ANI_GETUP,500
+    1173                    
+    1174 00007670     800c          .word   ANI_XFLIP
+    1175 00007680                   WL      ANI_CHANGEANIM,rzr_hitonground_anim
+    1176                    
+    1177                    *****************************************************************************
+    1178                    *
+    1179                    * ROLL OVER AND BREAK YER STINKIN' NECK
+    1180                    *
+    1181                    
+    1182 000076b0            SUBR   rzr_break_neck_anim
+    1183                    
+    1184 000076b0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+    1185 000076d0     801b          .word   ANI_SETFACING           ;ANI_XFLIP <- not primary anim
+    1186 000076e0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+    1187 00007700     8026          .word   ANI_SETSPEED,100h
     1188                    
-    1189 00008600           binufall_back4
-    1190                            ;no room.  fall back
-    1191 00008600     800b          .word   ANI_WAITHITGND
-    1192 00008610     8003          .word   ANI_ZEROVELS
-    1193 00008620                   WL      ANI_CODE,SMALL_BOUNCE
-    1194 00008650     8015          .word   ANI_OFFSET,-11,0,0
-    1195 00008690                   WL      5,R3HG3B+FR1
-    1196 000086c0     8015          .word   ANI_OFFSET,19,0,0
-    1197 00008700                   WL      5,R3TD3A+FR9
-    1198 00008730     8015          .word   ANI_OFFSET,-28,0,0
-    1199 00008770     800c          .word   ANI_XFLIP
-    1200 00008780                   WL      1,R3GU2A+FR1
-    1201 000087b0     8054          .word   ANI_WAITROLL
-    1202 000087c0                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
-    1203                    
-    1204                    
-    1205 000087f0            SUBR   rzr_backbroken_anim
-    1206                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+    1189 00007720     8003          .word   ANI_ZEROVELS
+    1190                    
+    1191 00007730                   WWWL    ANI_IFROPE,RC_EITHER,100,relkfall_back
+    1192                    
+    1193                            ;roll over.
+    1194 00007780                   WL      3,R3HG3B+FR3
+    1195 000077b0     8015          .word   ANI_OFFSET,-10,0,0
+    1196 000077f0                   WL      3,R3HG3B+FR4
+    1197 00007820     8015          .word   ANI_OFFSET,-4,0,0
+    1198 00007860                   WL      3,R3HG3B+FR5
+    1199 00007890     8015          .word   ANI_OFFSET,-9,0,0
+    1200 000078d0                   WL      3,R3HG3B+FR6
+    1201 00007900     8015          .word   ANI_OFFSET,-23,0,0
+    1202 00007940                   WL      1,R3RL1B+FR6
+    1203 00007970     8054          .word   ANI_WAITROLL
+    1204 00007980                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
+    1205                    
+    1206 000079b0           relkfall_back
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   23
 
-    1207 000087f0     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-    1208 00008810     8003          .word   ANI_ZEROVELS
-    1209 00008820     8026          .word   ANI_SETSPEED,100h
-    1210                    
-    1211 00008840     8010          .word   ANI_GRAVITY_OFF
-    1212 00008850                   WL      5,R3BR3Z+FR3
-    1213 00008880     800f          .word   ANI_GRAVITY_ON
-    1214                    
-    1215 00008890                   WL      ANI_SET_YVEL,040000h
-    1216 000088c0                   WLW     ANI_SET_ZVEL,20000h,AM_ABS
+    1207                            ;no room.  fall back
+    1208 000079b0     8015          .word   ANI_OFFSET,-11,0,0
+    1209 000079f0                   WL      5,R3HG3B+FR1
+    1210 00007a20     8015          .word   ANI_OFFSET,19,0,0
+    1211 00007a60                   WL      5,R3TD3A+FR9
+    1212 00007a90     8015          .word   ANI_OFFSET,-28,0,0
+    1213 00007ad0     800c          .word   ANI_XFLIP
+    1214 00007ae0                   WL      3,R3GU2A+FR1
+    1215 00007b10     8054          .word   ANI_WAITROLL
+    1216 00007b20                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
     1217                    
-    1218 00008900                   WL      4,R3BR3Z+FR2
-    1219 00008930                   WL      4,R3FD3B+FR5
-    1220                    
-    1221 00008960     800b          .word   ANI_WAITHITGND
-    1222 00008970     8003          .word   ANI_ZEROVELS
-    1223 00008980     800d          .word   ANI_BOUNCE,2
-    1224 000089a0                   WL      ANI_CODE,HIT_THE_MAT
-    1225 000089d0     800c          .word   ANI_XFLIP
-    1226                    
-    1227 000089e0                   WL      3,R3AM3D+FR2
-    1228                    
-    1229 00008a10     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
-    1230                    
-    1231 00008a70                   WL      3,R3AM3D+FR3
-    1232 00008aa0                   WL      3,R3AM3D+FR4
-    1233 00008ad0                   WL      3,R3AM3D+FR5
-    1234 00008b00                   WL      3,R3AM3D+FR6
-    1235 00008b30                   WL      3,R3AM3D+FR7
-    1236 00008b60                   WL      3,R3AM3D+FR1
-    1237                    
-    1238 00008b90     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-    1239                    
-    1240                    
-    1241 00008bb0     800a          .word   ANI_DETACH
-    1242                    
-    1243 00008bc0                   WL      10,R3AM3D+FR1
-    1244                    
-    1245 00008bf0     8054          .word   ANI_WAITROLL
-    1246 00008c00                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
-    1247                    
+    1218 00007b50            SUBR   rzr_break_neck2_anim
+    1219                    
+    1220 00007b50     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+    1221                    
+    1222 00007b70                   WLW     ANI_SET_XVEL,-20000h,AM_HIT_REL
+    1223 00007bb0                   WL      ANI_SET_YVEL,60000h
+    1224 00007be0                   WLW     ANI_SET_ZVEL,8000h,AM_ABS
+    1225                    
+    1226 00007c20                   WL      ANI_CODE,ckzpos
+    1227                    
+    1228 00007c50     800c          .word   ANI_XFLIP
+    1229 00007c60                   WL      5,R3HG3B+FR3
+    1230 00007c90                   WL      5,R3HG3B+FR4
+    1231 00007cc0                   WL      5,R3HG3B+FR5
+    1232 00007cf0                   WL      5,R3HG3B+FR6
+    1233 00007d20     800b          .word   ANI_WAITHITGND
+    1234                    
+    1235                            ;hit.  stay.
+    1236 00007d30     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND   ;So we can stomp him!
+    1237 00007d50                   WL      ANI_CODE,SMALL_BOUNCE
+    1238                    ;       .word   ANI_SOUND,bounce_l1
+    1239 00007d80     8015          .word   ANI_OFFSET,-7,0,0
+    1240 00007dc0     8003          .word   ANI_ZEROVELS
+    1241                    
+    1242 00007dd0                   WL      10,R3RL1B+FR6   ;20
+    1243                    
+    1244 00007e00     8054          .word   ANI_WAITROLL
+    1245 00007e10                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
+    1246                    
+    1247 00007e40            SUBR   rzr_break_neck3_anim
     1248                    
-    1249 00008c30            SUBR   rzr_slamnobounce_anim
+    1249 00007e40     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
     1250                    
-    1251 00008c30     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-    1252 00008c50     8003          .word   ANI_ZEROVELS
-    1253 00008c60     8026          .word   ANI_SETSPEED,100h
+    1251 00007e60                   WLW     ANI_SET_XVEL,-20000h,AM_HIT_REL
+    1252 00007ea0                   WL      ANI_SET_YVEL,58000h
+    1253 00007ed0                   WLW     ANI_SET_ZVEL,18000h,AM_ABS
     1254                    
-    1255 00008c80     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
-    1256 00008ca0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-    1257                    
-    1258 00008cc0                   WL      1,R3AM3D+FR1
-    1259 00008cf0                   WL      3,R3AM3D+FR1
-    1260 00008d20                   WL      4,R3AM3D+FR2
-    1261 00008d50                   WL      4,R3AM3D+FR3
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+    1255 00007f10                   WL      ANI_CODE,ckzpos
+    1256                    
+    1257 00007f40     805e          .word   ANI_DEBRIS,300,5,0,-5,0 ;%chance, tbl index, x,y,z off
+    1258                    
+    1259 00007fa0                   WL      15,R4POGO+FR5
+    1260 00007fd0     800b          .word   ANI_WAITHITGND
+    1261 00007fe0                   WL      ANI_CODE,HIT_THE_MAT
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   24
 
-    1262 00008d80                   WL      4,R3AM3D+FR4
-    1263 00008db0                   WL      4,R3AM3D+FR5
-    1264                    
-    1265 00008de0     800b          .word   ANI_WAITHITGND
-    1266 00008df0     8028          .word   ANI_ZERO_XZVELS
-    1267                    
-    1268 00008e00                   WL      2,R3AM3D+FR7
-    1269 00008e30                   WL      10,R3AM3D+FR1
-    1270                    
-    1271 00008e60     8054          .word   ANI_WAITROLL
-    1272 00008e70                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
-    1273                    
-    1274                    
-    1275 00008ea0            SUBR   rzr_slambounce_anim
-    1276                    
-    1277 00008ea0     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-    1278 00008ec0     8003          .word   ANI_ZEROVELS
-    1279 00008ed0     8026          .word   ANI_SETSPEED,100h
-    1280                    
-    1281 00008ef0                   WL      ANI_SET_YVEL,040000h
+    1262                    
+    1263 00008010     800c          .word   ANI_XFLIP
+    1264 00008020                   WL      3,R3GP3Z+FR7
+    1265 00008050                   WL      3,R3GP3Z+FR8
+    1266                    
+    1267 00008080                   WL      3,R3HG3B+FR3
+    1268 000080b0                   WL      3,R3HG3B+FR4
+    1269 000080e0                   WL      3,R3HG3B+FR5
+    1270 00008110                   WL      3,R3HG3B+FR6
+    1271 00008140     800b          .word   ANI_WAITHITGND
+    1272                    
+    1273                            ;hit.  stay.
+    1274 00008150     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND   ;So we can stomp him!
+    1275 00008170     8015          .word   ANI_OFFSET,-7,0,0
+    1276 000081b0     8003          .word   ANI_ZEROVELS
+    1277                    
+    1278 000081c0                   WL      10,R3RL1B+FR6   ;20
+    1279                    
+    1280 000081f0     8054          .word   ANI_WAITROLL
+    1281 00008200                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
     1282                    
-    1283 00008f20     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
-    1284 00008f40     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+    1283                    
+    1284 00008230            SUBR   rzr_break_neck4_anim
     1285                    
-    1286 00008f60     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
-    1287                    
-    1288 00008fc0                   WL      1,R3AM3D+FR1
-    1289                            .ref    ckzpos
-    1290 00008ff0                   WL      ANI_CODE,ckzpos
-    1291 00009020                   WL      3,R3AM3D+FR1
-    1292 00009050                   WL      4,R3AM3D+FR2
-    1293 00009080                   WL      4,R3AM3D+FR3
-    1294 000090b0                   WL      4,R3AM3D+FR4
-    1295 000090e0                   WL      4,R3AM3D+FR5
-    1296                    
-    1297 00009110     800b          .word   ANI_WAITHITGND
-    1298 00009120     8028          .word   ANI_ZERO_XZVELS
-    1299                    
-    1300 00009130                   WL      2,R3AM3D+FR7
-    1301 00009160                   WL      4,R3AM3D+FR1    ;10
-    1302                    
-    1303 00009190     8054          .word   ANI_WAITROLL
-    1304 000091a0                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
-    1305                    
-    1306 000091d0            SUBR   rzr_slambounce2_anim
-    1307                    
-    1308 000091d0     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-    1309 000091f0     8003          .word   ANI_ZEROVELS
-    1310 00009200     8026          .word   ANI_SETSPEED,100h
+    1286 00008230     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+    1287 00008250     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+    1288 00008270     8026          .word   ANI_SETSPEED,100h
+    1289                    
+    1290 00008290                   WL      ANI_SET_YVEL,60000h
+    1291 000082c0                   WLW     ANI_SET_XVEL,-28000h,AM_FACE_REL
+    1292                    
+    1293 00008300                   WL      6,R3HG3B+FR2
+    1294 00008330                   WWWL    ANI_IFROPE,RC_EITHER,100,relkfall_back4
+    1295                    
+    1296                            ;roll over.
+    1297 00008380                   WL      3,R3HG3B+FR3
+    1298 000083b0     800b          .word   ANI_WAITHITGND
+    1299 000083c0     8003          .word   ANI_ZEROVELS
+    1300 000083d0                   WL      ANI_CODE,SMALL_BOUNCE
+    1301 00008400     8015          .word   ANI_OFFSET,10,0,0
+    1302 00008440                   WL      3,R3HG3B+FR4
+    1303 00008470     8015          .word   ANI_OFFSET,4,0,0
+    1304 000084b0                   WL      3,R3HG3B+FR5
+    1305 000084e0     8015          .word   ANI_OFFSET,9,0,0
+    1306 00008520                   WL      3,R3HG3B+FR6
+    1307 00008550     8015          .word   ANI_OFFSET,23,0,0
+    1308 00008590                   WL      1,R3RL1B+FR6
+    1309 000085c0     8054          .word   ANI_WAITROLL
+    1310 000085d0                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
     1311                    
-    1312 00009220     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
-    1313 00009240     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
-    1314                    
-    1315 00009260     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
-    1316                    
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+    1312 00008600           relkfall_back4
+    1313                            ;no room.  fall back
+    1314 00008600     800b          .word   ANI_WAITHITGND
+    1315 00008610     8003          .word   ANI_ZEROVELS
+    1316 00008620                   WL      ANI_CODE,SMALL_BOUNCE
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   25
 
-    1317 000092c0                   WL      1,R3AM3X+FR1
-    1318 000092f0                   WL      ANI_CODE,ckzpos
-    1319 00009320                   WL      3,R3AM3X+FR1
-    1320 00009350     800b          .word   ANI_WAITHITGND
-    1321 00009360     8003          .word   ANI_ZEROVELS
-    1322 00009370                   WL      ANI_CODE,HIT_THE_MAT
-    1323 000093a0     800c          .word   ANI_XFLIP
-    1324 000093b0                   WL      ANI_SET_YVEL,030000h
-    1325                    
-    1326 000093e0                   WL      4,R3AM3D+FR1
-    1327 00009410                   WL      4,R3AM3D+FR2
-    1328 00009440                   WL      4,R3AM3D+FR3
-    1329 00009470                   WL      4,R3AM3D+FR4
-    1330 000094a0                   WL      4,R3AM3D+FR5
-    1331                    
-    1332 000094d0     800b          .word   ANI_WAITHITGND
-    1333 000094e0     8028          .word   ANI_ZERO_XZVELS
-    1334                    
-    1335 000094f0                   WL      2,R3AM3D+FR7
-    1336 00009520                   WL      10,R3AM3D+FR1
+    1317 00008650     8015          .word   ANI_OFFSET,-11,0,0
+    1318 00008690                   WL      5,R3HG3B+FR1
+    1319 000086c0     8015          .word   ANI_OFFSET,19,0,0
+    1320 00008700                   WL      5,R3TD3A+FR9
+    1321 00008730     8015          .word   ANI_OFFSET,-28,0,0
+    1322 00008770     800c          .word   ANI_XFLIP
+    1323 00008780                   WL      1,R3GU2A+FR1
+    1324 000087b0     8054          .word   ANI_WAITROLL
+    1325 000087c0                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
+    1326                    
+    1327                    *****************************************************************************
+    1328                    *
+    1329                    * END OF BACK BROKEN SEQ.
+    1330                    
+    1331 000087f0            SUBR   rzr_backbroken_anim
+    1332                    
+    1333 000087f0     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+    1334 00008810     8003          .word   ANI_ZEROVELS
+    1335 00008820     8026          .word   ANI_SETSPEED,100h
+    1336                    ;       .word   ANI_DETACH
     1337                    
-    1338 00009550     8054          .word   ANI_WAITROLL
-    1339 00009560                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
-    1340                    
+    1338 00008840     8010          .word   ANI_GRAVITY_OFF
+    1339 00008850                   WL      5,R3BR3Z+FR3
+    1340 00008880     800f          .word   ANI_GRAVITY_ON
     1341                    
-    1342 00009590            SUBR   rzr_breakneck2_anim
-    1343                    
-    1344 00009590     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
-    1345 000095b0     8003          .word   ANI_ZEROVELS
-    1346 000095c0     8026          .word   ANI_SETSPEED,100h
+    1342 00008890                   WL      ANI_SET_YVEL,040000h
+    1343 000088c0                   WLW     ANI_SET_ZVEL,20000h,AM_ABS
+    1344                    
+    1345 00008900                   WL      4,R3BR3Z+FR2
+    1346 00008930                   WL      4,R3FD3B+FR5
     1347                    
-    1348 000095e0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYD_SWEAT,SWEAT_PER,0
-    1349 00009650                   WL      4,R3FD3B+FR2
-    1350 00009680     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
-    1351 000096c0                   WL      4,R3FD3B+FR3
-    1352 000096f0                   WL      4,R3FD3B+FR4
-    1353 00009720                   WL      1,R3FD3B+FR5
-    1354                    
-    1355 00009750     800b          .word   ANI_WAITHITGND
-    1356                    
-    1357 00009760                   WL      ANI_CODE,HIT_THE_MAT
-    1358 00009790     8037          .word   ANI_SHAKEALL,2
-    1359 000097b0     801f          .word   ANI_SHAKER,20
-    1360                    
-    1361 000097d0                   WL      3,R3FD3B+FR6
-    1362                    
-    1363 00009800                   WL      3,R3HG3B+FR1
-    1364 00009830                   WL      3,R3HG3B+FR2
-    1365 00009860                   WL      3,R3HG3B+FR3
-    1366 00009890                   WL      3,R3HG3B+FR4
-    1367 000098c0                   WL      3,R3HG3B+FR5
-    1368 000098f0                   WL      3,R3HG3B+FR6
-    1369                    
-    1370 00009920     8028          .word   ANI_ZERO_XZVELS
-    1371 00009930                   WL      ANI_CODE,HIT_THE_MAT
-TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 16:56:12 2023
+    1348 00008960     800b          .word   ANI_WAITHITGND
+    1349 00008970     8003          .word   ANI_ZEROVELS
+    1350 00008980     800d          .word   ANI_BOUNCE,2
+    1351 000089a0                   WL      ANI_CODE,HIT_THE_MAT
+    1352 000089d0     800c          .word   ANI_XFLIP
+    1353                    
+    1354 000089e0                   WL      3,R3AM3D+FR2
+    1355                    
+    1356 00008a10     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
+    1357                    
+    1358 00008a70                   WL      3,R3AM3D+FR3
+    1359 00008aa0                   WL      3,R3AM3D+FR4
+    1360 00008ad0                   WL      3,R3AM3D+FR5
+    1361 00008b00                   WL      3,R3AM3D+FR6
+    1362 00008b30                   WL      3,R3AM3D+FR7
+    1363 00008b60                   WL      3,R3AM3D+FR1
+    1364                    
+    1365 00008b90     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+    1366                    
+    1367                    ;No stars around head here...
+    1368                    
+    1369 00008bb0     800a          .word   ANI_DETACH
+    1370                    
+    1371 00008bc0                   WL      10,R3AM3D+FR1
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
  Copyright (c) 1985-1991  Texas Instruments Incorporated 
 
 blocks, reactions to routine and special attacks                     PAGE   26
 
     1372                    
-    1373 00009960                   WL      8,R3RL1B+FR6
-    1374                    
-    1375 00009990     8054          .word   ANI_WAITROLL
-    1376 000099a0                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
-    1377                    
-    1378                    
-    1379 000099d0            SUBR   rzr_arm_broken_anim
+    1373 00008bf0     8054          .word   ANI_WAITROLL
+    1374 00008c00                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+    1375                    ;       .word   ANI_END
+    1376                    
+    1377                    *****************************************************************************
+    1378                    *
+    1379                    * GENERIC BOUNCE
     1380                    
-    1381 000099d0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
-    1382 000099f0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
-    1383 00009a10     8026          .word   ANI_SETSPEED,100h
-    1384                    
-    1385 00009a30                   WL      ANI_SET_YVEL,40000h
-    1386 00009a60                   WLW     ANI_SET_XVEL,-38000h,AM_HIT_REL
-    1387 00009aa0                   WLW     ANI_SET_ZVEL,10000h,AM_HIT_REL
-    1388                    
-    1389 00009ae0                   WL      ANI_CODE,DO_SCREAM
-    1390 00009b10     800b          .word   ANI_WAITHITGND
-    1391 00009b20     8003          .word   ANI_ZEROVELS
-    1392                    
-    1393 00009b30                   WL      4,R4AM4B+FR2
-    1394 00009b60                   WL      4,R4AM4B+FR3
-    1395 00009b90                   WL      4,R4AM4B+FR4
-    1396 00009bc0                   WL      4,R4AM4B+FR5
-    1397                    
-    1398 00009bf0                   WL      1,R4ST4G+FR1
-    1399                            .ref    am_I_dead
-    1400 00009c20                   WL      ANI_CODE,am_I_dead
-    1401 00009c50                   WL      ANI_IFNOTSTATUS2,wrmonodead
+    1381 00008c30            SUBR   rzr_slamnobounce_anim
+    1382                    
+    1383 00008c30     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+    1384 00008c50     8003          .word   ANI_ZEROVELS
+    1385 00008c60     8026          .word   ANI_SETSPEED,100h
+    1386                    
+    1387 00008c80     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
+    1388 00008ca0     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+    1389                    
+    1390 00008cc0                   WL      1,R3AM3D+FR1
+    1391 00008cf0                   WL      3,R3AM3D+FR1
+    1392 00008d20                   WL      4,R3AM3D+FR2
+    1393 00008d50                   WL      4,R3AM3D+FR3
+    1394 00008d80                   WL      4,R3AM3D+FR4
+    1395 00008db0                   WL      4,R3AM3D+FR5
+    1396                    
+    1397 00008de0     800b          .word   ANI_WAITHITGND
+    1398 00008df0     8028          .word   ANI_ZERO_XZVELS
+    1399                    
+    1400 00008e00                   WL      2,R3AM3D+FR7
+    1401 00008e30                   WL      10,R3AM3D+FR1
     1402                    
-    1403 00009c80                   WL      ANI_CHANGEANIM,rzr_fall_back_anim
-    1404                    
-    1405 00009cb0           wrmonodead
-    1406 00009cb0     8022          .word   ANI_FACEDOWN
-    1407 00009cc0     8002          .word   ANI_SETMODE,MODE_NORMAL
-    1408 00009ce0     8049          .word   ANI_END
-    1409                    
-    1410                    
-    1411                            .end
+    1403 00008e60     8054          .word   ANI_WAITROLL
+    1404 00008e70                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+    1405                    
+    1406                    
+    1407 00008ea0            SUBR   rzr_slambounce_anim
+    1408                    
+    1409 00008ea0     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+    1410 00008ec0     8003          .word   ANI_ZEROVELS
+    1411 00008ed0     8026          .word   ANI_SETSPEED,100h
+    1412                    
+    1413 00008ef0                   WL      ANI_SET_YVEL,040000h
+    1414                    
+    1415 00008f20     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
+    1416 00008f40     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+    1417                    
+    1418 00008f60     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
+    1419                    
+    1420 00008fc0                   WL      1,R3AM3D+FR1
+    1421                            .ref    ckzpos
+    1422 00008ff0                   WL      ANI_CODE,ckzpos
+    1423 00009020                   WL      3,R3AM3D+FR1
+    1424 00009050                   WL      4,R3AM3D+FR2
+    1425 00009080                   WL      4,R3AM3D+FR3
+    1426 000090b0                   WL      4,R3AM3D+FR4
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+blocks, reactions to routine and special attacks                     PAGE   27
+
+    1427 000090e0                   WL      4,R3AM3D+FR5
+    1428                    
+    1429 00009110     800b          .word   ANI_WAITHITGND
+    1430 00009120     8028          .word   ANI_ZERO_XZVELS
+    1431                    
+    1432 00009130                   WL      2,R3AM3D+FR7
+    1433 00009160                   WL      4,R3AM3D+FR1    ;10
+    1434                    
+    1435 00009190     8054          .word   ANI_WAITROLL
+    1436 000091a0                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+    1437                    
+    1438 000091d0            SUBR   rzr_slambounce2_anim
+    1439                    
+    1440 000091d0     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+    1441 000091f0     8003          .word   ANI_ZEROVELS
+    1442 00009200     8026          .word   ANI_SETSPEED,100h
+    1443                    
+    1444 00009220     8032          .word   ANI_FACE,MOVE_LEFT|MOVE_UP
+    1445 00009240     8004          .word   ANI_SETPLYRMODE,MODE_ONGROUND
+    1446                    
+    1447 00009260     805e          .word   ANI_DEBRIS,300,1,0,8,0          ;%chance, tbl index, x,y,z off
+    1448                    
+    1449 000092c0                   WL      1,R3AM3X+FR1
+    1450 000092f0                   WL      ANI_CODE,ckzpos
+    1451 00009320                   WL      3,R3AM3X+FR1
+    1452 00009350     800b          .word   ANI_WAITHITGND
+    1453 00009360     8003          .word   ANI_ZEROVELS
+    1454 00009370                   WL      ANI_CODE,HIT_THE_MAT
+    1455 000093a0     800c          .word   ANI_XFLIP
+    1456 000093b0                   WL      ANI_SET_YVEL,030000h
+    1457                    
+    1458 000093e0                   WL      4,R3AM3D+FR1
+    1459 00009410                   WL      4,R3AM3D+FR2
+    1460 00009440                   WL      4,R3AM3D+FR3
+    1461 00009470                   WL      4,R3AM3D+FR4
+    1462 000094a0                   WL      4,R3AM3D+FR5
+    1463                    
+    1464 000094d0     800b          .word   ANI_WAITHITGND
+    1465 000094e0     8028          .word   ANI_ZERO_XZVELS
+    1466                    
+    1467 000094f0                   WL      2,R3AM3D+FR7
+    1468 00009520                   WL      10,R3AM3D+FR1
+    1469                    
+    1470 00009550     8054          .word   ANI_WAITROLL
+    1471 00009560                   WL      ANI_CHANGEANIM,rzr_faceup_getup_anim
+    1472                    
+    1473                    *****************************************************************************
+    1474                    
+    1475 00009590            SUBR   rzr_breakneck2_anim
+    1476                    
+    1477 00009590     8002          .word   ANI_SETMODE,MODE_UNINT | MODE_NOAUTOFLIP
+    1478 000095b0     8003          .word   ANI_ZEROVELS
+    1479 000095c0     8026          .word   ANI_SETSPEED,100h
+    1480                    
+    1481 000095e0                   WLWWWW  ANI_CREATEPROC,CREATE_SWEAT,0,SPRAYD_SWEAT,SWEAT_PER,0
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+blocks, reactions to routine and special attacks                     PAGE   28
+
+    1482 00009650                   WL      4,R3FD3B+FR2
+    1483 00009680     8015          .word   ANI_OFFSET,0,53,0                       ;x,y,z
+    1484 000096c0                   WL      4,R3FD3B+FR3
+    1485 000096f0                   WL      4,R3FD3B+FR4
+    1486 00009720                   WL      1,R3FD3B+FR5
+    1487                    
+    1488 00009750     800b          .word   ANI_WAITHITGND
+    1489                    
+    1490 00009760                   WL      ANI_CODE,HIT_THE_MAT
+    1491 00009790     8037          .word   ANI_SHAKEALL,2
+    1492 000097b0     801f          .word   ANI_SHAKER,20
+    1493                    
+    1494 000097d0                   WL      3,R3FD3B+FR6
+    1495                    
+    1496 00009800                   WL      3,R3HG3B+FR1
+    1497 00009830                   WL      3,R3HG3B+FR2
+    1498 00009860                   WL      3,R3HG3B+FR3
+    1499 00009890                   WL      3,R3HG3B+FR4
+    1500 000098c0                   WL      3,R3HG3B+FR5
+    1501 000098f0                   WL      3,R3HG3B+FR6
+    1502                    
+    1503 00009920     8028          .word   ANI_ZERO_XZVELS
+    1504 00009930                   WL      ANI_CODE,HIT_THE_MAT
+    1505                    
+    1506 00009960                   WL      8,R3RL1B+FR6
+    1507                    
+    1508 00009990     8054          .word   ANI_WAITROLL
+    1509 000099a0                   WL      ANI_CHANGEANIM,rzr_facedown_getup_anim
+    1510                    
+    1511                    *****************************************************************************
+    1512                    
+    1513 000099d0            SUBR   rzr_arm_broken_anim
+    1514                    
+    1515 000099d0     8002          .word   ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
+    1516 000099f0     8004          .word   ANI_SETPLYRMODE,MODE_NORMAL
+    1517 00009a10     8026          .word   ANI_SETSPEED,100h
+    1518                    
+    1519 00009a30                   WL      ANI_SET_YVEL,40000h
+    1520 00009a60                   WLW     ANI_SET_XVEL,-38000h,AM_HIT_REL
+    1521 00009aa0                   WLW     ANI_SET_ZVEL,10000h,AM_HIT_REL
+    1522                    
+    1523 00009ae0                   WL      ANI_CODE,DO_SCREAM
+    1524 00009b10     800b          .word   ANI_WAITHITGND
+    1525 00009b20     8003          .word   ANI_ZEROVELS
+    1526                    
+    1527 00009b30                   WL      4,R4AM4B+FR2
+    1528 00009b60                   WL      4,R4AM4B+FR3
+    1529 00009b90                   WL      4,R4AM4B+FR4
+    1530 00009bc0                   WL      4,R4AM4B+FR5
+    1531                    
+    1532 00009bf0                   WL      1,R4ST4G+FR1
+    1533                            .ref    am_I_dead
+    1534 00009c20                   WL      ANI_CODE,am_I_dead
+    1535                    ;If I'm dead, goto fall back
+    1536 00009c50                   WL      ANI_IFNOTSTATUS2,xvlenodead
+TMS340 COFF Macro Assembler Version 6.10     Mon Oct 30 20:15:45 2023
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+blocks, reactions to routine and special attacks                     PAGE   29
+
+    1537                    
+    1538 00009c80                   WL      ANI_CHANGEANIM,rzr_fall_back_anim
+    1539                    ;       .word   ANI_END
+    1540                    
+    1541 00009cb0           xvlenodead
+    1542 00009cb0     8022          .word   ANI_FACEDOWN
+    1543 00009cc0     8002          .word   ANI_SETMODE,MODE_NORMAL
+    1544 00009ce0     8049          .word   ANI_END
+    1545                    
+    1546                    ******************************************************************************
+    1547                    
+    1548                            .end
 
  No Errors,  No Warnings

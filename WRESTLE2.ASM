@@ -3788,9 +3788,9 @@ but_offs2	.word	20h-3,24h-3
 	movk	MAX_PIECES-1,a9
 	move	*a13(OBJ_BASE),a1,L
 	addk	20h,a1			;skip shadow
-#nxt	move	*a1+,a8,L
+#glnxt	move	*a1+,a8,L
 	move	a0,*a8(OPAL)
-	dsj	a9,#nxt
+	dsj	a9,#glnxt
 
 ****	;re-initialize animation
 	movi	MODE_NORMAL,a14

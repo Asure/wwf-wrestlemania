@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		5/18/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"special.asm"
 	.title	"general special moves stuff"
@@ -27,6 +35,8 @@
 	.INCLUDE	"SWEAT.EQU"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	BAKMODS,message_palette,triple_sound,HALT,no_debris
 	.ref	announce_rnd_winner,pal_set,octopus2,ZERO_BITS,pal_find
@@ -38,9 +48,13 @@
 	.ref	_switch_addr
 	.ref	match_cnt
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
 
 SHOW_DAMAGE_POINTS	equ	0
 
+******************************************************************************
+* VARIABLES
 
 	.bss	impact_params	,32*8 * NUM_WRES	;
 
@@ -51,6 +65,8 @@ SHOW_DAMAGE_POINTS	equ	0
 	BSSX	neutral_objlist,32	;neutral collideable
 	BSSX	debris_count,	16	;active debris processes
 
+******************************************************************************
+* EQUATES FOR THIS FILE
 
 	STRUCTPD
 	LONG	ANIM
@@ -64,11 +80,14 @@ SHOW_DAMAGE_POINTS	equ	0
 	LONG	PALLET
 	LONG	STAR_TBL
 
+*****************************************************************************
+*
+* a10=index into offsets table
 
  SUBR	create_dizzy_proc
 
 	move	*a13(STARS_FLAG),a0
-	jrnz	pndsx
+	jrnz	cqtnx
 
 	CREATE0	dizzy_proc
 	move	a0,a9
@@ -79,7 +98,7 @@ SHOW_DAMAGE_POINTS	equ	0
 
 	move	*a13(WRESTLERNUM),a8
 	X128	a8
-	addi	pndsdizzy_offsets,a8
+	addi	cqtndizzy_offsets,a8
 	X32	a10
 	add	a10,a8
 	move	*a8+,a1			;x offset
@@ -87,9 +106,9 @@ SHOW_DAMAGE_POINTS	equ	0
 
 	move	*a13(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	pndsno_flip
+	jrz	cqtnno_flip
 	neg	a1
-pndsno_flip
+cqtnno_flip
 	add	a1,a0
 	sll	16,a0
 	move	a0,*a9(XVAL),L
@@ -104,18 +123,23 @@ pndsno_flip
 	sub	a0,a1
 	move	a1,*a9(YVAL),L
 
+;	move	*a13(OBJ_PRIORITY),a0
 	move	*a13(OBJ_ZPOSINT),a0
 	ori	1000h,a0
 
+;The stars for laying on ground guy, appear in front of other guy also!
+;No easy solution for this problem...
 
 	inc	a0
 	move	a0,*a9(ZVAL)
 
-pndsx
+cqtnx
 	rets
 
 
-pndsdizzy_offsets
+;		stand, lying
+cqtndizzy_offsets
+;		stand, on stomach, on back,?,?
 
 	.word	6,6dh, 0,0, 0,0, 0,0			;0 Bret Hart
 	.word	2,73h, 0,0, 0,0, 0,0			;1 Razor Ramon
@@ -129,13 +153,14 @@ pndsdizzy_offsets
 	.word	7,116, 0,0, 0,0, 0,0			;9 Referee
 
 
+*****************************************************************************
 
  SUBRP	dizzy_proc
 
 	move	*a13(PROC),a0,L
 	move	*a0(WRESTLERNUM),a0
 	X32	a0
-	addi	rlmnstar_art,a0
+	addi	gqdjstar_art,a0
 	move	*a0,a10,L
 	move	a10,*a13(STAR_TBL),L
 
@@ -153,61 +178,65 @@ pndsdizzy_offsets
 	calla	BEGINOBJ
 
 	move	*a13(PROC),a9,L
-rlmnloop
+gqdjloop
 	SLEEPK	1
 	move	*a9(STARS_FLAG),a0
-	jrz	rlmndie
+	jrz	gqdjdie
 
+;If stars are on for grounded opponent, swap ZPOS based on nearest opponent
 	move	*a9(PLYRMODE),a0
 	cmpi	MODE_ONGROUND,a0
-	jrnz	rlmnnock
+	jrnz	gqdjnock
 
 	move	*a9(NEW_FACING_DIR),a0
 	btst	MOVE_UP_BIT,a0
-	jrnz	rlmnfront
+	jrnz	gqdjfront
+;Stars should be lower Z than wrestlers
 	move	*a13(ZVAL),a0		;z val
 	subk	1,a0
 	move	a0,*a8(OZPOS)
-	jruc	rlmnnock
-rlmnfront
+	jruc	gqdjnock
+gqdjfront
+;Stars should be higher Z than wrestlers
 	move	*a13(ZVAL),a0		;z val
 	addk	1,a0
 	move	a0,*a8(OZPOS)
 
-rlmnnock
+gqdjnock
 
-	dsj	a11,rlmnloop
-rlmncnt
+	dsj	a11,gqdjloop
+gqdjcnt
 	move	*a10+,a11
-	jrnz	rlmnok
+	jrnz	gqdjok
 
+;	movi	gqdjdizzy_anim,a10		;repeat
 	move	*a13(STAR_TBL),a10,L
 
-	jruc	rlmncnt
-rlmnok
+	jruc	gqdjcnt
+gqdjok
 	move	*a10+,a0,L
 	callr	change_image_local
-	jruc	rlmnloop
+	jruc	gqdjloop
 
 
-rlmndie
+gqdjdie
 	calla	DELOBJA8
 	DIE
 
 
-rlmnstar_art
-	.long	rlmnhdizzy_anim		;0 Bret Hart
-	.long	rlmnrdizzy_anim		;1 Razor Ramon
-	.long	rlmnudizzy_anim		;2 Undertaker
-	.long	rlmnydizzy_anim		;3 Yokozuna
-	.long	rlmnsdizzy_anim		;4 Shawn Michaels
-	.long	rlmnbdizzy_anim		;5 Bam Bam
-	.long	rlmnddizzy_anim		;6 Doink
+gqdjstar_art
+	.long	gqdjhdizzy_anim		;0 Bret Hart
+	.long	gqdjrdizzy_anim		;1 Razor Ramon
+	.long	gqdjudizzy_anim		;2 Undertaker
+	.long	gqdjydizzy_anim		;3 Yokozuna
+	.long	gqdjsdizzy_anim		;4 Shawn Michaels
+	.long	gqdjbdizzy_anim		;5 Bam Bam
+	.long	gqdjddizzy_anim		;6 Doink
 	.long	0			;7 spare
-	.long	rlmnldizzy_anim		;8 Lex Luger
+	.long	gqdjldizzy_anim		;8 Lex Luger
 	.long	0			;9 Referee
 
-rlmnhdizzy_anim
+gqdjhdizzy_anim
 	WL	4,STARS01
 	WL	4,STARS02
 	WL	4,STARS03
@@ -216,7 +245,7 @@ rlmnhdizzy_anim
 	WL	4,STARS06
 	.word	0
 
-rlmnrdizzy_anim
+gqdjrdizzy_anim
 	WL	5,RAZDIZ201
 	WL	5,RAZDIZ202
 	WL	5,RAZDIZ203
@@ -229,7 +258,7 @@ rlmnrdizzy_anim
 	WL	5,RAZDIZ210
 	.word	0
 
-rlmnudizzy_anim
+gqdjudizzy_anim
 	WL	5,UNDZ01
 	WL	5,UNDZ02
 	WL	5,UNDZ03
@@ -238,7 +267,7 @@ rlmnudizzy_anim
 	WL	5,UNDZ06
 	.word	0
 
-rlmnydizzy_anim
+gqdjydizzy_anim
 	WL	5,YKDZ01
 	WL	5,YKDZ02
 	WL	5,YKDZ03
@@ -250,7 +279,7 @@ rlmnydizzy_anim
 	WL	5,YKDZ09
 	.word	0
 
-rlmnsdizzy_anim
+gqdjsdizzy_anim
 	WL	4,SHNDIZ01
 	WL	4,SHNDIZ02
 	WL	4,SHNDIZ03
@@ -263,7 +292,7 @@ rlmnsdizzy_anim
 	WL	4,SHNDIZ10
 	.word	0
 
-rlmnbdizzy_anim
+gqdjbdizzy_anim
 	WL	5,BMDZ01
 	WL	5,BMDZ02
 	WL	5,BMDZ03
@@ -272,7 +301,7 @@ rlmnbdizzy_anim
 	WL	5,BMDZ06
 	.word	0
 
-rlmnddizzy_anim
+gqdjddizzy_anim
 	WL	4,STARS01
 	WL	4,STARS02
 	WL	4,STARS03
@@ -281,7 +310,7 @@ rlmnddizzy_anim
 	WL	4,STARS06
 	.word	0
 
-rlmnldizzy_anim
+gqdjldizzy_anim
 	WL	4,STARS01
 	WL	4,STARS02
 	WL	4,STARS03
@@ -291,28 +320,31 @@ rlmnldizzy_anim
 	.word	0
 
 
+*****************************************************************************
 
+;For Bam fire head butt
+;For Taker club to head
  SUBR	create_impact
 
 	;quit if no_debris is set
 	move	@no_debris,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 	move	@reduce_bog,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 
 	PUSH	a1,a4,a7,a10,a11
 	move	*a13(WHOIHIT),a10,L
 	move	*a10(WRESTLERNUM),a0
 	sll	5,a0
-	addi	udzyoffset_t,a0
+	addi	fmcooffset_t,a0
 	move	*a0,a11,L
-	CREATE	DEBRIS_PID,udzyexplosions
-	CREATE	DEBRIS_PID,udzyexplosions2
+	CREATE	DEBRIS_PID,fmcoexplosions
+	CREATE	DEBRIS_PID,fmcoexplosions2
 	PULL	a1,a4,a7,a10,a11
 
-udzyrets	rets
+fmcorets	rets
 
-udzyoffset_t
+fmcooffset_t
 	.long	[100,0]		;0	(Bret)
 	.long	[108,0]		;1	(Razor)
 	.long	[108,0]		;2	(Taker)
@@ -323,57 +355,62 @@ udzyoffset_t
 	.long	[105,0]		;7	(spare)
 	.long	[90,0]		;8	(Lex)
 
+;For Bam fire super kick
+;For Taker fire super kick
  SUBR	create_impact2
 
 	;quit if no_debris is set
 	move	@no_debris,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 	move	@reduce_bog,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 
 	PUSH	a1,a4,a7,a10,a11
 	move	*a13(WHOIHIT),a10,L
 	movi	[38h,13h],a11
-	CREATE	DEBRIS_PID,udzyexplosions
-	CREATE	DEBRIS_PID,udzyexplosions2
+	CREATE	DEBRIS_PID,fmcoexplosions
+	CREATE	DEBRIS_PID,fmcoexplosions2
 	PULL	a1,a4,a7,a10,a11
 
 	rets
 
+;For Taker explosion for pin
  SUBR	create_impact5
 
 	;quit if no_debris is set
 	move	@no_debris,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 	move	@reduce_bog,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 
 	PUSH	a1,a4,a7,a10,a11
 	move	*a13(WHOIHIT),a10,L
 	movi	[10,1h],a11
-	CREATE	DEBRIS_PID,udzyexplosions
-	CREATE	DEBRIS_PID,udzyexplosions2
-	CREATE	DEBRIS_PID,udzyexplosions2
+	CREATE	DEBRIS_PID,fmcoexplosions
+	CREATE	DEBRIS_PID,fmcoexplosions2
+	CREATE	DEBRIS_PID,fmcoexplosions2
 	PULL	a1,a4,a7,a10,a11
 
 	rets
 
+;For Bam fire punches to head
  SUBR	create_impact3
 
 	;quit if no_debris is set
 	move	@no_debris,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 	move	@reduce_bog,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 
 	PUSH	a1,a4,a7,a10,a11
 	move	*a13(WHOIHIT),a10,L
 	movi	[58h,0],a11
-	CREATE	DEBRIS_PID,udzyexplosions
+	CREATE	DEBRIS_PID,fmcoexplosions
 	PULL	a1,a4,a7,a10,a11
 
 	rets
 
+;For Yoko salt to face
  SUBR	create_impact_salt
 
 	PUSH	a1,a4,a7,a10,a11
@@ -384,89 +421,95 @@ udzyoffset_t
 
 	rets
 
+;For Taker uppercut
  SUBR	create_impact4
 
 	;quit if no_debris is set
 	move	@no_debris,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 	move	@reduce_bog,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 
 	PUSH	a1,a4,a7,a10,a11
 	move	*a13(WHOIHIT),a10,L
 	movi	[58h,0],a11
-	CREATE	DEBRIS_PID,udzyhead_fountain
+	CREATE	DEBRIS_PID,fmcohead_fountain
+;Don't allow other debris to come out and bog us down!
 	movk	1,a0
 	move	a0,@no_debris
 	PULL	a1,a4,a7,a10,a11
 
 	rets
 
+;For Bam flying kick to face
  SUBR	create_impact_flykick
 
 	;quit if no_debris is set
 	move	@no_debris,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 	move	@reduce_bog,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 
 	PUSH	a1,a4,a7,a10,a11
 	move	*a13(WHOIHIT),a10,L
 	movi	[58h,0],a11
-	CREATE	DEBRIS_PID,udzyhead_fountain_kick
+	CREATE	DEBRIS_PID,fmcohead_fountain_kick
+;Don't allow other debris to come out and bog us down!
 	movk	1,a0
 	move	a0,@no_debris
 	PULL	a1,a4,a7,a10,a11
 
 	rets
 
-udzyhead_fountain_kick
+fmcohead_fountain_kick
+;For Taker uppercut fountain
 	move	*a10(DEBRIS_X),a1
-	jrnz	udzycont_k
+	jrnz	fmcocont_k
 
 	clr	a0		;okay, a0 IS always zero after a wakeup,
 	move	a0,@no_debris	; but it's bad karma to count on it.
 	DIE
 
-udzycont_k
+fmcocont_k
 	CREATE	DEBRIS_PID,impact_proc2
 	move	a0,a9
 
 	movi	XPLODE_P,a0
 	move	a0,*a9(PALLET),L
 
-	callr	udzystuff_it
+	callr	fmcostuff_it
 
 	SLEEPK	2
-	jruc	udzyhead_fountain_kick
+	jruc	fmcohead_fountain_kick
 
-udzyhead_fountain
+fmcohead_fountain
+;For Taker uppercut fountain
 	move	*a10(DEBRIS_X),a1
-	jrnz	udzycont
+	jrnz	fmcocont
 
 	clr	a0		;okay, a0 IS always zero after a wakeup,
 	move	a0,@no_debris	; but it's bad karma to count on it.
 	DIE
 
-udzycont
+fmcocont
 	CREATE	DEBRIS_PID,impact_proc2
 	move	a0,a9
 
 	movi	BLUEEX_P,a0
 	move	a0,*a9(PALLET),L
 
-	callr	udzystuff_it
+	callr	fmcostuff_it
 
 	SLEEPK	2
 
-	jruc	udzyhead_fountain
+	jruc	fmcohead_fountain
 
-udzystuff_it
+fmcostuff_it
 	movk	11,a0
 
 	calla	RNDRNG0
 	sll	5,a0
-	addi	udzyexp_tbl,a0
+	addi	fmcoexp_tbl,a0
 	move	*a0,a0,L
 
 	move	a0,*a9(ANIM),L		;animation
@@ -478,10 +521,10 @@ udzystuff_it
 
 	move	*a10(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	udzyno_flip2
+	jrz	fmcono_flip2
 	neg	a1
 	ori	M_FLIPH,a4		;flip image
-udzyno_flip2
+fmcono_flip2
 	add	a1,a0
 	sll	16,a0
 	move	a0,*a9(XVAL),L
@@ -501,17 +544,17 @@ udzyno_flip2
 	move	*a10(OBJ_ZPOSINT),a0
 	ori	1000h,a0
 	move	*a10(INRING),a14
-	jrz	udzyinring2
+	jrz	fmcoinring2
 	cmpi	[015ach,0],a0
-	jrgt	udzyinring2
+	jrgt	fmcoinring2
 	subi	[01e5h,0],a0		;below mat
-udzyinring2
+fmcoinring2
 	move	a0,a2
 	move	@HCOUNT,a1
 	btst	0,a1
-	jrz	udzyok2
+	jrz	fmcook2
 	addi	5h,a2
-udzyok2
+fmcook2
 	move	a2,*a9(ZVAL)
 
 	movi	20000h,a0
@@ -526,39 +569,46 @@ udzyok2
 	rets
 
 
+;For Yoko salt bucket
  SUBR	create_bucket_salt
 
 	;quit if no_debris is set
 	move	@no_debris,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 	move	@reduce_bog,a14
-	jrnz	udzyrets
+	jrnz	fmcorets
 
 	PUSH	a1,a4,a7,a10,a11
+;	move	*a13(WHOIHIT),a10,L
 
+;	movi	[58h,0],a11
 
 	move	a13,a10
-	CREATE	DEBRIS_PID,udzysalt_from_bucket
+	CREATE	DEBRIS_PID,fmcosalt_from_bucket
+;Don't allow other debris to come out and bog us down!
+;	movk	1,a0
+;	move	a0,@no_debris
 	PULL	a1,a4,a7,a10,a11
 
 	rets
 
-udzysalt_from_bucket
+fmcosalt_from_bucket
+;For Taker uppercut fountain
 	move	*a10(DEBRIS_X),a1
-	jrnz	udzyconts
+	jrnz	fmcoconts
 
 	move	a1,@no_debris
 
 	DIE
 
-udzyconts
+fmcoconts
 	CREATE	DEBRIS_PID,impact_proc2
 	move	a0,a9
 
 	movk	3,a0
 	calla	RNDRNG0
 	sll	5,a0
-	addi	udzysalt_exp_tbl,a0
+	addi	fmcosalt_exp_tbl,a0
 	move	*a0,a0,L
 
 	move	a0,*a9(ANIM),L		;animation
@@ -573,10 +623,10 @@ udzyconts
 
 	move	*a10(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	udzyno_flip2s
+	jrz	fmcono_flip2s
 	neg	a1
 	ori	M_FLIPH,a4		;flip image
-udzyno_flip2s
+fmcono_flip2s
 	add	a1,a0
 	sll	16,a0
 	move	a0,*a9(XVAL),L
@@ -596,17 +646,17 @@ udzyno_flip2s
 	move	*a10(OBJ_ZPOSINT),a0
 	ori	1000h,a0
 	move	*a10(INRING),a14
-	jrz	udzyinring2s
+	jrz	fmcoinring2s
 	cmpi	[015ach,0],a0
-	jrgt	udzyinring2s
+	jrgt	fmcoinring2s
 	subi	[01e5h,0],a0		;below mat
-udzyinring2s
+fmcoinring2s
 	move	a0,a2
 	move	@HCOUNT,a1
 	btst	0,a1
-	jrz	udzyok2s
+	jrz	fmcook2s
 	addi	5h,a2
-udzyok2s
+fmcook2s
 	move	a2,*a9(ZVAL)
 
 
@@ -622,17 +672,18 @@ udzyok2s
 
 	SLEEPK	2
 
-	jruc	udzysalt_from_bucket
+	jruc	fmcosalt_from_bucket
 
+*****************************************************************************
 
-udzyexplosions2
+fmcoexplosions2
 	SLEEPK	1
-udzyexplosions
+fmcoexplosions
 
 	;if there's too much debris already, don't do anything.
 	move	@debris_count,a14
 	cmpi	DEBRIS_MAX,a14
-	jrge	udzydie
+	jrge	fmcodie
 
 	;increment global debris count
 	move	@debris_count,a14
@@ -648,16 +699,16 @@ udzyexplosions
 	movk	4,a11
 	move	*a10(WHOHITME),a0,L
 	MOVE	*A0(COMBO_COUNT),A0
-	JRZ	udzylp
+	JRZ	fmcolp
 	movk	1,a11
-udzylp
+fmcolp
 	CREATE	DEBRIS_PID,impact_proc
 	move	a0,a9
 
 	movk	11,a0
 	calla	RNDRNG0
 	sll	5,a0
-	addi	udzyexp_tbl,a0
+	addi	fmcoexp_tbl,a0
 	move	*a0,a0,L
 
 	move	a0,*a9(ANIM),L		;animation
@@ -665,7 +716,7 @@ udzylp
 	move	*a10(WHOHITME),a0,L
 	move	*a0(WRESTLERNUM),a0
 	sll	5,a0
-	addi	udzypal_t,a0
+	addi	fmcopal_t,a0
 	move	*a0,a0,L
 	move	a0,*a9(PALLET),L
 
@@ -677,10 +728,10 @@ udzylp
 
 	move	*a10(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	udzyno_flip
+	jrz	fmcono_flip
 	neg	a1
 	ori	M_FLIPH,a4		;flip image
-udzyno_flip
+fmcono_flip
 	add	a1,a0
 	move	a0,a2
 
@@ -712,24 +763,31 @@ udzyno_flip
 	sub	a2,a3
 	move	a3,*a9(YVAL),L
 
+;	movi	02480H,a0
 
 	move	*a10(OBJ_ZPOSINT),a0
 	ori	1000h,a0
 	move	*a10(INRING),a14
-	jrz	udzyinring
+	jrz	fmcoinring
 	cmpi	[015ach,0],a0
-	jrgt	udzyinring
+	jrgt	fmcoinring
 	subi	[01e5h,0],a0		;below mat
-udzyinring
+fmcoinring
 	move	a0,a2
 	move	@HCOUNT,a1
 	btst	0,a1
-	jrz	udzyok
+	jrz	fmcook
 	addi	5h,a2
-udzyok
+fmcook
 	move	a2,*a9(ZVAL)
 
 
+;	movi	8000h,a0
+;	calla	RNDRNG0
+;	subi	4000h,a0
+;
+;	move	*a10(OBJ_XVEL),a1,L
+;	add	a1,a0
 
 	clr	a0
 	move	a0,*a9(XVEL),L
@@ -738,22 +796,24 @@ udzyok
 	calla	RNDRNG0
 	subi	8000h,a0
 
+;	move	*a10(OBJ_YVEL),a1,L
+;	add	a1,a0
 
 	clr	a0
 	move	a0,*a9(YVEL),L
 
 	SLEEPK	4
 
-   	dsj	a11,udzylp
+   	dsj	a11,fmcolp
 
 	;decrement global debris count
 	move	@debris_count,a14
 	dec	a14
 	move	a14,@debris_count
 
-udzydie	DIE
+fmcodie	DIE
 
-udzypal_t	.long	XPLODE_P	;0	(Bret)
+fmcopal_t	.long	XPLODE_P	;0	(Bret)
 	.long	XPLODE_P	;1	(Razor)
 	.long	BLUEEX_P	;2	(Taker)
 	.long	XPLODE_P	;3	(Yoko)
@@ -764,58 +824,80 @@ udzypal_t	.long	XPLODE_P	;0	(Bret)
 	.long	XPLODE_P	;8	(Lex)
 
 
+****************************************************************************
+* a11 = * impact parameters
 
  SUBR	impact_proc2
 	move	a10,a9
 
 	callr	begin_ani
-udzyloop0
+fmcoloop0
 	SLEEPK	1
 
 	JSRP	special_ani
-	jruc	udzyloop0
+	jruc	fmcoloop0
 
+*****************************************************************************
+* a11 = * impact parameters
 
  SUBR	impact_proc
 	move	a10,a9
 
 	callr	begin_ani
-udzyloop
+fmcoloop
 	SLEEPK	1
 	move	*a9(OBJ_XVEL),a0,L
 	move	a0,*a8(OXVEL),L
 
 	JSRP	special_ani
-	jruc	udzyloop
+	jruc	fmcoloop
 
 
 
+;;;* A1=PID, A7=PC, A8,A9,A10,A11 Passed parameters
+
+;	movi	sp_firehit_anim,a10
+;	callr	begin_ani
+;
+;	SLEEPK	1
+;	callr	special_ani
 
 
+;sp_d200_anim
+;;Will be damage point value!
+;	WL	30,FIREHIT01
+;	.word	0
+;
+;
+;sp_firehit_anim
+;	WL	4,FIREHIT01
+;	WL	4,FIREHIT02
+;	WL	4,FIREHIT03
+;	WL	4,FIREHIT04
+;	.word	0
 
 
+fmcoexp_tbl
+	.long	fmcosp_explode_a1_anim
+	.long	fmcosp_explode_a2_anim
+	.long	fmcosp_explode_a3_anim
+	.long	fmcosp_explode_a4_anim
+	.long	fmcosp_explode_b1_anim
+	.long	fmcosp_explode_b2_anim
+	.long	fmcosp_explode_b3_anim
+	.long	fmcosp_explode_b4_anim
+	.long	fmcosp_explode_c1_anim
+	.long	fmcosp_explode_c2_anim
+	.long	fmcosp_explode_c3_anim
+	.long	fmcosp_explode_c4_anim
 
-udzyexp_tbl
-	.long	udzysp_explode_a1_anim
-	.long	udzysp_explode_a2_anim
-	.long	udzysp_explode_a3_anim
-	.long	udzysp_explode_a4_anim
-	.long	udzysp_explode_b1_anim
-	.long	udzysp_explode_b2_anim
-	.long	udzysp_explode_b3_anim
-	.long	udzysp_explode_b4_anim
-	.long	udzysp_explode_c1_anim
-	.long	udzysp_explode_c2_anim
-	.long	udzysp_explode_c3_anim
-	.long	udzysp_explode_c4_anim
+fmcosalt_exp_tbl
+	.long	fmcosp_salt_exp1_anim
+	.long	fmcosp_salt_exp2_anim
+	.long	fmcosp_salt_exp3_anim
+	.long	fmcosp_salt_exp4_anim
 
-udzysalt_exp_tbl
-	.long	udzysp_salt_exp1_anim
-	.long	udzysp_salt_exp2_anim
-	.long	udzysp_salt_exp3_anim
-	.long	udzysp_salt_exp4_anim
-
-udzysp_salt_exp1_anim
+fmcosp_salt_exp1_anim
 	WL	4,SALTA01
 	WL	4,SALTA02
 	WL	4,SALTA03
@@ -827,7 +909,7 @@ udzysp_salt_exp1_anim
 	WL	4,SALTA09
 	WL	4,SALTA10
 	.word	0
-udzysp_salt_exp2_anim
+fmcosp_salt_exp2_anim
 	WL	4,SALTB01
 	WL	4,SALTB02
 	WL	4,SALTB03
@@ -840,7 +922,7 @@ udzysp_salt_exp2_anim
 	WL	4,SALTB10
 	WL	4,SALTB11
 	.word	0
-udzysp_salt_exp3_anim
+fmcosp_salt_exp3_anim
 	WL	3,SALTA01
 	WL	3,SALTA02
 	WL	3,SALTA03
@@ -852,7 +934,7 @@ udzysp_salt_exp3_anim
 	WL	3,SALTA09
 	WL	3,SALTA10
 	.word	0
-udzysp_salt_exp4_anim
+fmcosp_salt_exp4_anim
 	WL	3,SALTB01
 	WL	3,SALTB02
 	WL	3,SALTB03
@@ -865,7 +947,7 @@ udzysp_salt_exp4_anim
 	WL	3,SALTB10
 	WL	3,SALTB11
 	.word	0
-udzysp_explode_a1_anim
+fmcosp_explode_a1_anim
 	WL	4,XPLODA01
 	WL	4,XPLODA03
 	WL	4,XPLODA04
@@ -876,7 +958,7 @@ udzysp_explode_a1_anim
 	WL	4,XPLODA09
 	WL	4,XPLODA10
 	.word	0
-udzysp_explode_a2_anim
+fmcosp_explode_a2_anim
 	WL	2,XPLODA01
 	WL	2,XPLODA03
 	WL	2,XPLODA04
@@ -887,8 +969,8 @@ udzysp_explode_a2_anim
 	WL	2,XPLODA09
 	WL	2,XPLODA10
 	.word	0
-udzysp_explode_a3_anim
-udzysp_explode_a4_anim
+fmcosp_explode_a3_anim
+fmcosp_explode_a4_anim
 	WL	3,XPLODA01
 	WL	3,XPLODA03
 	WL	3,XPLODA04
@@ -901,7 +983,7 @@ udzysp_explode_a4_anim
 	.word	0
 
 
-udzysp_explode_b1_anim
+fmcosp_explode_b1_anim
 	WL	4,XPLODB01
 	WL	4,XPLODB03
 	WL	4,XPLODB04
@@ -912,7 +994,7 @@ udzysp_explode_b1_anim
 	WL	4,XPLODB09
 	WL	4,XPLODB10
 	.word	0
-udzysp_explode_b2_anim
+fmcosp_explode_b2_anim
 	WL	2,XPLODB01
 	WL	2,XPLODB03
 	WL	2,XPLODB04
@@ -923,8 +1005,8 @@ udzysp_explode_b2_anim
 	WL	2,XPLODB09
 	WL	2,XPLODB10
 	.word	0
-udzysp_explode_b3_anim
-udzysp_explode_b4_anim
+fmcosp_explode_b3_anim
+fmcosp_explode_b4_anim
 	WL	3,XPLODB01
 	WL	3,XPLODB03
 	WL	3,XPLODB04
@@ -936,7 +1018,7 @@ udzysp_explode_b4_anim
 	WL	3,XPLODB10
 	.word	0
 
-udzysp_explode_c1_anim
+fmcosp_explode_c1_anim
 	WL	4,XPLODC01
 	WL	4,XPLODC03
 	WL	4,XPLODC04
@@ -947,7 +1029,7 @@ udzysp_explode_c1_anim
 	WL	4,XPLODC09
 	WL	4,XPLODC10
 	.word	0
-udzysp_explode_c2_anim
+fmcosp_explode_c2_anim
 	WL	2,XPLODC01
 	WL	2,XPLODC03
 	WL	2,XPLODC04
@@ -959,8 +1041,8 @@ udzysp_explode_c2_anim
 	WL	2,XPLODC10
 	.word	0
 
-udzysp_explode_c3_anim
-udzysp_explode_c4_anim
+fmcosp_explode_c3_anim
+fmcosp_explode_c4_anim
 	WL	3,XPLODC01
 	WL	3,XPLODC03
 	WL	3,XPLODC04
@@ -973,6 +1055,7 @@ udzysp_explode_c4_anim
 	.word	0
 
 
+*****************************************************************************
 
 explosions_salt
 
@@ -985,14 +1068,14 @@ explosions_salt
 	move	a0,*a13(PDATA+16)	;y
 
 	movk	6,a11
-bqszlp
+igrwlp
 	CREATE	DEBRIS_PID,impact_proc
 	move	a0,a9
 
 	movk	3,a0
 	calla	RNDRNG0
 	sll	5,a0
-	addi	bqszsalt_exp_tbl,a0
+	addi	igrwsalt_exp_tbl,a0
 	move	*a0,a0,L
 
 	move	a0,*a9(ANIM),L		;animation
@@ -1004,10 +1087,10 @@ bqszlp
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a10(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	bqszno_flip
+	jrz	igrwno_flip
 	neg	a1
 	ori	M_FLIPH,a4		;flip image
-bqszno_flip
+igrwno_flip
 	add	a1,a0
 	move	a0,a2
 
@@ -1039,24 +1122,31 @@ bqszno_flip
 	sub	a2,a3
 	move	a3,*a9(YVAL),L
 
+;	movi	02480H,a0
 
 	move	*a10(OBJ_ZPOSINT),a0
 	ori	1000h,a0
 	move	*a10(INRING),a14
-	jrz	bqszinring
+	jrz	igrwinring
 	cmpi	[015ach,0],a0
-	jrgt	bqszinring
+	jrgt	igrwinring
 	subi	[01e5h,0],a0		;below mat
-bqszinring
+igrwinring
 	move	a0,a2
 	move	@HCOUNT,a1
 	btst	0,a1
-	jrz	bqszok
+	jrz	igrwok
 	addi	5h,a2
-bqszok
+igrwok
 	move	a2,*a9(ZVAL)
 
 
+;	movi	8000h,a0
+;	calla	RNDRNG0
+;	subi	4000h,a0
+;
+;	move	*a10(OBJ_XVEL),a1,L
+;	add	a1,a0
 
 	clr	a0
 	move	a0,*a9(XVEL),L
@@ -1065,23 +1155,25 @@ bqszok
 	calla	RNDRNG0
 	subi	8000h,a0
 
+;	move	*a10(OBJ_YVEL),a1,L
+;	add	a1,a0
 
 	clr	a0
 	move	a0,*a9(YVEL),L
 
 	SLEEPK	3
 
-   	dsj	a11,bqszlp
+   	dsj	a11,igrwlp
 
 	DIE
 
-bqszsalt_exp_tbl
-	.long	bqszsalt_exp1_anim
-	.long	bqszsalt_exp2_anim
-	.long	bqszsalt_exp1_anim
-	.long	bqszsalt_exp2_anim
+igrwsalt_exp_tbl
+	.long	igrwsalt_exp1_anim
+	.long	igrwsalt_exp2_anim
+	.long	igrwsalt_exp1_anim
+	.long	igrwsalt_exp2_anim
 
-bqszsalt_exp1_anim
+igrwsalt_exp1_anim
 	WL	4,SMOKE01
 	WL	4,SMOKE03
 	WL	4,SMOKE04
@@ -1092,7 +1184,7 @@ bqszsalt_exp1_anim
 	WL	4,SMOKE09
 	WL	4,SMOKE10
 	.word	0
-bqszsalt_exp2_anim
+igrwsalt_exp2_anim
 	WL	4,SMOKEB01
 	WL	4,SMOKEB03
 	WL	4,SMOKEB04
@@ -1103,6 +1195,7 @@ bqszsalt_exp2_anim
 	WL	4,SMOKEB09
 	WL	4,SMOKEB10
 	.word	0
+*****************************************************************************
 
  SUBRP	begin_ani
 
@@ -1126,14 +1219,15 @@ bqszsalt_exp2_anim
 
 	rets
 
+*****************************************************************************
 
  SUBRP	special_ani
 
 	dec	a11
-	jrnz	nlyecont
+	jrnz	ngvlcont
 
 	move	*a10+,a11		;tick count
-	jrz	nlyedie
+	jrz	ngvldie
 	move	*a10+,a0,L		;* image
 
 	move	a0,*a8(OIMG),L
@@ -1141,21 +1235,26 @@ bqszsalt_exp2_anim
 	move	*a0(ISAG),*a8(OSAG),L
 
 	move	*a0(IANIOFFX),a1
+;;;	add	a10,a1				;add in X ani-offset (if any)
 	move	a1,*a8(ODXOFF)			;display x offset
 
 	move	*a0(IANIOFFY),a1
+;;;	add	a11,a1				;add in Y pos & ani-offset
 	move	a1,*a8(ODYOFF)			;display y offset
 
 	movb	*a0(ICTRL+7),*a8(OCTRL+7)	;Write 5 z comp bits + bits pp
-nlyecont
+ngvlcont
 	RETP
 
 
 
-nlyedie
+ngvldie
 	calla	DELOBJA8
 	DIE
 
+*****************************************************************************
+* a0 = * image
+* a8 = * object
 
  SUBRP	change_image_local
 
@@ -1174,6 +1273,7 @@ nlyedie
 
 
 
+*****************************************************************************
 
  SUBR	init_special_objlist
 
@@ -1185,62 +1285,72 @@ nlyedie
 	rets
 
 
+*****************************************************************************
+;
+; a0 = * process
 
 insert_special_objlist
 
 	movi	neutral_objlist,a1
 	move	*a13(SP_PLYR_SIDE),a14	;( p1=0, p2=1, neutral=-1 )
-	jrn	kchjok
+	jrn	dvtxok
 	movi	plyr1_objlist,a1
 	move	a14,a14
-	jrz	kchjok
+	jrz	dvtxok
 	movi	plyr2_objlist,a1
-kchjok
+dvtxok
 	move	*a1(0),*a0(SP_NEXT),L	;update next link
 	move	a0,*a1,L		;insert at head of list
 
 	rets
 
 
+*****************************************************************************
+;
+; a0 = * process
 
  SUBR	delete_special_objlist
 
 	movi	neutral_objlist,a1	;prev
 	move	*a0(SP_PLYR_SIDE),a14	;( p1=0, p2=1, neutral=-1 )
-	jrn	yjiqok
+	jrn	zmsyok
 	movi	plyr1_objlist,a1	;prev
 	move	a14,a14
-	jrz	yjiqok
+	jrz	zmsyok
 	movi	plyr2_objlist,a1	;prev
-yjiqok
+zmsyok
 
 
 	move	*a1,a2,L		;cur
-	jrz	yjiqempty
+	jrz	zmsyempty
 
 	cmp	a2,a0
-	jrne	yjiqno_match
+	jrne	zmsyno_match
 
 	move	*a2(SP_NEXT),*a1(0),L	;unlink
 	rets
 
-yjiqno_match
+zmsyno_match
 
 	move	a2,a1			;prev
 	move	*a2(SP_NEXT),a2,L	;cur
-	jrz	yjiqempty
+	jrz	zmsyempty
 
 	cmp	a2,a0
-	jrne	yjiqno_match
+	jrne	zmsyno_match
 
 	move	*a2(SP_NEXT),*a1(SP_NEXT),L	;unlink
 
 	rets
 
-yjiqempty
+zmsyempty
+;	.if DEBUG
+;	LOCKUP
+;	.endif
 	rets
 
 
+*****************************************************************************
 
  SUBR	doink_pie
 
@@ -1260,7 +1370,7 @@ yjiqempty
 	move	*a11(OBJ_XPOS),a0,L
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	gfvdno_flip
+	jrz	qufsno_flip
 
 	move	*a13(SP_OBJCONTROL),a14
 	ori	M_FLIPH,a14
@@ -1268,7 +1378,7 @@ yjiqempty
 
 	neg	a1
 	neg	a2
-gfvdno_flip
+qufsno_flip
 	add	a1,a0
 	move	a0,*a13(SP_OBJ_XPOS),L
 	move	a2,*a13(SP_OBJ_XVEL),L
@@ -1296,7 +1406,7 @@ gfvdno_flip
 	movi	pie_anim,a0
 	callr	sp_change_anim
 
-gfvdlp
+qufslp
 
 	callr	sp_velocity_add
 	callr	sp_update_pos
@@ -1306,7 +1416,7 @@ gfvdlp
 	callr	sp_animate
 
 	move	*a13(SP_DIE),a0
-	jrnz	gfvddie
+	jrnz	qufsdie
 
 	move	@WORLDTLX+16,a0		;world x int
 	addi	200,a0			;center of screen
@@ -1314,13 +1424,13 @@ gfvdlp
 	sub	a1,a0
 	abs	a0
 	cmpi	256,a0	;off screen by 56 pixels
-	jrlt	gfvdlp
+	jrlt	qufslp
 
 
 	move	a13,a0
 	callr	delete_special_objlist
 
-gfvddie
+qufsdie
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
 
@@ -1330,6 +1440,7 @@ gfvddie
 	DIE
 
 
+*****************************************************************************
 
  SUBR	bam_fireball
 
@@ -1349,7 +1460,7 @@ gfvddie
 	move	*a11(OBJ_XPOS),a0,L
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	khmqno_flip
+	jrz	cjouno_flip
 
 	move	*a13(SP_OBJCONTROL),a14
 	ori	M_FLIPH,a14
@@ -1357,7 +1468,7 @@ gfvddie
 
 	neg	a1
 	neg	a2
-khmqno_flip
+cjouno_flip
 	add	a1,a0
 	move	a0,*a13(SP_OBJ_XPOS),L
 	move	a2,*a13(SP_OBJ_XVEL),L
@@ -1385,7 +1496,7 @@ khmqno_flip
 	movi	fireball_anim,a0
 	callr	sp_change_anim
 
-khmqlp
+cjoulp
 
 	callr	sp_velocity_add
 	callr	sp_update_pos
@@ -1395,7 +1506,7 @@ khmqlp
 	callr	sp_animate
 
 	move	*a13(SP_DIE),a0
-	jrnz	khmqdie
+	jrnz	cjoudie
 
 	move	@WORLDTLX+16,a0		;world x int
 	addi	200,a0			;center of screen
@@ -1403,13 +1514,13 @@ khmqlp
 	sub	a1,a0
 	abs	a0
 	cmpi	256,a0	;off screen by 56 pixels
-	jrlt	khmqlp
+	jrlt	cjoulp
 
 
 	move	a13,a0
 	callr	delete_special_objlist
 
-khmqdie
+cjoudie
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
 
@@ -1420,14 +1531,17 @@ khmqdie
 
 
 
+*****************************************************************************
 
  SUBR	und_spirit_pull
+;Old spirits
 	clr	a0
-	jruc	jgytcont
+	jruc	uzifcont
 
  SUBR	und_spirit_push
+;New reaper
 	movk	1,a0
-jgytcont	move	a0,*a13(SP_ID)
+uzifcont	move	a0,*a13(SP_ID)
 
 	move	a11,*a13(SP_WRESPROC),L
 	move	*a11(PLYR_SIDE),*a13(SP_PLYR_SIDE)
@@ -1440,24 +1554,26 @@ jgytcont	move	a0,*a13(SP_ID)
 	move	*a13(SP_OBJ),a8,L
 
 	move	*a13(SP_ID),a14
-	jrnz	jgytreap
+	jrnz	uzifreap
+;Old spirit
 	movi	[32,0],a1
 	movi	[7,0],a2		;x-vel
 	movi	[36h,0],a3
 	movi	spirit_anim,a4
 	movi	spirit_anim,a9
-	jruc	jgytcont2
-jgytreap
+	jruc	uzifcont2
+uzifreap
+;Reaper
 	movi	[2,0],a1
 	movi	[4,0],a2		;x-vel
 	movi	[2eh,0],a3
 	movi	reaper_grow,a4
 	movi	reaper_anim,a9
-jgytcont2
+uzifcont2
 	move	*a11(OBJ_XPOS),a0,L
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	jgytno_flip
+	jrz	uzifno_flip
 
 	move	*a13(SP_OBJCONTROL),a14
 	ori	M_FLIPH,a14
@@ -1465,7 +1581,7 @@ jgytcont2
 
 	neg	a1
 	neg	a2
-jgytno_flip
+uzifno_flip
 	add	a1,a0
 	move	a0,*a13(SP_OBJ_XPOS),L
 	move	a2,*a13(SP_OBJ_XVEL),L
@@ -1491,23 +1607,25 @@ jgytno_flip
 	move	a4,a0
 	callr	sp_change_anim
 
-jgytlp
+uziflp
 
 
 
 	callr	sp_velocity_add
 
+;	callr	sp_update_pos
+;sp_update_pos
 
 	move	*a13(SP_OBJ),a8,L
 
 	move	*a13(SP_OBJ_ZPOS),a0,L
 	ori	[01000h,0],a0
 	move	*a13(SP_INRING),a14
-	jrz	jgytinring
+	jrz	uzifinring
 	cmpi	[015ach,0],a0
-	jrgt	jgytinring
+	jrgt	uzifinring
 	subi	[01e5h,0],a0		;below mat
-jgytinring
+uzifinring
 	move	a0,*a8(OZVAL),L
 
 	move	*a13(SP_OBJ_XPOS),*a8(OXVAL),L	;object
@@ -1533,7 +1651,7 @@ jgytinring
 	callr	sp_animate
 
 	move	*a13(SP_DIE),a0
-	jrnz	jgytdie
+	jrnz	uzifdie
 
 	move	@WORLDTLX+16,a0		;world x int
 	addi	200,a0			;center of screen
@@ -1541,18 +1659,23 @@ jgytinring
 	sub	a1,a0
 	abs	a0
 	cmpi	256,a0	;off screen by 56 pixels
-	jrlt	jgytlp
+	jrlt	uziflp
 
 	move	a13,a0
 	callr	delete_special_objlist
-jgytdie
+uzifdie
 
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
 
+;	move	*a13(SP_SHADOW_OBJ),a0,L
+;	calla	DELOBJ
 
 	DIE
 
+*****************************************************************************
+* Yoko salt toss
+*
  SUBR	yok_salt_spray
  
 	movk	2,a0
@@ -1568,6 +1691,7 @@ jgytdie
 
 	move	*a13(SP_OBJ),a8,L
 
+;Salt
 	movi	[36h,0],a1
 	movi	[7,0h],a2		;x-vel
 	movi	[5bh,0],a3
@@ -1577,7 +1701,7 @@ jgytdie
 	move	*a11(OBJ_XPOS),a0,L
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	nntcno_flip
+	jrz	zedpno_flip
 
 	move	*a13(SP_OBJCONTROL),a14
 	ori	M_FLIPH,a14
@@ -1585,7 +1709,7 @@ jgytdie
 
 	neg	a1
 	neg	a2
-nntcno_flip
+zedpno_flip
 	add	a1,a0
 	move	a0,*a13(SP_OBJ_XPOS),L
 	move	a2,*a13(SP_OBJ_XVEL),L
@@ -1612,20 +1736,22 @@ nntcno_flip
 
 	move	a4,a0
 	callr	sp_change_anim
-nntclp
+zedplp
 	callr	sp_velocity_add
 
+;	callr	sp_update_pos
+;sp_update_pos
 
 	move	*a13(SP_OBJ),a8,L
 
 	move	*a13(SP_OBJ_ZPOS),a0,L
 	ori	[01000h,0],a0
 	move	*a13(SP_INRING),a14
-	jrz	nntcinring
+	jrz	zedpinring
 	cmpi	[015ach,0],a0
-	jrgt	nntcinring
+	jrgt	zedpinring
 	subi	[01e5h,0],a0		;below mat
-nntcinring
+zedpinring
 	move	a0,*a8(OZVAL),L
 
 	move	*a13(SP_OBJ_XPOS),*a8(OXVAL),L	;object
@@ -1651,7 +1777,7 @@ nntcinring
 	callr	sp_animate
 
 	move	*a13(SP_DIE),a0
-	jrnz	nntcdie
+	jrnz	zedpdie
 
 	move	@WORLDTLX+16,a0		;world x int
 	addi	200,a0			;center of screen
@@ -1659,27 +1785,32 @@ nntcinring
 	sub	a1,a0
 	abs	a0
 	cmpi	256,a0	;off screen by 56 pixels
-	jrlt	nntclp
+	jrlt	zedplp
 
-nntcdie
+zedpdie
+;	cmpi	2,a0
+;;Already taken off list?
+;	jrnz	zedpdie2
 	move	a13,a0
 	callr	delete_special_objlist
+;zedpdie2
 
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
 
 	DIE
 
+*****************************************************************************
 
  SUBR	react_bloodnguts_gen
 
 	move	a11,*a13(SP_WRESPROC),L
 
-voaeasdf
+kbezasdf
 	movi	3,a8
-voaeloop
+kbezloop
 	movi	2,a9
-voaeloop2
+kbezloop2
 	CREATE	DEBRIS_PID,react_blood
 	push	a13
 	move	a13,a10
@@ -1701,11 +1832,11 @@ voaeloop2
 
 	pull	a13
 
-	dsj	a9,voaeloop2
+	dsj	a9,kbezloop2
 
 	SLEEPK	2
 
-	dsj	a8,voaeloop
+	dsj	a8,kbezloop
 
 	SLEEP	2*60
 
@@ -1737,6 +1868,16 @@ voaeloop2
 	move	a8,*a13(SP_OBJ),L
 
 
+;	clr	a0				;x pos
+;	clr	a1				;y pos
+;	movi	PINSHAD1,a2			;* image
+;	movi	149,a3				;z pos
+;	movi	DMAWNZ,a4			;DMA flags
+;	clr	a5				;object ID
+;	clr	a6				;x vel
+;	clr	a7				;y vel
+;	calla	BEGINOBJ
+;	move	a8,*a13(SP_SHADOW_OBJ),L
 
 
 	movi	[4,0],a0
@@ -1745,12 +1886,12 @@ voaeloop2
 
 
 	move	a0,*a13(SP_OBJ_XVEL),L
-	jrp	voaeno_xflip
+	jrp	kbezno_xflip
 
 	move	*a13(SP_OBJCONTROL),a0
 	ori	M_FLIPH,a0
 	move	a0,*a13(SP_OBJCONTROL)
-voaeno_xflip
+kbezno_xflip
 
 
 	movi	[2,0],a0
@@ -1775,7 +1916,7 @@ voaeno_xflip
 	movi	60*3,a0
 	move	a0,*a13(SP_LIFESPAN)
 
-voaelp1
+kbezlp1
 	callr	sp_velocity_add
 	callr	sp_update_pos
 
@@ -1805,13 +1946,20 @@ voaelp1
 	movb	*a2(ICTRL+7),*a8(OCTRL+7)	;Write 5 z comp bits + bits pp
 
 
+;;	callr	sp_animate
 
+;	move	*a13(SP_LIFESPAN),a0
+;	dec	a0
+;	jrz	kbezdie
+;	move	a0,*a13(SP_LIFESPAN)
 
+;	move	*a13(SP_DIE),a0
+;	jrz	kbezlp1
 
 	move	*a13(SP_OBJ_YPOS),a1,L
 	move	*a13(SP_GROUND_Y),a14,L
 	cmp	a1,a14
-	jrle	voaelp1
+	jrle	kbezlp1
 
 	move	a14,*a13(SP_OBJ_YPOS),L
 
@@ -1819,22 +1967,26 @@ voaelp1
 	calla	sp_change_anim
 	callr	sp_update_pos
 
-voaelp2
+kbezlp2
+;	callr	sp_update_pos
 
 	SLEEPK	2
 
 	callr	sp_animate
 
 	move	*a13(SP_DIE),a0
-	jrz	voaelp2
+	jrz	kbezlp2
 
-voaedie
+kbezdie
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
 
+;	move	*a13(SP_SHADOW_OBJ),a0,L
+;	calla	DELOBJ
 
 	DIE
 
+*****************************************************************************
 
  SUBR	special_hit
 
@@ -1847,7 +1999,7 @@ voaedie
 	callr	delete_special_objlist
 	move	*a13(SP_ID),a14
 	sll	5,a14
-	addi	prxqsplat_tbl,a14
+	addi	oracsplat_tbl,a14
 	move	*a14,a0,L
 	callr	sp_change_anim
 
@@ -1857,20 +2009,21 @@ voaedie
 	callr	delete_special_objlist
 	move	*a13(SP_ID),a14
 	sll	5,a14
-	addi	prxqsplat_tbl,a14
+	addi	oracsplat_tbl,a14
 	move	*a14,a0,L
 	callr	sp_change_anim
 
 	PULL	a13
 	rets
 
-prxqsplat_tbl
+oracsplat_tbl
 	.long	spiritsplat_anim
 	.long	reapersplat_anim
 	.long	saltsplat_anim
 
 
 
+*****************************************************************************
 
 sp_create_obj
 
@@ -1889,6 +2042,7 @@ sp_create_obj
 
 	rets
 
+*****************************************************************************
 
 sp_create_shadow
 
@@ -1905,6 +2059,7 @@ sp_create_shadow
 
 	rets
 
+*****************************************************************************
 
 sp_velocity_add
 
@@ -1928,27 +2083,29 @@ sp_velocity_add
 	rets
 
 
+*****************************************************************************
 
 sp_standard_bounce
 
 	move	*a13(SP_OBJ_YVEL),a0,L
-	jrp	nhijok
+	jrp	axpook
 
 	move	*a13(SP_OBJ_YPOS),a1,L
 	move	*a13(SP_GROUND_Y),a14,L
 
 	cmp	a1,a14
-	jrle	nhijok
+	jrle	axpook
 
 	move	a14,*a13(SP_OBJ_YPOS),L
 
 	sra	1,a0
 	neg	a0
 	move	a0,*a13(SP_OBJ_YVEL),L
-nhijok
+axpook
 	rets
 
 
+*****************************************************************************
 
 sp_update_pos
 
@@ -1958,11 +2115,11 @@ sp_update_pos
 	move	*a13(SP_OBJ_ZPOS),a0,L
 	ori	[01000h,0],a0
 	move	*a13(SP_INRING),a14
-	jrz	xqviinring
+	jrz	pmrninring
 	cmpi	[015ach,0],a0
-	jrgt	xqviinring
+	jrgt	pmrninring
 	subi	[01e5h,0],a0		;below mat
-xqviinring
+pmrninring
 	move	a0,*a8(OZVAL),L
 	move	a0,*a9(OZVAL),L
 
@@ -2009,11 +2166,11 @@ sp_update_pos_single
 	move	*a13(SP_OBJ_ZPOS),a0,L
 	ori	[01000h,0],a0
 	move	*a13(SP_INRING),a14
-	jrz	xqviinring2
+	jrz	pmrninring2
 	cmpi	[015ach,0],a0
-	jrgt	xqviinring2
+	jrgt	pmrninring2
 	subi	[01e5h,0],a0		;below mat
-xqviinring2
+pmrninring2
 	move	a0,*a8(OZVAL),L
 
 	move	*a13(SP_OBJ_XPOS),*a8(OXVAL),L	;object
@@ -2034,6 +2191,7 @@ xqviinring2
 
 	rets
 
+*****************************************************************************
 
 
  SUBR	sp_change_anim
@@ -2060,7 +2218,7 @@ xqviinring2
 next_command
 	move	*a13(SP_ANIPC),a4,L
 	move	*a4+,a0
-	jrn	fjtscommand
+	jrn	rhetcommand
 
 	move	a0,*a13(SP_ANICNT)
 	move	*a4+,a2,L
@@ -2071,13 +2229,14 @@ next_command
 	move	a2,*a8(OIMG),L		;new image
 	move	*a2(ICMAP),a0,L		;Get *palette
 	cmp	a0,a1
-	jreq	fjtsno_change
+	jreq	rhetno_change
 
+;do this only if palette has changed!!!
 	move	*a2(ICMAP),a0,L		;Get *palette
 	calla	pal_getf
 	move	a0,*a8(OPAL),L		;Set palette & constant
 
-fjtsno_change
+rhetno_change
 	move	*a2(0),*a8(OSIZE),L
 	move	*a2(ISAG),*a8(OSAG),L
 
@@ -2086,35 +2245,38 @@ fjtsno_change
 
 	movb	*a2(ICTRL+7),*a8(OCTRL+7)	;Write 5 z comp bits + bits pp
 
+;	setf	6,0,0
+;	move	a7,*a8(OCTRL)			;Write 6 low bits
+;	setf	16,1,0
 
 	move	a4,*a13(SP_ANIPC),L
 
 _exit
 	rets
 
-fjtscommand
+rhetcommand
 	andi	0ffh,a0
 
 	;TEMP!
 	.if DEBUG
 	TEST	a0
-	jrn	fjtserrlo
+	jrn	rheterrlo
 	cmpi	14,a0
-	jrgt	fjtserrhi
-	jruc	fjtsok0
-fjtserrlo	LOCKUP
+	jrgt	rheterrhi
+	jruc	rhetok0
+rheterrlo	LOCKUP
 	nop
-fjtserrhi	LOCKUP
+rheterrhi	LOCKUP
 	nop
-fjtsok0	.endif
+rhetok0	.endif
 	;!PMET
 
 	X32	a0
-	addi	fjtsani_commands,a0
+	addi	rhetani_commands,a0
 	move	*a0,a0,L
 	jump	a0
 
-fjtsani_commands
+rhetani_commands
 	.long	_asp_zip	;0
 	.long	_asp_end	;1
 	.long	_asp_die	;2
@@ -2131,32 +2293,38 @@ fjtsani_commands
 	.long	_asp_waithitgnd	;13
 	.long	_asp_set_grav	;14
 
+********
 _asp_zip	;0
 
 	move	a4,*a13(SP_ANIPC),L
 	jruc	next_command
 
+********
 _asp_end	;1
 
 	move	a4,*a13(SP_ANIPC),L
 	jruc	next_command
 
+********
 _asp_die	;2
 
 	movk	2,a0
 	move	a0,*a13(SP_DIE)
 	rets
 
+********
 _asp_repeat	;3
 
 	move	*a13(SP_ANIBASE),*a13(SP_ANIPC),L
 	jruc	next_command
 
+********
 _asp_goto	;4
 
 	move	*a4(0),*a13(SP_ANIPC),L
 	jruc	next_command
 
+********
 _asp_collbox	;5
 
 	move	a4,a14
@@ -2174,6 +2342,7 @@ _asp_collbox	;5
 
 	jruc	next_command
 
+********
 _asp_zerovels	;6
 
 	clr	a0
@@ -2184,6 +2353,7 @@ _asp_zerovels	;6
 	move	a4,*a13(SP_ANIPC),L
 	jruc	next_command
 
+********
 _asp_add_yvel	;7
 
 	move	*a4+,a0,L
@@ -2195,44 +2365,47 @@ _asp_add_yvel	;7
 
 	jruc	next_command
 
+********
 _asp_setword	;8
 
 	STRUCT	0
-	WORD	fjavPDOFF
-	WORD	fjavWORD
-	LABEL	fjavSIZE
+	WORD	avdbPDOFF
+	WORD	avdbWORD
+	LABEL	avdbSIZE
 
 	move	a4,a14
-	addi	fjavSIZE,a14
+	addi	avdbSIZE,a14
 	move	a14,*a13(SP_ANIPC),L
 
-	move	*a4(fjavPDOFF),a0
+	move	*a4(avdbPDOFF),a0
 	add	a13,a0
-	move	*a4(fjavWORD),a1
+	move	*a4(avdbWORD),a1
 	move	a1,*a0
 
 	jruc	next_command
 
 
+********
 _asp_setlong	;9
 
 	STRUCT	0
-	WORD	hcyvPDOFF
-	LONG	hcyvLONG
-	LABEL	hcyvSIZE
+	WORD	fkxlPDOFF
+	LONG	fkxlLONG
+	LABEL	fkxlSIZE
 
 	move	a4,a14
-	addi	hcyvSIZE,a14
+	addi	fkxlSIZE,a14
 	move	a14,*a13(SP_ANIPC),L
 
-	move	*a4(hcyvPDOFF),a0
+	move	*a4(fkxlPDOFF),a0
 	add	a13,a0
-	move	*a4(hcyvLONG),a1,L
+	move	*a4(fkxlLONG),a1,L
 	move	a1,*a0,L
 
 	jruc	next_command
 
 
+********
 _asp_code	;10
 
 	move	*a4+,a0,L
@@ -2240,10 +2413,11 @@ _asp_code	;10
 	call	a0
 	jruc	next_command
 
+********
 _asp_waitnegyvel ;11
 
 	move	*a13(SP_OBJ_YVEL),a0,L
-	jrp	ajorwait
+	jrp	dapqwait
 
 	clr	a0
 	move	a0,*a13(SP_OBJ_YVEL),L
@@ -2251,11 +2425,12 @@ _asp_waitnegyvel ;11
 	move	a4,*a13(SP_ANIPC),L
 	jruc	next_command
 
-ajorwait
+dapqwait
 	movk	1,a0
 	move	a0,*a13(SP_ANICNT)	;# ticks to hold cur frame
 	rets
 
+********
 _asp_zeroyvel	;12
 
 	clr	a0
@@ -2264,26 +2439,28 @@ _asp_zeroyvel	;12
 	move	a4,*a13(SP_ANIPC),L
 	jruc	next_command
 
+********
 _asp_waithitgnd	;13
 
 	move	*a13(SP_OBJ_YVEL),a0,L	;must have down velocity
-	jrp	meylno_gnd
+	jrp	efmkno_gnd
 
 	move	*a13(SP_OBJ_YPOSINT),a0
 	move	*a13(SP_GROUND_Y+10h),a1
 	cmp	a1,a0			;a0-a1
-	jrgt	meylno_gnd
+	jrgt	efmkno_gnd
 
 	sll	16,a1
 	move	a1,*a13(SP_OBJ_YPOS),L
 
 	move	a4,*a13(SP_ANIPC),L
 	jruc	next_command
-meylno_gnd
+efmkno_gnd
 	movk	1,a0
 	move	a0,*a13(SP_ANICNT)
 	rets
 
+********
 _asp_set_grav	;14
 
 	move	*a4+,a0,L
@@ -2293,6 +2470,7 @@ _asp_set_grav	;14
 	jruc	next_command
 
 
+********
 blade_anim
 	WL	3,BLADE01
 	WL	3,BLADE02
@@ -2422,18 +2600,19 @@ turkey_anim
 	.word	ASP_REPEAT
 
 
+*******
 bat_anim
-	WWL	ASP_SETLONG,SP_HITGND_CODE,zuycbat_bounce
+	WWL	ASP_SETLONG,SP_HITGND_CODE,rkvobat_bounce
 	.word	ASP_SETWORD,SP_LIFESPAN,150
-	WL	ASP_CODE,zuycchoose_anim
+	WL	ASP_CODE,rkvochoose_anim
 
 batLR_anim
-	WL	ASP_CODE,zuycfliponx
+	WL	ASP_CODE,rkvofliponx
 	WL	1,BATSD01
 	.word	ASP_WAITHITGND
 	WWL	ASP_SETLONG,SP_GRAVITY,04000h
-	WL	ASP_CODE,zuycset_yvel
-zuycbl1
+	WL	ASP_CODE,rkvoset_yvel
+rkvobl1
 	WL	2,BATSD01
 	WL	7,BATSD02
 	WL	2,BATSD03
@@ -2441,18 +2620,18 @@ zuycbl1
 	WL	2,BATSD05
 	.word	ASP_WAITNEGYVEL
 	WL	ASP_ADD_YVEL,048000h
-	WL	ASP_GOTO,zuycbl1
+	WL	ASP_GOTO,rkvobl1
 
-zuycfliponx
+rkvofliponx
 	move	*a13(SP_OBJ_XVEL),a0,L
-	jrp	zuycnoflip
+	jrp	rkvonoflip
 	move	*a13(SP_OBJCONTROL),a0
 	xori	M_FLIPH,a0
 	move	a0,*a13(SP_OBJCONTROL)
-zuycnoflip
+rkvonoflip
 	rets
 
-zuycchoose_anim
+rkvochoose_anim
 	move	*a13(SP_OBJ_YVEL),a0,L
 	sra	1,a0
 	move	a0,*a13(SP_OBJ_YVEL),L
@@ -2460,12 +2639,12 @@ zuycchoose_anim
 	move	*a13(SP_OBJ_XVEL),a0,L
 	abs	a0
 	cmpi	0c000h,a0
-	jrgt	zuycfall_through		;to left/right bat
+	jrgt	rkvofall_through		;to left/right bat
 
 	movi	batU_anim,a0
 	move	a0,*a13(SP_ANIPC),L
 
-zuycfall_through
+rkvofall_through
 	rets
 
 
@@ -2475,8 +2654,8 @@ batU_anim
 	WL	1,BATBK01
 	.word	ASP_WAITHITGND
 	WWL	ASP_SETLONG,SP_GRAVITY,04000h
-	WL	ASP_CODE,zuycset_yvel
-zuycbl2
+	WL	ASP_CODE,rkvoset_yvel
+rkvobl2
 	WL	2,BATBK01
 	WL	7,BATBK02
 	WL	2,BATBK03
@@ -2484,9 +2663,9 @@ zuycbl2
 	WL	2,BATBK05
 	.word	ASP_WAITNEGYVEL
 	WL	ASP_ADD_YVEL,048000h
-	WL	ASP_GOTO,zuycbl2
+	WL	ASP_GOTO,rkvobl2
 
-zuycset_yvel
+rkvoset_yvel
 	movi	4000h,a0
 	calla	RNDRNGS
 	addi	048000h,a0
@@ -2495,26 +2674,27 @@ zuycset_yvel
 	rets
 
 
-zuycbat_bounce
+rkvobat_bounce
 	move	*a13(SP_OBJ_YVEL),a0,L
-	jrp	zuycok
+	jrp	rkvook
 
 	move	*a13(SP_OBJ_YPOS),a1,L
 	move	*a13(SP_GROUND_Y),a14,L
 
 	cmp	a1,a14
-	jrle	zuycok
+	jrle	rkvook
 
 	move	a14,*a13(SP_OBJ_YPOS),L
 
 	clr	a0
 	move	a0,*a13(SP_OBJ_YVEL),L
-zuycok
+rkvook
 
 	rets
 
 
 
+*******
 skull_anim
 	WL	3,SKULL01
 	WL	3,SKULL02
@@ -2550,7 +2730,7 @@ bone_anim
 	.word	ASP_REPEAT
 
 bone2_anim
-	WL	ASP_CODE,ankschoose_anim
+	WL	ASP_CODE,sexpchoose_anim
 
 boneR_anim
 	WL	2,BONEB15
@@ -2570,14 +2750,14 @@ boneR_anim
 	WL	2,BONEB01
 	.word	ASP_REPEAT
 
-ankschoose_anim
+sexpchoose_anim
 	move	*a13(SP_OBJ_XVEL),a0,L
-	jrp	anksfall_through
+	jrp	sexpfall_through
 
 	movi	boneL_anim,a0
 	move	a0,*a13(SP_ANIPC),L
 
-anksfall_through
+sexpfall_through
 	rets
 
 boneL_anim
@@ -2598,6 +2778,7 @@ boneL_anim
 	WL	2,BONEB15
 	.word	ASP_REPEAT
 
+*******
 
 heart_anim
 	WL	3,HART01
@@ -2695,7 +2876,7 @@ flame_splat_anim
 
 
 
-dqvpmisc_anims
+jrklmisc_anims
 	.long	ball_anim
 	.long	flame_anim
 	.long	fireball_anim
@@ -2744,37 +2925,38 @@ flame_anim
 fireball_anim
 
 	.word	ASP_COLLBOX,-10,20,-8,16,-10,20	;xoff,width,yoff,height,zoff,depth
-dqvplp
+jrkllp
 	WL	4,FIREBALL1
 	WL	4,FIREBALL2
 	WL	4,FIREBALL3
 	WL	4,FIREBALL4
 	WL	4,FIREBALL5
 	WL	4,FIREBALL6
-	WL	ASP_GOTO,dqvplp
+	WL	ASP_GOTO,jrkllp
 
 spirit_anim
 
 	.word	ASP_COLLBOX,0,10,-8,16,-10,20	;xoff,width,yoff,height,zoff,depth
-dqvplp2
+jrkllp2
 	WL	3,GHOST01
 	WL	3,GHOST02
 	WL	3,GHOST03
 	WL	3,GHOST04
 	WL	3,GHOST05
-	WL	ASP_GOTO,dqvplp2
+	WL	ASP_GOTO,jrkllp2
 
 
 salt_grow
 
 	.word	ASP_COLLBOX,0,10,-8,16,-1000,20	;xoff,width,yoff,height,zoff,depth
 	WL	1,SALT01
-	WL	ASP_CODE,dqvpset_xv
+	WL	ASP_CODE,jrklset_xv
 salt_anim
 	.word	ASP_COLLBOX,0,10,-8,16,-40,80	;xoff,width,yoff,height,zoff,depth
 	WL	20,SALT01
 	.word	ASP_ZEROVELS
 	WL	ASP_SET_GRAV,0h
+;Turn collisions off
 	.word	ASP_COLLBOX,0,10,-8,16,-1000,20	;xoff,width,yoff,height,zoff,depth
 	WL	4,SALT02
 	WL	4,SALT03
@@ -2796,12 +2978,12 @@ reaper_grow
 	WL	1,RPR03
 	WL	1,RPR04
 	WL	1,RPR05
-	WL	ASP_CODE,dqvpset_xv
+	WL	ASP_CODE,jrklset_xv
 reaper_anim
 	WL	3,REPRFL01
 	WL	3,REPRFL02
 	.word	ASP_COLLBOX,0,10,-8,16,-10,20	;xoff,width,yoff,height,zoff,depth
-dqvplp3
+jrkllp3
 	WL	3,REPRFL03
 	WL	3,REPRFL04
 	WL	3,REPRFL05
@@ -2810,14 +2992,14 @@ dqvplp3
 	WL	3,REPRFL08
 	WL	3,REPRFL01
 	WL	3,REPRFL02
-	WL	ASP_GOTO,dqvplp3
-dqvpset_xv
+	WL	ASP_GOTO,jrkllp3
+jrklset_xv
 	movi	[7,0],a0		;x-vel
 	move	*a13(SP_OBJCONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	dqvpno_flip
+	jrz	jrklno_flip
 	neg	a0
-dqvpno_flip
+jrklno_flip
 	move	a0,*a13(SP_OBJ_XVEL),L
 	rets
 
@@ -2866,15 +3048,19 @@ dqvpno_flip
 
  SUBR	saltsplat_anim
 
+;	.word	ASP_ZEROVELS
 	WL	ASP_SET_GRAV,0h
+;Turn collisions off
 	.word	ASP_COLLBOX,0,10,-8,16,-1000,20	;xoff,width,yoff,height,zoff,depth
 	WL	4,SALT02
 	WL	4,SALT03
 	WL	2,SALT04
-	WL	ASP_CODE,dqvpadjust_vels
+	WL	ASP_CODE,jrkladjust_vels
+;	.word	ASP_ZEROVELS
+;	WL	ASP_ADD_YVEL,-20000h
 	WL	2,SALT04
 	WL	3,SALT05
-	WL	ASP_CODE,dqvpadjust_vels
+	WL	ASP_CODE,jrkladjust_vels
 	WL	ASP_ADD_YVEL,-20000h
 	WL	3,SALT06
 	WL	3,SALT07
@@ -2884,7 +3070,7 @@ dqvpno_flip
 	WL	3,SALT09
 	.word	ASP_DIE
 
-dqvpadjust_vels
+jrkladjust_vels
 	move	*a13(SP_OBJ_XVEL),a0,L
 	sra	1,a0
 	move	a0,*a13(SP_OBJ_XVEL),L
@@ -2895,18 +3081,20 @@ dqvpadjust_vels
 	rets
 
 
+********
 
 pie_anim
 
 	.word	ASP_COLLBOX,-10,20,-8,16,-10,20	;xoff,width,yoff,height,zoff,depth
-gneilp
+colplp
+;;;	WL	99,PIE03
 
 	WL	4,BGBAT01
 	WL	4,BGBAT02
 	WL	4,BGBAT03
 	WL	4,BGBAT04
 	WL	4,BGBAT05
-	WL	ASP_GOTO,gneilp
+	WL	ASP_GOTO,colplp
 
 
  SUBR	piesplat_anim
@@ -2918,6 +3106,7 @@ gneilp
 	WL	4,PIE08
 	.word	ASP_DIE
 
+********
 
 pin_animC1
 	WL	1,PIN15
@@ -3028,6 +3217,15 @@ pin_animA3
 	.word	ASP_REPEAT
 
 
+*****************************************************************************
+*
+* args:
+*	a0 = X-VEL (LONG)
+*	a1 = Y-VEL (LONG)
+*
+* ret:
+*	a0 = angle 0=0d(U) 9=45d(UR) 18=90d(R) 27=135d(DR) 36=180d(D)
+*
 
  SUBR	calc_veldir
 
@@ -3036,46 +3234,59 @@ pin_animA3
 	move	a1,a14
 	abs	a14
 	or	a0,a14
-	jrz	hvgcdone
+	jrz	atnjdone
 
-	movi	hvgcposx_posy,a2
+	movi	atnjposx_posy,a2
 
 	move	a1,a1		;y-vel
-	jrp	hvgcpos_yvel
+	jrp	atnjpos_yvel
 
-	movi	hvgcposx_negy,a2
+	movi	atnjposx_negy,a2
 
-hvgcpos_yvel
+atnjpos_yvel
 	abs	a1
 
 	move	a14,a3		;x+y vel < 8 ?
 	srl	16+3,a3
-	jrz	hvgcnot_max
+	jrz	atnjnot_max
 
-hvgcovr
+atnjovr
 	srl	1,a0
 	srl	1,a1
 	srl	1,a3
-	jrnz	hvgcovr		;< 8 now?
-	jruc	hvgcrange_ok
+	jrnz	atnjovr		;< 8 now?
+	jruc	atnjrange_ok
 
-hvgcnot_max
+atnjnot_max
 	btst	18,a14		;bit 2 of int set (=4) ?
-	jrnz	hvgcrange_ok
+	jrnz	atnjrange_ok
 
-hvgcundr
+atnjundr
 	sll	1,a0
 	sll	1,a1
 	sll	1,a14
 	btst	18,a14		;bit 2 of int set (=4) ?
-	jrz	hvgcundr
+	jrz	atnjundr
 
 
-hvgcrange_ok
+atnjrange_ok
+;;	addi	08000h,a0	;round up
 	srl	16,a0	;x
 
+;;	addi	08000h,a1	;round up
 	srl	16,a1	;y
 
+;atnjagain
+;	cmpi	8,a0		;do this before losing fractional
+;	jrge	atnjtohi
+;	cmpi	8,a1
+;	jrlt	atnjok1
+;
+;atnjtohi
+;	srl	1,a0
+;	srl	1,a1
+;	jruc	atnjagain
+;atnjok1
 
 	X8	a1	;y*8
 	add	a1,a0	;+x
@@ -3083,10 +3294,11 @@ hvgcrange_ok
 	add	a2,a0
 	move	*a0,a0
 
-hvgcdone
+atnjdone
 	rets
 
-hvgcposx_posy
+atnjposx_posy
+;X		0  1  2  3  4  5  6  7
 
 	.word	18,18,18,18,18,18,18,18	;0
 
@@ -3105,7 +3317,8 @@ hvgcposx_posy
 	.word	00,02,03,05,06,07,08,09	;7	Y
 
 
-hvgcposx_negy
+atnjposx_negy
+;X		0  1  2  3  4  5  6  7
 
 	.word	18,18,18,18,18,18,18,18	; 0
 
@@ -3124,6 +3337,7 @@ hvgcposx_negy
 	.word	36,34,33,31,30,29,28,27	;-7	Y
 
 
+*****************************************************************************
 
 flame_table_A
 
@@ -3166,6 +3380,7 @@ flame_table_A
 	.long	BLOOD11		;35	(175d)
 	.long	BLOOD11		;36	(180d DOWN)
 
+*****************************************************************************
 
 	STRUCT	0
 
@@ -3192,20 +3407,22 @@ flame_table_A
 
 
 	STRUCTPD
-	WORD	usnjANIM
+	WORD	chnfANIM
 
+; a8 = * arguments
+; a11 = * wrestler proc
 
  SUBR	react_debris
 
 
 	move	*a8(0),a0		;%chance of generating debris
 	calla	RNDPER
-	jrls	usnjdie
+	jrls	chnfdie
 
 	;if there's too much debris already, don't do anything.
 	move	@debris_count,a14
 	cmpi	DEBRIS_MAX,a14
-	jrge	usnjdie
+	jrge	chnfdie
 
 	;increment global debris count
 	move	@debris_count,a14
@@ -3229,15 +3446,15 @@ NO_SOUND_AT_ALL
 
 	move	*a8(010h),a10		;table index
 	X32	a10
-	addi	usnjdebris_table,a10
+	addi	chnfdebris_table,a10
 	move	*a10,a10,L
 
 	addi	20h,a8			;* x,y,z off
 
 	move	*a10(DB_LOOP),a9	;loop count
-usnjlp1
+chnflp1
 	move	*a10(DB_COUNT),a0	;# per loop
-usnjlp2
+chnflp2
 
 	PUSH	a0
 	movi	7,a0
@@ -3246,43 +3463,43 @@ usnjlp2
 
 	move	*a11(WRESTLERNUM),a14
 	cmpi	2,a14
-	jrnz	usnjnot_und
+	jrnz	chnfnot_und
 	move	*a11(ANIBASE),a1,L
 	.ref	und_4_pin2_anim
 	cmpi	und_4_pin2_anim,a1
-	jrnz	usnjnot_und
+	jrnz	chnfnot_und
 	mmtm	sp,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a14
 	movi	0cfh,a0			;bat sound
 	calla	triple_sound
 	mmfm	sp,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a14
 	movi	8*32,a0
 
-usnjnot_und
+chnfnot_und
 	X32	a14
 	addi	debris_anims,a14
 	move	*a14,a14,L
 	add	a14,a0
-	move	*a0(0),*a13(usnjANIM),L
+	move	*a0(0),*a13(chnfANIM),L
 
 	CREATE	DEBRIS_PID,react_debris2
 
-	move	*a13(usnjANIM),*a0(SP_ANIMPTR),L	;&anim
+	move	*a13(chnfANIM),*a0(SP_ANIMPTR),L	;&anim
 	PULL	a0
-	dsj	a0,usnjlp2
+	dsj	a0,chnflp2
 
 	move	*a10(DB_SLEEP),a0	;sleep cnt
-	jrz	usnjskp
+	jrz	chnfskp
 	calla	PRCSLP
-usnjskp
-	dsj	a9,usnjlp1
+chnfskp
+	dsj	a9,chnflp1
 
-usnjexit
+chnfexit
 	;decrement global debris count
 	move	@debris_count,a14
 	dec	a14
 	move	a14,@debris_count
 
-usnjdie	DIE
+chnfdie	DIE
 
 WHICH_DEBRIS_SOUND
 	.long	BRET_DEBRIS
@@ -3295,6 +3512,8 @@ WHICH_DEBRIS_SOUND
 	.long	0
 	.long	LEX_DEBRIS
 
+;BRET_DEBRIS
+;	.WORD	0
 YOKO_DEBRIS
 	.WORD	3,0d9h,0dah,0dbh,0dch
 BRET_DEBRIS
@@ -3310,18 +3529,18 @@ LEX_DEBRIS
 RAZOR_DEBRIS
 	.WORD	1,0cdh,0c6h
 
-usnjdebris_table
-	.long	usnjdb0
-	.long	usnjdb1
-	.long	usnjdb2
-	.long	usnjdb3
-	.long	usnjdb4
-	.long	usnjdb5
-	.long	usnjdb6
-	.long	usnjdb7
+chnfdebris_table
+	.long	chnfdb0
+	.long	chnfdb1
+	.long	chnfdb2
+	.long	chnfdb3
+	.long	chnfdb4
+	.long	chnfdb5
+	.long	chnfdb6
+	.long	chnfdb7
 
 
-usnjdb0	;standing - hit to body 1
+chnfdb0	;standing - hit to body 1
 	.word	3,1,2				;loop count, # per loop, sleep cnt
 	.word	0,20,0				;random +/- x,y,z pos offs
 	.long	-020000h,050000h, 000000h	;initial x,y,z vel
@@ -3329,7 +3548,7 @@ usnjdb0	;standing - hit to body 1
 	.long	GRAVITY				;gravity value
 	.word	60,5				;lifespan, +/- rand
 
-usnjdb1	;onground - hit to body 1
+chnfdb1	;onground - hit to body 1
 	.word	2,2,4				;loop count, # per loop, sleep cnt
 	.word	20,0,0				;random +/- x,y,z pos offs
 	.long	000000h, 080000h, 000000h	;initial x,y,z vel
@@ -3337,7 +3556,7 @@ usnjdb1	;onground - hit to body 1
 	.long	GRAVITY				;gravity value
 	.word	70,5				;lifespan, +/- rand
 
-usnjdb2	;standing - hit to head 1
+chnfdb2	;standing - hit to head 1
 	.word	2,1,3				;loop count, # per loop, sleep cnt
 	.word	0,5,0				;random +/- x,y,z pos offs
 	.long	-030000h,050000h, 000000h	;initial x,y,z vel
@@ -3345,7 +3564,7 @@ usnjdb2	;standing - hit to head 1
 	.long	GRAVITY				;gravity value
 	.word	60,5				;lifespan, +/- rand
 
-usnjdb3	;standing - hit to head 2
+chnfdb3	;standing - hit to head 2
 	.word	1,1,0				;loop count, # per loop, sleep cnt
 	.word	0,5,0				;random +/- x,y,z pos offs
 	.long	-030000h,050000h, 000000h	;initial x,y,z vel
@@ -3353,7 +3572,7 @@ usnjdb3	;standing - hit to head 2
 	.long	GRAVITY				;gravity value
 	.word	60,5				;lifespan, +/- rand
 
-usnjdb4	;Doink earslap squish
+chnfdb4	;Doink earslap squish
 	.word	2,3,2				;loop count, # per loop, sleep cnt
 	.word	20,0,0				;random +/- x,y,z pos offs
 	.long	000000h, 080000h, 000000h	;initial x,y,z vel
@@ -3361,7 +3580,7 @@ usnjdb4	;Doink earslap squish
 	.long	GRAVITY				;gravity value
 	.word	70,5				;lifespan, +/- rand
 
-usnjdb5	;BAM POGO head slammed into ground
+chnfdb5	;BAM POGO head slammed into ground
 	.word	2,2,3				;loop count, # per loop, sleep cnt
 	.word	10,10,0				;random +/- x,y,z pos offs
 	.long	000000h, 080000h, 000000h	;initial x,y,z vel
@@ -3369,7 +3588,7 @@ usnjdb5	;BAM POGO head slammed into ground
 	.long	GRAVITY				;gravity value
 	.word	70,5				;lifespan, +/- rand
 
-usnjdb6	;BAM BAM fire head butt - Comes from Bam Bam attack sequence!
+chnfdb6	;BAM BAM fire head butt - Comes from Bam Bam attack sequence!
 	.word	2,1,3				;loop count, # per loop, sleep cnt
 	.word	0,5,0				;random +/- x,y,z pos offs
 	.long	-030000h,050000h, 000000h	;initial x,y,z vel
@@ -3377,7 +3596,7 @@ usnjdb6	;BAM BAM fire head butt - Comes from Bam Bam attack sequence!
 	.long	GRAVITY				;gravity value
 	.word	60,5				;lifespan, +/- rand
 
-usnjdb7	;onground - Taker pins me with hand
+chnfdb7	;onground - Taker pins me with hand
 	.word	8,2,4				;loop count, # per loop, sleep cnt
 	.word	15,0,0				;random +/- x,y,z pos offs
 	.long	000000h, 040000h, 000000h	;initial x,y,z vel
@@ -3386,13 +3605,17 @@ usnjdb7	;onground - Taker pins me with hand
 	.word	70,5				;lifespan, +/- rand
 
 
+*****************************************************************************
+; a8 = * x,y,z off
+; a10 = * debris table
+; a11 = * wrestler proc
 
  SUBR	react_debris2
 
 	;if there's too much debris already, don't do anything.
 	move	@debris_count,a14
 	cmpi	DEBRIS_MAX,a14
-	jrge	rxefdie
+	jrge	mvtsdie
 
 	;increment global debris count
 	move	@debris_count,a14
@@ -3403,16 +3626,16 @@ usnjdb7	;onground - Taker pins me with hand
 	move	*a11(PLYR_SIDE),*a13(SP_PLYR_SIDE)
 
 	move	*a10(DB_RXOFF),a0		;+/- xoff
-	jrz	rxefskp0
+	jrz	mvtsskp0
 	calla	RNDRNGS
-rxefskp0	move	*a8,a1				;xoff
+mvtsskp0	move	*a8,a1				;xoff
 	add	a0,a1
 
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	rxefno_flip1
+	jrz	mvtsno_flip1
 	neg	a1
-rxefno_flip1
+mvtsno_flip1
 	move	*a11(OBJ_XPOSINT),a0
 	add	a1,a0
 	sll	16,a0
@@ -3420,9 +3643,9 @@ rxefno_flip1
 
 
 	move	*a10(DB_RYOFF),a0		;+/- yoff
-	jrz	rxefskp1
+	jrz	mvtsskp1
 	calla	RNDRNGS
-rxefskp1	move	*a8(010h),a1			;yoff
+mvtsskp1	move	*a8(010h),a1			;yoff
 	add	a0,a1
 	move	*a11(OBJ_YPOSINT),a0
 	add	a1,a0
@@ -3431,9 +3654,9 @@ rxefskp1	move	*a8(010h),a1			;yoff
 
 
 	move	*a10(DB_RZOFF),a0		;+/- zoff
-	jrz	rxefskp2
+	jrz	mvtsskp2
 	calla	RNDRNGS
-rxefskp2	move	*a8(020h),a1			;zoff
+mvtsskp2	move	*a8(020h),a1			;zoff
 	add	a0,a1
 	move	*a11(OBJ_ZPOSINT),a0
 	add	a1,a0
@@ -3461,30 +3684,30 @@ rxefskp2	move	*a8(020h),a1			;zoff
 
 
 	move	*a10(DB_RXVEL),a0,L
-	jrz	rxefskp3
+	jrz	mvtsskp3
 	calla	RNDRNGS
-rxefskp3	move	*a10(DB_XVEL),a1,L
+mvtsskp3	move	*a10(DB_XVEL),a1,L
 	add	a0,a1
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	rxefno_flip2			;flip relative
+	jrz	mvtsno_flip2			;flip relative
 	neg	a1
-rxefno_flip2
+mvtsno_flip2
 	move	a1,*a13(SP_OBJ_XVEL),L
 
 
 	move	*a10(DB_RZVEL),a0,L
-	jrz	rxefskp4
+	jrz	mvtsskp4
 	calla	RNDRNGS
-rxefskp4	move	*a10(DB_ZVEL),a1,L
+mvtsskp4	move	*a10(DB_ZVEL),a1,L
 	add	a0,a1
 	move	a1,*a13(SP_OBJ_ZVEL),L
 
 
 	move	*a10(DB_RYVEL),a0,L
-	jrz	rxefskp5
+	jrz	mvtsskp5
 	calla	RNDRNGS
-rxefskp5	move	*a10(DB_YVEL),a1,L
+mvtsskp5	move	*a10(DB_YVEL),a1,L
 	add	a0,a1
 	move	a1,*a13(SP_OBJ_YVEL),L
 
@@ -3498,16 +3721,16 @@ rxefskp5	move	*a10(DB_YVEL),a1,L
 	move	a0,*a13(SP_DIE)
 
 	move	*a10(DB_RLIFESPAN),a0
-	jrz	rxefskp6
+	jrz	mvtsskp6
 	calla	RNDRNGS
-rxefskp6	move	*a10(DB_LIFESPAN),a1
+mvtsskp6	move	*a10(DB_LIFESPAN),a1
 	add	a0,a1
 	move	a1,*a13(SP_LIFESPAN)
 
 	move	*a13(SP_ANIMPTR),a0,L	;& anim
 	calla	sp_change_anim
 
-rxeflp
+mvtslp
 	callr	sp_velocity_add
 
 	move	*a13(SP_HITGND_CODE),a0,L
@@ -3520,13 +3743,13 @@ rxeflp
 
 	move	*a13(SP_LIFESPAN),a0
 	dec	a0
-	jrz	rxefdie
+	jrz	mvtsdie
 	move	a0,*a13(SP_LIFESPAN)
 
 	move	*a13(SP_DIE),a0
-	jrz	rxeflp
+	jrz	mvtslp
 
-rxefdie
+mvtsdie
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
 
@@ -3541,7 +3764,7 @@ rxefdie
 	DIE
 
 
-rxefpin_anims
+mvtspin_anims
 	.long	pin_animC1	;0
 	.long	pin_animC2	;1
 	.long	pin_animC2	;2
@@ -3564,17 +3787,18 @@ rxefpin_anims
 
 
 debris_anims
-	.long	rxefbret_debris_anims	;0
-	.long	rxefrazor_debris_anims	;1
-	.long	rxeftaker_debris_anims	;2
-	.long	rxefyoko_debris_anims	;3
-	.long	rxefshawn_debris_anims	;4
-	.long	rxefbam_debris_anims	;5
-	.long	rxefdoink_debris_anims	;6
-	.long	rxefdoink_debris_anims	;7
-	.long	rxeflex_debris_anims	;8
+	.long	mvtsbret_debris_anims	;0
+	.long	mvtsrazor_debris_anims	;1
+	.long	mvtstaker_debris_anims	;2
+	.long	mvtsyoko_debris_anims	;3
+	.long	mvtsshawn_debris_anims	;4
+	.long	mvtsbam_debris_anims	;5
+	.long	mvtsdoink_debris_anims	;6
+	.long	mvtsdoink_debris_anims	;7
+	.long	mvtslex_debris_anims	;8
 
-rxefbret_debris_anims
+***
+mvtsbret_debris_anims
 	.long	heart_anim	;0
 	.long	glasses_anim	;1
 	.long	glasses1_anim	;2
@@ -3583,7 +3807,8 @@ rxefbret_debris_anims
 	.long	heart_anim	;5
 	.long	heart_anim	;6
 	.long	heart_anim	;7
-rxefrazor_debris_anims
+***
+mvtsrazor_debris_anims
 	.long	chain_anim	;0
 	.long	bladeR_anim	;1
 	.long	blade_anim	;2
@@ -3592,7 +3817,8 @@ rxefrazor_debris_anims
 	.long	bladeR_anim	;5
 	.long	blade_anim	;6
 	.long	bladeR_anim	;7
-rxeftaker_debris_anims
+***
+mvtstaker_debris_anims
 	.long	bat_anim	;0
 	.long	bat_anim	;1
 	.long	skull_anim	;2
@@ -3601,8 +3827,10 @@ rxeftaker_debris_anims
 	.long	bat_anim	;5
 	.long	skull_anim	;6
 	.long	bone2_anim	;7
+;Special bats only for a pin
 	.long	bat_anim	;8
-rxefyoko_debris_anims
+***
+mvtsyoko_debris_anims
 	.long	lamb_anim	;0
 	.long	fish1_anim	;1
 	.long	fish2_anim	;2
@@ -3611,7 +3839,8 @@ rxefyoko_debris_anims
 	.long	fish2_anim	;5
 	.long	turkey_anim	;6
 	.long	fish1_anim	;7
-rxefshawn_debris_anims
+***
+mvtsshawn_debris_anims
 	.long	heart_anim	;4
 	.long	heart_anim	;5
 	.long	heart_anim	;6
@@ -3620,7 +3849,8 @@ rxefshawn_debris_anims
 	.long	heart_anim	;7
 	.long	heart_anim	;7
 	.long	heart_anim	;7
-rxefbam_debris_anims
+***
+mvtsbam_debris_anims
 	.long	ex_anima1	;0
 	.long	ex_anima1	;0
 	.long	ex_anima1	;0
@@ -3630,7 +3860,8 @@ rxefbam_debris_anims
 	.long	ex_anima1	;0
 	.long	ex_anima1	;0
 
-rxefdoink_debris_anims
+***
+mvtsdoink_debris_anims
 	.long	pin_animC2	;0
 	.long	pin_animA2	;1
 	.long	pin_animC3	;2
@@ -3639,7 +3870,8 @@ rxefdoink_debris_anims
 	.long	pin_animA2	;5
 	.long	pin_animC3	;6
 	.long	pin_animA3	;7
-rxeflex_debris_anims
+***
+mvtslex_debris_anims
 	.long	dbell_anim	;0
 	.long	star_anim	;1
 	.long	dbell_anim	;2
@@ -3649,61 +3881,64 @@ rxeflex_debris_anims
 	.long	dbell_anim	;6
 	.long	star_anim	;7
 
+*****************************************************************************
 
+; a8 = * arguments
+; a11 = * wrestler proc
 
 
  SUBR	und_tombbits2
 
 	move	@no_debris,a14
-	jrnz	mtepno_bab
+	jrnz	ntrfno_bab
 	move	@reduce_bog,a14
-	jrnz	mtepno_bab
+	jrnz	ntrfno_bab
 
 	movk	4,a9
-mteplp2
-	movi	mteptmb_debris2,a10
-	movi	mtepxyz_off2,a8
+ntrflp2
+	movi	ntrftmb_debris2,a10
+	movi	ntrfxyz_off2,a8
 	CREATE	DEBRIS_PID,react_debris2
 	movi	tombbit_anim,a14
 	move	a14,*a0(SP_ANIMPTR),L	;&anim
 
-	movi	mteptmb_debris2,a10
-	movi	mtepxyz_off2,a8
+	movi	ntrftmb_debris2,a10
+	movi	ntrfxyz_off2,a8
 	CREATE	DEBRIS_PID,react_debris2
 	movi	tombbit_anim,a14
 	move	a14,*a0(SP_ANIMPTR),L	;&anim
 
 	SLEEPK	1
-	dsj	a9,mteplp2
-mtepno_bab
+	dsj	a9,ntrflp2
+ntrfno_bab
 	DIE
 
 
  SUBR	und_tombbits
       
 	move	@no_debris,a14
-	jrnz	mtepno_bab
+	jrnz	ntrfno_bab
 	move	@reduce_bog,a14
-	jrnz	mtepno_bab
+	jrnz	ntrfno_bab
 
 	movk	3,a9
-mteplp
-	movi	mteptmb_debris,a10
-	movi	mtepxyz_off,a8
+ntrflp
+	movi	ntrftmb_debris,a10
+	movi	ntrfxyz_off,a8
 	CREATE	DEBRIS_PID,react_debris2
 	movi	tombbit_anim,a14
 	move	a14,*a0(SP_ANIMPTR),L	;&anim
 
 	SLEEPK	1
-	dsj	a9,mteplp
+	dsj	a9,ntrflp
 
 	DIE
 
 
-mtepxyz_off .word	91,97,0
-mtepxyz_off2 .word	58,8,0
+ntrfxyz_off .word	91,97,0
+ntrfxyz_off2 .word	58,8,0
 
-mteptmb_debris
+ntrftmb_debris
 	.word	2,3,2				;loop count, # per loop, sleep cnt
 	.word	20,0,0				;random +/- x,y,z pos offs
 	.long	000000h, 050000h, 000000h	;initial x,y,z vel
@@ -3712,7 +3947,7 @@ mteptmb_debris
 	.word	60,5				;lifespan, +/- rand
 
 
-mteptmb_debris2
+ntrftmb_debris2
 	.word	3,3,1				;loop count, # per loop, sleep cnt
 	.word	20,0,0				;random +/- x,y,z pos offs
 	.long	000000h, 050000h, 000000h	;initial x,y,z vel
@@ -3721,6 +3956,7 @@ mteptmb_debris2
 	.word	30,5				;lifespan, +/- rand
 
 
+*****************************************************************************
 
 BELOW	.EQU	16*2
 NEXT	.EQU	60*2
@@ -3728,256 +3964,275 @@ NEXT	.EQU	60*2
 	.long	0,0,NEXT
 TEXT_LIST
 	;software & design
-	.long	mehkLINESD,0,BELOW
-	.long	mehkLINESD1,0,BELOW
-	.long	mehkLINESD2,0,BELOW
-	.long	mehkLINESD3,0,BELOW
-	.long	mehkLINESD4,0,BELOW
-	.long	mehkLINESD5,0,NEXT
+	.long	ogloLINESD,0,BELOW
+	.long	ogloLINESD1,0,BELOW
+	.long	ogloLINESD2,0,BELOW
+	.long	ogloLINESD3,0,BELOW
+	.long	ogloLINESD4,0,BELOW
+	.long	ogloLINESD5,0,NEXT
 
 	;art & design
-	.long	mehkLINEAD,0,BELOW
-	.long	mehkLINEAD1,0,BELOW
-	.long	mehkLINEAD2,0,BELOW
-	.long	mehkLINEAD3,0,BELOW
-	.long	mehkLINEAD4,0,NEXT
+	.long	ogloLINEAD,0,BELOW
+	.long	ogloLINEAD1,0,BELOW
+	.long	ogloLINEAD2,0,BELOW
+	.long	ogloLINEAD3,0,BELOW
+	.long	ogloLINEAD4,0,NEXT
 
 	;music & sound
-	.long	mehkLINEMS,0,BELOW
-	.long	mehkLINEMS1,0,NEXT
+	.long	ogloLINEMS,0,BELOW
+	.long	ogloLINEMS1,0,NEXT
 
 	;hardware design
-	.long	mehkLINEHD,0,BELOW
-	.long	mehkLINEHD1,0,BELOW
-	.long	mehkLINEHD2,0,BELOW
-	.long	mehkLINEHD3,0,BELOW
-	.long	mehkLINEHD4,0,BELOW
-	.long	mehkLINEHD5,0,NEXT
+	.long	ogloLINEHD,0,BELOW
+	.long	ogloLINEHD1,0,BELOW
+	.long	ogloLINEHD2,0,BELOW
+	.long	ogloLINEHD3,0,BELOW
+	.long	ogloLINEHD4,0,BELOW
+	.long	ogloLINEHD5,0,NEXT
 
 	;art tools
-	.long	mehkLINEAT,0,BELOW
-	.long	mehkLINEAT1,0,BELOW
-	.long	mehkLINEAT2,0,BELOW
-	.long	mehkLINEAT3,0,BELOW
-	.long	mehkLINEAT4,0,NEXT
+	.long	ogloLINEAT,0,BELOW
+	.long	ogloLINEAT1,0,BELOW
+	.long	ogloLINEAT2,0,BELOW
+	.long	ogloLINEAT3,0,BELOW
+	.long	ogloLINEAT4,0,NEXT
 
 	;hardware support
-	.long	mehkLINEHS,0,BELOW
-	.long	mehkLINEHS1,0,BELOW
-	.long	mehkLINEHS2,0,BELOW
-	.long	mehkLINEHS3,0,BELOW
-	.long	mehkLINEHS4,0,NEXT
+	.long	ogloLINEHS,0,BELOW
+	.long	ogloLINEHS1,0,BELOW
+	.long	ogloLINEHS2,0,BELOW
+	.long	ogloLINEHS3,0,BELOW
+	.long	ogloLINEHS4,0,NEXT
 
 	;sound system
-	.long	mehkLINESS,0,BELOW
-	.long	mehkLINESS1,0,BELOW
-	.long	mehkLINESS2,0,NEXT
+	.long	ogloLINESS,0,BELOW
+	.long	ogloLINESS1,0,BELOW
+	.long	ogloLINESS2,0,NEXT
 
 	;game testers
-	.long	mehkLINEGT,0,BELOW
-	.long	mehkLINEGT1,0,BELOW
-	.long	mehkLINEGT2,0,NEXT
+	.long	ogloLINEGT,0,BELOW
+	.long	ogloLINEGT1,0,BELOW
+	.long	ogloLINEGT2,0,NEXT
 
 	;special thanks
-	.long	mehkLINEST,0,BELOW
-	.long	mehkLINEST1,0,BELOW
-	.long	mehkLINEST2,0,BELOW
-	.long	mehkLINEST3,0,BELOW
-	.long	mehkLINEST4,0,BELOW
-	.long	mehkLINEST5,0,BELOW
-	.long	mehkLINEST6,0,BELOW
-	.long	mehkLINEST7,0,BELOW
-	.long	mehkLINEST8,0,BELOW
-	.long	mehkLINEST9,0,BELOW
-	.long	mehkLINEST10,0,NEXT
+	.long	ogloLINEST,0,BELOW
+	.long	ogloLINEST1,0,BELOW
+	.long	ogloLINEST2,0,BELOW
+	.long	ogloLINEST3,0,BELOW
+	.long	ogloLINEST4,0,BELOW
+	.long	ogloLINEST5,0,BELOW
+	.long	ogloLINEST6,0,BELOW
+	.long	ogloLINEST7,0,BELOW
+	.long	ogloLINEST8,0,BELOW
+	.long	ogloLINEST9,0,BELOW
+	.long	ogloLINEST10,0,NEXT
 
 	;more special thanks
-	.long	mehkLINECP,0,BELOW
-	.long	mehkLINECP1,0,BELOW
-	.long	mehkLINECP2,0,BELOW
-	.long	mehkLINECP3,0,BELOW+280
+	.long	ogloLINECP,0,BELOW
+	.long	ogloLINECP1,0,BELOW
+	.long	ogloLINECP2,0,BELOW
+	.long	ogloLINECP3,0,BELOW+280
 
+;	.long	ogloLINECP4,0,BELOW
+;	.long	ogloLINECP5,0,BELOW
+;	.long	ogloLINECP6,0,BELOW
+;	.long	ogloLINECP7,0,BELOW+280
+;	.long	ogloLINECP8,0,BELOW
+;	.long	ogloLINECP9,0,BELOW
+;	.long	ogloLINECP10,0,BELOW+280
 	.long	-1
 
-mehkSETUP_LINE
+ogloSETUP_LINE
 	JAM_STR	osgemd_ascii,10,0,200,-30,RUBYPAL,print_string_C2
 
-mehkLINESD
+ogloLINESD
 	.byte	"SOFTWARE & DESIGN",0,0
 	.even
-mehkLINESD1
+ogloLINESD1
 	.byte	"MARK TURMELL",0,0
 	.even
-mehkLINESD2
+ogloLINESD2
 	.byte	"JASON SKILES",0,0
 	.even
-mehkLINESD3
+ogloLINESD3
 	.byte	"JAMIE RIVETT",0,0
 	.even
-mehkLINESD4
+ogloLINESD4
 	.byte	"JAKE SIMPSON",0,0
 	.even
-mehkLINESD5
+ogloLINESD5
 	.byte	"SHAWN LIPTAK",0,0
 	.even
-mehkLINESD6
+ogloLINESD6
 	.byte	"MIKE LYNCH",0,0
 	.even
 
-mehkLINEAD
+ogloLINEAD
 	.byte	"ART & DESIGN",0,0
 	.even
-mehkLINEAD1
+ogloLINEAD1
 	.byte	"SAL DIVITA",0,0
 	.even
-mehkLINEAD2
+ogloLINEAD2
 	.byte	"JOSH TSUI",0,0
 	.even
-mehkLINEAD3
+ogloLINEAD3
 	.byte	"EUGENE GEER",0,0
 	.even
-mehkLINEAD4
+ogloLINEAD4
 	.byte	"TONY GOSKIE",0,0
 	.even
 
-mehkLINEMS
+ogloLINEMS
 	.byte	"MUSIC & SOUND EFFECTS",0,0
 	.even
-mehkLINEMS1
+ogloLINEMS1
 	.byte	"CHRIS GRANNER",0,0
 	.even
 
-mehkLINEHD
+ogloLINEHD
 	.byte	"HARDWARE DESIGN",0,0
 	.even
-mehkLINEHD1
+ogloLINEHD1
 	.byte	"MARK LOFFREDO",0,0
 	.even
-mehkLINEHD2
+ogloLINEHD2
 	.byte	"CARY MEDNICK",0,0
 	.even
-mehkLINEHD3
+ogloLINEHD3
 	.byte	"STEVE CORRELL",0,0
 	.even
-mehkLINEHD4
+ogloLINEHD4
 	.byte	"JOE KALINOWSKI",0,0
 	.even
-mehkLINEHD5
+ogloLINEHD5
 	.byte	"JOHN LOWES",0,0
 	.even
 
 
-mehkLINEAT
+ogloLINEAT
 	.string	"ARTWORK TOOLS",0,0
 	.even
-mehkLINEAT1
+ogloLINEAT1
 	.string	"WARREN DAVIS",0,0
 	.even
-mehkLINEAT2
+ogloLINEAT2
 	.string "SHAWN LIPTAK",0,0
 	.even
-mehkLINEAT3
+ogloLINEAT3
 	.string "TODD ALLEN",0,0
 	.even
-mehkLINEAT4
+ogloLINEAT4
 	.string	"ALIAS RESEARCH",0,0
 	.even
 
 
-mehkLINEHS
+ogloLINEHS
 	.byte	"HARDWARE SUPPORT",0,0
 	.even
-mehkLINEHS1
+ogloLINEHS1
 	.byte	"PAT COX",0,0
 	.even
-mehkLINEHS2
+ogloLINEHS2
 	.byte	"SHERIDAN OURSLER",0,0
 	.even
-mehkLINEHS3
+ogloLINEHS3
 	.byte	"AL LASKO",0,0
 	.even
-mehkLINEHS4
+ogloLINEHS4
 	.byte	"JEFF PETERS",0,0
 	.even
 
 
-mehkLINESS
+ogloLINESS
 	.byte	"DCS SOUND SYSTEM",0,0
 	.even
-mehkLINESS1
+ogloLINESS1
 	.byte	"MATT BOOTY",0,0
 	.even
-mehkLINESS2
+ogloLINESS2
 	.byte	"ED KEENAN",0,0
 	.even
 
-mehkLINEGT
+ogloLINEGT
 	.byte	"GAME TESTERS",0,0
 	.even
-mehkLINEGT1
+ogloLINEGT1
 	.byte	"EDDIE FERRIER",0,0
 	.even
-mehkLINEGT2
+ogloLINEGT2
 	.byte	"MIKE VINIKOUR",0,0
 	.even
 
-mehkLINEST
+ogloLINEST
 	.byte	"SPECIAL THANKS",0,0
 	.even
-mehkLINEST1
+ogloLINEST1
 	.byte	"JOHN TOBIAS",0,0
 	.even
-mehkLINEST2
+ogloLINEST2
 	.byte	"MARK PENACHO",0,0
 	.even
-mehkLINEST3
+ogloLINEST3
 	.byte	"ED BOON",0,0
 	.even
-mehkLINEST4
+ogloLINEST4
 	.byte	"EUGENE JARVIS",0,0
 	.even
-mehkLINEST5
+ogloLINEST5
 	.byte	"L.E.D.",0,0
 	.even
-mehkLINEST6
+ogloLINEST6
 	.byte	"GEORGE PETRO",0,0
 	.even
-mehkLINEST7
+ogloLINEST7
 	.byte	"JEFF JOHNSON",0,0
 	.even
-mehkLINEST8
+ogloLINEST8
 	.byte	"JOHN NEWCOMER",0,0
 	.even
-mehkLINEST9
+ogloLINEST9
 	.byte	"JON HEY",0,0
 	.even
-mehkLINEST10
+ogloLINEST10
 	.byte	"MIDWAY MANAGEMENT",0,0
 	.even
 
-mehkLINECP
+ogloLINECP
 	.byte	"A SPECIAL THANK YOU",0,0
 	.even
-mehkLINECP1
+ogloLINECP1
 	.BYTE	"CATHY SIMPSON",0,0
 	.EVEN
-mehkLINECP2
+ogloLINECP2
 	.BYTE	"CRISTY TSUI",0,0
 	.EVEN
-mehkLINECP3
+ogloLINECP3
 	.BYTE	"WEI LIN GEER",0,0
 	.EVEN
 
+;ogloLINECP8
+;	.BYTE	"ZIPPER & KASHA",0,0
+;	.EVEN
+;ogloLINECP9
+;	.BYTE	"KRALOR   EMP TASS & EVIL",0,0
+;	.EVEN
+;ogloLINECP10
+;	.BYTE	"AND ALL THE CSERVE GUYS",0,0
+;	.EVEN
 
 
-mehkhstd_mod
+oglohstd_mod
 	.long	slateBMOD
 	.word	0,0
 	.long	0
 
+;oglotitle_mod
+;	.long	LAVAPGBMOD
+;	.word	0,0
 	.long	0
 
-mehkLIST_START	.equ PDATA+20H
+ogloLIST_START	.equ PDATA+20H
 
  SUBR	CREATE_TEXT_LINE
 	JSRP	GENERIC_DISPLAY
@@ -3986,7 +4241,7 @@ mehkLIST_START	.equ PDATA+20H
 	MOVI	TYPTEXT+1,A10
 	CREATE0	ck_octopus2
 
-	MOVI	mehkSETUP_LINE,A2
+	MOVI	ogloSETUP_LINE,A2
 	CALLA	setup_message
 small_loop
 	MOVE	*A8+,A4,L
@@ -4034,6 +4289,7 @@ NO_DELETE_IT
 	RETS
 
 MAKE_TEXT_MOVE
+;	MOVE	@mess_objid,A10
 	CALLR	FIND_ALL_TEXT
 ROTATE_TEXT
 	SLEEP	2
@@ -4048,7 +4304,7 @@ ROTATE_TEXT
 FIND_ALL_TEXT
 	MOVI	OBJLST,A14
 	MOVE	A13,A2
-	ADDI	mehkLIST_START,A2
+	ADDI	ogloLIST_START,A2
 	JRUC	PICK_UP_NEXT
 CHECK_AGAINST_NEXT
 	MOVE	*A14(OID),A1
@@ -4066,7 +4322,7 @@ PICK_UP_NEXT
 
 PUT_IN_SCALE_AND_YPOS
 	MOVE	A13,A2
-	ADDI	mehkLIST_START,A2
+	ADDI	ogloLIST_START,A2
 POS_NEXT_OBJ
 	MOVE	*A2+,A8,L
 	JRZ	REACHED_END_OF_LIST
@@ -4088,6 +4344,12 @@ REACHED_END_OF_LIST
 	RETS
 
 
+;IN
+;A9=ANGLE
+;OUT
+;A1=Y_COOR
+;A3=Y SCALE
+;A4=X SCALE
 
 Y_CENTER	.EQU	070H
 
@@ -4132,6 +4394,12 @@ NO_SCALE_PROBLEM
 
 	RETS
 
+;this sin table is in decimal and goes from sin(0) to sin (89). It has been
+;multiplyed by 256 in order to get an interger figure for each value. To
+;implement, use the angle as an offset into the table and then multiply
+;radius by value gained. Then divide result by 256 (ie rotate right 8 bits)
+;and you have your value. To use as a cosine table use offset as a negative
+;offset (-1) and come in from end of table backwards.O.K.!!!
 SIN_TABLE:
 	.WORD	255,255,255,255,254,254,253,253,252,252
 	.WORD	251,250,249,248,247,246,244,243,242,240
@@ -4155,6 +4423,9 @@ SIN_TABLE:
 	.WORD	255
 
 
+*******************************
+* Look at the buttons, read a sequence table,
+* and set octopus2 flag if sequence successful
 
 
  SUBR	ck_octopus2
@@ -4162,30 +4433,31 @@ SIN_TABLE:
 	clr	a10
 	movi	butn_lst,a9
 
-ewbylp	SLEEPK	1
+xonflp	SLEEPK	1
 
+;	move	@SWITCH,a0
 	move	@_switch_addr,a0,L
 	move	*a0,a0
 	zext	a0
 	cmpi	0ffffH,a0
-	jrnz	ewbytag1
+	jrnz	xonftag1
 	clr	a11
-	jruc	ewbylp
+	jruc	xonflp
 
-ewbytag1	move	a11,a11
-	jrnz	ewbylp
+xonftag1	move	a11,a11
+	jrnz	xonflp
 
 	inc	a11
 
 	move	*a9,a1,W
 	zext	a1
 	cmp	a0,a1
-	jrz	ewbyyes
+	jrz	xonfyes
 	movi	butn_lst,a9
-	jruc	ewbylp
-ewbyyes	addk	16,a9
+	jruc	xonflp
+xonfyes	addk	16,a9
 	move	*a9,a0
-	jrnz	ewbylp
+	jrnz	xonflp
 	movk	1,a0
 	move	a0,@octopus2
 
@@ -4193,6 +4465,7 @@ ewbyyes	addk	16,a9
 
 butn_lst
 
+;Buttons required for 2nd octopus:
 P1_P	.EQU	0FFEFH
 P1_PP	.EQU 	0FFBFH
 P1_B	.EQU	0FFDFH
@@ -4204,52 +4477,84 @@ P2_B	.EQU	0DFFFH
 	.word	P1_P,P1_P,P1_P,P1_PP,P1_PP,P1_B
 	.word	P2_PP,P2_PP,P2_PP,P2_P,P2_P,P2_B,0
 
+******************************************************************************
+*
+* Called every tick by wrestler_main
+*
+* Figure out if we should be getting hurt for being out of the ring.  If
+* we should, administer the damage and, if we die from it, fire off the
+* round end stuff.
+*
+* Old method:  DEC_TIMER is ticks before you start taking hurts.  When you're
+* thrown from the ring, it's set.  Also, when anyone else climbs into the
+* ring, it's reset.  If you're out alone and this is zero, you take hurts
+* on every eighth tick.
+*
+* New method:  RING_TIME holds the number of consecutive ticks you've been
+* inside the ring.  If you're outside, the count is negative.  If you've been
+* outside the ring for xonfout_time ticks and every member of the other team
+* has been inside for xonfout_time, you take hurts.  Note that this includes
+* both live and dead members of the other team.  If someone dies while
+* outside the ring, their RING_TIME is set to 1 and increments from there
+* as though he was inside the ring, so that when you kill one member of
+* a team outside, you don't immediately start taking damage if all his
+* teammates are cowering inside the ring.  The clock is ticking, though.
+* As before, lose one health point every eight ticks.
+*
+* Complications:  Sometimes dead drones get their processes KO'd.  This means
+* that their RING_TIMEs stop incrementing.  In the loop where we check
+* opponent RING_TIMEs, check for sleeping drones and subtract their PTIME
+* from 7FFF (the initial KO value) and add this value to their RING_TIME.
+*
 
-ewbyout_time	.equ	TSEC*7
+xonfout_time	.equ	TSEC*7
 
  SUBRP	do_ringout_dufus
 	move	@ring_out_on,a14
-	jrnz	ewbydrd_exit
-	cmpi	-(ewbyout_time-(TSEC*3)),a0	; Has he been out for 4 secs?
-	jrge	ewbydrd_exit		; br = no
+	jrnz	xonfdrd_exit
+	cmpi	-(xonfout_time-(TSEC*3)),a0	; Has he been out for 4 secs?
+	jrge	xonfdrd_exit		; br = no
 	PUSH	a0,a1,a2,a3,a7,a9,a10
 
 	move	*a13(PLYR_SIDE),a0	; Check to see if opp are out?
 	movk	NUM_WRES,a1
 	movi	process_ptrs,a2
 
-ewbyloopa	move	*a2+,a3,L
-	jrz	ewbynxta			;skip - inactive
+xonfloopa	move	*a2+,a3,L
+	jrz	xonfnxta			;skip - inactive
 
 	move	*a3(PLYR_SIDE),a14
 	cmp	a14,a0
-	jreq	ewbynxta			;skip - teammate
+	jreq	xonfnxta			;skip - teammate
 
 	move	*a3(RING_TIME),a14
-	cmpi	ewbyout_time-(TSEC*3),a14		;In ring > 4 seconds?
-	jrle	ewbydrd_done		;no pain - opponent not inside long enough
+	cmpi	xonfout_time-(TSEC*3),a14		;In ring > 4 seconds?
+	jrle	xonfdrd_done		;no pain - opponent not inside long enough
 
-ewbynxta
-	dsj	a1,ewbyloopa
-ewbydo_dufus
+xonfnxta
+	dsj	a1,xonfloopa
+xonfdo_dufus
+;	move	a1,a1
+;	jrz	xonfdrd_done
 
 	movk	3,a9			;msg number "Get back in dummy"
 	move	a13,a10			;Player process ptr
 	CREATE	4000h|AWARD_PID,dufus_msg_on
-ewbydrd_done
+xonfdrd_done
 	PULL	a0,a1,a2,a3,a7,a9,a10
-ewbydrd_exit
+xonfdrd_exit
 	rets
 
 
+;a9 = *player going over ropes
  SUBRP	kill_when_hit_ground
 	move	*a9(GROUND_Y),a10
 	move	*a9(OBJ_YPOSINT),a11
 	cmp	a10,a11
-	jrz	ewbykill_him
+	jrz	xonfkill_him
 	SLEEPK	1
 	jruc	kill_when_hit_ground
-ewbykill_him
+xonfkill_him
 	movi	-150,a0
 	move	*a9(PLYRNUM),a1
 	clr	a10
@@ -4261,12 +4566,12 @@ ewbykill_him
 
 	;don't do anthing if HALT is set
 	move	@HALT,a14
-	jrnz	ewbydone
+	jrnz	xonfdone
 
 	;first see if we're dead - that uses a special routine
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	ewbydead
+	jreq	xonfdead
 
 	;see if all our opponents are dead - the short way to do this
 	; is to check closest_num, since dead ones will never be picked
@@ -4277,94 +4582,95 @@ ewbykill_him
 	move	*a14,a14,L
 	move	*a14(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	ewbydone
+	jreq	xonfdone
 
 	;adjust RING_TIME
 	move	*a13(RING_TIME),a0
-	jrn	ewbyp_out
+	jrn	xonfp_out
 
 	;we were inside last tick
 	inc	a0
 	move	*a13(INRING),a14
-	jrz	ewbyrt_ok
+	jrz	xonfrt_ok
 
 	;we've moved outside.  init to -1
 	movi	-1,a0
 	move	@ring_out_on,a14
-	jrz	ewbyring_outs_off
+	jrz	xonfring_outs_off
 	move	a13,a9
 	CREATE0	kill_when_hit_ground
-ewbyring_outs_off
-	jruc	ewbyrt_ok
+xonfring_outs_off
+	jruc	xonfrt_ok
 
-ewbyp_out	;we were outside last tick
+xonfp_out	;we were outside last tick
 	dec	a0
 	move	*a13(INRING),a14
-	jrnz	ewbyrt_ok
+	jrnz	xonfrt_ok
 
 	;we've moved inside.  init to 1
 	movk	1,a0
+;	jruc	xonfrt_ok
 
-ewbyrt_ok	;a0 is now set to new RING_TIME.  write it back
+xonfrt_ok	;a0 is now set to new RING_TIME.  write it back
 	move	a0,*a13(RING_TIME)
 
-	;quit if RING_TIME is greater than (or equal to) ewbyout_time, which
+	;quit if RING_TIME is greater than (or equal to) xonfout_time, which
 	; means we're either inside our haven't been outside long enough
 	; to get hurt.
 	callr	do_ringout_dufus
 
-	cmpi	-ewbyout_time,a0
-	jrge	ewbydone
+	cmpi	-xonfout_time,a0
+	jrge	xonfdone
 
 	;proceed only on every eighth tick, for a loss rate of around
 	; 7 pixels per second.
 	move	@PCNT,a14	;check low three bits of PCNT
 	sll	32-3,a14
-	jrnz	ewbydone
+	jrnz	xonfdone
 
 	;uh-oh.  potential pain here.  loop through wrestler procs, and
 	; quit if we spot anyone from the other team with a RING_TIME less
-	; than or equal to ewbyout_time, means that they're either outside
+	; than or equal to xonfout_time, means that they're either outside
 	; or haven't been inside long enough for us to get hurt.
 	move	*a13(PLYR_SIDE),a0
 	movk	NUM_WRES,a1
 	movi	process_ptrs,a2
 
-ewbyloop0	move	*a2+,a3,L
-	jrz	ewbynxt0		;skip - inactive
+xonfloop0	move	*a2+,a3,L
+	jrz	xonfnxt0		;skip - inactive
 
 	move	*a3(PLYR_SIDE),a14
 	cmp	a14,a0
-	jreq	ewbynxt0		;skip - teammate
+	jreq	xonfnxt0		;skip - teammate
 
 	move	*a3(RING_TIME),a14
 
 	;if opponent is a sleeping drone, add (7fff-PTIME) to a14.
 	move	*a3(PTIME),a4
 	cmpi	1,a4
-	jreq	ewbynosleephack
+	jreq	xonfnosleephack
 	;sleeping drone
 	neg	a4
 	addi	07FFFH,a4
 	add	a4,a14
-ewbynosleephack
+xonfnosleephack
 
-	cmpi	ewbyout_time,a14
-	jrle	ewbydone		;no pain - opponent not inside long enough
+	cmpi	xonfout_time,a14
+	jrle	xonfdone		;no pain - opponent not inside long enough
 
-ewbynxt0	dsj	a1,ewbyloop0
+xonfnxt0	dsj	a1,xonfloop0
 
 	;if we've fallen through to here, it's time to take some hurt.
 	movi	-1,a0
 	move	*a13(PLYRNUM),a1
 	clr	a10
 	calla	adjust_health
-	jrnc	ewbydone		;still alive
+	jrnc	xonfdone		;still alive
 
 	;DEATH BY RING-OUT!
 	;do we need to start an animation here or does adjust_health take
 	; care of that for us?
-ewbyring_out_death
+xonfring_out_death
 	SETMODE	DEAD
 
 	;if we have any living teammates, go home right now.  if we're 
@@ -4375,46 +4681,48 @@ ewbyring_out_death
 	movk	NUM_WRES,a1
 	movi	process_ptrs,a2
 
-ewbyloop1	move	*a2+,a3,L
-	jrz	ewbynxt1		;skip - inactive
+xonfloop1	move	*a2+,a3,L
+	jrz	xonfnxt1		;skip - inactive
 
 	cmp	a3,a13
-	jreq	ewbynxt1		;skip - self
+	jreq	xonfnxt1		;skip - self
 
 	move	*a3(PLYR_SIDE),a14
 	cmp	a14,a0
-	jrne	ewbynxt1		;skip - not a teammate
+	jrne	xonfnxt1		;skip - not a teammate
 
 	move	*a3(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	ewbydone		;found a living teammate - skip disqual
+	jrne	xonfdone		;found a living teammate - skip disqual
 
 	move	*a3(STATUS_FLAGS),a14
 	btst	B_ZOMBIE,a14
-	jrnz	ewbydone		;found a zombie - skip disqual
+	jrnz	xonfdone		;found a zombie - skip disqual
 
-ewbynxt1	dsj	a1,ewbyloop1
+xonfnxt1	dsj	a1,xonfloop1
 
 	CREATE	CYCPID,CREATE_DISQUAL
 	CREATE	ANNC_PID,announce_rnd_winner
 	.if DEBUG
-	move	a13,*a0(PDATA),L	;ewbyCREATOR (pdata)
+	move	a13,*a0(PDATA),L	;xonfCREATOR (pdata)
 	movi	$,a14
-	move	a14,*a0(PDATA+20h),L	;ewbyORIGIN
+	move	a14,*a0(PDATA+20h),L	;xonfORIGIN
 	.endif
-ewbydone	rets
+xonfdone	rets
 
 
-ewbydead	;oops - we're dead.  If RING_TIME is negative, we've just died
+xonfdead	;oops - we're dead.  If RING_TIME is negative, we've just died
 	; outside the ring and we need to set it to 1.  If it's positive,
 	; just increment it and go home
 	move	*a13(RING_TIME),a0
-	jrp	ewbyinc
+	jrp	xonfinc
 	clr	a0
-ewbyinc	inc	a0
+xonfinc	inc	a0
 	move	a0,*a13(RING_TIME)
 	rets
 	
+*****************************************************************************
+* Stuff to deal with changed skirt pallettes
 
  SUBR	INIT_SKIRTS
 	MOVI	SKIRTS_DEST,A9
@@ -4426,10 +4734,18 @@ INIT_NEXT_SKIRT_PAL
 	RETS
 
  SUBR	CHANGE_SKIRTS2
+;	move	@match_cnt,a14
+;	dec	a14
+;	andi	07h,a14
+;	janz	SUCIDE
 	MOVE	@WHICH_SKIRT_PAL,A0
 	JRUC	SKIRT_RENTER
 
  SUBR	CHANGE_SKIRTS
+;	move	@match_cnt,a14
+;	dec	a14
+;	andi	07h,a14
+;	janz	SUCIDE
 	MOVE	@WHICH_SKIRT_PAL,A0
 	JRZ	RANDOM_SKIRT
 	DEC	A0
@@ -4467,6 +4783,8 @@ CHANGE_NEXT_PAL
 DO_PAL_AGAIN
 	CALLA	pal_set
 	JRNZ	SETUP_NEXT_ONE
+;FOR SOME REASON WE CANT SEEM TO RE-DO THIS PAL
+;JUST HIT "GO"
 	.IF	DEBUG
 	LOCKUP
 	.ENDIF
@@ -4488,13 +4806,17 @@ CHANGE_NUMBERS
 SKIRTS_DEST
 	.LONG	matl_P,NUGRND_P,NUGRND_P,DKCUR_P	;purple
 SKIRTS
+;BLUE_SKIRT
 	.LONG	matl_P,NUGRND_P,CURTREDP,DKCURRP ;red
 	.LONG	matl_P,NUGRND_P,NUGRND_P+(30*16),DKCUR_P ;purple
+;RED_SKIRT
 	.LONG	MTRIMRP,RSKIRTRP,CURTBLUP,DKCURBP ;blue
 	.LONG	MTRIMRP,RSKIRTRP,NUGRND_P+(30*16),DKCUR_P ;purple
+;BLACK_SKIRT
 	.LONG	MTRIMWP,RSKIRTWP,CURTBLUP,DKCURBP ;blue
 	.LONG	MTRIMWP,RSKIRTWP,NUGRND_P+(30*16),DKCUR_P ;purple
 	.LONG	MTRIMWP,RSKIRTWP,CURTREDP,DKCURRP ;red
+;PURPLE_SKIRT
 	.LONG	MTRIMPP,RSKIRTPP,CURTBLUP,DKCURBP ;blue
 	.LONG	MTRIMPP,RSKIRTPP,CURTREDP,DKCURRP ;red
 
@@ -4571,13 +4893,14 @@ RSKIRTWP:
    .word   02109h,020e8h,01ce7h,01ce7h,01cc6h,018c6h,018c5h,014a5h
    .word   014a4h,01084h,01083h,01083h,00c63h,00c63h,00c63h
 
+********************************
 
  SUBR    BROKEN_ARM_BLOOD
 
 	move	@no_debris,a14
-	jrnz	gsbzno_bab
+	jrnz	ndnano_bab
 	move	@reduce_bog,a14
-	jrnz	gsbzno_bab
+	jrnz	ndnano_bab
 
 	MOVE	*A13(WHOIHIT),A11,L
 	movk	M_FLIPH,A9
@@ -4595,7 +4918,7 @@ DO_ANOTHER_GLOBB
 	CREATE	DEBRIS_PID,GLOB_BLOOD
 	DSJS	A9,DO_ANOTHER_GLOBB
 
-gsbzno_bab	RETS
+ndnano_bab	RETS
 
 DO_BLOOD_1
 	PUSH	A9
@@ -4702,6 +5025,7 @@ DO_ANOTHER_GLOB
 	CALLA	BEGINOBJ
 	move	a8,*a13(SP_OBJ),L
 
+;	CALLR	WHICH_SWEAT_PAL
 
 	pull	a7
 	move	*a7,a9
@@ -4773,7 +5097,7 @@ RE_ENTER_FOR_BLOOD
 	MOVE	*A9,A0,L
 	calla	sp_change_anim
 
-gsbzlp2
+ndnalp2
 
 	SLEEPK	2
 
@@ -4782,7 +5106,7 @@ gsbzlp2
 	callr	sp_animate
 
 	move	*a13(SP_DIE),a0
-	jrz	gsbzlp2
+	jrz	ndnalp2
 
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
@@ -4848,7 +5172,7 @@ NO_FLIP_X_POS4
 NO_RAND_COUGH
 	calla	sp_change_anim
 
-	JRUC	gsbzlp2
+	JRUC	ndnalp2
 
 WHICH_SWEAT_PAL
 	MOVE	*A11(WRESTLERNUM),A0
@@ -5037,6 +5361,7 @@ SPIN_SWEAT_ORIG
 	.LONG	[0,0],[3,0],[0,0],[10,0]
 	.LONG	[-50,0],[3,0],[-2,0],[6,0]
 
+*****************************************************************************
 
  SUBRP	GLOB_SWEAT	;process
 
@@ -5056,6 +5381,7 @@ SPIN_SWEAT_ORIG
 	CALLA	BEGINOBJ
 	move	a8,*a13(SP_OBJ),L
 
+;	CALLR	WHICH_SWEAT_PAL
 
 	MOVE	*A11(OBJ_CONTROL),A14
 	ANDI	M_FLIPH,A14
@@ -5078,9 +5404,9 @@ SPIN_SWEAT_ORIG
 	MOVE	*A11(OBJ_CONTROL),A14
 	ANDI	M_FLIPH,A14
 	PUSHST
-	jrz	rfkdNO_FLIP_X_POS2
+	jrz	tclwNO_FLIP_X_POS2
 	NEG	A1
-rfkdNO_FLIP_X_POS2
+tclwNO_FLIP_X_POS2
 	add	A1,a0
 	move	a0,*a13(SP_OBJ_XPOS),L
 
@@ -5093,9 +5419,9 @@ rfkdNO_FLIP_X_POS2
 	calla	RNDRNG0
 	ADDI	[1,0],A0
 	POPST
-	JRNZ	rfkdNO_FLIP_ANIM_XVEL
+	JRNZ	tclwNO_FLIP_ANIM_XVEL
 	NEG	A0
-rfkdNO_FLIP_ANIM_XVEL
+tclwNO_FLIP_ANIM_XVEL
 	MOVE	A0,A0
 	move	a0,*a13(SP_OBJ_XVEL),L
 	PUSHST
@@ -5131,9 +5457,9 @@ GLOB_SWEAT_REENTER
 	CALLA	RNDRNG0
 	SLL	6,A0
 	POPST
-	JRN	rfkdNO_NEED_TO_USE_RIGHT_ANIM
+	JRN	tclwNO_NEED_TO_USE_RIGHT_ANIM
 	ADDI	020H,A0
-rfkdNO_NEED_TO_USE_RIGHT_ANIM
+tclwNO_NEED_TO_USE_RIGHT_ANIM
 	ADDI	WHICH_GLOB,A0
 	MOVE	*A0,A0,L
 	calla	sp_change_anim
@@ -5148,12 +5474,12 @@ glob_loop
 	callr	sp_animate
 
 	move	*a13(SP_OBJ_YVEL),a0,L	;must have down velocity
-	JRZ	rfkdno_gnd
+	JRZ	tclwno_gnd
 
 	move	*a13(SP_OBJ_YPOSINT),a0
 	move	*a13(SP_GROUND_Y+10h),a1
 	cmp	a1,a0			;a0-a1
-	jrgt	rfkdno_gnd
+	jrgt	tclwno_gnd
 
 	sll	16,a1
 	move	a1,*a13(SP_OBJ_YPOS),L
@@ -5167,12 +5493,12 @@ glob_loop
 	MOVI	SPLASH_A,A0
 	move	@ROLLING_COUNT,A14
 	SRL	1,A14
-	JRNC	rfkdGOT_RIGHT_SPLASH_ANIM
+	JRNC	tclwGOT_RIGHT_SPLASH_ANIM
 	MOVI	SPLASH_B,A0
-rfkdGOT_RIGHT_SPLASH_ANIM
+tclwGOT_RIGHT_SPLASH_ANIM
 
 	calla	sp_change_anim
-rfkdno_gnd
+tclwno_gnd
 	move	*a13(SP_DIE),a0
 	jrz	glob_loop
 
@@ -5180,6 +5506,7 @@ rfkdno_gnd
 	calla	DELOBJ
 	DIE
 
+*****************************************************************************
 
 WHICH_GLOB
 	.LONG	WAD_AL,WAD_AR
@@ -5482,6 +5809,10 @@ SPLASH_B
 
  SUBR	DO_EYES
 	;quit if no_debris is set
+;	move	@no_debris,a14
+;	jrnz	azvorets
+;	move	@reduce_bog,a14
+;	jrnz	azvorets
 
 	MOVE	A13,A11
 	movk	3,A0
@@ -5492,7 +5823,7 @@ SPLASH_B
 DO_ANOTHER_EYE
 	CREATE	DEBRIS_PID,CREATE_EYES
 	DSJS	A9,DO_ANOTHER_EYE
-xfunrets	RETS
+azvorets	RETS
 
 CREATE_EYES
 	CLR	A0
@@ -5576,7 +5907,7 @@ NO_NEED_TO_USE_RIGHT_ANIME
 	ADDI	WHICH_EYE,A0
 	MOVE	*A0,A0,L
 	calla	sp_change_anim
-xfunlp4
+azvolp4
 	SLEEPK	1
 
 	CALLR	sp_velocity_add
@@ -5586,7 +5917,7 @@ xfunlp4
 	move	*a13(SP_OBJ_YPOSINT),a0
 	move	*a13(SP_GROUND_Y+10h),a1
 	cmp	a1,a0			;a0-a1
-	jrgt	xfunno_gnd2
+	jrgt	azvono_gnd2
 
 	MOVE	A1,*A13(SP_OBJ_YPOSINT)
 	MOVE	*A13(SP_OBJ_YVEL),A1,L
@@ -5596,11 +5927,11 @@ xfunlp4
 	NEG	A0
 	MOVE	A0,*A13(SP_OBJ_YVEL),L
 
-xfunno_gnd2
+azvono_gnd2
 	move	*a13(SP_LIFESPAN),a0
 	DEC	A0
 	move	A0,*a13(SP_LIFESPAN)
-	jrnz	xfunlp4
+	jrnz	azvolp4
 
 	move	*a13(SP_OBJ),a0,L
 	calla	DELOBJ
@@ -5651,6 +5982,8 @@ BIG_EYE_R
 	WL	2,BIGEYE01
 	.word	ASP_REPEAT
 
+******************************************************************************
+;we need these
 
 SPITPUS_P:
 	.word	 22
@@ -5664,6 +5997,7 @@ SPITBLE_P:
 	.word	04EE8H,04AC6H,046A5H,04283H,03E62H,03A41H,03640H,03220H
 	.word	02E00H,029E0H,025C0H,021A0H,01D80H,01D80H
 
+******************************************************************************
 
 	.end
 

@@ -1,3 +1,22 @@
+**************************************************************
+*
+* Software:	? and Shawn Liptak
+* Initiated:	?
+*
+* Modified:	Shawn Liptak, 7/?/91	-Improved FLASHME, added FRANIMQ
+* 		Shawn Liptak, 7/?/91	-New and improved random stuff
+* 		Shawn Liptak, 9/13/91	-Fixed various junk (STRINGER)
+* 		Shawn Liptak, 10/5/91	-Added DELTAY to FRANIMQ
+* 		Shawn Liptak, 10/20/91	-Improved GETCPNT
+* 		Shawn Liptak, 1/4/92	-QDMAN mods
+* 		Shawn Liptak, 2/11/92	-Started basketball (cleanup)
+* 		Shawn Liptak, 12/10/92	-Added security code
+* 		Shawn Liptak, 3/16/93	-Fixed coin misses from wipeout
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 3/22/93 16:25
+**************************************************************
 	.file	"util.asm"
 	.title	"utility subroutines"
 	.width	132
@@ -13,6 +32,7 @@
 	.include	"macros.h"
 
 
+;utility subroutine equates
 
 	.def	SCRCLR
 	.def	OBJOFF,OBJON
@@ -25,6 +45,8 @@
 
 	.DEF	SPECIAL_WIPEOUT
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	IGNORE_CHAR_WIDTH,debris_count,are_we_waiting_f
 	.ref	SPECIAL_DISPLAY_INIT,switches_cur,dirqtimer,pal_set
@@ -34,6 +56,7 @@
 	.ref	COLRTEMP,ENDLESS_SOUND,get_but_val_cur,get_but_val_down
 	.ref	get_stick_val_cur,get_stick_val_down
 
+******************************************************************************
 
 
 	.def	STRNGRAM,HEXTOASC,GETANIX,WRLD
@@ -50,8 +73,32 @@
 	.text
 
 
+********************************
+* Kill all background objects
 
+; SUBR	KILBGND
+;
+;	MMTM	SP,A0,A2,A3,A4,A5
+;	MOVI	BAKLST,A2,L	;ACTIVE BACKGROUND OBJECTS LIST
+;	MOVE	*A2,A0,L
+;	JREQ	KILOBX		;BR=NO MORE OBJECTS ON LIST
+;FREEB
+;	MOVE	A2,A3		;SAVE PREVIOUS
+;	MOVE	*A2,A2,L	;GET NEXT BLOCK
+;	JREQ	KILOBX		;BR=ALL DONE
+;	MOVE	*A2,*A3,L	;LINK AROUND IN ACTIVE LIST	
+;	MOVE	@OFREE,A5,L	;LINK INTO FREE LIST AT START
+;	MOVE	A5,*A2,L
+;	MOVE	A2,@OFREE,L	;UPDATE FREE LIST POINTER
+;	MOVE	A3,A2
+;	JRUC	FREEB		;KILL ALL OBJECTS ON BACKGROUND LIST
+;KILOBX
+;	CALLR	ZERO_BITS
+;	MOVE	A0,@BAKLST,L
+;	MMFM	SP,A0,A2,A3,A4,A5
+;	RETS
 
+********************************
 
  SUBR	ZERO_BITS
 
@@ -67,6 +114,10 @@ KILUP
 	CALLR	WIPEOUT2
 	JAUC	SPECIAL_DISPLAY_INIT
 
+**************************************************************************
+* Wipes the system clear of all other processes, objects
+* and coordinates. It returns with display processor disabled
+* color ram cleared, and the bit map wiped clean.
 
  SUBR	WIPEOUT
 
@@ -82,6 +133,7 @@ KILUP
 
  SUBR	WIPEOUT2
 
+;	callr	security_chk		;Rets: A0=0 if OK!
 
 	clr	a0
 
@@ -105,6 +157,7 @@ KILUP
 	clr	a0
 	move	a0,@SOUNDSUP		;Allow sounds
 	move	a0,@IRQSKYE
+;	move	a0,@DISPLAYON		;TURN THE DISPLAY PROCESSOR OFF
 
 	pushst
 	dint
@@ -130,6 +183,10 @@ KILUP
 
 	rets
 
+*******************************
+* Save display/process lists and variables of active game
+* A13=*Process that stays running
+* Trashes scratch, A2-A7
 
 	.bss	sysstate_t	,16*50		;Mem for state save
 	.bss	svproc_p	,32		;*Saved proc list
@@ -159,26 +216,34 @@ SSSL	.macro	a
 
 	SSS	GAMSTATE
 
+;	movi	plyrproc_t,a2
+;	movi	plyrobj_t,a3
+;	movi	P1CTRL,a4
+;	movk	4,b0
+;xgoulp	move	*a2+,*a1+,L
+;	move	*a3+,*a1+,L
+;	move	*a4+,*a1+
+;	dsj	b0,xgoulp
 
 
 	movi	ACTIVE,a2
 	movi	svproc_p,a4
-	jruc	apxhprnxt
+	jruc	xgouprnxt
 
-apxhprlp	cmp	a13,a2
-	jreq	apxhprnxt			;Me?
+xgouprlp	cmp	a13,a2
+	jreq	xgouprnxt			;Me?
 
 	move	*a2(PROCID),a14
-	jrn	apxhprnxt			;Indestructible?
+	jrn	xgouprnxt			;Indestructible?
 
 	move	*a2,*a3,L		;Unlink
 	move	a2,*a4,L		;Add it to save list
 	move	a2,a4
 	move	a3,a2
-apxhprnxt
+xgouprnxt
 	move	a2,a3
 	move	*a2,a2,L
-	jrnz	apxhprlp
+	jrnz	xgouprlp
 
 	clr	a0
 	move	a0,*a3,L
@@ -194,17 +259,132 @@ apxhprnxt
 	movi	PALRAM,a0		;>Save pal ptrs
 	movi	pal_t,a1
 	movi	NMFPAL,b0
-apxhplp	move	*a0+,*a1+,L
-	dsj	b0,apxhplp
+xgouplp	move	*a0+,*a1+,L
+	dsj	b0,xgouplp
 
 	calla	pal_init
 
 	rets
 
 
+;*******************************
+;* Restore state of system_savegame
+;* A13=*Process
+;* Trashes scratch, A2-A8
+;
+;SRS	.macro	a
+;	move	*a1+,a0
+;	move	a0,@:a:
+;	.endm
+;SRSL	.macro	a
+;	move	*a1+,a0,L
+;	move	a0,@:a:,L
+;	.endm
+;
+; SUBR	system_restoregame
+;
+;	clr	a0
+;	move	a0,@DISPLAYON
+;
+;	clr	a1
+;	calla	KILALL			;Kill all processes
+;	calla	KILBGND			;Kill old background
+;	movi	-1,a1
+;	calla	obj_delc		;Kill all objs
+;
+;	calla	pal_init
+;
+;	movi	pal_t,a3		;>Restore pal ptrs
+;	movi	PALRAM,a4
+;	clr	a5
+;	movi	NMFPAL,a7
+;xgouplp
+;	move	*a3+,a0,L		;Get * pal
+;	move	a0,*a4+,L
+;	jrz	xgounxtp
+;	move	a5,a1
+;	sll	8,a1			;Pal offset
+;	move	*a0+,a2			;Get # colors in pal
+;	calla	pal_set			;Setup pal transfer
+;xgounxtp	addk	1,a5
+;	cmpi	NMFPAL/2,a7
+;	jrne	xgouskipslp
+;	PUSHP	a3,a4,a5,a7
+;	PULL	a8			;Get our rets addr so we can sleep
+;	SLEEPK	1			;Split the transfer
+;	PUSH	a8
+;	PULLP	a3,a4,a5,a7
+;xgouskipslp
+;	dsj	a7,xgouplp
+;
+;
+;	movi	sysstate_t,a1
+;
+;	SRSL	OBJLST
+;	SRSL	BAKLST
+;	SRSL	WORLDTLX
+;	SRSL	WORLDTLY
+;
+;	SRS	IRQSKYE
+;	SRSL	COLRTEMP
+;	SRS	dtype
+;	SRS	dpageflip
+;	SRS	gndstat
+;
+;	SRS	GAMSTATE
+;
+;;	movi	plyrproc_t,a2
+;;	movi	plyrobj_t,a3
+;;	movi	P1CTRL,a4
+;;	movk	4,b0
+;;xgoulp	move	*a1+,*a2+,L
+;;	move	*a1+,*a3+,L
+;;	move	*a1+,*a4+
+;;	dsj	b0,xgoulp
+;
+;
+;	movi	ACTIVE,a2		;0FHind end of list
+;xgouprlp
+;	move	a2,a3
+;	move	*a2,a2,L
+;	jrnz	xgouprlp
+;
+;	move	@svproc_p,*a3+,L	;Link
+;
+;
+;	movk	1,a0
+;	move	a0,@DISPLAYON
+;
+;	rets
+;
+;
+;
+;********************************
+;* Clear all world coordinates and scroll velocities
+;
+;; SUBRP	world_clr
+;;
+;;	clr	a0
+;;	move	a0,@SCROLLX,L		;X SCROLL VALUE
+;;	move	a0,@SCROLLY,L		;Y SCROLL VALUE
+;;	move	a0,@WORLDTLX,L		;TOP LEFT X SCREEN COORD (WORLD)
+;;	move	a0,@WORLDTLY,L		;TOP LEFT Y SCREEN COORD (WORLD)
+;;	move	a0,@WORLDTL,L
+;	movi	SCRNST,a0
+;	move	a0,@SCRNTL,L
+;	movi	SCRNEND,a0
+;	move	a0,@SCRNLR,L
+;	rets
 
 
+****************************************************************
+*
+* Animation script code by SL
+*
+****************************************************************
 
+********************************
+* Run an animation script (Process)
 
 
 	BSSX	animscnt	,16	;# anim scripts running
@@ -216,6 +396,7 @@ apxhplp	move	*a0+,*a1+,L
 	WORD	animsby			;Base Y
 	WORD	animsfnum		;# FRANIMs running
 	APTR	animslp_p		;*Loop point table pos
+;Careful!
 	APTR	animslp_t		;(*Loop point, Loop cnt)*5
 
 	.if 0
@@ -295,7 +476,7 @@ asFRA					;0FHRANIM
 	jrn	ans250			;No ID?
 	addi	CLSANIM,a10
 	add	a11,a10			;+offset
-	move	*a8+,a11		;apxhloops
+	move	*a8+,a11		;xgouloops
 	jrn	ans220
 	move	*a13(animsfnum),a2	;+1 FRANIM cnt
 	addk	1,a2
@@ -306,7 +487,7 @@ ans220	movi	anims_franim,a7
 	move	a6,a11
 	jruc	anslp
 
-ans250	addk	16,a8			;Skip apxhloops
+ans250	addk	16,a8			;Skip xgouloops
 	move	a8,a10
 	move	*a13(animslobj_p),a8,L	;Get * to last one
 	movi	FRQDELDIE,a7
@@ -694,7 +875,7 @@ asSVRL					;>Set value to rnd long
 
 asSVRLT					;>Set value to rnd long from a table
 	move	*a8+,a4,L
-	move	*a4+,a0			;apxhTable entries
+	move	*a4+,a0			;xgouTable entries
 	subk	1,a0
 	callr	RNDRNG0
 	sll	5,a0			;*32
@@ -717,7 +898,7 @@ asBXY					;0AddH # to BaseXY
 
 asTXTR					;>Print rnd text from table
 	move	*a8+,a4,L
-	move	*a4+,a0			;apxhTable entries
+	move	*a4+,a0			;xgouTable entries
 	subk	1,a0
 	callr	RNDRNG0
 	sll	5,a0			;*32
@@ -728,12 +909,15 @@ asTXTR					;>Print rnd text from table
 asTXT					;>Print text
 	move	*a8+,a0,L
 astxt5
+;	calla	prt0_xy
 	jruc	anslp
 
 
 asTXTK					;>Kill text
 	PUSHP	a8
 	callr	ERASE_TXT
+;	movk	4,a11			;Save A11!
+;	JSRP	text_shrink		;Sleeps
 	PULLP	a8
 	jruc	anslp
 
@@ -746,6 +930,8 @@ asEND	SLEEPK	1			;>Wait on FRANIMs before exit
 	.endif
 
 
+********************************
+* Animation of a part (Process)
 
 	STRUCTPD
 	APTR	anfc_p		;*AnimScrpt process that made me, set by AS
@@ -772,13 +958,15 @@ anf340	JSRP	FRANIMQ
 anf700	move	a11,a11
 	jrn	anf800
 	move	*a13(anfc_p),a0,L	;Get *Creator
-	move	*a0(animsfnum),a2	;apxhFrans-1
+	move	*a0(animsfnum),a2	;xgouFrans-1
 	subk	1,a2
 	move	a2,*a0(animsfnum)
 anf800	DIE
 
 
 
+********************************
+* Wait for animation processes to finish
 
  SUBR	anim_wait
 
@@ -789,6 +977,8 @@ anw10	SLEEPK	3
 
 	.if 0
 
+********************************
+* Wait 50 and kill anim stuff (Process)
 
  SUBR	anim_kilslp
 
@@ -796,6 +986,8 @@ anw10	SLEEPK	3
 	callr	anim_killall
 	DIE
 
+********************************
+* Kill all animation processes and objects
 
  SUBR	anim_killall
 
@@ -813,6 +1005,13 @@ anw10	SLEEPK	3
 	.endif
 
 
+********************************
+* Find an object by OID
+* A0=*1st obj
+* A1=OID
+* A2=!Mask
+* 0A0H=*Obj or 0 (Z)
+* Trashes A1,A3
 
  SUBRP	obj_find
 
@@ -831,6 +1030,9 @@ of50	move	a0,a0		;A0=*Obj or 0
 
 
 
+***************************************************************
+* Reset autoerase color for fixing scrn glitches
+* Trashes scratch
 
  SUBR	autoerase_set
 
@@ -843,19 +1045,23 @@ of50	move	a0,a0		;A0=*Obj or 0
 	movi	ERASECOL,a0		;Color pair
 	movi	510*512*8,a1		;Store to last 2 lines of bitmap
 	movi	512*8*2/16,b0
-ivxllp	move	a0,*a1+
-	dsj	b0,ivxllp
+zeuclp	move	a0,*a1+
+	dsj	b0,zeuclp
 
 	popst
 
 	rets
 
 
+*******************************
+* Flash an image by making a constant color
+* A8=*Image to flash
+* A9=Color to flash with (Ex. 0202h,a9)
 
 FLASHME
 
 	move	*a8(OCONST),a0
-	jrnz	rkoux			;Flashing?
+	jrnz	dsxux			;Flashing?
 
 	move	a9,*a8(OCONST)
 	setf	4,0,0
@@ -873,13 +1079,17 @@ FLASHME
 	move	a0,*a8(OCTRL)		;Write 4 low bits
 	setf	16,1,0
 
-rkoux	DIE
+dsxux	DIE
 
  .if 0
+*******************************
+* Flash an image by making a constant color
+* A8=*Image to flash
+* A9=Color to flash with *64K
 
 FLASHME
 	move	*a8(OCONST),a10
-	jrnz	gsvcx			;Flashing?
+	jrnz	qznax			;Flashing?
 	srl	16,a9
 	move	a9,*a8(OCONST)		;Set color
 	move	*a8(OCTRL),a0
@@ -893,9 +1103,16 @@ FLASHME
 	andi	0fff5H,a0		;Clr constant & nonzero
 	addk	2,a0			;Set nonzero
 	move	a0,*a8(OCTRL)
-gsvcx	DIE
+qznax	DIE
  .endif
 
+********************************
+*CHEAP COLOR CYCLER
+*CYCLES ANY NUMBER OF COLORS
+*A8=PALETTE NAME
+*A9=RAM STORAGE AREA
+*A10=MSW START COLOR, LSW END COLOR
+*A11=SPEED, A11=NEGATIVE FOR REVERSE CYCLER
 
 COLCYC	
 	SLEEPK	4
@@ -945,6 +1162,12 @@ CCYCBSLP
 	JRUC	COLCYCBL
 
 
+*******************************
+* CYCLE A PAL WITH A FIXED ROM COLOR TABLE
+* A8= [COLOR # TO START AT,# TO CYCLE]
+* A9= PAL NAME TO CYCLE
+* A10=TABLE TO CYCLE IT WITH
+* A11=RATE OF CYCLE IN TICKS
 
 CYC0	SLEEP	60
 
@@ -967,7 +1190,7 @@ CYCLE_TABLE
 	MOVE	A0,A8			;A8=[PAL #,0]
 	ADD	A1,A8			;A8=[PAL #,COLOR TO START AT]
 	MOVE	A10,A9			;A10=ROM TABLE TO CYCLE WITH
-wamlloop	
+afomloop	
 	PULLP	A1,A14
 	PUSHP	A1,A14
 	MOVE	*A1,A0,L
@@ -984,13 +1207,17 @@ wamlloop
 	JRN	RESTUFF
 	MOVE	*A13(PDATA+16),A1	;PDATA+16=ENTRY WE STOP AT
 	CMP	A0,A1
-	jrne	wamlloop
+	jrne	afomloop
 RESTUFF	MOVE	A10,A9			;REACHED END OF TABLE, RESTUFF
-	jruc	wamlloop
+	jruc	afomloop
 KILL_US
 	DIE
 
 
+****************************************************************
+* Converts a 32 bit hex # to a null terminated ascii string
+* A8=#
+* 0A8H=*String
 
 HEXTOASC
 	PUSH	a1,a2,a9
@@ -1022,6 +1249,8 @@ hexta4	move	*sp+,a9
 	rets
 
 
+********************************
+* Erase all text objects
 
  SUBR	ERASE_TXT
 
@@ -1029,18 +1258,45 @@ hexta4	move	*sp+,a9
 	jauc	obj_del1c
 
 
+**************************************************************************
+*
+* STRINGER - OUTPUT A TEXT STRING, THIS IS A PROCESS!
+* A0  = SLEEP TIME BETWEEN CHARACTERS
+* A4  = DMA CONTROL
+* A6  = COLOR (16 BITS)
+* A8  = PTR TO STRING
+* A9  = [Y,X] SCREEN ADDRESS OF STRING
+* A10 = [Y,X] SPACING
+* A11 = POINTER TO FONT TABLE
+* A14 = FLAGS:JUSTIFY
+*	BIT 16 = 1 INSERT ON OBJECT LIST, 0 JUST QUEUE THE DMA
+*	JUSTIFY = 0 LEFT JUSTIFY
+*		  1 CENTER JUSTIFY
+*		  2 RIGHT JUSTIFY
+* WRLD = ADJUST FOR WORLD COORDINATES
+* LOWZ+20000=ZPOS
+*
+* RETURNS:
+* A8 = POINTS TO NEXT BYTE AFTER STRING TERMINATOR
+* A9 = NEXT CURSOR POSITION AFTER THE STRING
+* NOTE: CALL WITH JSRP
+*
+**************************************************************************
 
+;LEFT JUSTIFY, NORMAL, NOT PUT ON THE OBJECT LIST
 STRLNRM
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
 	clr	a14
 	jruc	stringr1
 
+;CENTER JUSTIFY, NORMAL, NOT ON THE OBJECT LIST
 STRCNRM
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
 	movk	1,a14
 	jruc	stringr1
+;CENTER JUSTIFY, NORMAL, DMA, MULTIPLE COLORS
  SUBR	STRCNRM_1
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMAWNZ|M_NOCOLL,a4
@@ -1048,26 +1304,43 @@ STRCNRM
 	move	a6,a5
 	jruc	stringr1_1
 
+;RIGHT JUSTIFY, NORMAL, NOT PUT ON THE OBJECT LIST
 STRRNRM
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
 	movk	2,a14
 	jruc	stringr1
 
+;LEFT JUSTIFY, INVERTED, NOT ON THE OBJECT LIST
+;STRLINV
+;	mmtm	a12,a1,a2,a3,a4,a6,a14
+;	MOVI	DMACZ,A4
+;	clr	a14
+;	jruc	stringr1
 
+;CENTER JUSTIFY, INVERTED, NOT ON THE OBJECT LIST
+;STRCINV
+;	mmtm	a12,a1,a2,a3,a4,a6,a14
+;	MOVI	DMACZ,A4
+;	movk	1,a14
+;	jruc	stringr1
+;
 
+;LEFT JUSTIFY, NORMAL, OBJECT LIST
 STRLNRMO
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
 	movi	010000H,a14
 	jruc	stringr1
 
+;CENTER JUSTIFY, NORMAL, OBJECT LIST
 STRCNRMO
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
 	movi	010001H,a14
 	jruc	stringr1
 
+;CENTER JUSTIFY, NORMAL, OBJECT LIST, MULTIPLE COLORS!
 STRCNRMO_1
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMAWNZ|M_NOCOLL,a4
@@ -1075,6 +1348,7 @@ STRCNRMO_1
 	move	a6,a5
 	jruc	stringr1_1
 
+;CENTER JUSTIFY, NORMAL, OBJECT LIST, CONSTANT NON-ZERO
 STRCNRMO_2
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMACNZ|M_NOCOLL,a4
@@ -1082,6 +1356,7 @@ STRCNRMO_2
 	move	a6,a5
 	jruc	stringr1_1
 
+;LEFT JUSTIFY, NORMAL, OBJECT LIST, MULTIPLE COLORS!
  SUBR	STRLNRMO_1
 	mmtm	a12,a1,a2,a3,a4,a6,a14
 	movi	DMAWNZ|M_NOCOLL,a4
@@ -1219,6 +1494,15 @@ strrx	clr	a1
 	RETP
 
 
+**************************************************************************
+* STRNGLEN - RETURNS THE LENGTH, IN PIXELS, OF A GIVEN STRING
+* A8 = PTR TO STRING
+* A10 = [Y,X] SPACING OF STRING
+* A11 = PTR TO FONT TABLE
+* RETURNS:
+* A7 = LENGTH OF STRING
+* Z BIT SET IF LENGTH IS ZERO
+**************************************************************************
 STRNGLEN
 	PUSH	a8,a14
 	clr	a7		;A7=Length
@@ -1247,6 +1531,12 @@ stl60	movb	*a8,a14
 
 
 
+**************************************************************************
+*									 *
+* OBJOFF - TURN AN OBJECT "OFF" I.E. SET DMA OUTPUT TO 0		 *
+* A0 = PTR TO OBJECT BLOCK						 *
+*									 *
+**************************************************************************
 OBJOFF
 	PUSH	A4
 	MOVE	*A0(OCTRL),A4
@@ -1256,6 +1546,12 @@ OBJOFF
 	move	*sp+,a4,L
 	RETS
 
+**************************************************************************
+*									 *
+* OBJON - TURN AN OBJECT "ON" I.E. SET DMA OUTPUT TO WRITE <> 0		 *
+* A0 = PTR TO OBJECT BLOCK						 *
+*									 *
+**************************************************************************
 OBJON
 	PUSH	A4
 	MOVE	*A0(OCTRL),A4
@@ -1267,9 +1563,73 @@ OBJON
 	RETS
 
 	
+**************************************************************************
+*									 *
+* CLRPDATA - CLEAR THE PDATA AREA OF A PROCESS BLOCK			 *
+* A13 = PTR TO PROCESS BLOCK						 *
+*									 *
+**************************************************************************
+;CLRPDATA
+;	MMTM	SP,A1,A6,A14
+;	MOVE	A13,A14
+;	CLR	A1
+;	ADDI	PDATA,A14
+;	MOVI	(PSDATA-PDATA)/16,A6
+;CLRSHL
+;	SRL	1,A6
+;	JRNC	CLRPDL
+;	MOVE	A1,*A14+,W	;STUFF THE ODD WORD	
+;CLRPDL
+;	MOVE	A1,*A14+,L		
+;	DSJS	A6,CLRPDL
+;	MMFM	SP,A1,A6,A14
+;	RETS
+**************************************************************************
+*									 *
+* DFRMGRND - RETURNS THE DISTANCE FROM THE BOTTOM OF			 *
+*		   AN OBJECT TO THE "GROUND."				 *
+* A8 = OBJECT BLOCK							 *
+* RETURN(S)								 *
+* A1 = DISTANCE FROM GROUND (16 BITS)					 *
+* STATUS BITS SET ACCORDING TO THE SIGN OF A1				 *
+* NOTE: MAX ACCEPTABLE Y = +32K, MIN ACCEPTABLE Y = -32K		 *
+*									 *
+**************************************************************************
+;ZORIGIN	EQU	200		;Y COORDINATE OF THE Z ORIGIN
+;DFRMGRND
+;	PUSH	A2
+;	MOVE	*A8(OYPOS),A1,W
+;	MOVE	*A8(OSIZEY),A2,W
+;	ADD	A1,A2			;A2 = BOTTOM Y
+;	MOVE	*A8(OZPOS),A1,W
+;	SUB	A2,A1
+;	ADDI	ZORIGIN,A1
+;	MMFM	SP,A2
+;	RETS
+
+**************************************************************************
+*									 *
+* GET BOTTOM Y OF AN OBJECT						 *
+* A8 = OBJECT BLOCK PTR							 *
+* RETURN(S)								 *
+* A1 = 16 BIT BOTTOM Y IN LSW						 *
+* STATUS SET ACCORDING TO THE BOTTOM Y					 *
+*NOTE: MAKE SURE OBLOCK IS INIT'D WITH GSAGOF BEFORE CALLING		 *
+*									 *
+**************************************************************************
+;GETBOTY
+;	PUSH	A2
+;	MOVE	*A8(OYPOS),A1,W		;GET Y POSITION
+;	MOVE	*A8(OSIZEY),A2,W	;GET THE CURRENT SIZE
+;	ADD	A2,A1			;A1 = BOTTOM Y
+;	MMFM	SP,A2
+;	RETS
 
 
-
+********************************
+* GETCPNT - Get the center xy position of an object
+* A8=*Object
+* 0A0H=Center Y:Center X
 
  SUBR	GETCPNT
 
@@ -1283,6 +1643,10 @@ OBJON
 	rets
 
 
+********************************
+*GETANIX - GET ANIMATION POINT X COORD
+*CALLING PARMS: A8=OBJECT
+*RETURNS A0=16 BIT WORLD COORD OF UPPER LEFT
 
 GETANIX
 	MMTM	SP,A1,A2
@@ -1302,6 +1666,11 @@ GETAX1	MOVE	*A8(OXPOS),A0
 
 
 
+****************************************************************
+* Quickly produce a random # in range -X to +X
+* A0=+X
+* 0A0H=Random # (-A0 to +A0) (CC)
+* Trashes scratch
 
  SUBR	RNDRNGS
 
@@ -1309,6 +1678,12 @@ GETAX1	MOVE	*A8(OXPOS),A0
 	neg	a0
 
 
+********************************
+* Quickly produce a random # in a given range
+* A0=Lower bound
+* A1=Upper bound
+* 0A0H=Random # (A0 to A1) (CC)
+* Trashes scratch
 
  SUBR	RNDRNG
 
@@ -1329,6 +1704,11 @@ GETAX1	MOVE	*A8(OXPOS),A0
 	rets
 
 
+********************************
+* Quickly produce a random # in range 0-X
+* A0=X
+* 0A0H=Random # (0 to A0) (No CC)
+* Trashes scratch
 
  SUBR	RNDRNG0
 
@@ -1345,6 +1725,11 @@ GETAX1	MOVE	*A8(OXPOS),A0
 	rets
 
 
+********************************
+* Random % routine
+* A0=Probability of event (0-1000) (0=0%, 1000=100%)
+* 0A0H=0-999 (CC) (jrls nope, jrhi happened)
+* Trashes scratch
 
  SUBR	RNDPER
 
@@ -1362,9 +1747,24 @@ GETAX1	MOVE	*A8(OXPOS),A0
 	rets
 
 
+**************************************************************************
+*									 *
+* FILLAREA - FILL A GIVEN SQUARE AREA ON THE SCREEN WITH A COLOR	 *
+* A1 = [COLOR,PALETTE]							 *
+* A3 = DAG OF AREA [YPOS,XPOS]						 *
+* A4 = [Y,X] SIZE OF AREA						 *
+*									 *
+**************************************************************************
 FILLAREA
 	PUSH	a0,a1,a2,a4,a5,a14
 	jruc	areacon
+**************************************************************************
+*									 *
+* BLNKAREA - BLANK A GIVEN SQUARE AREA ON THE SCREEN			 *
+* A3 = DAG OF AREA [YPOS,XPOS]						 *
+* A4 = [Y,X] SIZE OF AREA						 *
+*									 *
+**************************************************************************
 BLNKAREA
 	PUSH	a0,a1,a2,a4,a5,a14
 	clr	a1			;constant 0:palette 0
@@ -1377,6 +1777,9 @@ areacon
 	rets
 
 
+********************************
+* Wait till DIRQ
+* Trashes A0-A1
 
  SUBR	dirq_wait
 
@@ -1387,6 +1790,9 @@ dirqwlp	move	@dirqtimer,a1
 	rets
 
 
+********************************
+* Wait on the DMA busy bit to clear
+* Preserves A1
 
  SUBRP	dma_wait
 
@@ -1395,6 +1801,9 @@ dwlp	move	@DMACTRL,b0
 	rets
 
 
+********************************
+* Wait for dma queue to empty, then wait for dma to finish
+* the last one. Turn displayon off.
 
  SUBR	dmaq_wait
 
@@ -1412,6 +1821,9 @@ dqw20	callr	dma_wait
 	rets
 
 
+********************************
+* Turn page flipping and erasure off. Setup for page0
+* Trashes scratch
 
  SUBR	dpageflip_off
 
@@ -1424,25 +1836,31 @@ dqw20	callr	dma_wait
 
 	rets
 
+*******************************
+* Blank display by using HEBLNK
+* Trashes scratch
 
  SUBRP	display_blank
 	dint
-dzavlp	move	@VCOUNT,a0
+klmolp	move	@VCOUNT,a0
 	cmpi	EOSINT,a0
-	jrlt	dzavlp
+	jrlt	klmolp
 	move	@HSBLNK,a0	;Blank screen
 	move	a0,@HEBLNK
 	eint
 
 	rets
 
+*******************************
+* Unblank display by resetting HEBLNK
+* Trashes scratch
 
  SUBRP	display_unblank
 
 	dint
-mzqylp	move	@VCOUNT,a0
+cwtnlp	move	@VCOUNT,a0
 	cmpi	EOSINT,a0
-	jrlt	mzqylp
+	jrlt	cwtnlp
 	movi	HEBLNKINIT,a0
 	move	a0,@HEBLNK
 	eint
@@ -1450,11 +1868,18 @@ mzqylp	move	@VCOUNT,a0
 	rets
 
 
+**************************************************************************
+*									 *
+* CRINIT - COLOR RAM INITIALIZATION, FIRST CLEAR ALL COLOR RAM, THEN	 *
+*	 FILL WITH PALETTES.						 *
+*									 *
+**************************************************************************
 CRINIT
 	MMTM	SP,A0,A1,A2,A6
 	MOVI	COLRAM,A1
 	CLR	A0
 	MOVI	10000H,A6,L
+*CLEAR ALL COLOR PALETTES
 CRINIT1
 	MOVE	A0,*A1+,L	;STUFF TWO WORDS AT A TIME
 	DSJS	A6,CRINIT1
@@ -1462,6 +1887,14 @@ CRINIT1
 	MMFM	SP,A0,A1,A2,A6
 	RETS
 
+**************************************************************************
+*									 *
+* CRLOAD - LOAD COLOR RAM FROM A ROM TABLE				 *
+* A1 = START OF ROM TABLE						 *
+* A2 = COLOR RAM START ADDRESS						 *
+* A6 = PALETTE COUNT							 *
+*									 *
+**************************************************************************
 CRLOAD
 	MMTM	SP,A0,A1,A2
 CRLOAD1
@@ -1484,6 +1917,10 @@ CRLOAD4
 	RETS
 
 
+********************************
+* CLEAR THE SCREEN (Kill this, only used by diagnostics)
+* only call with interrupts disabled and the dma shut down, otherwise
+* use clr_scrn
 
 SCRCLR	CLR	A0
 
@@ -1500,11 +1937,15 @@ SCRLP	MOVE	A0,*A1+,L
 
 
 
+********************************
+* Clear screen routine
 
  SUBR	CLR_SCRN
 
 	mmtm	sp,a1,a2,a3
 	move	@DISPLAYON,a3
+;	clr	a1
+;	move	a1,@DISPLAYON
 	callr	dmaq_wait			;wait on dma
 	clr	a0
 	move	a0,@CMAPSEL			;Select color map 0
@@ -1517,6 +1958,29 @@ clrlp	move	a0,*a1+,L
 	rets
 
 
+********************************
+* Animation list processor (JSRP)
+* A1=Mode:	0=Process current frame
+*		1=Process to end of list
+*		4=Process current frame, no sleep (time retrn'd in a0)
+* A8=*Object
+* A9=*Ani list
+* Rets:
+* C set if end of animation list was hit
+* A9=* to next frame or end of list
+* Trashes scratch
+*
+* Animation script format
+*	.long	*Image header or 0 if end
+*	.word	Sleep time  <-- BITS 0 - 7 ARE THE SLEEP TIME
+*			    <-- BITS 8 -15 ARE THE FLAGS:
+*				Bit #	Flag
+*				-----	----
+*				8-12	Unused
+*BNEWPAL  equ	13		13	New palette address is specified
+*BFLIPBIT equ	14		14	New flip bits are specified
+*			Flag hierarchy: 15-8
+*			 Options should follow in this order
 
 
 FRANIM
@@ -1591,6 +2055,23 @@ franerr
 	jruc	frannd
 
 
+***************************************************************
+* Animation list processor (Quick list version) (JSRP)
+* A8=*Object
+* A9=*FRANIM List
+* Trashes A0-A4,A14,B0-B1
+*
+* Script format
+*	.long	*Image hdr or 0 if end
+*	.word	Sleep time  <-- BITS 0 - 7 ARE THE SLEEP TIME
+*			    <-- BITS 8 -15 ARE THE FLAGS:
+*			BIT #		FLAG
+*			-----		----
+*			8-10,12		UNUSED
+*BDELTAY	equ	11	Word is added into YPOS
+*BNEWPAL	equ	13	New palette address is specified
+*BFLIPBIT	equ	14	New flip bits are specified
+*	Flag hierarchy: 15-8	Options should follow in this order
 
 
 FRANIMQ
@@ -1604,10 +2085,10 @@ FRANIMQ
 	.else
 	CALLERR	8,0			;Bad franim list
 	.endif
-	jruc	tjwex
+	jruc	auprx
 
 
-tjwelp	move	*a8(OCTRL),a4		;Current flags
+auprlp	move	*a8(OCTRL),a4		;Current flags
 	move	*a9+,a0			;Sleep time
 	cmpi	0100H,a0
 	jrlo	frq70			;No special bits?
@@ -1644,12 +2125,16 @@ frq70	calla	ANI
 	calla	PRCSLP			;Sleep
 
 frq80	move	*a9+,a1,L		;Get frame
-	jrnz	tjwelp
+	jrnz	auprlp
 
-tjwex	RETP
+auprx	RETP
 
 
 
+*****************************************************************************
+* Hardware security check code
+* 0A0H=0 if OK
+* Trashes scratch
 
 OFF	.equ	07db0H
 SEC	.equ	01b14030H-OFF
@@ -1660,15 +2145,15 @@ FAKEO	.equ	-0b00030H+OFF
 	PUSH	a2,a3,a4
 	clr	a0
 	movi	63,a3
-hsmclp	move	a3,a14
-	callr	hsmcsc
+orydlp	move	a3,a14
+	callr	orydsc
 	or	a2,a0
 	subk	1,a3
-	jrge	hsmclp
+	jrge	orydlp
 	PULL	a2,a3,a4
 	rets
 
-hsmcsc
+orydsc
 	movi	SEC+FAKEO,a1
 	sll	15-5,a14
 	add	a14,a1		;Add a bogus offset
@@ -1681,7 +2166,7 @@ hsmcsc
 	sll	9,a2		;Move to bits 9-14
 	xor	a14,a2
 	sll	32-15,a2	;Remove top bits
-	jrnz	hsmcx		;Bad value?
+	jrnz	orydx		;Bad value?
 
 	add	a14,a1
 	srl	2+3,a14
@@ -1692,7 +2177,7 @@ hsmcsc
 	move	a2,b1
 	sll	24,b1
 	getpc	a4
-	addi	hsmcsec_t-$,a4,W
+	addi	orydsec_t-$,a4,W
 	add	a4,a14
 	move	*a1(OFF+019H),a2	;Read 3rd sec value
 	move	a2,b0
@@ -1711,10 +2196,10 @@ hsmcsc
 	andi	03f3f3f3fH,a1
 	xor	a1,a2		;A2=0 if OK
 
-hsmcx	rets
+orydx	rets
 
 
-hsmcsec_t	.long	021283b3bH	;0
+orydsec_t	.long	021283b3bH	;0
 	.long	02439383bH
 	.long	031283b3bH
 	.long	0302b3938H
@@ -1782,55 +2267,59 @@ hsmcsec_t	.long	021283b3bH	;0
 secend
 
 
+***************************************************************
+* Shake screen as if an earthquake is in effect (horizontally)
+* A10 = # ticks to shake and power of shake
+* Note: time to shake must be more than 6 ticks
 
-	BSSX	znvhSHK_ON,16		;is a shake in progress?
-	BSSX	znvhX_ADJ,32		;current deviation from rest
+	BSSX	kqlmSHK_ON,16		;is a shake in progress?
+	BSSX	kqlmX_ADJ,32		;current deviation from rest
 
  SUBR	HORZ_SHAKER2
 
 	;check for a valid a10
 	move	a10,a10
-	jrn	znvhdone
-	jrz	znvhdone
+	jrn	kqlmdone
+	jrz	kqlmdone
 
-	move	@znvhSHK_ON,a0
-	jrz	znvhno_shake
+	move	@kqlmSHK_ON,a0
+	jrz	kqlmno_shake
 
 	;abort shake currently in progress
 	movi	HZSHAKE_PID,a0
 	calla	KIL1C
-	move	@znvhX_ADJ,a14
+	move	@kqlmX_ADJ,a14
 	move	@WORLDTLX,a0,L
 	sub	a14,a0
 	move	a0,@WORLDTLX,L
 
-znvhno_shake
+kqlmno_shake
 	;set the 'in progress' flag
 	movk	1,a14
-	move	a14,@znvhSHK_ON
+	move	a14,@kqlmSHK_ON
 
 	;create the shaker process
-	CREATE	HZSHAKE_PID,znvhshaker
+	CREATE	HZSHAKE_PID,kqlmshaker
 
-znvhdone
+kqlmdone
 	rets
 
-znvhshaker
+kqlmshaker
 	;a9  = index into sine table
 	;a10 = time left
 	;a11 = original time left
 
 	;initialize
-	movi	znvhlast_entry,a9
+	movi	kqlmlast_entry,a9
 	move	a10,a11
 
-znvhloop
+kqlmloop
 	;calculate the new offset
 
 	;get the cosine
 	move	a9,a14
 	X16	a14
-	addi	znvhsine_table,a14
+	addi	kqlmsine_table,a14
 	move	*a14,a0,W
 
 	;get the exp (index is 64 - (64 * a10 / a11)
@@ -1840,7 +2329,7 @@ znvhloop
 	neg	a1
 	addi	64,a1
 	X16	a1
-	addi	znvhexp_table,a1
+	addi	kqlmexp_table,a1
 	move	*a1,a1,W
 
 	;multiply
@@ -1850,12 +2339,12 @@ znvhloop
 	sra	5,a1
 	mpyu	a11,a1
 
-	move	a1,@znvhX_ADJ,L
+	move	a1,@kqlmX_ADJ,L
 
 	;update the table pointer
-	dsj	a9,znvhtable_ok
-	movi	znvhlast_entry,a9
-znvhtable_ok
+	dsj	a9,kqlmtable_ok
+	movi	kqlmlast_entry,a9
+kqlmtable_ok
 
 	;apply it
 	move	@WORLDTLX,a14,L
@@ -1866,21 +2355,21 @@ znvhtable_ok
 	SLEEPK	1
 
 	;undo it
-	move	@znvhX_ADJ,a14,L
+	move	@kqlmX_ADJ,a14,L
 	move	@WORLDTLX,a1,L
 	sub	a14,a1
 	move	a1,@WORLDTLX,L
 
 	;loop
-	dsj	a10,znvhloop
+	dsj	a10,kqlmloop
 
 	;all done
 	clr	a14
-	move	a14,@znvhSHK_ON
-	move	a14,@znvhX_ADJ
+	move	a14,@kqlmSHK_ON
+	move	a14,@kqlmX_ADJ
 	DIE
 
-znvhsine_table			;deg
+kqlmsine_table			;deg
 	.word	-601		;324
 	.word	-973		;288
 	.word	-973		;252
@@ -1891,12 +2380,12 @@ znvhsine_table			;deg
 	.word	974		;72
 	.word	602		;36
 	.word	0		;0
-znvhlast_entry	equ	9
+kqlmlast_entry	equ	9
 
 	;values of e^(-x) for values from 0 to 7, in 64 divisions
 	; e.g. e^-1.5 is the 32nd entry
 	; all values are multiplied by 1024
-znvhexp_table		;damps at speed 5
+kqlmexp_table		;damps at speed 5
 	.word 1024,945,873,807,745,688,636,587
 	.word 542,501,463,427,395,364,337,311
 	.word 287,265,245,226,209,193,178,165
@@ -1906,55 +2395,60 @@ znvhexp_table		;damps at speed 5
 	.word 22,20,19,17,16,15,14,13
 	.word 12,11,10,9,8,8,7,6
 
+***************************************************************
+* Shake screen as if an earthquake is in effect
+* A10 = # ticks to shake and power of shake
+* Note: time to shake must be more than 6 ticks
 
-	BSSX	wcoxSHK_ON,16		;is a shake in progress?
-	BSSX	wcoxY_ADJ,32		;current deviation from rest
+	BSSX	mdecSHK_ON,16		;is a shake in progress?
+	BSSX	mdecY_ADJ,32		;current deviation from rest
 
  SUBR	SHAKER2
 
 	;check for a valid a10
 	move	a10,a10
-	jrn	wcoxdone
-	jrz	wcoxdone
+	jrn	mdecdone
+	jrz	mdecdone
 
-	move	@wcoxSHK_ON,a0
-	jrz	wcoxno_shake
+	move	@mdecSHK_ON,a0
+	jrz	mdecno_shake
 
 	;abort shake currently in progress
 	movi	SHAKE_PID,a0
 	calla	KIL1C
-	move	@wcoxY_ADJ,a14
+	move	@mdecY_ADJ,a14
 	move	@WORLDTLY,a0,L
 	sub	a14,a0
 	move	a0,@WORLDTLY,L
 
-wcoxno_shake
+mdecno_shake
 	;set the 'in progress' flag
 	movk	1,a14
-	move	a14,@wcoxSHK_ON
+	move	a14,@mdecSHK_ON
 
 	;create the shaker process
-	CREATE	SHAKE_PID,wcoxshaker
+	CREATE	SHAKE_PID,mdecshaker
 
-wcoxdone
+mdecdone
 	rets
 
-wcoxshaker
+mdecshaker
 	;a9  = index into sine table
 	;a10 = time left
 	;a11 = original time left
 
 	;initialize
-	movi	wcoxlast_entry,a9
+	movi	mdeclast_entry,a9
 	move	a10,a11
 
-wcoxloop
+mdecloop
 	;calculate the new offset
 
 	;get the cosine
 	move	a9,a14
 	X16	a14
-	addi	wcoxsine_table,a14
+;	addi	mdeccosine_table,a14
+	addi	mdecsine_table,a14
 	move	*a14,a0,W
 
 	;get the exp (index is 64 - (64 * a10 / a11)
@@ -1964,7 +2458,7 @@ wcoxloop
 	neg	a1
 	addi	64,a1
 	X16	a1
-	addi	wcoxexp_table,a1
+	addi	mdecexp_table,a1
 	move	*a1,a1,W
 
 	;multiply
@@ -1974,12 +2468,12 @@ wcoxloop
 	sra	5,a1
 	mpyu	a11,a1
 
-	move	a1,@wcoxY_ADJ,L
+	move	a1,@mdecY_ADJ,L
 
 	;update the table pointer
-	dsj	a9,wcoxtable_ok
-	movi	wcoxlast_entry,a9
-wcoxtable_ok
+	dsj	a9,mdectable_ok
+	movi	mdeclast_entry,a9
+mdectable_ok
 
 	;apply it
 	move	@WORLDTLY,a14,L
@@ -1990,24 +2484,37 @@ wcoxtable_ok
 	SLEEPK	1
 
 	;undo it
-	move	@wcoxY_ADJ,a14,L
+	move	@mdecY_ADJ,a14,L
 	move	@WORLDTLY,a1,L
 	sub	a14,a1
 	move	a1,@WORLDTLY,L
 
 	;loop
-	dsj	a10,wcoxloop
+	dsj	a10,mdecloop
 
 	;all done
 	clr	a14
-	move	a14,@wcoxSHK_ON
-	move	a14,@wcoxY_ADJ
+	move	a14,@mdecSHK_ON
+	move	a14,@mdecY_ADJ
 	DIE
 
 	;45-degree increments
+;mdeccosine_table			;deg
+;	.word	724		;315
+;	.word	0		;270
+;mdecsine_table				;deg
+;	.word	-723		;225	;315
+;	.word	-1023		;180	;270
+;	.word	-723		;135	;225
+;	.word	0		;90	;180
+;	.word	724		;45	;135
+;	.word	1024		;0	;90
+;	.word	724			;45
+;	.word	0			;0
+;mdeclast_entry	equ	7
 
 	;36-degree increments
-wcoxcosine_table			;deg
+mdeccosine_table			;deg
 	.word	828		;324
 	.word	316		;288
 	.word	-315		;252
@@ -2019,7 +2526,7 @@ wcoxcosine_table			;deg
 	.word	828		;36
 	.word	1024		;0
 	
-wcoxsine_table			;deg
+mdecsine_table			;deg
 	.word	-601		;324
 	.word	-973		;288
 	.word	-973		;252
@@ -2030,16 +2537,52 @@ wcoxsine_table			;deg
 	.word	974		;72
 	.word	602		;36
 	.word	0		;0
-wcoxlast_entry	equ	9
+mdeclast_entry	equ	9
 
 	;30-degree increments
+;mdeccosine_table			;deg
+;	.word	887		;330
+;	.word	512		;300
+;	.word	0		;270
+;mdecsine_table				;deg
+;	.word	-511		;240	;330
+;	.word	-886		;210	;300
+;	.word	-1023		;180	;270
+;	.word	-886		;150	;240
+;	.word	-511		;120	;210
+;	.word	0		;90	;180
+;	.word	512		;60	;150
+;	.word	887		;30	;120
+;	.word	1024		;0	;90
+;	.word	887			;60
+;	.word	512			;30
+;	.word	0			;0
+;mdeclast_entry	equ	11
 
 	;values of e^(-x) for values from 0 to 7, in 64 divisions
 	; e.g. e^-1.5 is the 32nd entry
 	; all values are multiplied by 1024
+;mdecexp_table		;damps at speed 7
+;	.word 1024,916,819,733,656,587,525,470
+;	.word 420,376,337,301,269,241,216,193
+;	.word 173,154,138,124,110,99,88,79
+;	.word 71,63,56,50,45,40,36,32
+;	.word 29,26,23,20,18,16,15,13
+;	.word 12,10,9,8,7,6,6,5
+;	.word 4,4,3,3,3,2,2,2
+;	.word 2,1,1,1,1,1,1,0
 
+;mdecexp_table		;damps at speed 6
+;	.word 1024,930,846,769,699,636,578,525
+;	.word 477,434,395,359,326,296,269,245
+;	.word 223,202,184,167,152,138,125,114
+;	.word 104,94,86,78,71,64,58,53
+;	.word 48,44,40,36,33,30,27,24
+;	.word 22,20,18,17,15,14,12,11
+;	.word 10,9,8,7,7,6,5,5
+;	.word 4,4,4,3,3,3,2,2
 
-wcoxexp_table		;damps at speed 5
+mdecexp_table		;damps at speed 5
 	.word 1024,945,873,807,745,688,636,587
 	.word 542,501,463,427,395,364,337,311
 	.word 287,265,245,226,209,193,178,165
@@ -2049,8 +2592,18 @@ wcoxexp_table		;damps at speed 5
 	.word 22,20,19,17,16,15,14,13
 	.word 12,11,10,9,8,8,7,6
 
+;mdecexp_table		;damps at speed 2
+;	.word 1024,992,961,930,901,873,846,819
+;	.word 794,769,745,722,699,677,656,636
+;	.word 616,596,578,560,542,525,509,493
+;	.word 477,463,448,434,420,407,395,382
+;	.word 370,359,347,337,326,316,306,296
+;	.word 287,278,269,261,253,245,237,230
+;	.word 223,216,209,202,196,190,184,178
+;	.word 173,167,162,157,152,147,143,138
 
 
+;original Shawn shaker
 
 	.BSS	AMP,16
 	.BSS	AMPCNT,16
@@ -2061,7 +2614,7 @@ wcoxexp_table		;damps at speed 5
  SUBR	SHAKER
 
 	move	@SHK_ON,a0
-	jrnz	wcoxx
+	jrnz	mdecx
 	move	a10,a11
 	movk	2,a0
 	move	a0,@SHK_ON
@@ -2071,8 +2624,9 @@ wcoxexp_table		;damps at speed 5
 	move	a11,@AMPCNT
 	
 	CREATE0	shakelp
-wcoxx	RETS
+mdecx	RETS
 	
+;only shake vertically
 
 shakelp
  .if 0
@@ -2084,7 +2638,7 @@ shakelp
 	move	a0,@YSET
 	move	@HCOUNT,a14
 	btst	0,a14
-	jrz	wcoxshakey
+	jrz	mdecshakey
 
 	move	@XSET,a1
 	move	@WORLDTLX,a0,L
@@ -2100,7 +2654,7 @@ shakelp
 	jruc	shakelp
  .endif
 
-wcoxshakey
+mdecshakey
 	move	@AMP,a0
 	calla	RNDRNG0
 	move	a0,@YSET
@@ -2119,19 +2673,23 @@ wcoxshakey
 	move	@AMPCNT,a2
 	dec	a2
 	move	a2,@AMPCNT
-	jrnz	wcoxampok
+	jrnz	mdecampok
 	move	a11,@AMPCNT
 	move	@AMP,a0
 	cmpi	1,a0
-	jrz	wcoxampok
+	jrz	mdecampok
 	dec	a0
 	move	a0,@AMP
-wcoxampok
+mdecampok
 	dsj	a10,shakelp
 	move	a10,@SHK_ON
 
 	DIE
 
+*****************************************************************************
+*
+* RETURN:	a0 = start button bits
+*-----------------------------------------------------------------------------
 
  SUBR	get_all_starts_cur
 
@@ -2140,22 +2698,26 @@ wcoxampok
 	move	@PSTATUS2,a2
 
 	btst	0,a2
-	jrz	muibno_player1
+	jrz	vezcno_player1
 	clr	a0			;player 1
 	calla	get_start_cur
 	or	a0,a1
-muibno_player1
+vezcno_player1
 
 	btst	1,a2
-	jrz	muibno_player2
+	jrz	vezcno_player2
 	movk	1,a0			;player 2
 	calla	get_start_cur
 	or	a0,a1
-muibno_player2
+vezcno_player2
 
 	move	a1,a0
 	rets
 
+*****************************************************************************
+*
+* RETURN:	a0 = start button bits
+*-----------------------------------------------------------------------------
 
  SUBR	get_all_starts_down
 
@@ -2164,22 +2726,26 @@ muibno_player2
 	move	@PSTATUS2,a2
 
 	btst	0,a2
-	jrz	zeojno_player1
+	jrz	pqdhno_player1
 	clr	a0			;player 1
 	calla	get_start_down
 	or	a0,a1
-zeojno_player1
+pqdhno_player1
 
 	btst	1,a2
-	jrz	zeojno_player2
+	jrz	pqdhno_player2
 	movk	1,a0			;player 2
 	calla	get_start_down
 	or	a0,a1
-zeojno_player2
+pqdhno_player2
 
 	move	a1,a0
 	rets
 
+*****************************************************************************
+*
+* RETURN:	a0 = start bit
+*-----------------------------------------------------------------------------
 
  SUBR	get_start_cur
 
@@ -2191,6 +2757,10 @@ zeojno_player2
 	andi	1,a0
 	rets
 
+*****************************************************************************
+*
+* RETURN:	a0 = start bit
+*-----------------------------------------------------------------------------
 
  SUBR	get_start_down
 
@@ -2205,6 +2775,10 @@ zeojno_player2
 
 start_offs	.word	12h,15h
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
   SUBR	get_all_sticks_cur
 
@@ -2213,23 +2787,27 @@ start_offs	.word	12h,15h
 	move	@PSTATUS2,a2
 
 	btst	0,a2
-	jrz	cmgyno_player1
+	jrz	ufivno_player1
 	clr	a0			;player 1
 	calla	get_stick_val_cur
 	or	a0,a1
-cmgyno_player1
+ufivno_player1
 
 	btst	1,a2
-	jrz	cmgyno_player2
+	jrz	ufivno_player2
 	movk	1,a0			;player 2
 	calla	get_stick_val_cur
 	or	a0,a1
-cmgyno_player2
+ufivno_player2
 
 	move	a1,a0
 	rets
 
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
   SUBR	get_all_sticks_cur2
 
@@ -2247,6 +2825,10 @@ cmgyno_player2
 	rets
 
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
   SUBR	get_all_sticks_down
 
@@ -2255,23 +2837,27 @@ cmgyno_player2
 	move	@PSTATUS2,a2
 
 	btst	0,a2
-	jrz	xuknno_player1
+	jrz	jirpno_player1
 	clr	a0			;player 1
 	calla	get_stick_val_down
 	or	a0,a1
-xuknno_player1
+jirpno_player1
 
 	btst	1,a2
-	jrz	xuknno_player2
+	jrz	jirpno_player2
 	movk	1,a0			;player 2
 	calla	get_stick_val_down
 	or	a0,a1
-xuknno_player2
+jirpno_player2
 
 	move	a1,a0
 	rets
 
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
   SUBR	get_all_sticks_down2
 
@@ -2290,6 +2876,10 @@ xuknno_player2
 	rets
 
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
   SUBR	get_all_buttons_cur
 
@@ -2298,23 +2888,27 @@ xuknno_player2
 	move	@PSTATUS2,a2
 
 	btst	0,a2
-	jrz	ayreno_player1
+	jrz	aqtkno_player1
 	clr	a0			;player 1
 	calla	get_but_val_cur
 	or	a0,a1
-ayreno_player1
+aqtkno_player1
 
 	btst	1,a2
-	jrz	ayreno_player2
+	jrz	aqtkno_player2
 	movk	1,a0			;player 2
 	calla	get_but_val_cur
 	or	a0,a1
-ayreno_player2
+aqtkno_player2
 
 	move	a1,a0
 	rets
 
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
   SUBR	get_all_buttons_cur2
 
@@ -2329,6 +2923,10 @@ ayreno_player2
 	rets
 
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
  SUBR	get_all_buttons_down
 
@@ -2337,23 +2935,27 @@ ayreno_player2
 	move	@PSTATUS2,a2
 
 	btst	0,a2
-	jrz	eaxsno_player1
+	jrz	moqeno_player1
 	clr	a0			;player 1
 	calla	get_but_val_down
 	or	a0,a1
-eaxsno_player1
+moqeno_player1
 
 	btst	1,a2
-	jrz	eaxsno_player2
+	jrz	moqeno_player2
 	movk	1,a0			;player 2
 	calla	get_but_val_down
 	or	a0,a1
-eaxsno_player2
+moqeno_player2
 
 	move	a1,a0
 	rets
 
 
+*****************************************************************************
+*
+* RETURN:	a0 = joy switch bits
+*-----------------------------------------------------------------------------
 
  SUBR	get_all_buttons_down2
 
@@ -2367,6 +2969,11 @@ eaxsno_player2
 	move	a1,a0
 	rets
 
+*****************************************************************************
+* Get random # with mask
+* A0=Mask
+* 0A0H=Rnd # (Pass CC)
+* Trashes scratch
 
  SUBRP	rnd
 
@@ -2381,6 +2988,11 @@ eaxsno_player2
 	rets
 
 
+*****************************************************************************
+* Quickly produce a random # in range 0-X
+* A0=X
+* 0A0H=Random # (0 to A0) (No CC)
+* Trashes scratch
 
  SUBR	rndrng0
 
@@ -2399,6 +3011,7 @@ eaxsno_player2
 
 	.if	DEBUG
 	
+*****************************************************************************
 
  SUBR	tint_on
 
@@ -2409,6 +3022,7 @@ eaxsno_player2
 	PULL	a0,a1
 	rets
 
+*****************************************************************************
 
  SUBR	tint_off
 
@@ -2423,6 +3037,12 @@ eaxsno_player2
 	.endif
 
 
+*****************************************************************************
+* Change an objects image (Doesn't check VFLIP)
+* A0=*New image
+* A1=New flip flags & const
+* A8=*Obj
+* Trashes scratch
 
  SUBR	civanic
 
@@ -2431,7 +3051,7 @@ eaxsno_player2
  SUBR	civani
 
 	cmpi	ROM,a0
-	jrlo	ukrtanierr
+	jrlo	mtnlanierr
 
 	;set new anim points
 	move	*a0(IANIOFFX),*a8(ODXOFF),W
@@ -2447,18 +3067,19 @@ eaxsno_player2
 	move	a1,*a8(OCTRL)		;Write 6 low bits
 	setf	16,1,0
 
-ukrtx	rets
+mtnlx	rets
 
-ukrtanierr 
+mtnlanierr 
 	.if	DEBUG
 	LOCKUP
 	eint
 	.else
 	CALLERR	2,2
 	.endif
-	jruc	ukrtx
+	jruc	mtnlx
 
 
+******************************************************************************
 
 	.end
 

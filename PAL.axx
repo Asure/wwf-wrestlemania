@@ -1,3 +1,22 @@
+**************************************************************
+*
+* Software:	?, Shawn Liptak and Mark Turmell
+* Initiated:	4/13/89 (palstuff)
+*
+* Modified:	Shawn Liptak, 7/23/91	-New FADEIN/OUT (Total carnage)
+* 		Shawn Liptak, 7/28/91	-Merged with fbstuff
+* 		Shawn Liptak, 8/12/91	-PAL_TOWHT/PAL_FMWHT
+* 		Shawn Liptak, 8/21/91	-Merged pall & palstuff
+* 		Shawn Liptak, 9/13/91	-Clean up!
+* 		Shawn Liptak, 9/17/91	-New PAL struct
+* 		Shawn Liptak, 11/19/91	-Improved GETxPAL with CLNPAL
+* 		Shawn Liptak, 2/20/92	-Basketball cleanup
+* 		Shawn Liptak, 4/29/92	-Conditional bgndpal assembly
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 11/18/92 20:30
+**************************************************************
 	.title	"palette allocator and fader control"
 	.file	"pal.asm"
 	.width	132
@@ -15,17 +34,23 @@
 	.include	"fontsimg.glo"
 	.include	"bgndtbl.glo"
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	IRQSKYE
 	.REF	IGNORE_SPECIAL,IGNORE_THIS_PAL
 
+******************************************************************************
 
+;defs
 
+;equates
 
 FPALNUM	.equ	8
 FPALSZ	.equ	256*16
 
 
+;ram
 
 	.bss 	fade_start,16
 	.bss	fade_end,16
@@ -65,8 +90,13 @@ morfpal11	equ	FADERAM+10*16*64
 
 	.text
 
+********************************
+* Note: Scratch = A0-A1,A14,B0-B1
 
 
+*******************************
+* Clear out palette allocation and xfer ram
+* Trashes scratch
 
  SUBR	pal_init
 
@@ -74,14 +104,14 @@ morfpal11	equ	FADERAM+10*16*64
 	movi	PALRSIZ*NUMPAL/16,b0	;# of words
 
 	clr	a1
-hlwcl1	move	a1,*a0+
-	dsj	b0,hlwcl1
+pvkkl1	move	a1,*a0+
+	dsj	b0,pvkkl1
 
 	movi	PALTRAM,a0		;*xfer ram
 	movi	PALTSIZ*NUMPALT/16,b0	;# of words
 
-hlwcl2	move	a1,*a0+
-	dsj	b0,hlwcl2
+pvkkl2	move	a1,*a0+
+	dsj	b0,pvkkl2
 
 	;always start with DIAGP as pal 0!
 	movi	DIAGP,a0
@@ -89,6 +119,9 @@ hlwcl2	move	a1,*a0+
 	rets
 
 
+*******************************
+* Cleanup unused palettes
+* Trashes A1,A14,B0-B1
 
  SUBR	pal_clean
 
@@ -98,7 +131,7 @@ hlwcl2	move	a1,*a0+
 	movi	NUMPAL-1,a3		;Chk all pals
 	movi	00101H,a4		;2nd PAL #
 
-mlpglp	move	@OBJLST,a0,L
+vzsglp	move	@OBJLST,a0,L
 	jrz	cp30			;No objs, chk backgnd
 
 cp20	move	*a0(OPAL),a14
@@ -117,6 +150,15 @@ cp50	move	*a0(OPAL),a14
 	jrnz	cp50
 
 cp60
+;	move	*a2,a0,L
+;	cmpi	WARPP,a0
+;	jrne	cp70			;Not warp pal?
+;
+;	movi	CYCPID,a0
+;	movi	-1,a1
+;	calla	EXISTP
+;	move	a0,a0
+;	jrnz	cp80			;Found cycler?
 
 cp70
 	MOVE	@IGNORE_SPECIAL,A14
@@ -138,30 +180,42 @@ cp80	addi	00101H,a4		;Next pal
 	.endif
 
 cp90	addk	PALRSIZ,a2
-	dsj	a3,mlpglp
+	dsj	a3,vzsglp
 
 	PULL	a0,a2,a3,a4
 	rets
 
 
+*******************************
+* Find the color map # to which the given palette is assigned
+* A0=*Pallette
+* 0A0H=PAL # (DMA format) or 0 (Z)
+* Trashes scratch
 
  SUBR	pal_find
 
 	movi	PALRAM,a1
 	movi	NUMPAL,b0
 
-pxerlp	move	*a1+,a14,L	;Get * palette
+zbtplp	move	*a1+,a14,L	;Get * palette
 	cmp	a0,a14
-	jreq	pxerok		;Found?
-	dsj	b0,pxerlp
+	jreq	zbtpok		;Found?
+	dsj	b0,zbtplp
 	clr	a0		;Set Z
 	rets
 
-pxerok	move	A1,a14
+zbtpok	move	A1,a14
 	subi	NUMPAL,b0	;Compute pal #
 	neg	b0
 	move	b0,a1
 
+;	.if	PAL64
+;	movk	0fH,a14
+;	and	a1,a14		;A14=4 low bits
+;	srl	4,a1		;Move B4/B5 to B6/B7
+;	sll	6,a1
+;	add	a14,a1
+;	.endif
 
 	move	a1,a0		;Return pal #
 	sll	8,a1
@@ -171,6 +225,13 @@ pxerok	move	A1,a14
 
 
 
+*******************************
+* Get a foreground palette
+* A0=*Palette
+*Rets:
+* A0=Color map allocated (0000-cfcf)
+* Z set if no palette free
+* Trashes scratch
 
  SUBR	pal_getf
 
@@ -190,6 +251,8 @@ gfp8	move	*a1+,a2,L
 	dsj	a3,gfp8
 
 	.if	DEBUG
+;	LOCKUP
+;	eint
 	.endif
 	callr	pal_clean
 
@@ -199,11 +262,18 @@ gfp20	move	*a1+,a2,L
 	jrz	getfp		;Palette empty? Grab it
 	dsj	a3,gfp20
 
-flnuerr	PULL	a2,a3
+cabjerr	PULL	a2,a3
 	clr	a0		;Set Z error
 	rets
 
 
+********************************
+* Get a background palette
+* A0=*Palette
+*Rets:
+* A0=Color map allocated (0000-cfcf)
+* Z set if no palette free
+* Trashes scratch
 
 	.if	NMBPAL
 
@@ -235,7 +305,7 @@ gbp8	move	*a1+,a2,L
 gbp10	move	*a1+,a2,L
 	jrz	gbp30		;Palette empty? Grab it
 	dsj	a3,gbp10
-	jruc	flnuerr
+	jruc	cabjerr
 
 
 getfp	addk	NMBPAL,a3	;>Setup your new palette
@@ -263,7 +333,7 @@ gbp30	PUSH	a0,a1
 	move	*a0+,a2		;Get # colors in pal
 	callr	pal_set		;Setup pal transfer
 	mmfm	sp,a0,a1
-	jrz	flnuerr		;Failed to get transfer?
+	jrz	cabjerr		;Failed to get transfer?
 	move	a0,-*a1,L	;Stuff palette *
 
 getpn	subi	NUMPAL,a3	;Compute palette #
@@ -286,6 +356,13 @@ getpn	subi	NUMPAL,a3	;Compute palette #
 	rets
 
 
+*******************************
+* Setup palette transfer
+* A0=* to palette color data
+* A1=Bit 8-15 destination palette | Bit 0-7 start color
+* A2=Color count (0-255)
+* Rets: Z set if unable to setup transfer
+* Trashes scratch
 
  SUBR	pal_set
 
@@ -294,26 +371,31 @@ getpn	subi	NUMPAL,a3	;Compute palette #
 	movi	PALTRAM,a3
 	movi	NUMPALT,b0	;# of palette transfers allowed
 
-dbvnlp	move	*a3+,a14
-	jrz	dbvnset		;Cell free?
+yfhhlp	move	*a3+,a14
+	jrz	yfhhset		;Cell free?
 	addi	PALTSIZ-16,a3
-	dsj	b0,dbvnlp
+	dsj	b0,yfhhlp
 	.if	DEBUG
 	LOCKUP
 	eint
 	.endif
-	jruc	dbvnx
+	jruc	yfhhx
 
-dbvnset	move	a0,*a3+,L	;Set PALSRC
+yfhhset	move	a0,*a3+,L	;Set PALSRC
 	move	a1,*a3		;Set PALDEST
 	move	a2,*a3(-48)	;Set PLDCNT (Must set last)
 
-dbvnx	move	b1,a3
+yfhhx	move	b1,a3
 	move	b0,b0		;Return Z (error) or NZ (ok)
 	rets
 
 
 
+*******************************
+* Transfer palette data
+* Called during vblank
+* Looks through PALTRAM for transfers
+* Trashes A0-A7
 
  SUBR	pal_transfer
 
@@ -323,16 +405,16 @@ dbvnx	move	b1,a3
 	clr	a6
 	movi	COLRAM,a7
 
-sxcllp	move	*a0,a4		;Get count
-	jrz	sxclx		;End?
+enntlp	move	*a0,a4		;Get count
+	jrz	enntx		;End?
 
 PAL_DEBUG	equ	0
 	.if PAL_DEBUG
 	move	@HEBLNK,a1
 	cmpi	HEBLNKINIT,a1
-	jrnz	sxclhb_ok
+	jrnz	ennthb_ok
 	LOCKUP
-sxclhb_ok
+ennthb_ok
 	.endif
 
 	move	a6,*a0+		;Clear out tranfer count
@@ -355,57 +437,160 @@ sxclhb_ok
 
 	sll	32-9,a4		;Make 0-511
 	srl	32-9+1,a4
-	jrnc	sxcl1		;Even data count?
+	jrnc	ennt1		;Even data count?
 	move	*a1+,*a2+
 
-sxcl1	srl	1,a4		;/2 data count
-	jrnc	sxcl2		;Even?
+ennt1	srl	1,a4		;/2 data count
+	jrnc	ennt2		;Even?
 	move	*a1+,*a2+,L
 
-sxcl2	srl	1,a4		;/2 data count
-	jrnc	sxcl3		;Even?
+ennt2	srl	1,a4		;/2 data count
+	jrnc	ennt3		;Even?
 	move	*a1+,*a2+,L
 	move	*a1+,*a2+,L
-sxcl3	jrz	sxcl5		;Cnt=0?
+ennt3	jrz	ennt5		;Cnt=0?
 
-sxcl4	move	*a1+,*a2+,L
+ennt4	move	*a1+,*a2+,L
 	move	*a1+,*a2+,L
 	move	*a1+,*a2+,L
 	move	*a1+,*a2+,L
-	dsj	a4,sxcl4
+	dsj	a4,ennt4
 
-sxcl5	dsj	a3,sxcllp
+ennt5	dsj	a3,enntlp
 
-sxclx	rets
+enntx	rets
 
 
 
+*******************************
+* Black out selected palette
+* A0=* palette to black out
+* Trashes scratch
 
  SUBR	pal_blacken
 
 	PUSH	a2
 
 	callr	pal_find
-	jrz	luymerr
+	jrz	kqtserr
 	sll	8,a0
 	move	a0,a1
 	movi	FADERAM,a0
 	movk	32,b0
 	clr	a2
-luymlp	move	a2,*a0+,L
-	dsj	b0,luymlp
+kqtslp	move	a2,*a0+,L
+	dsj	b0,kqtslp
 	movi	FADERAM,a0
 	movi	64,a2
 	callr	pal_set
 
-luymerr	PULL	a2
+kqtserr	PULL	a2
 	rets
 
 
+********************************
+* PUMP_RED PROCESS, CYCLE NUCLEAR REACTORS
+
+;PUMP_RED
+;	SLEEPK	18H
+;	MOVI	REACTR,A0
+;	MOVE	A0,@KPBASE,L
+;	CALLR	find_pal
+;	JRZ	REDOUT
+;	SLL	8,A0
+;	MOVE	A0,A11			 ;NEEDED LATER FOR pal_set
+;
+;	MOVI	25,A10			;PUMP RED A10 TIMES
+;	MOVI	128,A8
+;REDLOOP MOVI	FADERAM,A0
+;	ADDK	10H,A8
+;	CALLR	DO_MULT
+;	SLEEPK	1
+;	DSJ	A10,REDLOOP
+;REDOUT
+;	MOVK	25,A10			;PUMP RED A10 TIMES
+;RED2	MOVI	FADERAM,A0
+;	SUBI	10H,A8
+;	CALLR	DO_MULT
+;	SLEEPK	1
+;	DSJ	A10,RED2
+;	JRUC	PUMP_RED
+;
+;DO_MULT
+;	MOVE	A8,A2
+;	PUSH	a8,a10,a11
+;
+;	MOVE	@KPBASE,A1,L		;REACTR,A1
+;;PARAMS
+;;	A0 - DEST RAM FOR PAL
+;;	A1 - SRC FOR PAL
+;;	A2 - COLOR MULTIPLIER
+;; EACH COLOR IN PALETTE WILL BE MULTIPLIED BY A2 THEN DIVIDED BY 128
+;
+;	move	*a1+,a14
+;	move	a14,*a0+
+;	SLL	23,A14		;TOP BITS OF FIELD ARE FLAGS
+;	SRL	23,A14		;ONLY 9 BITS NEEDED FOR # COLORS
+;	MOVI	07C00H,A4	;A4 - PRE MULT MASK FOR 5 BITS OF RED
+;;	MOVI	003E0H,A6	;A6 - PRE MULT MASK FOR 5 BITS OF GREEN
+;;	MOVI	0001FH,A8	;A8 - PRE MULT MASK FOR 5 BITS OF BLUE
+;	MOVE	A4,A9
+;;	MOVE	A6,A10
+;;	MOVE	A8,A11
+;	SLL	7,A9		; A9 - POST MULT MAX FOR 5 BITS OF RED
+;;	SLL	7,A10		;A10 - POST MULT MAX FOR 5 BITS OF GREEN
+;;	SLL	7,A11		;A11 - POST MULT MAX FOR 5 BITS OF BLUE
+;FADELPR
+;	MOVE	*A1+,A3,W	;A3 - RED
+;	MOVE	A3,A5
+;	ANDI	03FFH,A5
+;;	MOVE	A3,A5		;A5 - GREEN
+;;	MOVE	A3,A7		;A7 - BLUE
+;	AND	A4,A3
+;	CMPI	1001H,A3
+;	JRC	REDOKR
+;;	AND	A6,A5
+;;	AND	A8,A7
+;	MPYU	A2,A3
+;;	MPYU	A2,A5
+;;	MPYU	A2,A7
+;	CMP	A9,A3
+;	JRLE	REDOKR
+;	MOVE	A9,A3
+;REDOKR
+;;	CMP	A10,A5
+;;	JRLE	GREENOK
+;;	MOVE	A10,A5
+;;GREENOK
+;;	CMP	A11,A7
+;;	JRLE	BLUEOK
+;;	MOVE	A11,A7
+;;BLUEOK
+;	AND	A9,A3
+;	SRL	7,A3
+;;	AND	A10,A5
+;	OR	A5,A3
+;;	OR	A7,A3
+;;	SRL	7,A3
+;	MOVE	A3,*A0+
+;	DSJS	A14,FADELPR
+;
+;
+;	PULL	a8,a10,a11
+;
+;	movi	FADERAM,a0	;*Color data
+;	move	a11,a1		;Pal#
+;	move	*a0+,a2		;kqtsColors
+;	jruc	pal_set
 
 
 
-
+********************************
+* Fade in all selected palettes from black
+* A0=*Palette list to fade in (autoerase + 0-8 pals)
+* A1=Fade delay in ticks
+* Trashes scratch,A7,A9-A10
+* If 1st entry not neg then it enables autoerase fading
 
 
  SUBR	pal_fadein
@@ -460,7 +645,7 @@ fi200	move	*a11+,a1,L
 	move	*a6+,a1			;Palette #
 	cmpi	-256,a1			;FF00
 	jreq	fi230			;Couldn't find?
-	move	*a0+,a2			;luymColors
+	move	*a0+,a2			;kqtsColors
 	callr	pal_set
 fi230	addi	FPALSZ,a5
 	dsj	a7,fi200
@@ -475,6 +660,11 @@ fi800	DIE
 
 
 
+********************************
+* Fade out all selected palettes to black
+* A0=*Palette list to fade out (autoerase + 0-8 pals)
+* A1=Fade delay in ticks
+* If 1st entry not neg then it enables autoerase fading
 
 
  SUBR	pal_fadeout
@@ -534,7 +724,7 @@ fo220	move	a5,a0
 	move	*a6+,a1			;Palette #
 	cmpi	-256,a1			;FF00
 	jrz	fo250
-	move	*a0+,a2			;luymColors
+	move	*a0+,a2			;kqtsColors
 	callr	pal_set
 fo250	addi	FPALSZ,a5
 	dsj	a7,fo200
@@ -548,6 +738,8 @@ fo400	move	a10,a0
 fo800	DIE
 
 
+********************************
+* Fade autoerase color
 
  SUBRP	pal_fadeae	;A2=Brightness (0-128)
 
@@ -559,6 +751,11 @@ fo800	DIE
 	jruc	pf1c
 
 
+********************************
+* Fade a palette
+* Each color in palette will be multiplied by a2 then divided by 128
+* A0=*Ram for pal, A1=*Palette, A2=Brightness (0-128)
+* Trashes scratch
 
  SUBRP	pal_fade
 
@@ -611,6 +808,10 @@ pfbok	sll	10,a3
 
 
 
+**************************************************************************
+* Fade palettes from black to their normal colors except for list
+* A0=*List NOT to fade or 0
+* Trashes scratch
 
  SUBR	pal_fadeinx
 
@@ -619,6 +820,10 @@ pfbok	sll	10,a3
 	jruc	fbf10
 
 
+**************************************************************************
+* Fade palettes down to black except for list
+* A0=*List NOT to fade or 0
+* Trashes scratch
 
  SUBR	pal_fadeoutx
 
@@ -651,6 +856,12 @@ fbfx	PULL	a2,a6,a7,a8,a9,a10
 	rets
 
 
+**************************************************************************
+* fadeonep - Fade one palette (Process)
+*
+* A8=*Palette to be faded
+* A9=Palette slot # (0 to NUMPAL-1)
+* A10=Add value per fade (!0)
 
 fadeonep
 
@@ -693,6 +904,10 @@ fop60	add	a10,a11
 	DIE
 
 
+****************************************************************
+* Fade palettes from white to their normal colors except for list
+* A0=*List NOT to fade or 0
+* A1=Do Autoerase (!0=Yes)
 
  SUBR	pal_fmwht
 
@@ -701,6 +916,10 @@ fop60	add	a10,a11
 	jruc	ptw10
 
 
+****************************************************************
+* Brighten palettes to white except for list
+* A0=*List NOT to fade or 0
+* A1=Do Autoerase (!0=Yes)
 
  SUBR	pal_towht
 
@@ -738,6 +957,11 @@ ptwx	PULL	a2,a6,a7,a8,a9,a10
 	rets
 
 
+********************************
+* Brighten one palette (Process)
+* A8=*Palette to be faded
+* A9=Palette slot #
+* A10=Add value per loop (!0)
 
 brightenonep
 	.if	PAL64
@@ -778,6 +1002,9 @@ bopx	SLEEPK	1		;give last xfer a chance to go
 	DIE
 
 
+********************************
+* Change brightness of autoerase (Process)
+* A10=Add value per loop (!0)
 
  SUBR	addbrt_ae
 
@@ -798,6 +1025,9 @@ abaelp	add	a10,a11
 abaex	DIE
 
 
+********************************
+* Change brightness of autoerase
+* A2=Brightness (-31 to 31)
 
  SUBRP	addbae
 
@@ -809,6 +1039,11 @@ abaex	DIE
 	jruc	pb1c
 
 
+********************************
+* Change brightness of a palette
+* Each color in palette will have A2 added to its RGB
+* A0=*Ram for pal, A1=*Palette, A2=Brightness (-31 to 31)
+* Trashes scratch
 
  SUBRP	pal_addb
 
@@ -857,6 +1092,11 @@ pbbok	sll	10,a3
 	rets
 
 
+*****************************************************************************
+*
+* INPUT:	a10 = * list palettes not to fade (0 terminated)
+* A11=Fade increment (1-256)
+*-----------------------------------------------------------------------------
 
  SUBR	fade_up
 
@@ -873,6 +1113,11 @@ pbbok	sll	10,a3
 
 	jruc	do_fade
 
+*****************************************************************************
+* Fade palettes down (process)
+* A10=* list palettes not to fade (0 terminated)
+* A11=Fade increment (1-256)
+*-----------------------------------------------------------------------------
 
  SUBR	fade_down
 
@@ -888,6 +1133,11 @@ pbbok	sll	10,a3
 
 	jruc	do_fade
 
+*****************************************************************************
+*
+* INPUT:	a10 = * list palettes not to fade (0 terminated)
+*
+*-----------------------------------------------------------------------------
 
  SUBR	fade_up_half
 
@@ -904,6 +1154,11 @@ pbbok	sll	10,a3
 
 	jruc	do_fade
 
+*****************************************************************************
+*
+* INPUT:	a10 = * list palettes not to fade (0 terminated)
+*
+*-----------------------------------------------------------------------------
 
  SUBR	fade_down_half
 
@@ -920,6 +1175,7 @@ pbbok	sll	10,a3
 
 	jruc	do_fade
 
+*****************************************************************************
 
  SUBRP	do_fade
 
@@ -927,7 +1183,7 @@ pbbok	sll	10,a3
 	move	a0,@irqskyeo
 
 	move	@fade_start,a10
-pryvfade_loop
+gfhafade_loop
 
 	move	@irqskyeo,a11
 	movk	01fH,a7
@@ -955,28 +1211,28 @@ pryvfade_loop
 	movi	FADERAM,a4
 	movi	PALRAM,a1
 	movi	NUMPAL,a3
-pryvnext_pal
+gfhanext_pal
 	move	*a1+,a2,L	;Get *palette
-	jrz	pryvempty_pal
+	jrz	gfhaempty_pal
 
 	move	@fade_list,a7,L
-	jrz	pryvskip_check
-	jruc	pryvstart
+	jrz	gfhaskip_check
+	jruc	gfhastart
 
-pryvnext_check
+gfhanext_check
 	cmp	a9,a2
-	jreq	pryvdone		;skip this palette
-pryvstart
+	jreq	gfhadone		;skip this palette
+gfhastart
 	move	*a7+,a9,L
-	jrnz	pryvnext_check
+	jrnz	gfhanext_check
 
-pryvskip_check
+gfhaskip_check
 
 	move	*a2+,a5		;Number colours in palette
 	move	a5,a8
 	move	a4,a6
 
-pryvcopy_loop
+gfhacopy_loop
 	move	*a2+,a11
 	movk	01fH,a7
 	and	a11,a7		;A7  = Blue
@@ -999,7 +1255,7 @@ pryvcopy_loop
 
 	move	a7,*a6+		;1 word
 
-	dsj	a8,pryvcopy_loop
+	dsj	a8,gfhacopy_loop
 
 
 	PUSH	a1,a2
@@ -1010,34 +1266,35 @@ pryvcopy_loop
 	move	a5,a2		;# colours
 	callr	pal_set
 	PULL	a1,a2
-pryvdone
-pryvempty_pal
+gfhadone
+gfhaempty_pal
 	addi	FPALSZ,a4
-	dsj	a3,pryvnext_pal
+	dsj	a3,gfhanext_pal
 
 	SLEEPK	1
 
 	move	@fade_start,a0
 	move	@fade_end,a1
 	cmp	a0,a1
-	jrhi	pryvfading_up
+	jrhi	gfhafading_up
 				;fading_down
 	move	@fade_inc,a0	;signed inc
 	sub	a0,a10
 	cmp	a1,a10
-	jrge	pryvfade_loop
+	jrge	gfhafade_loop
 
 	DIE
 
-pryvfading_up
+gfhafading_up
 	move	@fade_inc,a0	;signed inc
 	add	a0,a10
 	cmp	a1,a10
-	jrls	pryvfade_loop
+	jrls	gfhafade_loop
 
 	DIE
 
 
+******************************************************************************
 
 	.end
 

@@ -1,3 +1,12 @@
+**************************************************************
+*
+* Software:	Jason Skiles
+* Initiated:	29 Oct 93
+*
+* COPYRIGHT (C) 1993 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 5/5/95 14:54
+**************************************************************
 
 	.file	"lifebar.asm"
 	.title	"meters, names, messages, and scores"
@@ -28,6 +37,7 @@
 	.include	"tmpdebug.h"
 	.endif
 
+*****************************************************************************
 
 	.ref	reset_for_round,init_scroller,BGND_UD1
 	.ref	reset_for_round2,no_debris,flash_red
@@ -66,14 +76,20 @@
 	.ref	temp_music
 	.ref	finish_completed
 
+*****************************************************************************
 
+;player life/turbo data struct
 PLT_LIFE 	equ	0		;UHW	life pixels (164 max)
 PLT_CLIFE	equ	PLT_LIFE+10h	;UHW	displayed life (164 max)
 PLT_TURBO	equ	PLT_CLIFE+10h	;UHW	turbo val (5400h max)
 PLT_COMBO_SIZE	equ	PLT_TURBO+10h	;UHW	combo bar size
 PLT_SIZE	equ	PLT_COMBO_SIZE+010h
 
+;NOTE that PLT_SIZE is 40h, so anytime we might otherwise use a multiply,
+; we do a X64 instead.  DO NOT change the size of this struct unless
+; you're prepared to do some cleanup.
 
+;meter data struct
 MD_LINK		equ	0		;UHW	PLYRNUM for this meter
 MD_LIFE		equ	MD_LINK+10h	;UHL	life bar *obj
 MD_LBAK		equ	MD_LIFE+20h	;UHL	turbo bar *obj
@@ -111,10 +127,18 @@ MD_SIZE		equ	MD_COMBO+20H
 	BSSX	event_ptr,32
 	.endif
 
+*****************************************************************************
+*
+* Life/Turbo meter sizes and positions.
+*
 
 LIFE_MAX	.equ	163		;green pixels in life bar
 TURBO_MAX	.equ	84<<8		;max turbo value
 
+*****************************************************************************
+*
+* Called at the beginning of the first round of a match.
+*
 
  SUBR	init_life_data
 
@@ -126,8 +150,8 @@ TURBO_MAX	.equ	84<<8		;max turbo value
 	clr	a14
 	movi	event_data,a0
 	movi	EVENTSIZ*NUM_EVENTS/16,a1
-quoiclp	move	a14,*a0+,W
-	dsj	a1,quoiclp
+erjkclp	move	a14,*a0+,W
+	dsj	a1,erjkclp
 
 	.endif
 
@@ -136,7 +160,7 @@ quoiclp	move	a14,*a0+,W
 	calla	GET_ADJ
 	BADCHK	a0,1,5,3		;reg,lo,hi,val
 	X32	a0			;x 16 bits
-	addi	quoitimer_table-20h,a0
+	addi	erjktimer_table-20h,a0
 	move	*a0,a1,L
 	move	a1,@speed_adjustment,L
 
@@ -146,23 +170,31 @@ quoiclp	move	a14,*a0+,W
 	movi	LIFE_MAX,a2
 	movi	TURBO_MAX,a3
 	clr	a4
-quoiinit_loop
+erjkinit_loop
 	move	a2,*a1(PLT_LIFE)
 	move	a3,*a1(PLT_TURBO)
 	move	a4,*a1(PLT_CLIFE)
 	move	a4,*a1(PLT_COMBO_SIZE)
 	addi	PLT_SIZE,a1
-	dsj	a0,quoiinit_loop
+	dsj	a0,erjkinit_loop
 
 	rets
 
-quoitimer_table
+erjktimer_table
 	.long		10000h*4/5	;80% damage (slowest)
 	.long		10000h*9/10	;90%
 	.long		10000h*1	;normal damage (default)
 	.long		10000h*11/10	;110%
 	.long		10000h*6/5	;120% damage (fastest)
 
+*****************************************************************************
+*
+* Resets life/turbo/combo data for wrestler in a13.  Used by change_wrestler.
+* Updates name display too, if either display is aimed at our guy.
+*
+* Since this only happens for dead guys, we don't check to see if it's a
+* player, and we don't check special royal rumble mode cases.
+*
 
  SUBR	init_wres_life_data
 
@@ -184,20 +216,24 @@ quoitimer_table
 	movi	meter_data,a5
 	move	*a5(MD_LINK),a14
 	cmp	a1,a14
-	jreq	apmschgnm
+	jreq	zufechgnm
 	addi	MD_SIZE,a5
 	move	*a5(MD_LINK),a14
 	cmp	a1,a14
-	jrne	apmsdone
+	jrne	zufedone
 
-apmschgnm	X32	a1
+zufechgnm	X32	a1
 	addi	name_tbl,a1
 	move	*a1,a0,L
 	move	*a5(MD_NAME),a8,L
 	calla	civanic
 
-apmsdone	rets
+zufedone	rets
 
+*****************************************************************************
+*
+* Called at the start of the second and later rounds of a match.
+*
 
  SUBR	init_rnd_life_data
 
@@ -205,11 +241,11 @@ apmsdone	rets
 	movi	NUM_WRES,a0
 	movi	life_data,a1
 	movi	LIFE_MAX,a2
-joqlinit_loop
+iducinit_loop
 	move	a2,*a1(PLT_LIFE)
 	move	a2,*a1(PLT_CLIFE)
 	addi	PLT_SIZE,a1
-	dsj	a0,joqlinit_loop
+	dsj	a0,iducinit_loop
 
 	;set lifebar pals.
 	movi	FYL2RD_P,a0
@@ -217,23 +253,27 @@ joqlinit_loop
 
 	movi	meter_data,a1
 	move	@p2rounds,a14
-	jrz	joqlok1
+	jrz	iducok1
 
 	;set left lifebar red
 	move	*a1(MD_LIFE),a8,L
 	move	a0,*a8(OPAL)
 
-joqlok1	addi	MD_SIZE,a1
+iducok1	addi	MD_SIZE,a1
 	move	@p1rounds,a14
-	jrz	joqlok2
+	jrz	iducok2
 
 	;set right lifebar red
 	move	*a1(MD_LIFE),a8,L
 	move	a0,*a8(OPAL)
 
-joqlok2	rets
+iducok2	rets
 
 
+*****************************************************************************
+*
+* 0a8H = PLYRNUM for left meter
+* 0a9H = PLYRNUM for right meter
 
 P1CNTR	.equ	PDATA
 P2CNTR	.equ	PDATA+16
@@ -303,60 +343,66 @@ P2STATE	.equ	PDATA+48
 	move	a0,*a13(P1STATE)
 	move	a0,*a13(P2STATE)
 
-kthlmain_loop
+zsutmain_loop
+;Update all the life data
 	clr	a0
 
-kthlmaint_loop
+zsutmaint_loop
 	MOVE	@WHICH_SCREEN,A1,L
 	CMPI	DUMRETS,A1
 	JRNE	JUST_DISPLAY_THEM
 	callr	inc_life
 	inc	a0
 	cmpi	NUM_WRES,a0
-	jrne	kthlmaint_loop
+	jrne	zsutmaint_loop
 
 JUST_DISPLAY_THEM
+;Update the meters
 	clr	a0
 	callr	update_meter
 	movk	1,a0
 	callr	update_meter
 
+;Blink CPU controlled name with insert coins/press start
 	movi	meter_data,a1
 	move	@PSTATUS2,a0
 	btst	0,a0
-	jrnz	kthlp2
+	jrnz	zsutp2
+;Plyr 1 is drone
 	move	*a13(P1CNTR),a0
 	dec	a0
 	move	a0,*a13(P1CNTR)
-	jrnz	kthlp2
+	jrnz	zsutp2
 	move	*a13(P1STATE),a0
 	xori	1,a0	
 	move	a0,*a13(P1STATE)
-	jrz	kthldoname
+	jrz	zsutdoname
 
+;Do correct coin message
 
 	movi	TSEC,a0			;one second of PRESS/INSERT...
 	move	@NUM_OPPS,a14		;(two if one-on-one mode)
 	dec	a14
-	jrnz	kthltset1a
+	jrnz	zsuttset1a
 	sla	1,a0
-kthltset1a	move	a0,*a13(P1CNTR)
+zsuttset1a	move	a0,*a13(P1CNTR)
 
 	move	*a1(MD_NAME),a8,L
 	movi	WF_START,a0
+;Display the insert coin/press start message
 	calla	CR_STRTP
-	jrhs	kthlenough_money
+	jrhs	zsutenough_money
 	movi	WF_INSERT,a0
-kthlenough_money
+zsutenough_money
 	calla	civanic
-	jruc	kthlp2
-kthldoname	
+	jruc	zsutp2
+zsutdoname	
 	movi	TSEC*4,a0		;and four seconds of names
 	move	@NUM_OPPS,a14		;(two if one-on-one mode)
 	dec	a14
-	jrnz	kthltset1b
+	jrnz	zsuttset1b
 	sra	1,a0
-kthltset1b	move	a0,*a13(P1CNTR)
+zsuttset1b	move	a0,*a13(P1CNTR)
 
 	move	*a1(MD_LINK),a0
 	X32	a0
@@ -367,47 +413,51 @@ kthltset1b	move	a0,*a13(P1CNTR)
 	X32	a0
 	addi	name_tbl,a0
 	move	*a0,a0,L
+;Change the name
 	move	*a1(MD_NAME),a8,L
 	calla	civanic
-kthlp2
+zsutp2
 	movi	meter_data,a1
 	addi	MD_SIZE,a1
 	move	@PSTATUS2,a0
 	btst	1,a0
-	jrnz	kthlok
+	jrnz	zsutok
 
+;Plyr 2 is drone
 	move	*a13(P2CNTR),a0
 	dec	a0
 	move	a0,*a13(P2CNTR)
-	jrnz	kthlok
+	jrnz	zsutok
 	move	*a13(P2STATE),a0
 	xori	1,a0	
 	move	a0,*a13(P2STATE)
-	jrz	kthldoname2
+	jrz	zsutdoname2
 
+;Do correct coin message
 
 	movi	TSEC,a0			;one second of PRESS/INSERT...
 	move	@NUM_OPPS,a14		;(two if one-on-one mode)
 	dec	a14
-	jrnz	kthltsetsa
+	jrnz	zsuttsetsa
 	sla	1,a0
-kthltsetsa	move	a0,*a13(P1CNTR)
+zsuttsetsa	move	a0,*a13(P1CNTR)
 
 	move	*a1(MD_NAME),a8,L
 	movi	WF_START,a0
+;Display the insert coin/press start message
 	calla	CR_STRTP
-	jrhs	kthlenough_money
+	jrhs	zsutenough_money
 	movi	WF_INSERT,a0
-kthlenough_money2
+zsutenough_money2
 	calla	civanic
-	jruc	kthlok
-kthldoname2
+	jruc	zsutok
+zsutdoname2
 	movi	TSEC*4,a0		;and four seconds of names
 	move	@NUM_OPPS,a14		;(two if one-on-one mode)
 	dec	a14
-	jrnz	kthltset2b
+	jrnz	zsuttset2b
 	sra	1,a0
-kthltset2b	move	a0,*a13(P1CNTR)
+zsuttset2b	move	a0,*a13(P1CNTR)
 
 	move	*a1(MD_LINK),a0
 	X32	a0
@@ -418,13 +468,18 @@ kthltset2b	move	a0,*a13(P1CNTR)
 	X32	a0
 	addi	name_tbl,a0
 	move	*a0,a0,L
+;Change the name
 	move	*a1(MD_NAME),a8,L
 	calla	civanic
 
-kthlok
+zsutok
 	SLEEPK	1
-	jruc	kthlmain_loop
+	jruc	zsutmain_loop
 
+********
+*
+* Meter objects and their positions
+*
 
 
 lbar_x		.equ	11
@@ -535,6 +590,9 @@ rhlth1	.word	rbar_x,bar_y,bar_z			;X, Y, Z
 	.long	0,0					;XVEL, YVEL
 	.even
 
+*
+* name data
+*
 
 lname	.word	lname_x,name_y,name_z			;X, Y, Z
 	.long	NAM_BRT					;IMG
@@ -550,12 +608,13 @@ rname	.word	rname_x,name_y,name_z			;X, Y, Z
 	.long	0,0					;XVEL, YVEL
 	.even
 
+***************************************
 
  SUBRP	replace_wins
 	move	@match_winner,a1
 	MOVE	@PSTATUS2,A0
 	AND	A1,A0
-	JRZ	wucsEXIT
+	JRZ	mfsdEXIT
 
 	move	@WINS_OBJ,A0,L
 	JRZ	NO_WINS_1
@@ -576,7 +635,7 @@ NO_WINS_3
 	push	a10
 	callr	streak_1
 	pull	a10
-wucsEXIT
+mfsdEXIT
 	rets
 
 do_player_2_wins
@@ -587,6 +646,7 @@ do_player_2_wins
 	rets
 
 
+***************************************
 
 FLASH_COMBO
 
@@ -629,7 +689,7 @@ COMBO_FLASH_ANIM
 	ANDNI	M_FLIPH,A1
 	MOVE	A1,*A8(OCTRL)
 	movk	3,a9
-wucsflsh	PUSHP	a9
+mfsdflsh	PUSHP	a9
 	movi	wind_anim,a1
 	calla	setup_back_anim
 	JSRP	ANIM_CROWD
@@ -637,7 +697,7 @@ wucsflsh	PUSHP	a9
 	SLEEPK	2
 
 	PULLP	a9
-	dsj	a9,wucsflsh
+	dsj	a9,mfsdflsh
 
 	DIE
 
@@ -653,35 +713,43 @@ wind_anim
 	WL	2,SECWND09
 	.WORD	CANI_END
 
+******************************************************************************
 
  SUBR	CHECK_COMBO_GO
 	move	*a8(PLYRNUM),a1
 
 	;if we're in royal rumble, change a 1 to a zero.
 	move	@royal_rumble,a14
-	jrz	wucsnorum0
+	jrz	mfsdnorum0
 	cmpi	1,a1
-	jrne	wucsnorum0
+	jrne	mfsdnorum0
 	clr	a1
-wucsnorum0
+mfsdnorum0
 
 	X64	a1		;x by PLT_SIZE
 	addi	life_data,a1
 	MOVE	*A1(PLT_COMBO_SIZE),a14
+;	MOVE	@BONUS_POWER,A1
+;	cmp	A1,a14
 	move	@instant_combos_on,a1
-	jrnz	wucsauto_combos			; Auto combos on
+	jrnz	mfsdauto_combos			; Auto combos on
 	movk	16,a1				; Normal combo check
-	jruc	wucscombo_check
-wucsauto_combos
+	jruc	mfsdcombo_check
+mfsdauto_combos
 	clr	a1
-wucscombo_check
+mfsdcombo_check
 	cmp	a1,a14
 	rets
 
+******************************************************************************
 
+;A7 = BIT TO SET IN PLAYER HISTORY
+;A5 = FIRST TIME FOR MOVE
+;A6 = MOVE REPEAT
 
  SUBR	ADD_TO_COMBO_COUNT
 
+;Adds first value each time! [why?]
 	MOVE	A7,A2
 	movk	1,a5
 	movk	1,a3
@@ -701,17 +769,17 @@ ALREADY_ADDED_ONCE
 
 	PUSH	a13
 	move	@royal_rumble,a14
-	jrz	wucsnorum
+	jrz	mfsdnorum
 
 	move	*a13(PLYRNUM),a14
 	cmpi	1,a14
-	jrgt	wucsnorum
+	jrgt	mfsdnorum
 
 	;royal rumble and a13 is a human.  make it the first one.
 	clr	a1
 	calla	get_process_ptr
 	move	a0,a13
-wucsnorum
+mfsdnorum
 
 	;WARNING:  a13 isn't neccesarily valid in here! (see above)
 	move	*a13(PLYR_SIDE),a1
@@ -731,12 +799,12 @@ wucsnorum
 	ADD	A3,A2
 	MOVE	A2,*A5(PLT_COMBO_SIZE)
 	move	@instant_combos_on,a6
-	jrz	wucsnorm_combos
+	jrz	mfsdnorm_combos
 	clr	a6
-	jruc	wucsdo_check
-wucsnorm_combos
+	jruc	mfsddo_check
+mfsdnorm_combos
 	movk	16,a6
-wucsdo_check
+mfsddo_check
 	cmp	a6,a2
 	JRGE	SET_FLASHING_COMBO_GOING
 	SLL	5,A2
@@ -760,6 +828,7 @@ wucsdo_check
 	MOVE	*A9(MD_COMBO),A8,L
 
 SET_FLASHING_COMBO_GOING
+;a1=plyr side
 	move	a1,a0
 	SLL	4,a0
 	ADDI	COMBO_FLASH_FLAG,a0
@@ -797,26 +866,33 @@ WHICH_SIZE_BAR
 	.LONG	SUPER_15
 	.LONG	SUPER_16
 
+*****************
+*
+* Use in a 1-player game when there are multiple drones on the other team.
+* This process keeps the other lifebar/name/combo meter display up-to-date.
+* It won't do a rewire within ekgwLATENCY ticks of the last rewire unless the
+* currently displayed wrestler is dead.
+*
 
-	.bss	tjckLAST_REWIRE,32
-tjckLATENCY	.equ	TSEC/2
+	.bss	ekgwLAST_REWIRE,32
+ekgwLATENCY	.equ	TSEC/2
 
  SUBR	rewire_monitor
 
 	move	@buddy_mode_on,a14
-	jrnz	tjckbuddy
+	jrnz	ekgwbuddy
 	move	@royal_rumble,a14
-	jrnz	tjckrumble
+	jrnz	ekgwrumble
 
 	;quit if we're a two-player game
 	move	@PSTATUS2,a14
 	cmpi	3,a14
-	jreq	tjckdie
+	jreq	ekgwdie
 
 	;quit if we're a 1v1 game
 	move	@NUM_OPPS,a14
 	cmpi	1,a14
-	jreq	tjckdie
+	jreq	ekgwdie
 
 	;okay, we should run.  figure out which PLYRNUM to key on.  Choose
 	; the first active process, since that'll either be the only human
@@ -828,173 +904,178 @@ tjckLATENCY	.equ	TSEC/2
 	; switch control from one drone to the next, we can't count on
 	; PLYRNUM's and process ptrs always matching up!
 
-tjckrun	movi	NUM_WRES,a0
+ekgwrun	movi	NUM_WRES,a0
 	movi	process_ptrs,a1
-tjcklp0	move	*a1+,a2,L
-	jrnz	tjckfound
-	dsj	a0,tjcklp0
+ekgwlp0	move	*a1+,a2,L
+	jrnz	ekgwfound
+	dsj	a0,ekgwlp0
 
 	;Hey!  No active processes!  Bitch, then quit.
 	.if DEBUG
 	LOCKUP
 	.endif
 
-tjckdie	DIE
+ekgwdie	DIE
 
-tjckfound	move	*a2(PLYRNUM),a10	;key plyrnum
+ekgwfound	move	*a2(PLYRNUM),a10	;key plyrnum
 	move	*a2(CLOSEST_NUM),a11	;previous closest (current disp.)
 
-tjckloop	move	a10,a1
+ekgwloop	move	a10,a1
 	calla	get_process_ptr
 	move	a0,a6			;key process (recomputed every wake)
 	move	*a6(CLOSEST_NUM),a1
 	cmp	a11,a1
-	jreq	tjckno
+	jreq	ekgwno
 
-	;closest has changed.  only rewire if PCNT >= @tjckLAST_REWIRE+tjckLATENCY,
+	;closest has changed.  only rewire if PCNT >= @ekgwLAST_REWIRE+ekgwLATENCY,
 	; or if the old guy is dead.
 	move	a11,a1			;old guy...
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	tjckrewire			;dead?
+	jreq	ekgwrewire			;dead?
 
 	move	@PCNT,a0,L
-	move	@tjckLAST_REWIRE,a1,L
-	addi	tjckLATENCY,a1
+	move	@ekgwLAST_REWIRE,a1,L
+	addi	ekgwLATENCY,a1
 	cmp	a1,a0
-	jrle	tjckno			;enough time since last chg?
+	jrle	ekgwno			;enough time since last chg?
 
-tjckrewire	move	*a6(CLOSEST_NUM),a1
+ekgwrewire	move	*a6(CLOSEST_NUM),a1
 	calla	get_process_ptr
 	move	a0,a7			;new closest proc
 	move	*a7(PLYR_SIDE),a0	;side to display
 	move	*a7(PLYRNUM),a1		;PLYRNUM to display
 	callr	rewire_meter
 	move	@PCNT,a14,L
-	move	a14,@tjckLAST_REWIRE,L
+	move	a14,@ekgwLAST_REWIRE,L
 	move	*a6(CLOSEST_NUM),a11
-tjckno	SLOOP	10,tjckloop
+ekgwno	SLOOP	10,ekgwloop
 
 
+****
 
 
-tjckrumble	;royal rumble.  Never rewire the left meter.  Toggle the right
+ekgwrumble	;royal rumble.  Never rewire the left meter.  Toggle the right
 	; meter every four seconds between plyrnums 2 and 3.  Don't
 	; toggle to or stay on a dead guy.
 
 	movk	3,a9		;pretend we're on PLYRNUM 3...
-	jruc	tjcktoggle		;...so that we can just toggle to initialize.
+	jruc	ekgwtoggle		;...so that we can just toggle to initialize.
 
-tjckrloop	;see if we're displaying a dead guy.
+ekgwrloop	;see if we're displaying a dead guy.
 	move	a9,a1
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	tjcktoggle
+	jreq	ekgwtoggle
 
 	;still alive.  time to toggle anyway?
 	dec	a8
-	jrle	tjcktoggle
+	jrle	ekgwtoggle
 
 	;not time yet.
-	SLOOP	10,tjckrloop
+	SLOOP	10,ekgwrloop
 
-tjcktoggle	move	a9,a1
+ekgwtoggle	move	a9,a1
 
 	;is THIS guy dead?
 	xori	1,a1		;toggle between 2 and 3
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	tjcknotogl		;new guy is dead.  skip it.
+	jreq	ekgwnotogl		;new guy is dead.  skip it.
 
 	move	a1,a9
 	movk	1,a0
 	callr	rewire_meter
 
 	movk	TSEC*4/10,a8
-tjcknotogl	SLOOP	10,tjckrloop
+ekgwnotogl	SLOOP	10,ekgwrloop
 
 
+****
 
 
-tjckbuddy	;buddy mode.  This one is easy:  Show the human, unless he's dead
+ekgwbuddy	;buddy mode.  This one is easy:  Show the human, unless he's dead
 	; and his drone teammate is alive.  Don't assume, once the human
 	; is dead, that he'll stay that way.  Buckoffs and all.
 
 	clr	a8		;displayed player on team 0
 	movk	1,a9		;displayed player on team 1
 
-tjckbloop	clr	a1
+ekgwbloop	clr	a1
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	tjckp1liv
+	jrne	ekgwp1liv
 
-tjckp1ded	;plyr 1 is dead--check his drone.
+ekgwp1ded	;plyr 1 is dead--check his drone.
 	movk	2,a1
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	tjckp1liv		;show the human anyway
+	jreq	ekgwp1liv		;show the human anyway
 
 	;p1 is dead and his drone is alive.  show the drone.
 	cmpi	2,a8
-	jreq	tjckckp2		;already showing the drone.  skip it.
+	jreq	ekgwckp2		;already showing the drone.  skip it.
 
 	clr	a0
 	movk	2,a1
 	move	a1,a8
 	callr	rewire_meter
-	jruc	tjckckp2
+	jruc	ekgwckp2
 
-tjckp1liv	;plyr 1 is alive (or his drone is dead). show him.
+ekgwp1liv	;plyr 1 is alive (or his drone is dead). show him.
 
 	TEST	a8
-	jrz	tjckckp2		;already showing the human.  skip it.
+	jrz	ekgwckp2		;already showing the human.  skip it.
 
 	clr	a0
 	clr	a1
 	move	a1,a8
 	callr	rewire_meter
 
-tjckckp2	movk	1,a1
+ekgwckp2	movk	1,a1
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	tjckp2liv
+	jrne	ekgwp2liv
 
-tjckp2ded	;plyr 2 is dead--check his drone.
+ekgwp2ded	;plyr 2 is dead--check his drone.
 	movk	3,a1
 	calla	get_process_ptr
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	tjckp2liv		;show the human anyway
+	jreq	ekgwp2liv		;show the human anyway
 
 	;p2 is dead and his drone is alive.  show the drone.
 	cmpi	3,a9
-	jreq	tjckbnap		;already showing the drone.  skip it.
+	jreq	ekgwbnap		;already showing the drone.  skip it.
 
 	movk	1,a0
 	movk	3,a1
 	move	a1,a9
 	callr	rewire_meter
-	jruc	tjckbnap
+	jruc	ekgwbnap
 
-tjckp2liv	;plyr 2 is alive (or his drone is dead). show him.
+ekgwp2liv	;plyr 2 is alive (or his drone is dead). show him.
 
 	cmpi	1,a9
-	jrz	tjckbnap		;already showing the human.  skip it.
+	jrz	ekgwbnap		;already showing the human.  skip it.
 
 	movk	1,a0
 	movk	1,a1
 	move	a1,a9
 	callr	rewire_meter
 
-tjckbnap	SLOOP	10,tjckbloop
+ekgwbnap	SLOOP	10,ekgwbloop
 
 
+*****************************************************************************
+* 'rewires' a meter display for a different wrestler
+* 0a0H = display(0 or 1), 0a1H= playernum (0 to NUM_WRES-1)
 
  SUBR	rewire_meter
 
@@ -1024,14 +1105,17 @@ tjckbnap	SLOOP	10,tjckbloop
 	;change the combo bar
 	PUSH	A0
 	MOVE	*A6(PLT_COMBO_SIZE),A2
+;	MOVE	@BONUS_POWER,A14
+;	CMP	A14,A2
 	move	@instant_combos_on,a14
-	jrz	fcoinorm_combos
+	jrz	dylcnorm_combos
 	clr	a14
-	jruc	fcoido_check
-fcoinorm_combos
+	jruc	dylcdo_check
+dylcnorm_combos
 	movk	16,a14
-fcoido_check
+dylcdo_check
 	cmp	a14,a2
+;	CMPI	16,A2
 	JRGE	WE_ARE_IN_COMBO_MODE
 	
 	MOVE	A0,A1
@@ -1071,6 +1155,7 @@ NO_NEED_TO_SET_XFLIP
 	JRUC	JUMP_BACK_IN
 
 WE_ARE_IN_COMBO_MODE
+;IS THIS NECESSARY!
 	SLL	4,A0
 	ADDI	COMBO_FLASH_FLAG,A0
 	MOVE	*A0,A1
@@ -1097,16 +1182,16 @@ JUMP_BACK_IN
 	move	*a7(WRESTLERNUM),a1
 
 	move	@royal_rumble,a14
-	jrz	fcoiuname
+	jrz	dylcuname
 
 	move	*a7(PLYRNUM),a14
-	jrz	fcoibuddy0
+	jrz	dylcbuddy0
 	cmpi	1,a14
-	jrgt	fcoiuname
+	jrgt	dylcuname
 	.if DEBUG
 	LOCKUP		;rewire to PLYRNUM 1 in buddy mode!?
 	.endif
-fcoibuddy0	;It's a royal rumble.  Create the pair of names to go with the slash.
+dylcbuddy0	;It's a royal rumble.  Create the pair of names to go with the slash.
 	; This code only executes once for the left meters in rumble mode.
 
 	.ref	index1,index2
@@ -1147,12 +1232,12 @@ fcoibuddy0	;It's a royal rumble.  Create the pair of names to go with the slash.
 
 	PULL	a8
 
-fcoiuname	X32	a1
+dylcuname	X32	a1
 	addi	name_tbl,a1
 	move	*a1,a0,L
 	calla	civanic
 
-fcoirets	PULL	a2,a3,a4,a5,a6,a7,a8,a9,a10,a11
+dylcrets	PULL	a2,a3,a4,a5,a6,a7,a8,a9,a10,a11
 
 	rets
 
@@ -1165,6 +1250,9 @@ shortname_tbl
 	.long	SHORTHRT,SHORTRZR,SHORTUND,SHORTYOK,SHORTSHN
 	.long	SHORTBAM,SHORTDNK,SHORTDNK,SHORTLEX,SHORTLEX
 
+*****************************************************************************
+* Updates (resizes) the bars on a meter display.
+* 0a0H = meter (0 or 1)
 
  SUBRP	update_meter
 
@@ -1186,7 +1274,7 @@ shortname_tbl
 	addi	LIFE_MAX,a14		;a14 is pixels to hide
 
 	move	a14,*a8(OFSET)
-	JRZ	jfsgNOT_TO_WORRY
+	JRZ	uehxNOT_TO_WORRY
 
 	cmpi	2,a2
 	jrge	we_are_a_drone_ignore
@@ -1210,22 +1298,32 @@ ignore_it
 we_are_a_drone_ignore
 	MOVE	@WHICH_SCREEN,A1,L
 	CMPI	DUMRETS,A1
-	JREQ	jfsgNOT_TO_WORRY
+	JREQ	uehxNOT_TO_WORRY
 	MOVE	*A8(OFLAGS),A1
 	ORI	M_NODISP,A1
 	MOVE	A1,*A8(OFLAGS)
 	RETS
 
-jfsgNOT_TO_WORRY
+uehxNOT_TO_WORRY
 	MOVE	*A8(OFLAGS),A1
 	ANDI	0FFFFH-M_NODISP,A1
 	MOVE	A1,*A8(OFLAGS)
 	RETS
 
 
+;	movi	5,a7
+;	mpyu	a14,a7
+;	move	*a8(OIMG),a14,L
+;	move	*a14(ISAG),a14,L
+;	add	a14,a7
+;	move	a7,*a8(OSAG),L
 
 	rets
 
+*****************************************************************************
+* Returns the remaining health for a player
+* 0a1H = PLYRNUM
+* <a0 = life (also returns Z bit based on life remaining)
 
 
  SUBR	get_health
@@ -1238,8 +1336,26 @@ jfsgNOT_TO_WORRY
 	rets
 
 
+*****************************************************************************
+*
+* Adjusts a player's health total
+* 0a0H = amount to add to player's health total
+* 0a1H = PLYRNUM
+* 0a10H= attacker's process ptr
+*
+* Returns carry bit set if we're dead at the end of this, even if we
+* were dead when the function was called.  Returns carry clear if we're
+* alive afterwards.
+*
+* HACK ALERT:  In royal rumble mode, the two human players share a lifebar.
+*  This is implemented by halving all damage done to human players, and
+*  then redirecting any damage done to player 1 to player 0 instead.
+*  So right away we save the actual PLYRNUM, then change from 1 to 0 in
+*  royal rumble mode.  When it comes time to animate, we restore the
+*  original.
+*
 
-	.bss	kfgbactual_plyrnum,16
+	.bss	yrjbactual_plyrnum,16
 
 	;reg use:
 	; a3 = adjusted health
@@ -1252,57 +1368,65 @@ jfsgNOT_TO_WORRY
 	PUSH	a1,a3,a4,a5,a8,a10,a13
 
 	;save the original PLYRNUM
-	move	a1,@kfgbactual_plyrnum
+	move	a1,@yrjbactual_plyrnum
 
 	;if we're in royal rumble mode and PLYRNUM is 1, make it zero.
 	move	@royal_rumble,a14
-	jrz	kfgbpnumok
+	jrz	yrjbpnumok
 	cmpi	1,a1
-	jrne	kfgbpnumok
+	jrne	yrjbpnumok
 	clr	a1
-kfgbpnumok
+yrjbpnumok
 
+****	;get process pointer
 	move	a1,a13
 	X32	a13
 	addi	process_ptrs,a13
 	move	*a13,a13,L
 
+****	;get the meter struct pointer
 	move	a1,a5
 	X64	a5		;x by PLT_SIZE
 	addi	life_data,a5
 
+****	;get health
 	move	*a5(PLT_LIFE),a4
 	
+****	;skip the whole routine if we're dead and taking damage
 	TEST	a0
-	jrnn	kfgbx0		;not taking damage
+	jrnn	yrjbx0		;not taking damage
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	kfgbalready_dead
-kfgbx0
+	jreq	yrjbalready_dead
+yrjbx0
 
+****	;skip multiplier if we're getting life back.
 	TEST	a0
-	jrnn	kfgbno_multiplier
+	jrnn	yrjbno_multiplier
 
+****	;make sure a10 is valid
 	move	*a13(WHOHITME),a14,L
-	jrz	kfgbno_valid_attacker	;must have this.  WHOHITME is init'd
+	jrz	yrjbno_valid_attacker	;must have this.  WHOHITME is init'd
 	cmp	a14,a10			; to 0, and will thus match a cleared
-	jrne	kfgbno_valid_attacker	; a10, with unpredictable results.
+	jrne	yrjbno_valid_attacker	; a10, with unpredictable results.
 
 
+****	;teammates do 1 pixel damage to each other
 	move	*a10(PLYR_SIDE),a3
 	move	*a13(PLYR_SIDE),a14
 	xor	a3,a14
-	jrnz	kfgbnorum1
+	jrnz	yrjbnorum1
 
 	;in 8-on-1, do half dmg to teammates instead of 1 pixel
 	calla	is_8_on_1
-	jrnc	kfgbdo_1
+	jrnc	yrjbdo_1
 	sra	1,a0
-	jruc	kfgbnorum1
+	jruc	yrjbnorum1
 
-kfgbdo_1	movi	-1,a0
-kfgbnorum1
+yrjbdo_1	movi	-1,a0
+yrjbnorum1
 
+****	;doing a combo?
 	move	*a10(COMBO_COUNT),a14
 	jrz	DO_NORMAL_ADJUST_CHECK
 	move	a14,a0
@@ -1314,37 +1438,40 @@ kfgbnorum1
 	clr	a14
 	move	a14,@DAM_MULT
 
+;	subk	12,a0
+;	subk	11,a0
 	subk	10,a0
 	CMPI	-4,A0
-	JRLE	kfgbno_multiplier
+	JRLE	yrjbno_multiplier
 	MOVI	-4,A0
-	JRUC	kfgbno_multiplier
+	JRUC	yrjbno_multiplier
 
 DO_NORMAL_ADJUST_CHECK
 	;not a combo.  check for a multiplier.
 	move	@DAM_MULT,a9
-	jrz	kfgbno_multiplier
+	jrz	yrjbno_multiplier
 
 	;compute new damage val
 	;MULT 2:  damage *= 3/2
 	;MULT 3:  damage *= 4/2
 	;MULT 4+: damage *= 5/2
 	move	a0,a14
-kfgbmul_lp	add	a14,a0
-	dsj	a9,kfgbmul_lp
+yrjbmul_lp	add	a14,a0
+	dsj	a9,yrjbmul_lp
 	sra	1,a0
 	
 	;clr DAM_MULT
 	clr	a14
 	move	a14,@DAM_MULT
 
-kfgbno_valid_attacker
-kfgbno_multiplier
+yrjbno_valid_attacker
+yrjbno_multiplier
 
 
+****	;Adjust damage based on the number of drones, unless we're adding
 	;life.
 	TEST	a0
-	jrnn	kfgbdc_adj_done
+	jrnn	yrjbdc_adj_done
 
 	;count active drones
 	; count = 0 in attract mode, 4 in 8-on-1, 5 in buddy mode, 6 in
@@ -1353,111 +1480,114 @@ kfgbno_multiplier
 
 	movk	4,a3
 	calla	is_8_on_1
-	jrc	kfgbadc_set
+	jrc	yrjbadc_set
 
 	movk	5,a3
 	move	@buddy_mode_on,a14
-	jrnz	kfgbadc_set
+	jrnz	yrjbadc_set
 
 	movk	6,a3
 	move	@royal_rumble,a14
-	jrnz	kfgbadc_set
+	jrnz	yrjbadc_set
 
 	clr	a3
 
 	move	@PSTATUS2,a14
-	jrz	kfgbadc_set
+	jrz	yrjbadc_set
 
 	movi	process_ptrs+40h,a1
 	movi	NUM_WRES-2,a2
-kfgblp0	move	*a1+,a14,L
-	jrz	kfgbadc_set
+yrjblp0	move	*a1+,a14,L
+	jrz	yrjbadc_set
 	inc	a3
-	dsj	a2,kfgblp0
+	dsj	a2,yrjblp0
 
-kfgbadc_set
+yrjbadc_set
 	X32	a3
-	addi	kfgbdamage_mod_table,a3
+	addi	yrjbdamage_mod_table,a3
 
 	;add 10h if the target is a player
 	move	*a13(PLYR_TYPE),a14
 	cmpi	PTYPE_DRONE,a14
-	jreq	kfgbadc_drone
+	jreq	yrjbadc_drone
 	addk	10h,a3
-kfgbadc_drone
+yrjbadc_drone
 	move	*a3,a3
 	mpyu	a0,a3
 	move	a3,a0
 	sra	8,a0
 
 	PULL	a1,a2,a3
-kfgbdc_adj_done
+yrjbdc_adj_done
 
 
+****	;Adjust damage based on game time adjustment
 	move	@speed_adjustment,a14,L
 	mpys	a14,a0
 	sra	16,a1
 	move	a1,a0
 
 
+****	;Store away dmg this plyr has done for later analysis, but only
 	; if we're taking damage and a10 matches WHOHITME.
 	TEST	a0
-	jrnn	kfgbnostore
+	jrnn	yrjbnostore
 
 	move	*a13(WHOHITME),a14,L
 	cmp	a14,a10
-	jrne	kfgbnostore
+	jrne	yrjbnostore
 
 	move	*a10(DAMAGE_GIVEN),a14
 	sub	a0,a14		;(damage is negative)
 	move	a14,*a10(DAMAGE_GIVEN)
-kfgbnostore
+yrjbnostore
 
 	;do range checking on the damage value.  Don't allow a wrestler
 	; to have a life value below zero or above LIFE_MAX.
 	move	a0,a3
 	add	a4,a3			;a3 is new life total
-	jrle	kfgbbzero
+	jrle	yrjbbzero
 
 	cmpi	LIFE_MAX,a3
-	jrle	kfgbdmg_ok
+	jrle	yrjbdmg_ok
 
 	movi	LIFE_MAX,a3
-	jruc	kfgbdmg_ok
+	jruc	yrjbdmg_ok
 
-kfgbbzero	;this hit will kill us.  If it was a 20+ point hit, and it killed
+yrjbbzero	;this hit will kill us.  If it was a 20+ point hit, and it killed
 	; us by a margin of 6 pixels or less, fudge it by taking five
 	; off the damage
 
 	cmpi	-10,a3
-	jrle	kfgbno_fudge	;skip if life is -4 or less
+	jrle	yrjbno_fudge	;skip if life is -4 or less
 
 	cmpi	-20,a0
-	jrgt	kfgbno_fudge	;skip if the hit wasn't 25 or more
+	jrgt	yrjbno_fudge	;skip if the hit wasn't 25 or more
 
 	;fudge it.  Add 5 to the adjusted life to keep us alive
 	addk	5,a3
 	movk	5,a3
 	;and add 5 to the health adjustment (thus subtracting five from
 	; the damage done), just to be safe.
-	jruc	kfgbdmg_ok
+;	addk	5,a0
+	jruc	yrjbdmg_ok
 
-kfgbno_fudge
+yrjbno_fudge
 	clr	a3
 
 	;if we're in attract mode, don't die!
 	move	@PSTATUS2,a14
-	jrnz	kfgbnorm1
+	jrnz	yrjbnorm1
 	MOVI	LIFE_MAX,a3
 
-kfgbnorm1	;if he's out of life and we're in debug mode, fill him up.
+yrjbnorm1	;if he's out of life and we're in debug mode, fill him up.
 	.if DEBUG
 	move	@fight_debug,a14
-	jrz	kfgbdmg_ok
+	jrz	yrjbdmg_ok
 	movi	LIFE_MAX,a3
 	.endif
 
-kfgbdmg_ok
+yrjbdmg_ok
 	move	a3,*a5(PLT_LIFE)
 
 	;update LAST_DAMAGE
@@ -1468,33 +1598,33 @@ kfgbdmg_ok
 	;if a4 > 30 and a3 <= 30, fire off a danger process.
 	; re above:  a4 is current life, a3 is life after this hit.
 	cmpi	30,a4
-	jrle	kfgbno_danger_proc
+	jrle	yrjbno_danger_proc
 	cmpi	30,a3
-	jrgt	kfgbno_danger_proc
+	jrgt	yrjbno_danger_proc
 
 	;skip this if we have any teammates
 	move	a13,a0
 	calla	ck_any_teammates
-	jrc	kfgbno_danger_proc
+	jrc	yrjbno_danger_proc
 	CREATE	FLASH_PID,flash_obj
 	move	a13,*a0(PDATA),L
 
-kfgbno_danger_proc
+yrjbno_danger_proc
 
 	TEST	a3
-	jrnz	kfgbnot_dead
+	jrnz	yrjbnot_dead
 
 	;player IS dead. -- time to restore original PLYRNUM
-	move	@kfgbactual_plyrnum,a1
+	move	@yrjbactual_plyrnum,a1
 	calla	get_process_ptr
 	move	a0,a13
 
 	;set I_WILL_DIE on dead human's teammate if we're in royal rumble
 	; mode.
 	move	@royal_rumble,a14
-	jrz	kfgbnorum
+	jrz	yrjbnorum
 	cmpi	2,a1
-	jrge	kfgbnorum
+	jrge	yrjbnorum
 
 	xori	1,a1
 	calla	get_process_ptr
@@ -1502,41 +1632,43 @@ kfgbno_danger_proc
 	move	a14,*a0(I_WILL_DIE)
 	xori	1,a1
 
-kfgbnorum	;if dying guy is a drone, and we're in 8-on-? mode, decrement
+yrjbnorum	;if dying guy is a drone, and we're in 8-on-? mode, decrement
 	; wrestler_count and wake up the wrestler_counter process.
-	move	@kfgbactual_plyrnum,a1
+	move	@yrjbactual_plyrnum,a1
 	cmpi	2,a1
-	jrlt	kfgbnotd8
+	jrlt	yrjbnotd8
 
 	;Set the COUNTED_DEAD bit too.  If it's already set, don't decrement
 	; wrestler_count again.
 	move	*a13(STATUS_FLAGS),a14,L
 	btst	B_COUNTED_DEAD,a14
-	jrnz	kfgbnotd8
+	jrnz	yrjbnotd8
 	ori	M_COUNTED_DEAD,a14
 	move	a14,*a13(STATUS_FLAGS),L
 
 	move	@wrestler_count_proc,a0,L	; Does the counter proc exist ?
-	jrz	kfgbnotd8				; br = no
+	jrz	yrjbnotd8				; br = no
 	move	@wrestler_count,a14		; Current count == 0 ?
-	jrz	kfgbnotd8				; br = yes
+	jrz	yrjbnotd8				; br = yes
 	dec	a14				; Decrement it
 	move	a14,@wrestler_count		; Write it back
 	movk	1,a14				; Make counter proc wakeup on next tick
 	move	a14,*a0(PTIME)
-kfgbnotd8
+yrjbnotd8
 
 	;Is combo mode on for this player?
 	move	*a13(WHOHITME),a8,L
 	callr	CHECK_COMBO_GO
-	jrlt	kfgbok
+	jrlt	yrjbok
+;Am I in the middle of a combo?
 	move	*a8(COMBO_COUNT),a0
-	jrz	kfgbok
+	jrz	yrjbok
+;Give him some life back
 	movk	1,a14
 	move	a14,*a5(PLT_LIFE)
 	move	a14,*a13(I_WILL_DIE)
-	jruc	kfgbalready_dead
-kfgbok
+	jruc	yrjbalready_dead
+yrjbok
 
 	;temp! - 314
 	.if DEBUG
@@ -1550,44 +1682,45 @@ kfgbok
 	clr	a14
 	move	a14,*a13(ROLL_POS)
 
+;Lookup table based on wrestler type
 
 	move	*a13(WHOHITME),a10,L	;* wrestler process
 	move	*a10(ATTACK_MODE),a0
 	cmpi	AMODE_BLBOWDROP,a0
-	jrz	kfgbskip0
+	jrz	yrjbskip0
 	cmpi	AMODE_BSTOMP,a0
-	jrz	kfgbskip0
+	jrz	yrjbskip0
 	cmpi	AMODE_BUTTSTOMP,a0
-	jrz	kfgbskip0
+	jrz	yrjbskip0
 
-	;if death by buzzer, jump to kfgbskip0 ONLY if it was unblocked.
+	;if death by buzzer, jump to yrjbskip0 ONLY if it was unblocked.
 	cmpi	AMODE_BUZZ,a0
-	jrne	kfgbnobuzz
+	jrne	yrjbnobuzz
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jrne	kfgbskip0
-kfgbnobuzz
+	jrne	yrjbskip0
+yrjbnobuzz
 
 	;if our DEAD_ANIM bit is set, don't animate
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_DEAD_ANIM,a14
-	jrnz	kfgbskip0
+	jrnz	yrjbskip0
 
 	move	*a13(WRESTLERNUM),a0
 	X32	a0
 
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrz	kfgbgrnd
+	jrz	yrjbgrnd
 	cmpi	MODE_ONGROUND,a14
-	jrnz	kfgbfall
+	jrnz	yrjbfall
 
-kfgbgrnd	addi	convulse_t,a0
+yrjbgrnd	addi	convulse_t,a0
 	move	*a0,a0,L
 
 	calla	change_anim1a
 
-kfgbskip0
+yrjbskip0
 	SETMODE	DEAD
 	calla	wres_collis_off
 
@@ -1598,40 +1731,46 @@ kfgbskip0
 	setc
 	rets
 
-kfgbfall
+yrjbfall
+;Check plyr mode, attempt a death fall back
+;Otherewise, just set mode dead
 	cmpi	MODE_NORMAL,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_RUNNING,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_INAIR,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_INAIR2,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_BOUNCING,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_ONTURNBKL,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_BLOCK,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_DIZZY,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_CLIMBTURNBKL,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_HEADHOLD,a14
-	jrz	kfgbfallbk
+	jrz	yrjbfallbk
 	cmpi	MODE_HEADHELD,a14
-	jrz	kfgbwill_die
+	jrz	yrjbwill_die
+
+;Puppet mode?  Others?
+;How best to deal with this?
 
 
+;	LOCKUP
 
-
+;At least zero vels?
 	clr	a0
 	move	a0,*a13(OBJ_XVEL),L
 	move	a0,*a13(OBJ_ZVEL),L
 	move	a0,*a13(OBJ_YVEL),L
      
 	SETMODE	DEAD
-kfgbskip	calla	wres_collis_off
+yrjbskip	calla	wres_collis_off
 
 	calla	flash_red
 
@@ -1640,32 +1779,34 @@ kfgbskip	calla	wres_collis_off
 	setc
 	rets
 
-kfgbwill_die
+yrjbwill_die
+;	movk	1,a0
+;	move	a0,*a13(I_WILL_DIE)
 	movi	3*60,a0
 	move	a0,*a13(I_WILL_DIE)
-	jruc	kfgbskip
+	jruc	yrjbskip
 
-kfgbfallbk	addi	kfgbfallbacks_t,a0
+yrjbfallbk	addi	yrjbfallbacks_t,a0
 	move	*a0,a0,L
 
 	calla	change_anim1a
 
 	move	*a13(OBJ_XVEL),a2,L
 	cmpi	[2,0],a2
-	jrgt	kfgbokz
+	jrgt	yrjbokz
 	movi	[2,0],a2
 	move	*a13(OBJ_XPOSINT),a1
 	move	*a13(WHOHITME),a0,L	;* wrestler process
 
 	move	*a0(OBJ_XPOSINT),a0
 	cmp	a0,a1			;offx - defx
-	jrgt	kfgbfall_right		;attacker on left
+	jrgt	yrjbfall_right		;attacker on left
 	movi	[-2,0],a2
 
 
-kfgbfall_right
+yrjbfall_right
 	move	a2,*a13(OBJ_XVEL),L
-kfgbokz
+yrjbokz
 
 	calla	wres_collis_off
      
@@ -1680,7 +1821,7 @@ kfgbokz
 
 
 
-kfgbalready_dead
+yrjbalready_dead
 
 	calla	flash_red
 
@@ -1688,13 +1829,14 @@ kfgbalready_dead
 	setc
 	rets
 
-kfgbnot_dead
+yrjbnot_dead
 	PULL	a1,a3,a4,a5,a8,a10,a13
 	clrc
 	rets
 
 
-kfgbdamage_mod_table
+;		tgt = drone	tgt = player
+yrjbdamage_mod_table
 	.word	_85PCT,		_85PCT		;0 drones
 	.word	_100PCT,	_100PCT		;1 drone
 	.word	_110PCT,	_90PCT		;2 drones
@@ -1705,8 +1847,8 @@ kfgbdamage_mod_table
 
 
  SUBR	fallbacks_t
-kfgbfallbacks_t
-kfgbfall_back
+yrjbfallbacks_t
+yrjbfall_back
 	REFLONG	hrt_fall_back_anim		;0 Bret Hart
 	REFLONG	rzr_fall_back_anim		;1 Razor Ramon
 	REFLONG	und_fall_back_anim		;2 Undertaker
@@ -1719,7 +1861,7 @@ kfgbfall_back
  
 
  SUBR	convulse_t
-kfgbhitonground
+yrjbhitonground
 	REFLONG	hrt_hitonground_anim		;0 Bret Hart
 	REFLONG	rzr_hitonground_anim
 	REFLONG	und_hitonground_anim		;2 Undertaker
@@ -1730,48 +1872,59 @@ kfgbhitonground
 	.long	0				;7 spare
 	REFLONG	lex_hitonground_anim		;8 Lex Luger
 
+*****************************************************************************
+* Create the credits display at the top of the screen
+*
 
  SUBR	start_credbox
 
 	;draw the panel
-	TBL_OBJ	ikycplate
+	TBL_OBJ	jqobplate
 
 	callr	update_credit_msg
 	rets
 
 	
+***************************************
+* Display credit info - Gets called from coin routines.
+*
+* Trashes a0-a7
 
  SUBR	update_credit_msg
 
 	PUSH	a8,a9,a10
 
+;Only turn on these messages if during gameplay, or player select!
 
 	.ref	SHOW_CRD_FLAG
 	move	@SHOW_CRD_FLAG,a0
-	jrnz	ikyccont0
+	jrnz	jqobcont0
 
 	move	@GAMSTATE,a0
 	cmpi	INSELECT,a0
-	jrz	ikyccont
+	jrz	jqobcont
 
 	CMPI	INPARTY,A0
-	JREQ	ikyccont
+	JREQ	jqobcont
 	CMPI	INPREGAME,A0
-	JREQ	ikyccont
+	JREQ	jqobcont
 	CMPI	INPREGAME2,A0
-	JREQ	ikyccont
+	JREQ	jqobcont
 
 	subk	INGAME,a0
-	jrne	ikycx
+	jrne	jqobx
 
-ikyccont0
+jqobcont0
 
+;When coins are entered, and the game is being played, tell the meter
+;code to display approproiate coinin message.
 
+;Get meter process info
 	movi	METER_PID,a0
 	clr	a1
 	not	a1
 	calla	EXISTP
-	jrz	ikyccont
+	jrz	jqobcont
 
 	movk	1,a1
 	move	a1,*a0(P1CNTR)
@@ -1780,18 +1933,18 @@ ikyccont0
 	move	a1,*a0(P1STATE)
 	move	a1,*a0(P2STATE)
 
-ikyccont
+jqobcont
 
 	movi	CLSDEAD|CREDITID,a0
 	calla	obj_del1c		;kill credit/qrtr imgs
  
-	TBL_OBJ	ikycplate
+	TBL_OBJ	jqobplate
 
 	movi	freeply,a10
 
 	movk	ADJFREPL,a0
 	CALLA	GET_ADJ		 	;SEE IF FREEPLAY......(Z BIT CLEAR IF SO!)
-	jrnz	ikycfreep
+	jrnz	jqobfreep
 
 	movi	credit,a10
 
@@ -1801,11 +1954,12 @@ ikyccont
 	move	a0,a9
 	sll	32-4,a0
 	srl	32-4-5,a0		;*32
-	addi	ikycnumfont,a0
+	addi	jqobnumfont,a0
 	move	*a0,a2,L
 
 	movi	[216,0],a0
 	movi	[6,0],a1
+;	movi	1006,a3			;Z
 	movi	1901H,a3			;Z
 	movi	DMAWNZ|M_SCRNREL,a4
 	movi	CLSDEAD|CREDITID,a5
@@ -1816,16 +1970,17 @@ ikyccont
 	srl	4,a9
 	sll	32-4,a9
 	srl	32-4-5,a9		;*32
-	addi	ikycnumfont,a9
+	addi	jqobnumfont,a9
 	move	*a9,a2,L
 
 	movi	[211,0],a0
 	movi	[6,0],a1
 	calla	BEGINOBJ
 	
-ikycfreep	movi	[179,0],a0
+jqobfreep	movi	[179,0],a0
 	movi	[6,0],a1
 	move	a10,a2
+;	movi	1006,a3			;Z
 	movi	1901H,a3			;Z
 	movi	DMAWNZ|M_SCRNREL,a4
 	movi	CLSDEAD|CREDITID,a5
@@ -1833,19 +1988,22 @@ ikycfreep	movi	[179,0],a0
 	clr	a7
 	calla	BEGINOBJ
 
-ikycx	PULL	a8,a9,a10
+jqobx	PULL	a8,a9,a10
 
 	rets
 
+***************************************
+* config data
+*
 
-ikycplate	.word	176,4,1900H				;X, Y, Z
+jqobplate	.word	176,4,1900H				;X, Y, Z
 	.long	crplate					;IMG
 	.word	DMAWNZ|M_SCRNREL			;CTRL
 	.word	CLSDEAD|CREDITID			;OID
 	.long	0,0					;XVEL, YVEL
 	.even
 
-ikycnumfont
+jqobnumfont
 	.long	font60
 	.long	font61
 	.long	font62
@@ -1857,8 +2015,11 @@ ikycnumfont
 	.long	font68
 	.long	font69
 
+*****************************************************************************
+* Moves PLT_CLIFE toward PLT_LIFE if it isn't already there.
+* 0a0H = PLYRNUM
 
-cwbilifebar_deltavee	equ	2	;pixels per tick of motion
+ujzzlifebar_deltavee	equ	2	;pixels per tick of motion
 
  SUBRP	inc_life
 
@@ -1872,31 +2033,34 @@ cwbilifebar_deltavee	equ	2	;pixels per tick of motion
 	move	*a1(PLT_CLIFE),a3
 
 	cmp	a2,a3
-	jrz	cwbidone
+	jrz	ujzzdone
 
 	;CLIFE is lagging.  move it toward LIFE
-	jrgt	cwbishrink
+	jrgt	ujzzshrink
 
 	;CLIFE needs to grow
-	addi	cwbilifebar_deltavee,a3
+	addi	ujzzlifebar_deltavee,a3
 	cmp	a3,a2
-	jruc	cwbiset
+	jruc	ujzzset
 
-cwbishrink
-	subi	cwbilifebar_deltavee,a3
+ujzzshrink
+	subi	ujzzlifebar_deltavee,a3
 	cmp	a2,a3
-cwbiset
-	jrge	cwbiinrange
+ujzzset
+	jrge	ujzzinrange
 
 	;overshot it
 	move	a2,a3	    
-cwbiinrange
+ujzzinrange
 	move	a3,*a1(PLT_CLIFE)
 
-cwbidone
+ujzzdone
 	rets
 
 
+*****************************************************************************
+* Flash the background of the life meter for the current player.
+* 0a10H = plyrnum
 
 danger_snd	equ	0b9h
 
@@ -1904,23 +2068,23 @@ danger_snd	equ	0b9h
 
 	;if we're a drone and we have teammates, ignore this.
 	cmpi	1,a10
-	jrle	idwhndie
+	jrle	gnuzndie
 
 	move	a10,a1
 	calla	get_process_ptr
 	move	*a0(PLYR_SIDE),a4
 	movi	process_ptrs+40h,a1
 	movi	NUM_WRES-2,a2
-idwhlp0	move	*a1+,a3,L
-	jrz	idwhndie			;done at first inactive
+gnuzlp0	move	*a1+,a3,L
+	jrz	gnuzndie			;done at first inactive
 	cmp	a0,a3
-	jreq	idwhnxt0			;skip self
+	jreq	gnuznxt0			;skip self
 	move	*a3(PLYR_SIDE),a14
 	cmp	a4,a14
-	jreq	idwhdie			;die--we have a teammate
-idwhnxt0	dsj	a2,idwhlp0
+	jreq	gnuzdie			;die--we have a teammate
+gnuznxt0	dsj	a2,gnuzlp0
 
-idwhndie
+gnuzndie
 	;find the bar obj
 	calla	arm_comeback_award
 
@@ -1929,9 +2093,9 @@ idwhndie
 
 	;danger music - skip if in 8-on-2 mode
 	calla	is_8_on_1
-	jrc	idwhdie
+	jrc	gnuzdie
 	move	@royal_rumble,a14
-	jrnz	idwhdie
+	jrnz	gnuzdie
 
 	movi	18,a3
 	move	@temp_music,a14
@@ -1945,9 +2109,9 @@ end_music_set
 	movi	[85h,0],a0
 	move	*a13(PDATA),a1,L
 	move	*a1(PLYR_SIDE),a1
-	jrz	idwhp1
+	jrz	gnuzp1
 	movi	[0e4h,0],a0
-idwhp1	movi	[18h,0],a1
+gnuzp1	movi	[18h,0],a1
 	movi	name_z,a3			;Z
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4	;DMA flags
 	movi	CLSDEAD,a5
@@ -1956,7 +2120,7 @@ idwhp1	movi	[18h,0],a1
 	calla	BEGINOBJ
 
 	movk	20,a9
-idwhlp
+gnuzlp
 
 	move	a10,a0
 	X32	a0
@@ -1969,11 +2133,11 @@ idwhlp
 	move	*a14,a14,L
 	move	*a14(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	idwhdeldie
+	jreq	gnuzdeldie
 
 	move	*a0(PLYRMODE),a0
 	cmpi	MODE_DEAD,a0
-	jreq	idwhdeldie
+	jreq	gnuzdeldie
 
 	SLEEPK	7
 
@@ -1987,41 +2151,42 @@ idwhlp
 	calla	pal_getf
 	move	a0,*a8(OPAL)
 
-	dsj	a9,idwhlp
+	dsj	a9,gnuzlp
 
-idwhdeldie	calla	DELOBJA8
+gnuzdeldie	calla	DELOBJA8
 
-idwhdie	DIE
+gnuzdie	DIE
 
 
 
+******************************************************************************
 
  SUBRP	do_win_streaks
 
 	move	@p1winstreak,a0
-	jrz	idwhp2
+	jrz	gnuzp2
 
 	callr	streak_1
 
-idwhp2	move	@p2winstreak,a0
-	jrz	idwhx
+gnuzp2	move	@p2winstreak,a0
+	jrz	gnuzx
 
 	callr	streak_2
 
-idwhx
+gnuzx
 	rets
 
 streak_1
 	cmpi	99,a0
-	jrls	idwhmaxok
+	jrls	gnuzmaxok
 	movi	99,a0
-idwhmaxok
+gnuzmaxok
     	calla	BINBCD
 
 	move	a0,a9
 	sll	32-4,a0
 	srl	32-4-5,a0		;*32
-	addi	idwhf_t,a0
+	addi	gnuzf_t,a0
 	move	*a0,a2,L
 
 	movi	[3dh,0],a0
@@ -2037,7 +2202,7 @@ idwhmaxok
 	srl	4,a9
 	sll	32-4,a9
 	srl	32-4-5,a9		;*32
-	addi	idwhf_t,a9
+	addi	gnuzf_t,a9
 	move	*a9,a2,L
 	movi	[36h,0],a0
 	movi	[23h,0],a1
@@ -2050,15 +2215,15 @@ idwhmaxok
 
 streak_2
 	cmpi	99,a0
-	jrls	idwhmaxok2
+	jrls	gnuzmaxok2
 	movi	99,a0
-idwhmaxok2
+gnuzmaxok2
     	calla	BINBCD
 
 	move	a0,a9
 	sll	32-4,a0
 	srl	32-4-5,a0		;*32
-	addi	idwhf_t,a0
+	addi	gnuzf_t,a0
 	move	*a0,a2,L
 
 	movi	[175h,0],a0
@@ -2075,7 +2240,7 @@ idwhmaxok2
 	srl	4,a9
 	sll	32-4,a9
 	srl	32-4-5,a9		;*32
-	addi	idwhf_t,a9
+	addi	gnuzf_t,a9
 	move	*a9,a2,L
 	movi	[16eh,0],a0
 	movi	[23h,0],a1
@@ -2087,13 +2252,15 @@ idwhmaxok2
 	rets
 
 
-idwhf_t
+gnuzf_t
 	.long	WFONT_0,WFONT_1,WFONT_2,WFONT_3,WFONT_4
 	.long	WFONT_5,WFONT_6,WFONT_7,WFONT_8,WFONT_9
 
 
 	.ref	match_cnt
 
+*****************************************************************************
+*
 
 	STRUCTPD
 	LONG	BLINK_PROC
@@ -2108,30 +2275,33 @@ announce_match
 	move	a0,*a13(BLINK_PROC),L
 
 	move	@PSTATUS2,a0
-	jrnz	jabenoamode
+	jrnz	ebwtnoamode
 	clr	a0
 	move	a0,@HALT
 	DIE
 
-jabenoamode
+ebwtnoamode
 
  .if DEBUG
 	.ref	skip_select
 	move	@skip_select,a0
-	jrz	jabenoskp
+	jrz	ebwtnoskp
 	clr	a0
 	move	a0,@HALT
 	DIE
-jabenoskp
+ebwtnoskp
  .endif
 
 
+;	SLEEP	28h
+;	movi	28h,a10
+;	JSRP	wait_on_butn
 
 	movi	ram_lst,a11
 	clr	a0
 	movi	39,a1
-jabelp	move	a0,*a11+,L
-	dsjs	a1,jabelp
+ebwtlp	move	a0,*a11+,L
+	dsjs	a1,ebwtlp
 	movi	ram_lst,a11
 
 	movi	[252h,0],a0			;x pos
@@ -2139,21 +2309,21 @@ jabelp	move	a0,*a11+,L
 	movi	MTCHPLT,a2
 	movi	MPLTPRPP,b0
 	movi	1800h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 
 	movi	[252h,0],a0			;x pos
 	movi	[3eh,0],a1			;y pos
 	movi	MNMEPLT,a2
 	movi	MPLTPRPP,b0
 	movi	1800h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 
 	movi	[574,0],a0			;x pos
 	movi	[4Fh,0],a1			;y pos
 	movi	MATCH,a2
 	movi	WGFS_W_P,b0
 	movi	1801h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 	MOVE	A8,B3
 	CLR	B4
 	CLR	B5
@@ -2162,56 +2332,56 @@ jabelp	move	a0,*a11+,L
 	move	@match_cnt,a0
 
 	cmpi	999,a0
-	jrls	jabemaxok
+	jrls	ebwtmaxok
 	movi	999,a0
-jabemaxok
+ebwtmaxok
     	calla	BINBCD
 
 	move	a0,a9
 	move	a0,a10
 	sll	32-4,a0
 	srl	32-4-5,a0		;*32
-	addi	jabef_t,a0
+	addi	ebwtf_t,a0
 	move	*a0,a2,L
 
 	movi	[252h,0],a0			;x pos
 	movi	[43h,0],a1			;y pos
 	movi	WGFS_W_P,b0
 	movi	1802h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 	MOVE	A8,B4
 
 	srl	4,a9
 	sll	32-4,a9
 	srl	32-4-5,a9		;*32
 	move	a9,a9
-	jrz	jabeok2
+	jrz	ebwtok2
 
-	addi	jabef_t,a9
+	addi	ebwtf_t,a9
 	move	*a9,a2,L
 	movi	[252h,0],a0			;x pos
 	movi	[43h,0],a1			;y pos
 	movi	WGFS_W_P,b0
 	movi	1802h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 	MOVE	A8,B5
 
 	srl	8,a10
 	sll	32-4,a10
 	srl	32-4-5,a10		;*32
 	move	a10,a10
-	jrz	jabeok2
+	jrz	ebwtok2
 
-	addi	jabef_t,a10
+	addi	ebwtf_t,a10
 	move	*a10,a2,L
 	movi	[252h,0],a0			;x pos
 	movi	[43h,0],a1			;y pos
 	movi	WGFS_W_P,b0
 	movi	1802h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 	MOVE	A8,B6
 
-jabeok2
+ebwtok2
 	MOVE	*B3(OSIZEX),B7
 	ADDI	5,B7
 	MOVE	*B4(OSIZEX),B0
@@ -2262,8 +2432,14 @@ X2B_ADDED
 	ADD	B7,B8
 	MOVE	B8,*B4(OXPOS)
 
+;Print the text on the little plate
 
+;This will be a table lookup which points to match type
+;(Ex. Best 2 of 3, Intercontinental Championship, WWF Championship
+;Lumberjack match, Tag Team Bout, This contest is for 1 fall!, etc.)
 
+;Make sure we have enough ram set aside for the largest
+;message possible.  (ram_lst)
 
 	movi	[253h,0],a0			;x pos
 	movi	[68h,0],a1			;y pos
@@ -2271,10 +2447,10 @@ X2B_ADDED
 	;set a3 to 1 if this is the final match, 0 otherwise
 	clr	a3
 	calla	is_final_match
-	jrnc	jabea3set
+	jrnc	ebwta3set
 	movk	1,a3
 
-jabea3set	movi	WHICH_MATCH,a2
+ebwta3set	movi	WHICH_MATCH,a2
 	SLL	5,A3
 	ADD	A3,A2
 	MOVE	*A2,A2,L
@@ -2287,48 +2463,54 @@ jabea3set	movi	WHICH_MATCH,a2
 	calla	BEGINOBJP
 
 
+;Place all of the new plates & string characters onto the ram_lst that
+;gets scrolled.
 
 	movi	OBJLST,a14
 	movi	CLSNEUT|TYPTEXT|SUBTXT,a0
 	movi	CLSNEUT|TYPTEXT|SUBMES1,a2
-jabelp2
+ebwtlp2
 	move	*a14,a14,L
-	jrz	jabex
+	jrz	ebwtx
 	move	*a14(OID),a1
 	cmp	a2,a1
-	jrz	jabeadd
+	jrz	ebwtadd
 	cmp	a0,a1
-	jrne	jabelp2
-jabeadd	move	a14,*a11+,L
-  	jruc	jabelp2
-jabex
+	jrne	ebwtlp2
+ebwtadd	move	a14,*a11+,L
+  	jruc	ebwtlp2
+ebwtx
 
+;This will blink between red/white
 	CREATE	CYCPID,blink_font
 	move	a0,*a13(BLINK_PROC),L
 
+;Slide everthing onto screen
 
 	movi	0b6H,a0
 	calla	triple_sound
 
 	movi	20h,a10	;30
 
-jabeonscr_loop
+ebwtonscr_loop
 
 	SLEEPK	1
 
 	movi	[200,0],a0
-	callr	jabeset_x
+	callr	ebwtset_x
 
-	dsj	a10,jabeonscr_loop
+	dsj	a10,ebwtonscr_loop
 
 	calla	is_8_on_1
-	jrc	jabeskip_do_rounds
+	jrc	ebwtskip_do_rounds
 	;skip this if this is the final match
 	CREATE	ANNC_PID,DO_ROUNDS
-jabeskip_do_rounds
+ebwtskip_do_rounds
 
+;In middle
 	CREATE	SOUND_PID,ring_bell
 
+;	SLEEP	20h
 
 	.ref	IKIL1C
 	.ref	show_options
@@ -2348,14 +2530,14 @@ jabeskip_do_rounds
 
 	movi	16h,a10	;23
 
-jabeoffscr_loop
+ebwtoffscr_loop
 
 	SLEEPK	1
 
 	movi	[0feb0h,0],a0
-	callr	jabeset_x
+	callr	ebwtset_x
 
-	dsj	a10,jabeoffscr_loop
+	dsj	a10,ebwtoffscr_loop
 
 	move	*a13(BLINK_PROC),a0,L
 	calla	KILL
@@ -2375,7 +2557,7 @@ jabeoffscr_loop
 
 	DIE
 
-jabef_t
+ebwtf_t
 	.long	WGSF22_0,WGSF22_1,WGSF22_2,WGSF22_3,WGSF22_4
 	.long	WGSF22_5,WGSF22_6,WGSF22_7,WGSF22_8,WGSF22_9
 
@@ -2388,104 +2570,121 @@ WHICH_MATCH
 	.LONG	LUMBMTCH
 
 
+;ebwtln0a_setup
+;	JAM_STR	osgemd_ascii,6,0,247h,43h,BLUE,0
+;
+;ebwtln0b_setup
+;	JAM_STR	osgemd_ascii,6,0,23fh,43h,BLUE,0
+;
+;ebwtln1_setup
+;	JAM_STR	sgmd8_ascii,5,0,252h,80h-10,SGMD8WHT2,0
+;
+;ebwtln2_setup
+;	JAM_STR	sgmd8_ascii,5,0,252h,8bh-10,SGMD8WHT2,0
+;
+;ebwtstr_rounds
+;	.string	"ROUNDS",0
+;	.even
 
 blink_font
 
 	SLEEPK	2
 
 	movi	20,a10
-jabetop	
+ebwttop	
 	movi	WSF_R_P,a0
 	calla	pal_getf
 
 	movi	ram_lst,a11
-jabelp3
+ebwtlp3
 	move	*a11+,a8,L
-	jrz	jabex2
+	jrz	ebwtx2
 	move	*a8(OID),a14
 	cmpi	CLSNEUT|TYPTEXT|SUBMES1,a14
-	jrnz	jabelp3
+	jrnz	ebwtlp3
 	move	a0,*a8(OPAL)
-  	jruc	jabelp3
+  	jruc	ebwtlp3
 
-jabex2	SLEEPK	4
+ebwtx2	SLEEPK	4
 
 	movi	WSF_W_P,a0
 	calla	pal_getf
 
 	movi	ram_lst,a11
-jabelp4
+ebwtlp4
 	move	*a11+,a8,L
-	jrz	jabex3
+	jrz	ebwtx3
 	move	*a8(OID),a14
 	cmpi	CLSNEUT|TYPTEXT|SUBMES1,a14
-	jrnz	jabelp4
+	jrnz	ebwtlp4
 	move	a0,*a8(OPAL)
-  	jruc	jabelp4
+  	jruc	ebwtlp4
 
-jabex3	SLEEPK	7
+ebwtx3	SLEEPK	7
 
-	dsj	a10,jabetop
+	dsj	a10,ebwttop
 
 announcing_being_done
 	DIE
 
+******************************************************************************
 
 	STRUCTPD
-	LONG	jabeCREATOR	;UHL proc ptr to whoever created us
-	LONG	jabeORIGIN		;UHL approx address of our create call
+	LONG	ebwtCREATOR	;UHL proc ptr to whoever created us
+	LONG	ebwtORIGIN		;UHL approx address of our create call
 
 	.if DEBUG
 	;doesn't execute -- just here for TV viewing
-	move	*a13(jabeCREATOR),a14,L
-	move	*a13(jabeORIGIN),a14,L
+	move	*a13(ebwtCREATOR),a14,L
+	move	*a13(ebwtORIGIN),a14,L
 	.endif
 
  SUBR	announce_rnd_winner	;process
 
 	;temp! - 314
 	.if DEBUG
-	DBEVENT	BDE_ARW_START,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ARW_START,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 
-jabefini_wait
+ebwtfini_wait
 	move	@in_finish_move,a14	; Are we doing a finishing move ?
-	jrz	jabefini_done		; br = no
+	jrz	ebwtfini_done		; br = no
 	SLEEPK	10
-	jruc	jabefini_wait
-jabefini_done
+	jruc	ebwtfini_wait
+ebwtfini_done
 
 	movi	ANNC_PID,a0
 	clr	a1
 	not	a1
 	calla	EXISTP
-	jrz	jabetmpok
+;	janz	SUCIDE
+	jrz	ebwttmpok
 
 	;temp! - 314
 	.if DEBUG
-	DBEVENT	BDE_ARW_DEXIST,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ARW_DEXIST,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 	DIE
 
-jabetmpok
+ebwttmpok
 
 	move	@annc_rnd_winner_done,a14
-	jrz	jabearwd_ok
+	jrz	ebwtarwd_ok
 	.if DEBUG
 	;temp! - 314
-	DBEVENT	BDE_ARW_FLAGDIE,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ARW_FLAGDIE,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 	DIE
-jabearwd_ok
+ebwtarwd_ok
 
 	;if anyone is trying to do a buckoff, wait for them to finish up.
-jabeany_b	callr	anyone_bucking
+ebwtany_b	callr	anyone_bucking
 	TEST	a0
-	jrz	jabenobuck
+	jrz	ebwtnobuck
 
 	;temp! - 314
 	.if DEBUG
-	DBEVENT	BDE_ARW_ATTEMPT,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ARW_ATTEMPT,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 
 	;Someone's trying to do a buckoff.  We'll give them 120 ticks or
@@ -2500,7 +2699,7 @@ jabeany_b	callr	anyone_bucking
 
 	;temp! - 314
 	.if DEBUG
-	DBEVENT	BDE_ARW_WAKEUP,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ARW_WAKEUP,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 
 	;check for anyone with their NEW_BUCKOFF bit set.  If we find any,
@@ -2508,39 +2707,39 @@ jabeany_b	callr	anyone_bucking
 	movi	process_ptrs,a0
 	movi	NUM_WRES,a1
 	clr	a3
-jabelp0	move	*a0+,a2,L
-	jrz	jabenxt0		;skip inactive
+ebwtlp0	move	*a0+,a2,L
+	jrz	ebwtnxt0		;skip inactive
 	move	*a2(STATUS_FLAGS),a14,L
 	btst	B_NEW_BUCKOFF,a14
-	jrz	jabenxt0
+	jrz	ebwtnxt0
 
 	;got one
 	andni	M_NEW_BUCKOFF,a14
 	move	a14,*a2(STATUS_FLAGS),L
 	inc	a3
 
-jabenxt0	dsj	a1,jabelp0
+ebwtnxt0	dsj	a1,ebwtlp0
 
 	;now check for an all-dead condition.  If neither team is dead, die.
 	calla	get_live_bits
 	cmpi	3,a0
-	jrne	jabe1ded
+	jrne	ebwt1ded
 
 	;temp! - 314
 	.if DEBUG
-	DBEVENT	BDE_ALL_ALIVE,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ALL_ALIVE,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 	jauc	SUCIDE
 
-jabe1ded	;1 team is dead.  If nobody did a buckoff during our nap, end the
-	; round.  If someone did, jump up to jabeany_b, which checks to see
+ebwt1ded	;1 team is dead.  If nobody did a buckoff during our nap, end the
+	; round.  If someone did, jump up to ebwtany_b, which checks to see
 	; if there's any more buckoff candidates.
 	TEST	a3
-	jrnz	jabeany_b
+	jrnz	ebwtany_b
 
 	;temp! - 314
 	.if DEBUG
-	DBEVENT	BDE_ARW_NOBUCK,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ARW_NOBUCK,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 
 	;there was at least one wrestler who could have done a buckoff,
@@ -2549,21 +2748,21 @@ jabe1ded	;1 team is dead.  If nobody did a buckoff during our nap, end the
 	movi	process_ptrs,a0
 	movi	NUM_WRES,a1
 	clr	a3
-jabelp6	move	*a0+,a2,L
-	jrz	jabenxt6		;skip inactive
+ebwtlp6	move	*a0+,a2,L
+	jrz	ebwtnxt6		;skip inactive
 	move	a3,*a2(BUCKOFF_COUNT)
 	move	*a2(STATUS_FLAGS),a14,L
 	andni	M_DO_BUCKOFF,a14
 	ori	M_NO_BUCKOFF,a14
 	move	a14,*a2(STATUS_FLAGS),L
-jabenxt6	dsj	a1,jabelp6
+ebwtnxt6	dsj	a1,ebwtlp6
 
 
-jabenobuck
+ebwtnobuck
 
 	;temp! - 314
 	.if DEBUG
-	DBEVENT	BDE_ARW_ENDRND,a13,L,*a13(jabeCREATOR),L,*a13(jabeORIGIN),L
+	DBEVENT	BDE_ARW_ENDRND,a13,L,*a13(ebwtCREATOR),L,*a13(ebwtORIGIN),L
 	.endif
 
 	;set round_end_time
@@ -2585,7 +2784,7 @@ jabenobuck
 
 	callr	set_winner	;a3 = PLYRNUM of a wrestler on the winning
 				; team.  The pinner if there is one.
-	jrn	jabedo_game_over
+	jrn	ebwtdo_game_over
 	X32	a3
 	addi	process_ptrs,a3
 	move	*a3,a10,L
@@ -2600,28 +2799,39 @@ jabenobuck
 	jruc	timer_updated
 
 at_end
+;ebwtlet_finish_happen
+;	move	@in_finish_move,a0		; Did a finish move get started?
+;	jrz	ebwtno_finish_move			; br = no
+;	SLEEPK	1				; Wait for it to finish
+;	jruc	ebwtlet_finish_happen
+;ebwtno_finish_move
 	move	@p1rounds,a0
 	move	@p2rounds,a3
 	or	a0,a3
 	cmpi	2,a3
-	jrnz	jabeno_2_rnd_victory
+	jrnz	ebwtno_2_rnd_victory
 	calla	is_8_on_1
-	jrc	jabeno_2_rnd_victory
+	jrc	ebwtno_2_rnd_victory
 	MATCH_AWARD a10,TWO_RND_AWD
-jabeno_2_rnd_victory
+ebwtno_2_rnd_victory
 	calla	calc_match_time_2
 
 timer_updated
 
 	callr	is_perfect
-	jrnc	jabenot_perfect
+	jrnc	ebwtnot_perfect
 	MATCH_AWARD a10,PERFECT_AWD
 	CREATE	ADD_INIT_PID,CREATE_PERFECT
 	SLEEP	55+50
-jabenot_perfect
+ebwtnot_perfect
+;NOT_PERFECT_MATCH
 
+;a10=*proc of wrestler who just pinned opponent
+;-not neccesarily: if the win was by disqualification or timeout, there's
+; no pin.
 	SLEEPK	30
 
+;Place token on top of winner, then have it float up to the top of the screen
 
 	movi	27,a3
 	calla	SNDSND
@@ -2637,43 +2847,53 @@ jabenot_perfect
 	jrz	DO_WAIT
 	move	@p2rounds,a0
 	cmpi	2,a0
-	jrnz	jabego0
+	jrnz	ebwtgo0
 
 DO_WAIT
 	CLR	A0
 	MOVE	A0,@MUSIC_HAP
 
+;Increment his win count
 	calla	increment_wincount
 
 	;don't draw the text if this is a royal rumble
 	move	@royal_rumble,a14
-	jrnz	jabeskip_rw
+	jrnz	ebwtskip_rw
 	callr	replace_wins
-jabeskip_rw
+ebwtskip_rw
 
 	;wait 1 sec or until a press
 	movi	TSEC,a9
-jabewl0	SLEEPK	1
+ebwtwl0	SLEEPK	1
 	calla	get_all_buttons_cur2
-	jrnz	jabego0
-	dsjs	a9,jabewl0
-jabego0
+	jrnz	ebwtgo0
+	dsjs	a9,ebwtwl0
+ebwtgo0
 
 	move	@p1rounds,a9
 	cmpi	2,a9
-	jreq	jabewon_match
+	jreq	ebwtwon_match
 	move	@p2rounds,a14
 	cmpi	2,a14
-	jreq	jabewon_match
+	jreq	ebwtwon_match
 	add	a14,a9
 	dec	a9
-	jruc	jabewon_fall
+	jruc	ebwtwon_fall
 
-jabewon_match
+ebwtwon_match
 	movk	2,a9
-jabewon_fall
+ebwtwon_fall
 
 
+;	calla	is_8_on_1
+;	jrnc	ebwtno_fireworks
+;	move	@p1rounds,a0
+;	move	@p2rounds,a14
+;	or	a0,a14
+;	cmpi	2,a14
+;	jrlt	ebwtno_fireworks
+;	JSRP	do_fireworks
+;ebwtno_fireworks
 
 	move	*a10(PLYR_SIDE),a11
 	movi	0c4h,a0
@@ -2685,6 +2905,8 @@ jabewon_fall
 	CREATE	ANNC_PID,CREATE_END_ROUND_ICON
 	SLEEPK	20
 
+;Move round awards into match awards section and annunciate round awards for
+;each human player.  Then clear out round awards.
 
 	calla	is_it_a_really_quick_win
 	calla	give_award_if_opponent_is_human
@@ -2697,12 +2919,12 @@ jabewon_fall
 
 	move	@p1rounds,a0
 	cmpi	2,a0
-	jrz	jabeend
+	jrz	ebwtend
 	move	@p2rounds,a0
 	cmpi	2,a0
-	jrnz	jabenot_end
+	jrnz	ebwtnot_end
 
-jabeend
+ebwtend
 	calla	check_for_award_for_winstreak
 	clr	a0
 	move	a0,@award_ok_to_die,L
@@ -2710,23 +2932,23 @@ jabeend
 
 	CREATE	SOUND_PID,DO_RIGHT_MUSIC
 	move	@royal_rumble,a0
-	jrnz	jabeno_award_wait
-jabewait_awards_dead
+	jrnz	ebwtno_award_wait
+ebwtwait_awards_dead
 	SLEEPK	1
 	move	@award_ok_to_die,a0,L
 	cmpi	3,a0
-	jrlt	jabewait_awards_dead
-jabeno_award_wait
+	jrlt	ebwtwait_awards_dead
+ebwtno_award_wait
 
 
 
 	;wait 1 sec or until a press
 	movi	TSEC*3,a9
-jabewl1	SLEEPK	1
+ebwtwl1	SLEEPK	1
 	calla	get_all_buttons_cur2
-	jrnz	jabego1
-	dsjs	a9,jabewl1
-jabego1
+	jrnz	ebwtgo1
+	dsjs	a9,ebwtwl1
+ebwtgo1
 	movk	4,a0
 	move	a0,@award_ok_to_die,L
 
@@ -2737,22 +2959,22 @@ jabego1
 
 	movi	25,a0			; Tips every 25 consecutive wins
 	move	@p1winstreak,a1		; p1 winstreak ?
-	jrnz	jabetip_chk		; br = yes
-jabeck_p2
+	jrnz	ebwttip_chk		; br = yes
+ebwtck_p2
 	move	@p2winstreak,a1		; p2 winstreak ?
-	jrz	jabeck_mtch_num		; br = no
-jabetip_chk
+	jrz	ebwtck_mtch_num		; br = no
+ebwttip_chk
 	modu	a0,a1			; 25 wins?
-	jrz	jabedo_tip			; br = yes
-jabeck_mtch_num
+	jrz	ebwtdo_tip			; br = yes
+ebwtck_mtch_num
 	movi	100,a0			; Tips every 100 matches
 	move	@match_cnt,a1		; Get match count
 	modu	a0,a1			; Time for a tip
-	jrnz	jabeno_tip			; br = no
-jabedo_tip
+	jrnz	ebwtno_tip			; br = no
+ebwtdo_tip
 	CREATE	04000h,show_mk3_tip	; Show a random mk3 tip
 	SLEEPK	2
-jabeno_tip
+ebwtno_tip
 
 	MOVE	@MUSIC_HAP,A0
 	JRNZ	MUSIC_ALREADY_GOING
@@ -2768,11 +2990,15 @@ MUSIC_ALREADY_GOING
 	move	a0,@HALT
 	DIE
 
+********
+* Create game over process and die
 
- SUBRP	jabedo_game_over
+ SUBRP	ebwtdo_game_over
 	CREATE0	do_game_over		;it'll set it's own PROCID
 	DIE
 
+********
+* Play's a wrestler's music
 
  SUBRP	DO_RIGHT_MUSIC
 	SLEEP	55
@@ -2781,38 +3007,38 @@ MUSIC_ALREADY_GOING
 	MOVE	A0,@MUSIC_HAP
 	MOVE	*A10(WRESTLERNUM),A11
 	SLL	4,A11
-	ADDI	jabewrestler_tunes,A11
+	ADDI	ebwtwrestler_tunes,A11
 	MOVE	*A11,A3
 	calla	SNDSND
 	DIE
 
-jabewrestler_tunes
+ebwtwrestler_tunes
 	.word	5,2,1,7,6,4,8,0,3
 
-jabenot_end
+ebwtnot_end
 	move	@royal_rumble,a14
-	jrnz	jabeno_run_boxes
+	jrnz	ebwtno_run_boxes
 	JSRP	show_dufus_messages		; Shows run msg (only between rounds)
-jabeno_run_boxes
+ebwtno_run_boxes
 
 	;wait 105 ticks or until a press
 	movi	105,a9
-jabewl2	SLEEPK	1
+ebwtwl2	SLEEPK	1
 	calla	get_all_buttons_cur2
-	jrnz	jabego2
-	dsjs	a9,jabewl2
-jabego2	;Hey!  REAL programmers don't use go2's!
+	jrnz	ebwtgo2
+	dsjs	a9,ebwtwl2
+ebwtgo2	;Hey!  REAL programmers don't use go2's!
 	;if the dufus msg boxes are on make sure their
 	;on for at least 1 second
 	move	@dboxes_on,a0,L		; Any dufus msg boxes on?
-	jrz	jabedeath_ok		; br = no
+	jrz	ebwtdeath_ok		; br = no
 	cmpi	50,a9			; Has 1 second passed ?
-	jrle	jabedeath_ok		; br = yes
+	jrle	ebwtdeath_ok		; br = yes
 	subi	50,a9			; Give me remainder of 1 second
-jabedbox_wait
+ebwtdbox_wait
 	SLEEPK	1
-	dsjs	a9,jabedbox_wait
-jabedeath_ok
+	dsjs	a9,ebwtdbox_wait
+ebwtdeath_ok
 	movk	1,a0
 	move	a0,@award_ok_to_die,L
 
@@ -2843,6 +3069,7 @@ RESET_HUMAN_VS_HUMAN
 
 WRESTLERS_RESET
 
+;Cause wrestlers to re-appear in the correct spot to start the next round.
 
 	CALLA	CLEAR_SPEECH_REPEAT
 
@@ -2890,6 +3117,7 @@ NO_LOWER
 	popst
 dont_update_clock
 
+;Update the meters
 	clr	a0
 	MOVE	A0,@DAM_MULT
 	callr	update_meter
@@ -2903,6 +3131,7 @@ dont_update_clock
 
 	calla	BGND_UD1
 
+;Now display "round 2" or "round 3"
 
 	CREATE	SOUND_PID,ring_bell
 
@@ -2915,6 +3144,7 @@ dont_update_clock
 
 	SLEEPK	1
 	calla	BGND_UD1
+;	CREATE	SKIRT_PID,CHANGE_SKIRTS2
 
 	SLEEPK	1
 
@@ -2947,6 +3177,7 @@ dont_update_clock
 
 	DIE
 
+******************************************************************************
 
  SUBRP	DO_ROUNDS
 	movi	[200,0],a0			;x pos
@@ -2954,7 +3185,7 @@ dont_update_clock
 	movi	RNDPLAT,a2
 	movi	RNDPLT_P,b0
 	movi	1800h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 
 	clr	a0
 	move	a0,*a8(OID)
@@ -2964,20 +3195,20 @@ dont_update_clock
 	move	@current_round,a0
 	MOVI	RNDNUM_1,A2
 	DEC	A0
-	JRZ	jabeOKAY
+	JRZ	ebwtOKAY
 	MOVI	RNDNUM_2,A2
 	DEC	A0
-	JRZ	jabeOKAY
+	JRZ	ebwtOKAY
 	MOVI	RNDNUM_3,A2
 	DEC	A0
-	JRZ	jabeOKAY
+	JRZ	ebwtOKAY
 	MOVI	RNDNUM_4,A2
-jabeOKAY
+ebwtOKAY
 	movi	[200,0],a0			;x pos
 	movi	[255,0],a1			;y pos
 	movi	RNDNUM_P,b0
 	movi	1801h,a3				;z pos
-	callr	jabebegin_obj
+	callr	ebwtbegin_obj
 
 	clr	a0
 	move	a0,*a8(OID)
@@ -3016,24 +3247,24 @@ ZIP_ROUNDS_ON
 	move	a2,*a9(OYVAL),L
 	RETS
 
-jabeset_x
+ebwtset_x
 	movi	ram_lst,a11
 	move	*a11,a8,L
 	move	*a8(OXVAL),a1,L
 	sub	a1,a0
 	sra	3,a0
-jabelp5
+ebwtlp5
 	move	*a11+,a8,L
-	jrz	jabex4
+	jrz	ebwtx4
 	move	*a8(OXVAL),a2,L
 	add	a0,a2
 	move	a2,*a8(OXVAL),L
 
-	jruc	jabelp5
-jabex4
+	jruc	ebwtlp5
+ebwtx4
 	rets
 
-jabebegin_obj
+ebwtbegin_obj
 
 	movi	DMAWNZ|M_SCRNREL,a4		;DMA flags
 	movi	CLSNEUT|TYPTEXT|SUBTXT,a5
@@ -3044,7 +3275,7 @@ jabebegin_obj
 
 blink_text
 	SLEEPK	10
-jabelp1
+ebwtlp1
 	movi	SGMD8RED2,a0
 	calla	pal_getf
 	move	a0,*a8(OPAL)
@@ -3053,8 +3284,9 @@ jabelp1
 	calla	pal_getf
 	move	a0,*a8(OPAL)
 	SLEEPK	7
-	jruc	jabelp1
+	jruc	ebwtlp1
 
+*******************************************************************************
 
  SUBR	FIRSTATT_MESS
 
@@ -3065,19 +3297,27 @@ jabelp1
 	pushp	a10
 	movi	1801h,a11
 	
-	jruc	jabecommon
+	jruc	ebwtcommon
 
  SUBR	BONUS_MESS
 
+;Process which displays high risk - 2x damage & possibly move name
+;This comes in from Secret button moves
+;A8=* plyr proc of who fired off the move
+;A10=# of move message
+;Messages display the first time only
 
 	clr	a14
 	move	a10,a10			;No message
-	jrz	jabealready
-	jrnn	jabereg
+	jrz	ebwtalready
+	jrnn	ebwtreg
 
-jabetag
+ebwttag
+;Taunt style high risk move - give 3x dmg
 	PUSHP	a14
 
+;	movk	3,a1
+;	move	a1,@DAM_MULT
 
 	RND_AWARD	a8,HIGH_RISK_AWD	; give award for high risk
 
@@ -3089,7 +3329,7 @@ jabetag
 	CREATE0	MAYBE_HIGH_RISK
 
 	callr	is_there_one_already
-	jrnz	jabeexit
+	jrnz	ebwtexit
 
 	CREATE	MESSAGE_PID,SPECIAL_MESSAGE
 
@@ -3099,12 +3339,13 @@ jabetag
 	SLEEP	50
 
 	movk	4,a10
-	jruc	jabeinhere
-jabereg
+	jruc	ebwtinhere
+ebwtreg
 
 	move	*a8(RISK),a1
 	btst	15,a1
-	jrnz	jabetag
+;Taunt style high risk move - give 3x dmg
+	jrnz	ebwttag
 
 
 
@@ -3117,19 +3358,28 @@ jabereg
 normal_thing2
 	move	*a2,a0,L
 	btst	a3,a0
-	jrnz	jabealready
+	jrnz	ebwtalready
+;Set the bit which says I've been displayed already!
 	movk	1,a1
 	sll	a3,a1
 	or	a1,a0
 	move	a0,*a2,L
 
 	sll	5,a10
-	addi	jabemessage_tbl,a10
+	addi	ebwtmessage_tbl,a10
 	move	*a10,a14,L
-jabealready
+ebwtalready
 	PUSHP	a14
 
 
+;	movk	2,a1
+;	move	*a8(RISK),a14
+;	btst	15,a14
+;	jrz	ebwtreg2
+;
+;;Taunt style high risk move - give 3x dmg
+;	movk	4,a1
+;ebwtreg2	move	a1,@DAM_MULT
 
 	movk	2,a1
 	move	a1,@DAM_MULT
@@ -3143,9 +3393,9 @@ jabealready
 
 	CREATE0	MAYBE_HIGH_RISK
 
-jabecommon	
+ebwtcommon	
 	callr	is_there_one_already
-	jrnz	jabeexit
+	jrnz	ebwtexit
 
 	CREATE	MESSAGE_PID,SPECIAL_MESSAGE
 
@@ -3155,13 +3405,16 @@ jabecommon
 	SLEEP	50
 
 	movk	2,a10
-jabeinhere	MOVI	xDAMAGE,A8
+ebwtinhere	MOVI	xDAMAGE,A8
 	MOVI	1803H,A11
 
 	CREATE	MESSAGE_PID,SPECIAL_MESSAGE
 
+;Wait for 2x to leave
+;Try to print correct move name
 	SLEEP	50
 
+;Get back message img addr to display
 	PULLP	a8
 	jaz	SUCIDE
 
@@ -3186,20 +3439,26 @@ SET_MESS_FLAGS
 	MOVE	A0,*A1
 	RETS
 
+*******************************************************************************
 
  SUBR	MOVE_NAME_ANNC
 
+;Process which displays move name
+;This comes in from actual script - like a hip toss announce
+;A8=* plyr proc of who fired off the move
+;A10=# of move message
+;Messages display the first time only
 
 	cmpi	41,a10
-	jrz	jabeskip
+	jrz	ebwtskip
 
 	move	@reduce_bog,a14
-	jrnz	jabeexit
-jabeskip
+	jrnz	ebwtexit
+ebwtskip
 	move	*a8(PLYR_SIDE),a9
 
 	callr	is_there_one_already
-	jrnz	jabeexit
+	jrnz	ebwtexit
 
 	move	a10,a3
 	movi	message_flag,a2
@@ -3208,26 +3467,28 @@ jabeskip
 	addi	32,a2
 	subi	32,a3
 	cmpi	9,a3
-	jrz	jabecont
+	jrz	ebwtcont
 normal_thing
 	move	*a2,a0,L
 	btst	a3,a0
-	jrnz	jabeexit
+	jrnz	ebwtexit
+;Set the bit which says I've been displayed already!
 	movk	1,a1
 	sll	a3,a1
 	or	a1,a0
 	move	a0,*a2,L
-jabecont
+ebwtcont
 	sll	5,a10
-	addi	jabemessage_tbl,a10
+	addi	ebwtmessage_tbl,a10
 	move	*a10,a8,L
 
 	callr	DO_THIS_MESS
 
-jabeexit
+ebwtexit
 	DIE
 
-jabemessage_tbl
+;Add new move img names here:
+ebwtmessage_tbl
 	.long	0		;0 = Blank
 	.long	HEADSLAM	;1
 	.long	0        	;2
@@ -3272,12 +3533,15 @@ jabemessage_tbl
 	.long	SECWND09       	;41	   
 	.long	VERTSUPL	;42	*   ;YOKO LEX
 
+*******************************************************************************
 
 DO_THIS_MESS
+;a8=*message to print
+;a9=0 or 1
 
 	;if this is the second wind message, skip the permission check
 	cmpi	SECWND09,a8
-	jreq	jabeskip_perm_check
+	jreq	ebwtskip_perm_check
 
 	;no messages in no-bog mode?
 	move	@no_debris,a14
@@ -3289,8 +3553,9 @@ DO_THIS_MESS
 	move	*a0,a0,L
 	btst	MOVE_NAMES_ON_BIT,a0
 	jrz	NO_MORE_MESS
-jabeskip_perm_check
+ebwtskip_perm_check
 
+;Don't allow overlaps!
 	CLR	A10
 
 	MOVI	1805H,A11		;1801
@@ -3304,6 +3569,7 @@ NO_MORE_MESS
 	RETS
 
 
+*******************************************************************************
 
  SUBR	DO_REVERSAL_MESS
 	RND_AWARD a8,REVERSAL_AWD		; give award for reversal
@@ -3331,49 +3597,60 @@ NO_MORE_MESS
 exit_reversal
 	DIE
 
+****************************************************************************
+* Returns process ptr to first wrestler we can find who's trying a buckoff.
 
  SUBR	anyone_bucking
 
 	;no buckoffs allowed in royal rumble mode
 	move	@royal_rumble,a14
-	jrnz	kvoeno
+	jrnz	cqwwno
 
 	movi	process_ptrs,a0
 	movi	NUM_WRES,a1
-kvoelp	move	*a0+,a2,L
-	jrz	kvoenxt
+cqwwlp	move	*a0+,a2,L
+	jrz	cqwwnxt
 	move	*a2(STATUS_FLAGS),a14,L
 	btst	B_DO_BUCKOFF,a14
-	jrz	kvoenxt
+	jrz	cqwwnxt
 	btst	B_NEW_BUCKOFF,a14
-	jrnz	kvoeyes
+	jrnz	cqwwyes
 	btst	B_DID_BUCKOFF,a14
-	jrnz	kvoenxt
-kvoeyes	move	a2,a0
+	jrnz	cqwwnxt
+cqwwyes	move	a2,a0
 	rets
 
-kvoenxt	dsj	a1,kvoelp
-kvoeno	clr	a0
+cqwwnxt	dsj	a1,cqwwlp
+cqwwno	clr	a0
 	rets
 
+****************************************************************************
+* Sets everyone's NO_BUCKOFF flag.
 
  SUBRP	set_all_buckoffs
 
 	movi	process_ptrs,a0
 	movi	NUM_WRES,a1
-meculp	move	*a0+,a2,L
-	jrz	mecunxt
+wpxnlp	move	*a0+,a2,L
+	jrz	wpxnnxt
 	move	*a2(STATUS_FLAGS),a14
 	ori	M_NO_BUCKOFF,a14
 	move	a14,*a2(STATUS_FLAGS)
-mecunxt	dsj	a1,meculp
+wpxnnxt	dsj	a1,wpxnlp
 	rets
 
+****************************************************************************
+*
+* Returns carry set if everyone on winning team is unharmed.
+* Exception:  Never returns C if final match.
+*
+* 0a10H = proc of a wrestler on the winning team (anyone will do)
+*
 
  SUBRP	is_perfect
 
 	calla	is_8_on_1
-	jrc	yazafinal
+	jrc	vfcufinal
 
 	PUSH	a2,a3,a4,a5
 
@@ -3381,33 +3658,35 @@ mecunxt	dsj	a1,meculp
 	movi	NUM_WRES,a2
 	movi	process_ptrs,a3
 
-yazalp	move	*a3+,a4,L
-	jrz	yazanxt		;skip inactive
+vfculp	move	*a3+,a4,L
+	jrz	vfcunxt		;skip inactive
 
 	move	*a4(PLYR_SIDE),a14
 	cmp	a5,a14
-	jrne	yazanxt		;skip enemies
+	jrne	vfcunxt		;skip enemies
 
 	move	*a4(PLYRNUM),a1
 	callr	get_health
 	cmpi	LIFE_MAX,a0
-	jreq	yazanxt		;okay - unharmed
+	jreq	vfcunxt		;okay - unharmed
 
 	;injured guy found.  return !c
 	PULL	a2,a3,a4,a5
-yazafinal	clrc
+vfcufinal	clrc
 	rets
 
-yazanxt	dsj	a2,yazalp
+vfcunxt	dsj	a2,vfculp
 
 	;no injured teammates found.  return c
 	PULL	a2,a3,a4,a5
 	setc
 	rets
 
+*****************************************************************************
 
  SUBR	DO_COMBO_MESS
 
+;Combo messages come from the scripts
 
 	MOVE	@combo_audit_done,A0
 	JRNZ	YES_WE_HAVE
@@ -3422,23 +3701,25 @@ YES_WE_HAVE
 	; message.
 	move	*a13(STATUS_FLAGS),a14,L
 	btst	B_COMBO_BROKEN,a14
-	jrnz	xsbwrets
+	jrnz	bvhdrets
 
 	MOVE	*A13(PLYRNUM),A9
 	MOVI	HITCOMBO,A8
 	MOVE	*A13(COMBO_COUNT),A10
 	DEC	A10
+;We need to announce even the lowly combos
+;How can you have a combo of 1 ?????
 	CMPI	2,A10
 	JRLT	NO_MESSAGE
 
 
 	cmpi	10,a10
-	jrlt	xsbwaward_reg_combo
+	jrlt	bvhdaward_reg_combo
 	RND_AWARD	a13,UCOMBOS_AWD
-	jruc	xsbwcombo_awd_done
-xsbwaward_reg_combo
+	jruc	bvhdcombo_awd_done
+bvhdaward_reg_combo
 	RND_AWARD	a13,COMBOS_AWD	; give award for combo started
-xsbwcombo_awd_done
+bvhdcombo_awd_done
 
 	MOVI	0BAH,A0		;0BAH humbug!
 	CALLA	triple_sound
@@ -3446,6 +3727,7 @@ xsbwcombo_awd_done
 	MOVI	01A4H,A0	;INCREDIBLE COMBINATION MOVE !
 	CALLA	ADD_VOICE
 
+;Add a couple for a better appearance!
 	CMPI	5,A10
 	JRLE	NO_MIGHT_BE_OBVIOUS
 	addk	2,a10
@@ -3455,6 +3737,7 @@ NO_MIGHT_BE_OBVIOUS
 
 	move	*a13(PLYR_SIDE),a9
 
+;Don't allow combo message to come out if other message there...
 	callr	is_there_one_already
 	jrnz	NO_MESSAGE
 
@@ -3474,18 +3757,19 @@ NO_MESSAGE
 	move	*a13(PLYRNUM),a11
 
 	cmpi	1,a11
-	jrne	xsbwnorum
+	jrne	bvhdnorum
 	move	@royal_rumble,a14
-	jrz	xsbwnorum
+	jrz	bvhdnorum
 
 	;pretend we're player 0
 	clr	a1		;side
 	clr	a11		;PLYRNUM
 
 
+;clear_combo_meter jumps here!
  SUBRP	zero_combo_meter
 
-xsbwnorum	movi	MD_SIZE,a9
+bvhdnorum	movi	MD_SIZE,a9
 	mpyu	a1,a9
 	addi	meter_data,a9
 	MOVE	*A9(MD_COMBO),A8,L
@@ -3494,6 +3778,7 @@ xsbwnorum	movi	MD_SIZE,a9
 	ADDI	life_data,A5
 	CLR	A2
 
+;halve_combo_meter jumps here!
  SUBRP	draw_combo_meter
 
 	MOVE	A2,*A5(PLT_COMBO_SIZE)
@@ -3529,14 +3814,20 @@ xsbwnorum	movi	MD_SIZE,a9
 	MOVE	A0,*A8(OPAL)
 
 NO_GO_AWAY
-xsbwrets	RETS
+bvhdrets	RETS
 
+*******************************************************************************
+*
 
  SUBRP	SPECIAL_MESSAGE
 
 ZIP_SPEED	.EQU	18H
 BUFF		.EQU	25
 
+;A8=IMAGE TO PLACE UP
+;A9=WHICH SIDE (1 OR 2)
+;A10=NUMBER OF BONUS MULTIPLIER 2-5 (IF NECESSARY)
+;A11=ZPOS TO PLACE BLOCK (SO DAMAGE x GOES OVER OTHER)
 
 	MOVK	1,A0
 	CALLR	SET_MESS_FLAGS
@@ -3601,10 +3892,11 @@ WE_SET_XPOS
 
 	move	*a8(OIMG),a0,L
 	cmpi	SECWND09,a0
-	jrnz	xsbwnospec
+	jrnz	bvhdnospec
+;We need to animate this second wind message
 
 	CREATE0	flash_2ndwind
-xsbwnospec
+bvhdnospec
 
 
 	MMFM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A9,A10
@@ -3899,6 +4191,7 @@ ON_LEFT
 	CLR	A7
 	MMTM	SP,A0,A1,A2,A3,A4,A5,A6,A7
 	movi	WGSF_W_P1,b0
+;	calla	BEGINOBJ
 	calla	BEGINOBJP
 	MMFM	SP,A0,A1,A2,A3,A4,A5,A6,A7
 	MOVE	A8,A9
@@ -3977,14 +4270,17 @@ CREATE_END_ROUND_ICON
 	.ref	wrestler_count
 
 	move	@wrestler_count_proc,a0,L	; Does the counter proc exist ?
-	jrz	xsbwno_wc_proc			; br = no
+	jrz	bvhdno_wc_proc			; br = no
 
+;	move	@wrestler_count,a14		; Current count == 0 ?
+;	jrz	bvhdno_wc_proc			; br = yes
+;	dec	a14				; Decrement it
 	clr	a14
 	move	a14,@wrestler_count		; Write it back
 
 	movk	1,a14				; Make counter proc wakeup on next tick
 	move	a14,*a0(PTIME)
-xsbwno_wc_proc
+bvhdno_wc_proc
 
 
 
@@ -4131,7 +4427,7 @@ MAYBE_A_SPARKLE
  SUBRP	ICON_SPARKLE
 
 	move	@reduce_bog,a14
-	jrnz	xsbwdie
+	jrnz	bvhddie
 
 	MOVK	6,A0
 	CALLA	RNDRNG0
@@ -4166,7 +4462,7 @@ MAYBE_A_SPARKLE
 	calla	setup_back_anim
 	JSRP	ANIM_CROWD
 	CALLA	DELOBJA8
-xsbwdie	DIE
+bvhddie	DIE
 
 
 WHICH_SPARKLE
@@ -4305,11 +4601,11 @@ CREATE_PERFECT
 	PULLP	A10
 
 
-xsbwwait_loop
+bvhdwait_loop
 	SLEEPK	1
 	move	*a8(OYPOS),a0
 	cmpi	100,a0
-	jrge	xsbwwait_loop
+	jrge	bvhdwait_loop
 	clr	a0
 	move	a0,*a8(OYVEL),L
 	movi	FX_PID,a0
@@ -4575,6 +4871,7 @@ WHERE_PERFECT_SPARKLE
 	.LONG	[17,383]
 	.LONG	-1
 
+******************************************************************************
 
  SUBR	CREATE_TIMEOUT
 
@@ -4749,13 +5046,26 @@ DISQUAL_DISSOLVE_ANIM
 	WL	20,PINHIM09
 	.WORD	CANI_END
 
+***********
+*
+* Old:
+* returns lowest PLYRNUM on winning side (0 or 1 for plyrs, 2 for drones)
+* in a3.  increments p1rounds and p2rounds too.  (actually, it's okay to
+* return a 3 or a 4 if we want.  The code that calls this will work fine.
+* If this is the final battle, we add 2 instead of 1 to pXrounds.
+*
+* New:
+* returns lowest PLYRNUM on winning side, unless there was a pin, in which
+* case it returns the first wrestler on the winning side with his DID_PIN
+* flag set.
+*
 
  SUBRP	set_winner
 
 	;first, establish cause of death.  Choices are time running out
 	; and loss of all health.
 	move	@match_time,a14,L
-	jrz	xsbwtmout
+	jrz	bvhdtmout
 
 	;time didn't run out, so either someone was pinned, which should
 	; only happen if everyone on his team is dead, or the last living
@@ -4765,26 +5075,26 @@ DISQUAL_DISSOLVE_ANIM
 	movi	process_ptrs,a1
 	clr	a3
 
-xsbwloop0	move	*a1+,a2,L
-	jrz	xsbwnxt0		;skip inactive
+bvhdloop0	move	*a1+,a2,L
+	jrz	bvhdnxt0		;skip inactive
 
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	xsbwnxt0		;skip dead
+	jreq	bvhdnxt0		;skip dead
 
 	;got a live one.  if he pinned, use him.  if not, save his pointer
 	; in case we find no pinner, but keep looking
 	move	*a2(STATUS_FLAGS),a14
 	btst	B_DID_PIN,a14
-	jrnz	xsbwa2wins
+	jrnz	bvhda2wins
 
 	move	a2,a3
 
-xsbwnxt0	dsj	a0,xsbwloop0
+bvhdnxt0	dsj	a0,bvhdloop0
 
 	;okay, nobody pinned.  did we find any live ones at all?
 	move	a3,a2
-	jrnz	xsbwa2wins		;yes, we saved a non-pinner.
+	jrnz	bvhda2wins		;yes, we saved a non-pinner.
 
 	;trouble.  we didn't find any live wrestlers, and there definitely
 	; should have been one.  This is really bad and should never happen,
@@ -4793,50 +5103,50 @@ xsbwnxt0	dsj	a0,xsbwloop0
 	.if DEBUG
 	LOCKUP
 	.endif
-xsbwbogus	movi	NUM_WRES,a0
+bvhdbogus	movi	NUM_WRES,a0
 	movi	process_ptrs,a1
 
-xsbwloop1	move	*a1+,a2,L
-	jrz	xsbwnxt1		;skip inactive
+bvhdloop1	move	*a1+,a2,L
+	jrz	bvhdnxt1		;skip inactive
 
 	;got one
-	jruc	xsbwa2wins
+	jruc	bvhda2wins
 
-xsbwnxt1	dsjs	a0,xsbwloop1
+bvhdnxt1	dsjs	a0,bvhdloop1
 
 	;good heavens!  no actives found at all!  no way is this ever gonna
 	; happen.  fuck it.  quit or something.
-	jruc	xsbwno_hits
+	jruc	bvhdno_hits
 
-xsbwa2wins	;a2 is process of winner
+bvhda2wins	;a2 is process of winner
 	;increment pXrounds
 	movi	p1rounds,a0
 	movi	01h,a1		;match_winner value for p1 side winning
 	move	*a2(PLYR_SIDE),a4
-	jrz	xsbwrok
+	jrz	bvhdrok
 	movi	p2rounds,a0
 	movi	02h,a1		;match_winner value for p1 side winning
-xsbwrok	move	*a0,a4
+bvhdrok	move	*a0,a4
 	inc	a4
 
 	;if this is the final match (or royal rumble), increment it again.
 	inc	a4		;increment, then dec if we shouldn't have.
 	calla	is_8_on_1
-	jrc	xsbwa4ok
+	jrc	bvhda4ok
 	move	@royal_rumble,a14
-	jrnz	xsbwa4ok
+	jrnz	bvhda4ok
 	dec	a4
-xsbwa4ok	move	a4,*a0
+bvhda4ok	move	a4,*a0
 
 	;if pXwins == 2, set match_winner
 	cmpi	2,a4
-	jrne	xsbwno_mw
+	jrne	bvhdno_mw
 	move	a1,@match_winner
 
-xsbwno_mw	move	*a2(PLYRNUM),a3
+bvhdno_mw	move	*a2(PLYRNUM),a3
 	rets
 
-xsbwtmout	;clock ran out on the round.  Award victory to the team with the
+bvhdtmout	;clock ran out on the round.  Award victory to the team with the
 	; highest average life points remaining.  In case of a tie, winner
 	; is the last team to land a hit.  If there have been no hits,
 	; we'll wanna drop out and go straight to game over, which I'll
@@ -4847,9 +5157,9 @@ xsbwtmout	;clock ran out on the round.  Award victory to the team with the
 	; runs out.
 	move	@process_ptrs+40h,a2,L	;first drone
 	calla	is_8_on_1
-	jrc	xsbwa2wins
+	jrc	bvhda2wins
 	move	@royal_rumble,a14
-	jrnz	xsbwa2wins
+	jrnz	bvhda2wins
 
 	;reggies:
 	clr	a4	;team 1 count
@@ -4860,24 +5170,24 @@ xsbwtmout	;clock ran out on the round.  Award victory to the team with the
 	movi	NUM_WRES,a9
 	movi	process_ptrs,a8
 
-xsbwloop2	move	*a8+,a10,L
-	jrz	xsbwnxt2		;skip inactive
+bvhdloop2	move	*a8+,a10,L
+	jrz	bvhdnxt2		;skip inactive
 
 	move	*a10(PLYRNUM),a1
 	calla	get_health
 	move	*a10(PLYR_SIDE),a14
-	jrnz	xsbwt2
+	jrnz	bvhdt2
 
 	;on team 1
 	inc	a4
 	add	a0,a5
-	jruc	xsbwnxt2
+	jruc	bvhdnxt2
 
-xsbwt2	;on team 2
+bvhdt2	;on team 2
 	inc	a6
 	add	a0,a7
 
-xsbwnxt2	dsj	a9,xsbwloop2
+bvhdnxt2	dsj	a9,bvhdloop2
 
 	;compute the averages (we could check for the very likely case of
 	; the divisor being one, but there's no real need, as this is
@@ -4886,10 +5196,10 @@ xsbwnxt2	dsj	a9,xsbwloop2
 	divu	a6,a7
 
 	cmp	a5,a7
-	jrlt	xsbwt1w
-	jrgt	xsbwt2w
+	jrlt	bvhdt1w
+	jrgt	bvhdt2w
 
-xsbwtie	;uh-oh.  Tie.  Find wrestler with most recent LAST_HIT_TIME and
+bvhdtie	;uh-oh.  Tie.  Find wrestler with most recent LAST_HIT_TIME and
 	; award the match to his team.  If everyone's LAST_HIT_TIME's are
 	; zero, nobody has landed a blow, so just quit to game over.
 	; LAST_HIT_TIME holds all 32 bits of PCNT, so we don't need to worry
@@ -4900,53 +5210,53 @@ xsbwtie	;uh-oh.  Tie.  Find wrestler with most recent LAST_HIT_TIME and
 	clr	a0		;current high LAST_HIT_TIME
 	clr	a1		;team with current high LAST_HIT_TIME
 
-xsbwloop4	move	*a8+,a10,L
-	jrz	xsbwnxt4		;skip inactive
+bvhdloop4	move	*a8+,a10,L
+	jrz	bvhdnxt4		;skip inactive
 
 	move	*a10(LAST_HIT_TIME),a14,L
 	cmp	a0,a14
-	jrle	xsbwnxt4
+	jrle	bvhdnxt4
 
 	;new champ.
 	move	a14,a0
 	move	*a10(PLYR_SIDE),a1
 
-xsbwnxt4	dsj	a9,xsbwloop4
+bvhdnxt4	dsj	a9,bvhdloop4
 
 	TEST	a0
-	jrz	xsbwno_hits
+	jrz	bvhdno_hits
 	TEST	a1
-	jrnz	xsbwt2w
-	;fall through to xsbwt1w
+	jrnz	bvhdt2w
+	;fall through to bvhdt1w
 
-xsbwt1w	;team 1 wins
+bvhdt1w	;team 1 wins
 	clr	a4
-	jruc	xsbwfw
+	jruc	bvhdfw
 
-xsbwt2w	;team 2 wins
+bvhdt2w	;team 2 wins
 	movk	1,a4
 
-xsbwfw	;award win to first live wrestler with PLYR_SIDE equal to a4
+bvhdfw	;award win to first live wrestler with PLYR_SIDE equal to a4
 
 	movk	NUM_WRES,a0
 	movi	process_ptrs,a1
 
-xsbwloop3	move	*a1+,a2,L
-	jrz	xsbwnxt3		;skip inactive
+bvhdloop3	move	*a1+,a2,L
+	jrz	bvhdnxt3		;skip inactive
 
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	xsbwnxt3		;skip dead
+	jreq	bvhdnxt3		;skip dead
 
 	move	*a2(PLYR_SIDE),a14
 	cmp	a14,a4
-	jrne	xsbwnxt3		;skip losers
+	jrne	bvhdnxt3		;skip losers
 
 	;got one
 	move	*a2(PLYRNUM),a3
-	jruc	xsbwa2wins
+	jruc	bvhda2wins
 
-xsbwnxt3	dsj	a0,xsbwloop3
+bvhdnxt3	dsj	a0,bvhdloop3
 
 	;good heavens.  we didn't find ANYONE from that team.  This is
 	; a major error that should never happen.  Deal with it as in
@@ -4954,14 +5264,18 @@ xsbwnxt3	dsj	a0,xsbwloop3
 	.if DEBUG
 	LOCKUP
 	.endif
-	jruc	xsbwbogus
+	jruc	bvhdbogus
 
-xsbwno_hits
+bvhdno_hits
 	;battle ended in a tie with neither side landing a blow.  drop
 	; out to game over.
 	movi	-1,a2
 	rets
 
+*****************************************************************************
+*
+* Clears a combo meter.
+* 0a13H = process of victim
 
  SUBR	clear_combo_meter
 
@@ -4969,6 +5283,10 @@ xsbwno_hits
 	move	*a13(PLYRNUM),a11
 	jruc	zero_combo_meter
 
+*****************************************************************************
+*
+* Sets a combo meter to half-size.
+* 0a13H = process of victim
 
  SUBR	halve_combo_meter
 
@@ -4984,6 +5302,10 @@ xsbwno_hits
 	movk	10,a2
 	jruc	draw_combo_meter
 
+*****************************************************************************
+*
+* Clears a life bar.
+* 0a13H = process of victim
 
  SUBR	clear_lifebar
 
@@ -4998,6 +5320,7 @@ xsbwno_hits
 
 	rets
 
+******************************************************************************
 
 	.end
 

@@ -1,3 +1,13 @@
+**************************************************************
+*
+* Software:	Mike Lynch, Jason Skiles, Mark Turmell
+* Initiated:	04/04/95
+*
+* Modified:
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"award.asm"
 	.title	"wrestling game program"
@@ -66,6 +76,7 @@ BONUS_ICON2_START_XPOS	.equ	-37
 BONUS_ICON3_START_XPOS	.equ	-52
 
 
+;fer know
 LIFE_MAX	.equ	163		;green pixels in life bar
 
 BONUS_MSG_XPOS1		.equ	81
@@ -143,6 +154,13 @@ lp?
 	.endm
 
 
+;performed by each player.  They are used at the end of a match to award
+;icons to the player.  These are cleared before each match.
+;
+;The pxrnd_award arrays are used to keep track of awards on a per round basis.
+;The pxmtch_award arrays are used to keep track of awards on a per match basis.
+;The pxws_award arrays are used to keep track of awards on a per winstreak basis.
+;
 	BSSX	p1rnd_award,	8*NUM_AWARDS	;player 1 round awards
 	BSSX	p2rnd_award,	8*NUM_AWARDS	;player 2 round awards
 	BSSX	p1mtch_award,	8*NUM_AWARDS	;player 1 match awards
@@ -216,14 +234,19 @@ lp?
 	.ref	NUM_OPPS
 
 
+***************************************************************
+* rst_awards - Used to zero out per round and/or per match award arrays
+* Clears both players award arrays!!!
+* a14 = pointer to awards array to clear
+*
  SUBR	rst_awards
 	PUSH	a0,a1
 	movi	(NUM_AWARDS*2)-1,a0
 	clr	a1
-grbnrst_award_loop
+exwirst_award_loop
 	movb	a1,*a14
 	addk	8,a14
-	dsjs	a0,grbnrst_award_loop
+	dsjs	a0,exwirst_award_loop
 	movi	pcomeback,a0
 	move	a1,*a0+,L
 	move	a1,*a0,L
@@ -233,34 +256,38 @@ grbnrst_award_loop
 
  SUBRP	accumulate_player_awards
 	move	@royal_rumble,a14
-	jrnz	grbnapa_done
+	jrnz	exwiapa_done
 	X32	a0
 	addi	process_ptrs,a0
 	move	*a0,a1,L
-	jrz	grbnapa_done
+	jrz	exwiapa_done
 	move	a5,a0
 	addi	(BLOCKS_AWD*8),a0
 	movb	*a0,a1
-	jrz	grbnno_blocks
+	jrz	exwino_blocks
 	clr	a1
-	jruc	grbndo_accumulate
-grbnno_blocks
+	jruc	exwido_accumulate
+exwino_blocks
 	movk	BLOCK_ICONS,a1
-grbndo_accumulate
+exwido_accumulate
 	movb	a1,*a0
 	movi	NUM_RND_AWARDS,a2	; number of awards
-grbnacc_awards_loop
+exwiacc_awards_loop
 	movb	*a6,a3			; Get current value of match award
 	movb	*a5,a4			; Get per round award
 	add	a4,a3			; Add to per match award
 	movb	a3,*a6			; Store back to per match award
 	addk	8,a6			; Increment round awards pointer
 	addk	8,a5			; Increment match awards pointer
-	dsjs	a2,grbnacc_awards_loop	; Keep going until all are accumulated
-grbnapa_done
+	dsjs	a2,exwiacc_awards_loop	; Keep going until all are accumulated
+exwiapa_done
 	rets
 
 
+***************************************************************
+* accumulate_awards - accumulates the per round awards into the
+* per match awards.
+*
  SUBR	accumulate_awards
 	PUSH	a0,a1,a2,a3,a4,a5,a6	; Save reggies I'm gonna trash
 
@@ -280,16 +307,26 @@ grbnapa_done
 	rets
 	
 	
+***************************************************************
+* rst_winstreak_awards - Used to zero out per winstreak award arrays
+* a14 = pointer to player winstreak award table to clear
+*
  SUBR	rst_winstreak_awards
 	PUSH	a0,a1
 	movi	NUM_AWARDS-1,a0
 	clr	a1
-wzaurst_ws_award_loop
+aosbrst_ws_award_loop
 	move	a1,*a14+,W
-	dsjs	a0,wzaurst_ws_award_loop
+	dsjs	a0,aosbrst_ws_award_loop
 	PULL	a0,a1
 	rets
 
+***************************************************************
+*
+* This array contains the number of ICONS to award for each item in
+* the awards stuff.  This array MUST be in the same order as the
+* awards indecies in game.equ
+*
  SUBRP	award_icons:
 	.byte	POWER_MOVE_ICONS     	;POWER_MOVE_AWD	
 	.byte	REVERSALS_ICONS		;REVERSAL_AWD	
@@ -325,52 +362,64 @@ wzaurst_ws_award_loop
 	.byte	0			;Not used
 	.even
 
+***************************************************************
+* round_award - adds in round ICONS for a player.
+* a0 = pointer to player data.
+* a10 = award index.
+*
  SUBR	round_award
 	PUSH	a9,a8
 	move	*a0(PLYRNUM),a9,W	; Get the player number
 	cmpi	2,a9			; Is this a human player
-	jrge	ureara_out			; br = nope - get out
+	jrge	yhvwra_out			; br = nope - get out
 	X8	a10			; Mult award index by 8
 	move	a10,a8
 	movb	*a0(PLYR_SIDE),a9	; What side are we ?
-	jrz	ureacks_rnd_p1		; br = player 1
+	jrz	yhvwcks_rnd_p1		; br = player 1
 	addi	p2rnd_award,a10		; add player 2 round table base to index
-	jruc	ureacks_rnd_go		; increment counter
-ureacks_rnd_p1
+	jruc	yhvwcks_rnd_go		; increment counter
+yhvwcks_rnd_p1
 	addi	p1rnd_award,a10		; add player 2 round table base to index
-ureacks_rnd_go
+yhvwcks_rnd_go
 	addi	award_icons,a8
 	movb	*a8,a8			; Get # ICONs to award
 	movb	*a10,a9			; Get current value
 	add	a8,a9			; Add em in
 	movb	a9,*a10			; Put it back
-ureara_out	PULL	a9,a8			; Restore A9
+yhvwra_out	PULL	a9,a8			; Restore A9
 	rets				; Get the hell out
 
 
+***************************************************************
+* match_award - adds round ICONS to match ICONS total
+* a0 = pointer to player data.
+* a10 = award index.
+*
  SUBR	match_award
 	PUSH	a9,a8
 	move	*a0(PLYRNUM),a9,W	; Get the player number
 	cmpi	2,a9			; Is this a human player
-	jrge	lehmma_out			; br = nope - get out
+	jrge	wmlima_out			; br = nope - get out
 	X8	a10			; Mult award index by 8
 	move	a10,a8
 	movb	*a0(PLYR_SIDE),a9	; What side are we ?
-	jrz	lehmcks_match_p1		; br = player 1
+	jrz	wmlicks_match_p1		; br = player 1
 	addi	p2mtch_award,a10	; add player 2 round table base to index
-	jruc	lehmcks_match_go		; increment counter
-lehmcks_match_p1
+	jruc	wmlicks_match_go		; increment counter
+wmlicks_match_p1
 	addi	p1mtch_award,a10	; add player 2 round table base to index
-lehmcks_match_go
+wmlicks_match_go
 	addi	award_icons,a8
 	movb	*a8,a8			; Get # ICONs to award
 	movb	*a10,a9			; Get current value
 	add	a8,a9			; Add em in
 	movb	a9,*a10			; Put it back
-lehmma_out	PULL	a9,a8			; Restore A9
+wmlima_out	PULL	a9,a8			; Restore A9
 	rets				; Get the hell out
 
 	
+* NOTE - These MUST Be in the same order as the award indexes in game.equ
+*
  SUBRP	award_text
 	.long	PWRMVEC		; Power Move
 	.long	HIGHRSKC	; Reversal
@@ -406,14 +455,17 @@ lehmma_out	PULL	a9,a8			; Restore A9
 	.long	0		; Not Yet Used
 
 
+;a8 = player number 0=1 1=2
+;a9 = *bar record
+;a11 = zip out on state #, zip in then die on state #+1
  SUBRP	zip_award_bar
 	move	@player_award_state,a10,L
 	cmp	a10,a11
-	jrz	zaimzip_out
+	jrz	lrvuzip_out
 	SLEEPK	1
 	jruc	zip_award_bar
 
-zaimzip_out
+lrvuzip_out
 	movi	ZIP_IN_SOUND,a0
 	calla	triple_sound
 
@@ -421,12 +473,12 @@ zaimzip_out
 	addk	1,a11
 	move	*a9((BONUS_RECORD_SIZE-1)*32),a0,W
 	move	a8,a8
-	jrz	zaimp1_zip_out
+	jrz	lrvup1_zip_out
 	movi	[-BONUS_BAR_VEL,0],a1
-	jruc	zaimzip_out_loop
-zaimp1_zip_out
+	jruc	lrvuzip_out_loop
+lrvup1_zip_out
 	movi	[BONUS_BAR_VEL,0],a1
-zaimzip_out_loop
+lrvuzip_out_loop
 	move	*a9,a10,L			; Bar
 	move	*a10(OXVAL),a14,L
 	add	a1,a14
@@ -443,47 +495,48 @@ zaimzip_out_loop
 	move	a14,*a10(OXVAL),L
 
 	move	*a9(96),a10,L			; 2nd Icon
-	jrz	zaimzout_done
+	jrz	lrvuzout_done
 	move	*a10(OXVAL),a14,L
 	add	a1,a14
 	move	a14,*a10(OXVAL),L
 
 	move	*a9(128),a10,L			; 3rd Icon
-	jrz	zaimzout_done
+	jrz	lrvuzout_done
 	move	*a10(OXVAL),a14,L
 	add	a1,a14
 	move	a14,*a10(OXVAL),L
-zaimzout_done
+lrvuzout_done
 	PUSHP	a0,a1
 	SLEEPK	1
 	PULLP	a0,a1
 	move	*a9,a10,L
 	move	*a10(OXPOS),a10,W
 	cmp	a10,a0
-	jrnz	zaimzip_out_loop
+	jrnz	lrvuzip_out_loop
 
+;	JSRP	flash_bar_icons
 
 	move	*a9(((BONUS_RECORD_SIZE-1)*32)+16),a10,W
-	jrnz	zaimno_zip_in
+	jrnz	lrvuno_zip_in
 
-zaimwait_2nd_state	
+lrvuwait_2nd_state	
 	move	@player_award_state,a10,L
 	cmp	a10,a11
-	jrle	zaimzip_in
+	jrle	lrvuzip_in
 	SLEEPK	1
-	jruc	zaimwait_2nd_state
+	jruc	lrvuwait_2nd_state
 
-zaimzip_in
+lrvuzip_in
 	SLEEPK	3
 	move	a8,a8
-	jrz	zaimp1_zip_in
+	jrz	lrvup1_zip_in
 	movi	[BONUS_BAR_VEL,0],a1
 	movi	399,a0
-	jruc	zaimzip_in_loop
-zaimp1_zip_in
+	jruc	lrvuzip_in_loop
+lrvup1_zip_in
 	movi	[-BONUS_BAR_VEL,0],a1
 	clr	a0
-zaimzip_in_loop
+lrvuzip_in_loop
 	move	*a9,a10,L			; Bar
 	move	*a10(OXVAL),a14,L
 	add	a1,a14
@@ -500,26 +553,26 @@ zaimzip_in_loop
 	move	a14,*a10(OXVAL),L
 
 	move	*a9(96),a10,L			; 2nd Icon
-	jrz	zaimzin_done
+	jrz	lrvuzin_done
 	move	*a10(OXVAL),a14,L
 	add	a1,a14
 	move	a14,*a10(OXVAL),L
 
 	move	*a9(128),a10,L			; 3rd Icon
-	jrz	zaimzin_done
+	jrz	lrvuzin_done
 	move	*a10(OXVAL),a14,L
 	add	a1,a14
 	move	a14,*a10(OXVAL),L
-zaimzin_done
+lrvuzin_done
 	PUSHP	a0,a1
 	SLEEPK	1
 	PULLP	a0,a1
 	move	*a9,a10,L
 	move	*a10(OXPOS),a10,W
 	cmp	a10,a0
-	jrnz	zaimzip_in_loop
+	jrnz	lrvuzip_in_loop
 
-zaimzip_exit
+lrvuzip_exit
 	move	*a9,a0,L		; Bar
 	calla	DELOBJ
 	move	*a9(32),a0,L		; Text
@@ -527,24 +580,25 @@ zaimzip_exit
 	move	*a9(64),a0,L		; 1st Icon
 	calla	DELOBJ
 	move	*a9(96),a0,L		; 2nd Icon
-	jrz	zaimzip_die
+	jrz	lrvuzip_die
 	calla	DELOBJ
 	move	*a9(128),a0,L		; 3rd Icon
-	jrz	zaimzip_die
+	jrz	lrvuzip_die
 	calla	DELOBJ
-zaimzip_die
+lrvuzip_die
 	DIE
 
-zaimno_zip_in
+lrvuno_zip_in
+;	JSRP	flash_bar_icons
 	move	@award_ok_to_die,a10,L
 	addi	1,a10
 	move	a10,@award_ok_to_die,L
-zaimno_zip_in_wait
+lrvuno_zip_in_wait
 	move	@award_ok_to_die,a10,L
 	cmpi	4,a10
-	jrz	zaimzip_exit
+	jrz	lrvuzip_exit
 	SLEEPK	1
-	jruc	zaimno_zip_in_wait
+	jruc	lrvuno_zip_in_wait
 
 
  SUBRP	flash_bar_icons
@@ -552,12 +606,12 @@ zaimno_zip_in_wait
 	move	a9,a10
 	addi	64,a10
 	movi	0101h,a9
-zaimiflash_loop
+lrvuiflash_loop
 	move	*a10+,a8,L
-	jrz	zaimfbi_exit
+	jrz	lrvufbi_exit
 	CREATE	AWARD_PID,FLASHME
-	jruc	zaimiflash_loop
-zaimfbi_exit
+	jruc	lrvuiflash_loop
+lrvufbi_exit
 	SLEEPK	10
 	PULLP	a8,a9
 	RETP
@@ -568,41 +622,50 @@ zaimfbi_exit
 	clr	a8
 	movi	award_text,a6
 	movi	NUM_AWARDS,a9
-zaimgna_loop
+lrvugna_loop
 	movb	*a10,a11
-	jrz	zaimno_inc
+	jrz	lrvuno_inc
 	move	a11,*a7+,L
 	cmpi	5,a11
-	jrge	zaimgna_big_icon
+	jrge	lrvugna_big_icon
 	clr	a11
-	jruc	zaimgna_get_text_obj
-zaimgna_big_icon
+	jruc	lrvugna_get_text_obj
+lrvugna_big_icon
 	movi	1,a11
-zaimgna_get_text_obj
+lrvugna_get_text_obj
 	move	a11,*a7+,L
 	move	*a6,*a7,L
 	addi	32,a7
 	addk	1,a8
-zaimno_inc
+lrvuno_inc
 	addi	32,a6
 	addk	8,a10
-	dsjs	a9,zaimgna_loop
+	dsjs	a9,lrvugna_loop
 	move	a8,a10
 	cmpi	6,a8
-	jrle	zaimno_limit
+	jrle	lrvuno_limit
 	movk	6,a10
-zaimno_limit
+lrvuno_limit
 	PULL	a6,a7,a8,a9,a11
 	rets
 
 
+****************************************************************
+*
+* adjust_perfects - This function is called to check to see if 2 perfects
+* have been registered for a match.  If so the perfects are deleted from
+* a double perfect is put into the match awards and the 2 single perfects
+* are removed.  This allows the double perfect to be registered in the
+* winstreak accumulation and the proper icon bar to be displayed at the
+* end of the match.
+*
  SUBRP	adjust_perfects
 	PUSH	a9,a10
 	movi	p1mtch_award,a9
 	addi	(PERFECT_AWD*8),a9
 	movb	*a9,a10				; How many perfects for match
 	cmpi	(PERFECT_ICONS*2),a10		; Is it 2?
-	jrnz	vujhnop1_dbl_perfect		; br = nope
+	jrnz	nrmonop1_dbl_perfect		; br = nope
 	clr	a10				; Reset match perfects
 	movb	a10,*a9
 	subi	(PERFECT_AWD*8),a9		; Add a double perfect
@@ -610,13 +673,13 @@ zaimno_limit
 	movb	*a9,a10
 	addk	DBL_PERFECT_ICONS,a10
 	movb	a10,*a9
-	jruc	vujhap_done
-vujhnop1_dbl_perfect
+	jruc	nrmoap_done
+nrmonop1_dbl_perfect
 	movi	p2mtch_award,a9
 	addi	(PERFECT_AWD*8),a9
 	movb	*a9,a10
 	cmpi	(PERFECT_ICONS*2),a10
-	jrnz	vujhap_done
+	jrnz	nrmoap_done
 	clr	a10
 	movb	a10,*a9
 	subi	(PERFECT_AWD*8),a9
@@ -624,45 +687,47 @@ vujhnop1_dbl_perfect
 	movb	*a9,a10
 	addk	DBL_PERFECT_ICONS,a10
 	movb	a10,*a9
-vujhap_done
-vujhadjust_blocks
+nrmoap_done
+nrmoadjust_blocks
 	movi	p1mtch_award,a9
 	addi	(BLOCKS_AWD*8),a9
 	movb	*a9,a10				; How many block awards for match
 	cmpi	(BLOCK_ICONS*2),a10		; Is it >= 2?
-	jrlt	vujhnop1_dbl_block			; br = nope
+	jrlt	nrmonop1_dbl_block			; br = nope
 	movk	DBL_BLOCK_ICONS,a10		; Give bigger award for multiround no blocking
 	movb	a10,*a9
-vujhnop1_dbl_block
+nrmonop1_dbl_block
 	movi	p2mtch_award,a9
 	addi	(BLOCKS_AWD*8),a9
 	movb	*a9,a10
 	cmpi	(BLOCK_ICONS*2),a10
-	jrlt	vujhab_done
+	jrlt	nrmoab_done
 	movk	DBL_BLOCK_ICONS,a10
 	movb	a10,*a9
-vujhab_done
+nrmoab_done
 	PULL	a9,a10
 	rets
 
+; A8 = Player number
+; A9 = *next bar icon record
  SUBRP	adjust_text_position
 	PUSH	a9
 	subi	((BONUS_RECORD_SIZE-3)*32),a9	;Point at Icon 2 object
-vujhadj_t_loop
+nrmoadj_t_loop
 	move	*a9,a0,L		;Object exist ?
-	jrz	vujhatp_exit		;br = no
+	jrz	nrmoatp_exit		;br = no
 	move	*a0(OIMG),a14,L		;Get image pointer
 	move	*a14,a14,W		;Get image width
 	move	a8,a8			;Player 1?
-	jrnz	vujhdo_tadjust		;br = no
+	jrnz	nrmodo_tadjust		;br = no
 	neg	a14
-vujhdo_tadjust
+nrmodo_tadjust
 	move	*a9(OXPOS),a0,W		;Get current XPos
 	add	a14,a0			;Adjust it
 	move	a0,*a9(OXPOS),W		;Write it back
 	addi	32,a9
-	jruc	vujhadj_t_loop
-vujhatp_exit
+	jruc	nrmoadj_t_loop
+nrmoatp_exit
 	PULL	a9
 	rets
 
@@ -673,14 +738,14 @@ vujhatp_exit
 	movi	p1mtch_award,a10
 	movi	picon,a7
 	move	a8,a8						; player 1 ?
-	jrz	vujhdpa_p1						; br = yes
+	jrz	nrmodpa_p1						; br = yes
 	addi	(MAX_BONUS_BARS*BONUS_RECORD_SIZE*32),a9
 	addi	(MAX_BONUS_BARS*3*32),a7
 	movi	p2mtch_award,a10
-vujhdpa_p1
+nrmodpa_p1
 	callr	get_num_awards				; Get the number of awards
 	move	a10,a10
-	jrz	vujhno_awards
+	jrz	nrmono_awards
 
 	move	a7,a0
 	PUSH	a0
@@ -691,45 +756,48 @@ vujhdpa_p1
 	clr	a6
 	clr	a7					;Y velocity
 
-vujhdo_next_award_bar
+; Make a bonus bar
+nrmodo_next_award_bar
 	movi	BONUSBAR,a2				;Image Pointer
 	movi	[399,0],a0				;Start X position
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4		;DMA flags
 	movi	DPLT_R_P,b0				;Make em BLUE
 	move	a8,a8					;Player 1?
-	jrnz	vujhdo_bar					;br = no
+	jrnz	nrmodo_bar					;br = no
 	clr	a0
 	movi	DMAWNZ|M_3D|M_SCRNREL|M_FLIPH,a4	;DMA flags
 	movi	DPLT_B_P,b0				;Make em BLUE
-vujhdo_bar
+nrmodo_bar
 	mmtm	sp,a1,a8
 	calla	BEGINOBJP				;Bonus Bar
 	move	a8,*a9+,L
 	mmfm	sp,a1,a8
 
+; Make the bonus bar text
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4		;DMA flags
 	PULL	a0
 	move	*a0(64),a2,L
 	PUSH	a0
 	movi	[399+BONUS_RTEXT_START_XPOS,0],a0
 	move	a8,a8					;Player 1?
-	jrnz	vujhdo_text				;br = no
+	jrnz	nrmodo_text				;br = no
 	movi	[BONUS_LTEXT_START_XPOS,0],a0
-vujhdo_text
+nrmodo_text
 	addi	10h,a3
 	mmtm	sp,a1,a8
 	calla	BEGINOBJ				;Bonus Bar
 	move	a8,*a9+,L
 	mmfm	sp,a1,a8
 
+; Make the bonus bar icon 1
 	PULL	a0
 	callr	get_bbicons
 	PUSH	a0
 	movi	[399-BONUS_ICON1_START_XPOS,0],a0	;Start X position
 	move	a8,a8					;Player 1?
-	jrnz	vujhdo_icon_1				;br = no
+	jrnz	nrmodo_icon_1				;br = no
 	movi	[BONUS_ICON1_START_XPOS,0],a0		;Start X position
-vujhdo_icon_1
+nrmodo_icon_1
 	addi	10h,a3
 	mmtm	sp,a1,a8
 	move	*a9,a2,L
@@ -737,55 +805,57 @@ vujhdo_icon_1
 	move	a8,*a9+,L
 	mmfm	sp,a1,a8
 
+; Make the bonus bar icon 2
 	move	*a9,a2,L
-	jrz	vujhno_2nd_icon
+	jrz	nrmono_2nd_icon
 	movi	[399-BONUS_ICON2_START_XPOS,0],a0	;Start X position
 	move	a8,a8					;Player 1?
-	jrnz	vujhdo_icon_2				;br = no
+	jrnz	nrmodo_icon_2				;br = no
 	movi	[BONUS_ICON2_START_XPOS,0],a0		;Start X position
-vujhdo_icon_2
+nrmodo_icon_2
 	addi	10h,a3
 	mmtm	sp,a1,a8
 	calla	BEGINOBJ				;Icon 2
 	move	a8,*a9+,L
 	mmfm	sp,a1,a8
-	jruc	vujhchk_3rd_icon
-vujhno_2nd_icon
+	jruc	nrmochk_3rd_icon
+nrmono_2nd_icon
 	clr	a2
 	move	a2,*a9+,L
-	jruc	vujhno_more_icons
-vujhchk_3rd_icon
+	jruc	nrmono_more_icons
+nrmochk_3rd_icon
 
+; Make the bonus bar icon 3
 	move	*a9,a2,L
-	jrz	vujhno_more_icons
+	jrz	nrmono_more_icons
 	movi	[399-BONUS_ICON3_START_XPOS,0],a0	;Start X position
 	move	a8,a8					;Player 1?
-	jrnz	vujhdo_icon_3				;br = no
+	jrnz	nrmodo_icon_3				;br = no
 	movi	[BONUS_ICON3_START_XPOS,0],a0		;Start X position
-vujhdo_icon_3
+nrmodo_icon_3
 	addi	10h,a3
 	mmtm	sp,a1,a8
 	calla	BEGINOBJ				;Icon 3
 	move	a8,*a9+,L
 	mmfm	sp,a1,a8
-	jruc	vujhicon_3_done
+	jruc	nrmoicon_3_done
 
-vujhno_more_icons
+nrmono_more_icons
 	clr	a2
 	move	a2,*a9+,L
-vujhicon_3_done
+nrmoicon_3_done
 	movi	(399-BONUS_BAR_END_XPOS),a0
 	move	a8,a8					;Player 1?
-	jrnz	vujhdo_td_pos				;br = no
+	jrnz	nrmodo_td_pos				;br = no
 	movi	BONUS_BAR_END_XPOS,a0			;End for check award
-vujhdo_td_pos
+nrmodo_td_pos
 	move	a0,*a9+,W				;Store Ending position
 	clr	a0
 	move	a0,*a9+,W				;Store NOT last
 
 	callr	adjust_text_position			;Adjust text position based on number of icons
 
-vujhcreate_bar_proc
+nrmocreate_bar_proc
 	mmtm	sp,a1,a7
 	CREATE	AWARD_PID,zip_award_bar			; Process to control this bar
 	mmfm	sp,a1,a7
@@ -794,13 +864,13 @@ vujhcreate_bar_proc
 	PULL	a0
 	addi	96,a0
 	PUSH	a0
-	dsj	a10,vujhdo_next_award_bar
+	dsj	a10,nrmodo_next_award_bar
 
 	movk	1,a0
 	move	a0,-*a9,W				;Store last
 	PULL	a0
 	rets
-vujhno_awards
+nrmono_awards
 	move	@award_ok_to_die,a9,L
 	addi	1,a9
 	move	a9,@award_ok_to_die,L
@@ -809,23 +879,23 @@ vujhno_awards
 
  SUBRP	total_icons
 	move	a8,a8
-	jrz	vujhtot_p1_icons
+	jrz	nrmotot_p1_icons
 	movi	p2mtch_award,a9
 	movi	p2icon_total,a10
-	jruc	vujhtot_awards
-vujhtot_p1_icons
+	jruc	nrmotot_awards
+nrmotot_p1_icons
 	movi	p1mtch_award,a9
 	movi	p1icon_total,a10
-vujhtot_awards
+nrmotot_awards
 	movi	NUM_AWARDS,a11
 	move	*a10,a8,L
-vujhtot_awards_loop
+nrmotot_awards_loop
 	movb	*a9,a14
 	sll	24,a14
 	srl	24,a14
 	add	a14,a8
 	addk	8,a9
-	dsjs	a11,vujhtot_awards_loop
+	dsjs	a11,nrmotot_awards_loop
 	move	a8,*a10,L
 	rets
 
@@ -833,54 +903,63 @@ vujhtot_awards_loop
 
  SUBR	clear_icon_total
 	move	a8,a8
-	jrz	vujhclr_p1_icons
+	jrz	nrmoclr_p1_icons
 	clr	a8
 	move	a8,@p2icon_total,L
 	rets
-vujhclr_p1_icons
+nrmoclr_p1_icons
 	move	a8,@p1icon_total,L
 	rets
 	
 
+****************************************************************
+*
+* create_end_rnd_awards - This PROCESS creates the icon bars displayed
+* at the end of a match.
+*
  SUBR	create_end_rnd_awards
 	move	@royal_rumble,a14
-	jrz	rmjqcera_ok
+	jrz	kqcscera_ok
 	DIE
-rmjqcera_ok
+kqcscera_ok
 
 	callr	adjust_perfects
 
 	movi	(MAX_BONUS_BARS*BONUS_RECORD_SIZE*2),a8
 	movi	bar_obj_ptr,a9
 	clr	a11
-rmjqclr_array_loop
+kqcsclr_array_loop
 	move	a11,*a9+,L
-	dsjs	a8,rmjqclr_array_loop
+	dsjs	a8,kqcsclr_array_loop
 
 	clr	a8				; Clear the state machine
 	move	a8,@player_award_state,L
 
+;1PLYR
 	move	*a10(PLYR_SIDE),a8
 
 	callr	create_player_awards		; Create awards for player 1
+;1PLYR	movk	1,a8
+;1PLYR	callr	create_player_awards		; Create awards for player 2
 
 	movk	1,a8				; Start the state machine
 	move	a8,@player_award_state,L
 
-rmjqstate_loop
+kqcsstate_loop
 	movi	((TSEC*3)/4),a9			; How long each bar is diplayed
-rmjqstate_loop1
+kqcsstate_loop1
 	SLEEPK	1
 	calla	get_all_buttons_cur
-	jrnz	rmjqquick_states
-	dsjs	a9,rmjqno_state_advance		; Is it time to advance the state machine?
+	jrnz	kqcsquick_states
+	dsjs	a9,kqcsno_state_advance		; Is it time to advance the state machine?
 	addk	1,a8				; Yes
 	move	a8,@player_award_state,L
-	jruc	rmjqstate_loop			; Reset the Sleeper time
-rmjqno_state_advance
+	jruc	kqcsstate_loop			; Reset the Sleeper time
+kqcsno_state_advance
 	move	@award_ok_to_die,a10,L		; Is it time to exit ?
+;1PLYR	cmpi	2,a10
 	cmpi	1,a10
-	jrnz	rmjqstate_loop1			; br = no
+	jrnz	kqcsstate_loop1			; br = no
 
 	clr	a8
 	callr	total_icons
@@ -888,24 +967,30 @@ rmjqno_state_advance
 	callr	total_icons
 
 	movi	TSEC/2,a8
-rmjqwait
+kqcswait
 	SLEEPK	1
 	calla	get_all_buttons_cur
-	jrnz	rmjqwait_abort
-	dsjs	a8,rmjqwait
-rmjqwait_abort
+	jrnz	kqcswait_abort
+	dsjs	a8,kqcswait
+kqcswait_abort
 	movk	3,a8
 	move	a8,@award_ok_to_die,L
 
 	DIE
 
-rmjqquick_states
+kqcsquick_states
 	SLEEPK	5
 	addk	1,a8
 	move	a8,@player_award_state,L
-	jruc	rmjqno_state_advance
+	jruc	kqcsno_state_advance
 
 
+****************************************************************
+* 
+* is_it_a_really_quick_win - This function determines whether the win
+* by the player (a10) was quick enough to be awarded an icon.  If so
+* an icon is awarded. 
+* 
   SUBR	is_it_a_really_quick_win
 	PUSH	a0,a1,a2
 	move	@match_time,a0,L
@@ -916,71 +1001,83 @@ rmjqquick_states
 	srl	16,a2
 	add	a2,a1
 	cmpi	69,a1
-	jrgt	roulquick
-	jruc	rouliiarqw_done
+	jrgt	wrhfquick
+	jruc	wrhfiiarqw_done
 
 	cmpi	79,a1
-	jrgt	roulsuper_quick
+	jrgt	wrhfsuper_quick
 	cmpi	73,a1
-	jrgt	roulvery_quick
+	jrgt	wrhfvery_quick
 	cmpi	64,a1
-	jrgt	roulquick
-	jruc	rouliiarqw_done
-roulsuper_quick
+	jrgt	wrhfquick
+	jruc	wrhfiiarqw_done
+wrhfsuper_quick
 	RND_AWARD	a10,SUPER_QUICK_AWD
-	jruc	rouliiarqw_done
-roulvery_quick
+	jruc	wrhfiiarqw_done
+wrhfvery_quick
 	RND_AWARD	a10,VERY_QUICK_AWD
-	jruc	rouliiarqw_done
-roulquick
+	jruc	wrhfiiarqw_done
+wrhfquick
 	RND_AWARD	a10,QUICK_AWD
-rouliiarqw_done
+wrhfiiarqw_done
 	PULL	a0,a1,a2
 	rets
 
 
+****************************************************************
+* 
+* give_award_if_opponent_is_human - This function awards the player
+* with ICONs if he/she defeated a human player.
+* 
   SUBR	give_award_if_opponent_is_human
 	PUSH	a9
 	movb	*a10(PLYR_SIDE),a9
-	jrz	zfhqi_am_player1
+	jrz	dfhki_am_player1
 	move	@PSTATUS2,a9
 	andi	01b,a9
-	jruc	zfhqgaioih_award
-zfhqi_am_player1
+	jruc	dfhkgaioih_award
+dfhki_am_player1
 	move	@PSTATUS2,a9
 	andi	10b,a9
-zfhqgaioih_award
-	jrz	zfhqgaioih_done
+dfhkgaioih_award
+	jrz	dfhkgaioih_done
 	RND_AWARD a10,DFT_HUMAN_AWD
-zfhqgaioih_done
+dfhkgaioih_done
 	PULL	a9
 	rets
 	rets
 
 
+****************************************************************
+* 
+* arm_comeback_award - This function arms the big comeback ICON
+* awarding system.
+* 
+* a10 = Index number of player
+* 
 
   SUBR	arm_comeback_award
 	cmpi	2,a10
-	jrlt	ldtqok_to_arm
+	jrlt	bmokok_to_arm
 	rets
-ldtqok_to_arm
+bmokok_to_arm
 
 	;figure out if all opponents are at 80%+ strength.
 	movi	process_ptrs,a8
 	movi	NUM_WRES,a9
-ldtqlp	move	*a8+,a0,L
-	jrz	ldtqnxt		;skip inactive
+bmoklp	move	*a8+,a0,L
+	jrz	bmoknxt		;skip inactive
 
 	move	*a0(PLYR_SIDE),a14
 	cmp	a14,a10		;humans only, so PLYRNUM == PLYR_SIDE
-	jreq	ldtqnxt		;skip teammates
+	jreq	bmoknxt		;skip teammates
 
 	move	*a0(PLYRNUM),a1
 	calla	get_health
 	cmpi	(LIFE_MAX*80)/100,a0
-	jrlt	ldtqrets		;abort if any enemy is under 80% strength
+	jrlt	bmokrets		;abort if any enemy is under 80% strength
     
-ldtqnxt	dsj	a9,ldtqlp
+bmoknxt	dsj	a9,bmoklp
 
 	PUSH	a0,a10
 	X32	a10
@@ -988,109 +1085,129 @@ ldtqnxt	dsj	a9,ldtqlp
 	movk	1,a0
 	move	a0,*a10,L
 	PULL	a0,a10
-ldtqrets	rets
+bmokrets	rets
 
 
+****************************************************************
+* 
+* check_for_award_for_big_comeback - This function awards ICONS for a
+* player who cameback from the brink of disaster
+* 
   SUBR	check_for_award_for_big_comeback
 	PUSH	a9
 	movb	*a10(PLYR_SIDE),a9
-	jrz	sqbti_am_player1
+	jrz	lfuqi_am_player1
 	move	@(pcomeback+32),a9,L
-	jrz	sqbtgfbc_done
-	jruc	sqbtgfbc_award
-sqbti_am_player1
+	jrz	lfuqgfbc_done
+	jruc	lfuqgfbc_award
+lfuqi_am_player1
 	move	@pcomeback,a9,L
-	jrz	sqbtgfbc_done
-sqbtgfbc_award
+	jrz	lfuqgfbc_done
+lfuqgfbc_award
 	RND_AWARD a10,COMEBACK_AWD
-sqbtgfbc_done
+lfuqgfbc_done
 	PULL	a9
 	rets
 
 
+****************************************************************
+* 
+* arm_winstreak_award - This function arms the winstreak ICON
+* awarding system.
+* 
+* a1 = Winstreak Value
+* a2 = Player Number
+* 
   SUBR	arm_winstreak_award
 	move	a1,a1
-	jrz	sldoawa_exit
+	jrz	wpbmawa_exit
 	PUSHP	a0,a1
 	X32	a2
 	addi	pwsarm,a2
 	movk	5,a0
 	modu	a0,a1
-	jrnz	sldoawa_disarm
+	jrnz	wpbmawa_disarm
 	movk	1,a0
-	jruc	sldoawa_ok
-sldoawa_disarm
+	jruc	wpbmawa_ok
+wpbmawa_disarm
 	clr	a0
-sldoawa_ok
+wpbmawa_ok
 	move	a0,*a2,L
 	PULLP	a0,a1
-sldoawa_exit
+wpbmawa_exit
 	rets
 
 
+****************************************************************
+* 
+* check_for_award_for_winstreak
+* player who cameback from the brink of disaster
+* 
   SUBR	check_for_award_for_winstreak
 	PUSH	a0,a9,a10
 	move	a10,a0
 	movb	*a10(PLYR_SIDE),a9
-	jrz	xsbqi_am_player1
+	jrz	wpgti_am_player1
 	movi	(pwsarm+32),a10
 	move	*a10,a9,L
-	jrz	xsbqcfafw_done
-	jruc	xsbqcfafw_award
-xsbqi_am_player1
+	jrz	wpgtcfafw_done
+	jruc	wpgtcfafw_award
+wpgti_am_player1
 	movi	pwsarm,a10
 	move	*a10,a9,L
-	jrz	xsbqcfafw_done
-xsbqcfafw_award
+	jrz	wpgtcfafw_done
+wpgtcfafw_award
 	MATCH_AWARD a0,FIVE_WINS_AWD
 	clr	a9
 	move	a9,*a10,L
-xsbqcfafw_done
+wpgtcfafw_done
 	PULL	a0,a9,a10
 	rets
 
+; A0 = *num icons
+; A9 = *objects
  SUBR	get_bbicons
 	PUSH	a0,a1,a9
 	move	*a0,a0,L	; Get number of Icons
 	cmpi	5,a0		; Num < 5?
-	jrlt	xsbqsmall_icons	; br = yes
+	jrlt	wpgtsmall_icons	; br = yes
 	cmpi	10,a0		; Num < 10?
-	jrlt	xsbqs_and_l_icons	; br = yes
+	jrlt	wpgts_and_l_icons	; br = yes
 	movi	BICON_10,a0
 	move	a0,*a9+,L	; Store the image pointer
-	jruc	xsbqgbb_done
-xsbqsmall_icons
+	jruc	wpgtgbb_done
+wpgtsmall_icons
 	movi	BICON_1,a1
 	cmpi	4,a0
-	jrlt	xsbqsmall_loop
+	jrlt	wpgtsmall_loop
 	.if DEBUG
 	LOCKUP
 	.endif
 	subk	1,a0
-xsbqsmall_loop
+wpgtsmall_loop
 	move	a1,*a9+,L	; Store Icon image
-	dsjs	a0,xsbqsmall_loop
-	jruc	xsbqgbb_done
-xsbqs_and_l_icons
+	dsjs	a0,wpgtsmall_loop
+	jruc	wpgtgbb_done
+wpgts_and_l_icons
 	cmpi	5,a0
-	jrz	xsbqis_five
+	jrz	wpgtis_five
 	cmpi	7,a0
-	jrlt	xsbqgt5_ok
+	jrlt	wpgtgt5_ok
 	.if DEBUG
 	LOCKUP
 	.endif
 	movk	7,a0
-xsbqgt5_ok
+wpgtgt5_ok
 	movi	BICON_1,a1
-xsbqsloop
+wpgtsloop
 	move	a1,*a9+,L
 	subk	1,a0
 	cmpi	5,a0
-	jrnz	xsbqsloop
-xsbqis_five
+	jrnz	wpgtsloop
+wpgtis_five
 	movi	BICON_5,a1
 	move	a1,*a9+,L
-xsbqgbb_done
+wpgtgbb_done
 	clr	a0
 	move	a0,*a9,L
 	PULL	a0,a1,a9
@@ -1121,18 +1238,18 @@ xsbqgbb_done
 	move	a1,a3
 	move	a1,a0
 	cmpi	100,a3
-	jrge	xsbqicon_max
+	jrge	wpgticon_max
 
 	clr	a2
-xsbqget_tens_loop
+wpgtget_tens_loop
 	cmpi	10,a3
-	jrlt	xsbqtens_done
+	jrlt	wpgttens_done
 	subi	10,a3
 	addk	1,a2
-	jruc	xsbqget_tens_loop
-xsbqtens_done
+	jruc	wpgtget_tens_loop
+wpgttens_done
 	move	a2,a2
-	jrz	xsbqno_tens
+	jrz	wpgtno_tens
 	addk	1,a2
 	sll	5,a2
 	addi	bbicon_table,a2
@@ -1140,54 +1257,56 @@ xsbqtens_done
 	move	a1,*a9+,L
 	move	*a1,a1,W
 	add	a1,a4
-xsbqno_tens
+wpgtno_tens
 	move	a0,a3
 	movk	10,a2
 	modu	a2,a3
 	cmpi	5,a3
-	jrlt	xsbqless_five
+	jrlt	wpgtless_five
 	move	@(bbicon_table+32),a2,L
 	move	a2,*a9+,L
 	move	*a2,a1,W
 	add	a1,a4
 	subi	5,a3
-xsbqless_five
+wpgtless_five
 	move	a3,a3
-	jrz	xsbqno_ones
+	jrz	wpgtno_ones
 	move	@bbicon_table,a2,L
 	move	*a2,a1,W
-xsbqones_loop
+wpgtones_loop
 	move	a2,*a9+,L
 	add	a1,a4
-	dsjs	a3,xsbqones_loop
-xsbqno_ones
+	dsjs	a3,wpgtones_loop
+wpgtno_ones
 	srl	1,a4
 	move	a4,@icon_string_width,L
 	clr	a2
 	move	a2,*a9,L
 	PULL	a0,a1,a2,a3,a4,a9
 	rets
-xsbqicon_max
+wpgticon_max
 	movi	BICON_100A,a2
 	move	a2,*a9+,L
 	move	*a2,a1
 	add	a1,a4
-	jruc	xsbqno_ones
+	jruc	wpgtno_ones
 
+; a10 = player num
+; a1  = num icons
  SUBRP	audit_icons
 	PUSH	a0,a1,a2
 	move	a1,a2
 	movi	AUD_P1ICONMAX,a0
 	move	a10,a10
-	jrz	xsbqp1_audit
+	jrz	wpgtp1_audit
 	movi	AUD_P2ICONMAX,a0
-xsbqp1_audit
+wpgtp1_audit
 	calla	GET_AUD
 	cmp	a1,a2
-	jrle	xsbqnot_higher
+	jrle	wpgtnot_higher
 	move	a2,a1
 	calla	STORE_AUDIT
-xsbqnot_higher
+wpgtnot_higher
 	PULL	a0,a1,a2
 	rets
 
@@ -1197,7 +1316,7 @@ xsbqnot_higher
 	PUSH	a0,a1,a2,a3,a4,a5,a6,a7,a9,a11
 	movi	[BONUS_MSG_XPOS1,0],a0
 	move	a10,a10
-	jrz	xsbqp1bonus
+	jrz	wpgtp1bonus
 	movi	p2bicon,a9
 	move	@p2winstreak,a1,W
 
@@ -1206,13 +1325,13 @@ xsbqnot_higher
 	cmp	a1,a2
 	.endif
 
-	jrz	xsbqtotal_reset
+	jrz	wpgttotal_reset
 	move	@p2icon_total,a1,L
-	jrz	xsbqno_bonus
+	jrz	wpgtno_bonus
 	callr	audit_icons
 	movi	[BONUS_MSG_XPOS2,0],a0
-	jruc	xsbqdo_bonus
-xsbqp1bonus
+	jruc	wpgtdo_bonus
+wpgtp1bonus
 	movi	p1bicon,a9
 	move	@p1winstreak,a1,W
 
@@ -1221,11 +1340,11 @@ xsbqp1bonus
 	cmp	a1,a2
 	.endif
 
-	jrz	xsbqtotal_reset
+	jrz	wpgttotal_reset
 	move	@p1icon_total,a1,L
-	jrz	xsbqno_bonus
+	jrz	wpgtno_bonus
 	callr	audit_icons
-xsbqdo_bonus
+wpgtdo_bonus
 	callr	get_bonus_icons
 
 	movi	[BONUS_MSG_YPOS,0],a1
@@ -1239,17 +1358,17 @@ xsbqdo_bonus
 	move	a8,*a9+,L
 
 	move	a10,a10
-	jrz	xsbqp1icon
+	jrz	wpgtp1icon
 	movi	[BONUS_ICON_XPOS2,0],a0
-	jruc	xsbqdobicon
-xsbqp1icon
+	jruc	wpgtdobicon
+wpgtp1icon
 	movi	[BONUS_ICON_XPOS1,0],a0
-xsbqdobicon
+wpgtdobicon
 	move	@icon_string_width,a1,L
 	sll	16,a1
 	sub	a1,a0
 	move	*a9,a2,L
-xsbqdobicon_loop
+wpgtdobicon_loop
 	movi	[BONUS_ICON_YPOS,0],a1
 	PUSH	a0
 	calla	BEGINOBJ
@@ -1259,8 +1378,8 @@ xsbqdobicon_loop
 	add	a11,a0
 	move	a8,*a9+,L
 	move	*a9,a2,L
-	jrnz	xsbqdobicon_loop
-xsbqno_bonus
+	jrnz	wpgtdobicon_loop
+wpgtno_bonus
 	clr	a0
 	move	a0,*a9,L
 	PULL	a0,a1,a2,a3,a4,a5,a6,a7,a9,a11
@@ -1268,32 +1387,32 @@ xsbqno_bonus
 
 
 
- SUBRP	xsbqtotal_reset
+ SUBRP	wpgttotal_reset
 	move	a10,a10
-	jrz	xsbqp1_reset
+	jrz	wpgtp1_reset
 	clr	a0
 	move	a0,@p2icon_total,L
-	jruc	xsbqno_bonus
-xsbqp1_reset
+	jruc	wpgtno_bonus
+wpgtp1_reset
 	clr	a0
 	move	a0,@p1icon_total,L
-	jruc	xsbqno_bonus
+	jruc	wpgtno_bonus
 
 
  SUBR	del_bonus_icons
 	PUSH	a0,a2
 	move	a10,a10
-	jrnz	xsbqdel_p2
+	jrnz	wpgtdel_p2
 	movi	p1bicon,a2
-	jruc	xsbqdel_bicon
-xsbqdel_p2
+	jruc	wpgtdel_bicon
+wpgtdel_p2
 	movi	p2bicon,a2
-xsbqdel_bicon
+wpgtdel_bicon
 	move	*a2+,a0,L
-	jrz	xsbqdel_done
+	jrz	wpgtdel_done
 	calla	DELOBJ
-	jruc	xsbqdel_bicon
-xsbqdel_done
+	jruc	wpgtdel_bicon
+wpgtdel_done
 	PULL	a0,a2
 	rets
 
@@ -1302,11 +1421,11 @@ xsbqdel_done
  SUBR	show_progress_bicons
 	PUSH	a0,a1,a2,a3,a4,a5,a6,a6,a9,a10
 	move	@p2icon_total,a1,L
-	jrnz	xsbqdo_spb
-xsbqspb_p1
+	jrnz	wpgtdo_spb
+wpgtspb_p1
 	move	@p1icon_total,a1,L
-	jrz	xsbqno_picons
-xsbqdo_spb
+	jrz	wpgtno_picons
+wpgtdo_spb
 	movi	progress_icons,a9
 	callr	get_bonus_icons
 	movi	[PROG_BICON_XPOS,0],a0
@@ -1321,7 +1440,7 @@ xsbqdo_spb
 	clr	a7
 	addi	32,a9
 	move	*a9,a2,L
-xsbqdopicon_loop
+wpgtdopicon_loop
 	movi	[PROG_BICON_YPOS,0],a1
 	PUSH	a0
 	calla	BEGINOBJ
@@ -1331,8 +1450,8 @@ xsbqdopicon_loop
 	add	a10,a0
 	move	a8,*a9+,L
 	move	*a9,a2,L
-	jrnz	xsbqdopicon_loop
-xsbqno_picons
+	jrnz	wpgtdopicon_loop
+wpgtno_picons
 	clr	a6
 	move	a6,*a9,L
 	PULL	a0,a1,a2,a3,a4,a5,a6,a6,a9,a10
@@ -1343,16 +1462,17 @@ xsbqno_picons
 	PUSH	a0,a2
 	movi	progress_icons,a2	; Get pointer to progess screen icon array
 	addi	32,a2
-xsbqdel_picon
+wpgtdel_picon
 	move	*a2+,a0,L		; Get pointer to object
-	jrz	xsbqdelp_done		; br = not valid object pointer
+	jrz	wpgtdelp_done		; br = not valid object pointer
 	calla	DELOBJ			; Delete the object
-	jruc	xsbqdel_picon		; Go get next
-xsbqdelp_done
+	jruc	wpgtdel_picon		; Go get next
+wpgtdelp_done
 	PULL	a0,a2
 	rets
 
 
+; Displays dufus messages for each HUMAN player
 
  SUBR	show_dufus_messages
 
@@ -1388,43 +1508,48 @@ f_done
 	.long	OUTRING			; 3rd Dufus Message (OUTRING INSTRUCTIONS)
 
 
+; A13 = *player data
+; A1 = message number (1-3)
  SUBR	dufus_msg_off
 	PUSH	a0,a2,a3
 	move	*a13(PLYRNUM),a2,W	; Get the player number
 	cmpi	2,a2			; Is this a human player
-	jrge	xsbqdmoff_exit		; br = nope - get out
+	jrge	wpgtdmoff_exit		; br = nope - get out
 
 	movi	p1dufus_msg_flags,a2	; Get pointer to player 1 msg flags
 	movb	*a13(PLYR_SIDE),a0	; Are we player 1?
-	jrz	xsbqdo_dufus_msg_off	; br = yes
+	jrz	wpgtdo_dufus_msg_off	; br = yes
 	movi	p2dufus_msg_flags,a2	; Get pointer to player 2 msg flags
-xsbqdo_dufus_msg_off
+wpgtdo_dufus_msg_off
 	subk	1,a1			; Decrement msg number
 	move	*a2,a0,L		; Get msg flags
 	movk	1,a3			; Set up for bit shift
 	sll	a1,a3
 	andn	a3,a0			; Disable this msg
 	move	a0,*a2,L		; Write it back
-xsbqdmoff_exit
+wpgtdmoff_exit
 	PULL	a0,a2,a3
 	rets
 
 
+; A9 = message number
+; A10 = *player data
  SUBR	dufus_msg_on
 
 	move	*a10(PLYRNUM),a8,W		; Get the player number
 	cmpi	2,a8				; Is this a human player
-	jrge	xsbqdmo_exit			; br = nope - get out
+	jrge	wpgtdmo_exit			; br = nope - get out
 	move	@p1dufus_msg_flags,a14,L	; Get Player 1 msg flags
 	movi	p1winstreak,a11
+;	movb	*a10(PLYR_SIDE),a8		; Get Player number
 	movb	*a10(PLYRNUM),a8		; Get Player number
-	jrz	xsbqp1_dmo				; br = player 1
+	jrz	wpgtp1_dmo				; br = player 1
 	move	@p2dufus_msg_flags,a14,L	; Get Player 2 msg flags
 	movi	p2winstreak,a11
-xsbqp1_dmo
+wpgtp1_dmo
 	move	*a11,a11,W			; 3 or more wins ?
 	cmpi	3,a11				
-	jrge	xsbqdmo_exit			; br = yes
+	jrge	wpgtdmo_exit			; br = yes
 	move	a9,a10				; Save msg number
 	move	a8,a9				; Save player number
 	move	a10,a11
@@ -1432,7 +1557,7 @@ xsbqp1_dmo
 	movk	1,a8				; set up for bit shift
 	sll	a11,a8				; shift by msg num-1
 	and	a8,a14				; will this msg be displayed?
-	jrz	xsbqdmo_exit			; br = no
+	jrz	wpgtdmo_exit			; br = no
 
 	clr	a8				; Set up state machine
 	move	a8,@award_ok_to_die,L
@@ -1440,40 +1565,40 @@ xsbqp1_dmo
 	CREATE	4000h|AWARD_PID,display_dufus_message
 
 	movi	TSEC,a10			; Let box get displayed for 1 second
-xsbqmin_time_loop
+wpgtmin_time_loop
 	SLEEPK	1
 	callr	suspend_all			; Put all but unsuspendables to sleep
-	dsjs	a10,xsbqmin_time_loop		; 1 second? - br = no
+	dsjs	a10,wpgtmin_time_loop		; 1 second? - br = no
 
 	movi	TSEC*2,a10			; Allow up to 2 more seconds
-xsbqwait_die_loop
+wpgtwait_die_loop
 	SLEEPK	1
 	callr	suspend_all			; Put all but unsuspendables to sleep
 	calla	get_all_buttons_cur		; Anybody pressing buttons?
-	jrnz	xsbqdmo_abort			; br = yes
-	dsjs	a10,xsbqwait_die_loop		; 2 seconds? - br = no
-xsbqdmo_abort
+	jrnz	wpgtdmo_abort			; br = yes
+	dsjs	a10,wpgtwait_die_loop		; 2 seconds? - br = no
+wpgtdmo_abort
 	movk	1,a9				; Tell display_dufus_msg to die
 	move	a9,@award_ok_to_die,L
-xsbqdmo_exit
+wpgtdmo_exit
 	DIE
 	
 
  SUBRP	suspend_all
 	movi	ACTIVE,a3,L
 
-xsbqlp	move	*a3,a3,L	;Get next
-	jrz	xsbqx		;End?
+wpgtlp	move	*a3,a3,L	;Get next
+	jrz	wpgtx		;End?
 	move	*a3(PROCID),a14	;Get Process ID
 	andi	0c000h,a14	;Is this either an indestructable or unsuspendable process?
-	jrnz	xsbqlp		;br = yes
+	jrnz	wpgtlp		;br = yes
 
 	move	*a3(PTIME),a14	;Get current Sleep time
 	addk	1,a14		;Add 1 to it
 	move	a14,*a3(PTIME)	;Write it back
-	jruc	xsbqlp		;Go check next process
+	jruc	wpgtlp		;Go check next process
 
-xsbqx	rets
+wpgtx	rets
 
 
 
@@ -1481,15 +1606,18 @@ xsbqx	rets
 	PUSH	a0,a1
 	movi	p1dufus_msg_flags,a1		; Pointer to player 1 msg enables
 	move	a0,a0				; Reset player 1 msgs?
-	jrz	xsbqrst_d_p1			; br = yes
+	jrz	wpgtrst_d_p1			; br = yes
 	movi	p2dufus_msg_flags,a1		; Pointer to player 2 msg enables
-xsbqrst_d_p1
+wpgtrst_d_p1
 	movk	0fh,a0				; Enable all msgs
 	move	a0,*a1,L
 	PULL	a0,a1
 	rets
 
- SUBRP	xsbqadjust_tl
+;a9  = player number
+;a11 = *objects (2)
+;a2  = current scale divisor
+ SUBRP	wpgtadjust_tl
 	PUSH	a2,a7,a10
 	srl	8,a2
 	andni	0ffh,a2			; Mask lower scale bits
@@ -1501,9 +1629,9 @@ xsbqrst_d_p1
 	divu	a2,a7			; divide by scale factor
 	movi	DUFUS_BOX_LXPOS,a10
 	move	a9,a9			; Am I player 1?
-	jrz	xsbqatl_right		; br = yes
+	jrz	wpgtatl_right		; br = yes
 	movi	DUFUS_BOX_RXPOS,a10
-xsbqatl_right
+wpgtatl_right
 	sub	a7,a10			; Upper left X
 	move	a10,*a14(OXPOS)		; Set box X
 	move	*a11,a14,L		; Get text object pointer
@@ -1524,28 +1652,31 @@ xsbqatl_right
 	
 
 
+; Displays dufus messages for a player
+; A9 = player number
+; A10 = message number (1 - 4)
  SUBR	display_dufus_message
 
 	move	@PSTATUS2,a14
 	move	a9,a9				; Player 1?
-	jrz	xsbqp1_is_dufus			; br = yes
+	jrz	wpgtp1_is_dufus			; br = yes
 	move	@p2winstreak,a0,W		; Is this player on a winstreak?
 	cmpi	3,a0
-	jrge	xsbqno_dufus_msg			; br = yes (no dufus msgs)
+	jrge	wpgtno_dufus_msg			; br = yes (no dufus msgs)
 	movi	p2dufus_msg_flags,a1		; 
 	movi	[DUFUS_BOX_RXPOS,0],a0		; Set p2 box x position
 	movi	p2dufus_obj,a11			; Pointer to be used later
-	jruc	xsbqdufus_msg_box			; Go do it
-xsbqp1_is_dufus
+	jruc	wpgtdufus_msg_box			; Go do it
+wpgtp1_is_dufus
 	move	@p1winstreak,a0,W		; Is this player on a winstreak?
 	cmpi	4,a0
-	jrge	xsbqno_dufus_msg			; br = yes (no dufus msgs)
+	jrge	wpgtno_dufus_msg			; br = yes (no dufus msgs)
 	movi	p1dufus_msg_flags,a1		; Get which msgs to show
 	movi	p1dufus_obj,a11			; Pointer to used later
 	movi	[DUFUS_BOX_LXPOS,0],a0		; Set p1 box x position
-xsbqdufus_msg_box
+wpgtdufus_msg_box
 	btst	a9,a14				; Is this really a human ?
-	jrz	xsbqno_dufus_msg			; br = no
+	jrz	wpgtno_dufus_msg			; br = no
 	move	*a1,a2,L			; Get enabled msg flags
 	movk	1,a3				; Generate bit number of msg we want displayed
 	subi	1,a10				; Subtract 1 from msg number
@@ -1553,7 +1684,7 @@ xsbqdufus_msg_box
 	sll	a10,a3				; Shift bit up
 	move	a2,a10				; Save bit
 	and	a3,a2				; Ok to display msg ?
-	jrz	xsbqno_dufus_msg			; br = no
+	jrz	wpgtno_dufus_msg			; br = no
 	andn	a3,a10				; Disable this msg
 	move	a10,*a1,L			; Write it back
 	move	a8,a3				; Get msg number
@@ -1578,32 +1709,32 @@ xsbqdufus_msg_box
 	subi	10h,a3	 			; Make sure box is behind text
 	movi	DPLT_B_P,b0			; Player 1 palette
 	move	a9,a9				; Are we player 1?
-	jrz	xsbqp1_dufus_box_pal		; br = yes
+	jrz	wpgtp1_dufus_box_pal		; br = yes
 	movi	DPLT_R_P,b0			; Player 2 palette
-xsbqp1_dufus_box_pal
+wpgtp1_dufus_box_pal
 	calla	BEGINOBJP			; Create the box
 	move	a8,*a11(32),L			; Save box object pointer
 	movi	05000500h,a2			; Set initial box scale factor
 	move	a2,*a8(OSCALE),L
 	movi	02000200h,a3			; Initial amount to adjust scale factor
-xsbqdufus_wait
+wpgtdufus_wait
 	PUSHP	a2,a3,a8			; Savey reggies
-	callr	xsbqadjust_tl			; Adjust top/left corner position
+	callr	wpgtadjust_tl			; Adjust top/left corner position
 	SLEEPK	1				; Wait
 	PULLP	a2,a3,a8 			; Getty reggies
 	cmpi	01000100h,a2			; Are we at full size
-	jrz	xsbqdufus_flash			; br = yes
+	jrz	wpgtdufus_flash			; br = yes
 	sub	a3,a2				; Adjust scale factor
 	cmpi	00010001h,a3			; Scaling value = 1?
-	jrz	xsbqno_more_shift			; br = yes
+	jrz	wpgtno_more_shift			; br = yes
 	srl	1,a3				; Adjust scaling value
-xsbqno_more_shift					
+wpgtno_more_shift					
 	move	*a11,a8,L			; Get pointer to text object
 	move	a2,*a8(OSCALE),L		; Set new scale factor
 	move	*a11(32),a8,L			; Get pointer to box object
 	move	a2,*a8(OSCALE),L		; Set new scale factor
-	jruc	xsbqdufus_wait			; Do it again
-xsbqdufus_flash
+	jruc	wpgtdufus_wait			; Do it again
+wpgtdufus_flash
 	movi	BOX_OUT_SOUND,a0
 	calla	triple_sound
 	move	*a11(32),a8,L			; Get the object pointer
@@ -1612,16 +1743,16 @@ xsbqdufus_flash
 	SLEEPK	5
 	CREATE	4000h|AWARD_PID,FLASHME		; Flash him twice
 	SLEEPK	5
-xsbqdufus_done
+wpgtdufus_done
 	SLEEPK	1
 	move	@award_ok_to_die,a0,L		; Should I croak?
-	jrz	xsbqdufus_done			; br = no
+	jrz	wpgtdufus_done			; br = no
 
 	move	*a11,a0,L			; Get rid of text object
 	calla	DELOBJ
 	move	*a11(32),a0,L			; Get rid of box object
 	calla	DELOBJ
-xsbqno_dufus_msg
+wpgtno_dufus_msg
 	DIE					; Crooooak!!!
 
 
@@ -1629,72 +1760,76 @@ xsbqno_dufus_msg
 	.bss	pin_objects,32*2
 
 
+******************************************************************************
+*
+* a9 is dead team (0 or 1).  Figure out if we need to post the message or
+* not.
 
  SUBR	pin_prompt
 
 	move	@royal_rumble,a14	; Are we in royal rumble mode ?
-	jrnz	xsbqcheck_count		; br = yes
+	jrnz	wpgtcheck_count		; br = yes
 	calla	is_8_on_1		; Are is 8 on 1 mode ?
-	jrnc	xsbqnot_8_on_1		; br = no
-xsbqcheck_count
+	jrnc	wpgtnot_8_on_1		; br = no
+wpgtcheck_count
 	move	@wrestler_count,a14	; Are there any drones left to kill ?
-	jrnz	xsbqdie			; br = yes
-xsbqnot_8_on_1
+	jrnz	wpgtdie			; br = yes
+wpgtnot_8_on_1
 
 	;quit if there's already one of these going. (not likely)
 	movi	PINHIM_ANIM_PID,a0
 	movi	-1,a1
 	calla	EXISTP
-	jrnz	xsbqdie
+	jrnz	wpgtdie
 
 	;look for a live human from the winning team inside the ring.
 	;quit if there isn't one.
 	movi	process_ptrs,a0
 	movi	2,a1			;only check humans
-xsbqlp0	move	*a0+,a2,L
-	jrz	xsbqnxt0			;skip inactive
+wpgtlp0	move	*a0+,a2,L
+	jrz	wpgtnxt0			;skip inactive
 	move	*a2(PLYR_SIDE),a14
 	cmp	a9,a14
-	jreq	xsbqnxt0			;skip dead team
+	jreq	wpgtnxt0			;skip dead team
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	xsbqnxt0			;skip dead guys (shouldn't be any)
+	jreq	wpgtnxt0			;skip dead guys (shouldn't be any)
 	move	*a2(INRING),a14
-	jrnz	xsbqnxt0			;skip outside guys
-	jruc	xsbqf_dead			;got one.  move on.
-xsbqnxt0	dsj	a1,xsbqlp0
-	jruc	xsbqdie			;no live winning human found.  quit.
+	jrnz	wpgtnxt0			;skip outside guys
+	jruc	wpgtf_dead			;got one.  move on.
+wpgtnxt0	dsj	a1,wpgtlp0
+	jruc	wpgtdie			;no live winning human found.  quit.
 
-xsbqf_dead	;Make sure everyone on the dead team is actually dead and not
+wpgtf_dead	;Make sure everyone on the dead team is actually dead and not
 	; a zombie.  Further, make sure at least one is inside the ring.
 	move	a2,a8			;save proc ptr of pinner.
 	clr	a10			;"found pinable guy" flag
 
 	movi	process_ptrs,a0
 	movi	NUM_WRES,a1		;check everyone
-xsbqlp1	move	*a0+,a2,L
-	jrz	xsbqnxt1			;skip inactive
+wpgtlp1	move	*a0+,a2,L
+	jrz	wpgtnxt1			;skip inactive
 	move	*a2(PLYR_SIDE),a14
 	cmp	a9,a14
-	jrne	xsbqnxt1			;skip live team
+	jrne	wpgtnxt1			;skip live team
 	move	*a2(INRING),a14
-	jrnz	xsbqnxt1			;skip outside guys
+	jrnz	wpgtnxt1			;skip outside guys
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jrne	xsbqdie			;found live guy - quit
+	jrne	wpgtdie			;found live guy - quit
 	move	*a2(STATUS_FLAGS),a14,L
 	btst	B_ZOMBIE,a14
-	jrnz	xsbqdie			;found zombie - quit
+	jrnz	wpgtdie			;found zombie - quit
 	inc	a10			;got one.
-xsbqnxt1	dsj	a1,xsbqlp1
+wpgtnxt1	dsj	a1,wpgtlp1
 
 
 
 	;done looking, and everyone on the dead team is dead and not a
 	;zombie.  If a10 is set, that means we also found at least one
 	;inside the ring, so we can go ahead and flash the message.
-xsbqfp_dn	TEST	a10
-	jrz	xsbqdie
+wpgtfp_dn	TEST	a10
+	jrz	wpgtdie
 
 
 	calla	END_MATCH_SPEECH	;do the obnoxious "PIN HIM!" crap.
@@ -1714,7 +1849,7 @@ xsbqfp_dn	TEST	a10
 	clr	a7				; Y Velocity
 
 	move	*a8(PLYR_SIDE),a14
-	jrnz	xsbqonrt
+	jrnz	wpgtonrt
 
 	;left
 	move	@p1pins,a0
@@ -1725,9 +1860,9 @@ xsbqfp_dn	TEST	a10
 	clr	a10
 	movi	DPLT_B_P,b0
 	movk	5,a11
-	jruc	xsbqdo_it
+	jruc	wpgtdo_it
 
-xsbqonrt	;right
+wpgtonrt	;right
 	move	@p2pins,a0
 	addk	1,a0
 	move	a0,@p2pins
@@ -1737,7 +1872,7 @@ xsbqonrt	;right
 	movi	DPLT_R_P,b0
 	movi	-5,a11
 
-xsbqdo_it
+wpgtdo_it
 	mmtm	sp,a0,a1
 	calla	BEGINOBJP
 	mmfm	sp,a0,a1
@@ -1751,11 +1886,11 @@ xsbqdo_it
 
 	move	a11,a0
 
-xsbqzin
+wpgtzin
 	move	*a9,a8,L
 	move	*a8(OXPOS),a11,W
 	cmp	a10,a11
-	jrz	xsbqzin_done
+	jrz	wpgtzin_done
 	add	a0,a11
 	move	a11,*a8(OXPOS),W
 	move	*a9(32),a8,L
@@ -1765,12 +1900,12 @@ xsbqzin
 	PUSHP	a0
 	SLEEPK	1
 	PULLP	a0
-	jruc	xsbqzin
+	jruc	wpgtzin
 
-xsbqzin_done
+wpgtzin_done
 
 	PUSHP	a0
-	CREATE	PINHIM_ANIM_PID,xsbqflash_pin_txt
+	CREATE	PINHIM_ANIM_PID,wpgtflash_pin_txt
 
 	PUSHP	a0
 	SLEEP	TSEC*2
@@ -1778,13 +1913,13 @@ xsbqzin_done
 	calla	KILL
 	PULLP	a0
 
-xsbqzout
+wpgtzout
 	move	*a9,a8,L
 	move	*a8(OXPOS),a11,W
 	cmpi	-107,a11
-	jrlt	xsbqzout_done
+	jrlt	wpgtzout_done
 	cmpi	500,a11
-	jrgt	xsbqzout_done
+	jrgt	wpgtzout_done
 	sub	a0,a11
 	move	a11,*a8(OXPOS),W
 	move	*a9(32),a8,L
@@ -1794,18 +1929,18 @@ xsbqzout
 	PUSHP	a0
 	SLEEPK	1
 	PULLP	a0
-	jruc	xsbqzout
+	jruc	wpgtzout
 
-xsbqzout_done
+wpgtzout_done
 	move	*a9,a0,L
 	calla	DELOBJ
 	move	*a9(32),a0,L
 	calla	DELOBJ
 
-xsbqdie	DIE
+wpgtdie	DIE
 
 
-xsbqflash_pin_txt
+wpgtflash_pin_txt
 
 	.ref	setup_back_anim
 	.ref	ANIM_CROWD
@@ -1813,7 +1948,7 @@ xsbqflash_pin_txt
 	move	*a9(32),a8,L
 	movk	5,a9
 
-xsbqlpa	PUSHP	a9
+wpgtlpa	PUSHP	a9
 	.ref	PIN_FLASH_ANIM
 	movi	PIN_FLASH_ANIM,a1
 	calla	setup_back_anim
@@ -1821,23 +1956,26 @@ xsbqlpa	PUSHP	a9
 	JSRP	ANIM_CROWD
 
 	PULLP	a9
-	dsj	a9,xsbqlpa
+	dsj	a9,wpgtlpa
 
 	DIE
 
 
+***********************************************************
+*
+;A8 = player side (0,1)
  SUBRP	no_block_powerup_check
-dyvllp
+tupclp
 	;no no-block allowed if royal rumble.
 	move	@royal_rumble,a14
-	jrnz	dyvldie
+	jrnz	tupcdie
 
 	clr	a11
-	PUPWAITSWITCH	BLOCK,dyvllp
+	PUPWAITSWITCH	BLOCK,tupclp
 
 	movi	TSEC*2,a11
-	PUPWAITSWITCH	BLOCK,dyvllp
-	PUPWAITSWITCH	BLOCK,dyvllp
+	PUPWAITSWITCH	BLOCK,tupclp
+	PUPWAITSWITCH	BLOCK,tupclp
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -1846,17 +1984,20 @@ dyvllp
 	ori	BLOCKING_OFF,a9
 	move	a9,*a8,L
 
-dyvldie	DIE
+tupcdie	DIE
 
+***********************************************************
+**
+;asA8 = player side (0,1)
  SUBRP	move_names_powerup_check
-gcidlp
+xcqdlp
 	clr	a11
-	PUPWAITSWITCH	PUNCH,gcidlp
+	PUPWAITSWITCH	PUNCH,xcqdlp
 
 	movi	TSEC*2,a11
-	PUPWAITSWITCH	PUNCH,gcidlp
-	PUPWAITSWITCH	PUNCH,gcidlp
-	PUPWAITSWITCH	PUNCH,gcidlp
+	PUPWAITSWITCH	PUNCH,xcqdlp
+	PUPWAITSWITCH	PUNCH,xcqdlp
+	PUPWAITSWITCH	PUNCH,xcqdlp
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -1869,20 +2010,29 @@ gcidlp
 
 
 
+***********************************************************
+***
+;aA8 = player side (0,1)
  SUBRP	drone_meters_powerup_check
 
 	;only in one-player games
 	move	@PSTATUS2,a11
 	cmpi	3,a11
-	jrz	gacponep_only
+	jrz	cgowonep_only
 
 	;only in one-on-one games
 	move	@NUM_OPPS,a14
 	dec	a14
-	jrnz	gacponep_only
-gacplp
+	jrnz	cgowonep_only
+cgowlp
 
 
+;	clr	a11
+;	PUPWAITSWITCH	KICK,cgowlp
+;			     
+;	movi	TSEC*2,a11
+;	PUPWAITSWITCH	KICK,cgowlp
+;	PUPWAITSWITCH	KICK,cgowlp
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -1892,19 +2042,22 @@ gacplp
 	move	a9,*a8,L
 	move	a9,@drone_meters_on
 
-gacponep_only
+cgowonep_only
 	DIE
 
 
+***********************************************************
+*****
+;bA8 = player side (0,1)
  SUBRP	hyper_match_powerup_check
-zirylp
+ibmolp
 	clr	a11
-	PUPWAITSWITCH	LEFT,zirylp
+	PUPWAITSWITCH	LEFT,ibmolp
 
 	movi	TSEC*2,a11
-	PUPWAITSWITCH	PUNCH,zirylp
-	PUPWAITSWITCH	PUNCH,zirylp
-	PUPWAITSWITCH	BLOCK,zirylp
+	PUPWAITSWITCH	PUNCH,ibmolp
+	PUPWAITSWITCH	PUNCH,ibmolp
+	PUPWAITSWITCH	BLOCK,ibmolp
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -1916,14 +2069,17 @@ zirylp
 	DIE
 
 
+***********************************************************
+*****&
+;cA8 = player side (0,1)
  SUBRP	combos_powerup_check
-gpsslp
+abomlp
 	clr	a11
-	PUPWAITSWITCH	RIGHT,gpsslp
+	PUPWAITSWITCH	RIGHT,abomlp
 
 	movi	TSEC*2,a11
-	PUPWAITSWITCH	PUNCH,gpsslp
-	PUPWAITSWITCH	SUPERP,gpsslp
+	PUPWAITSWITCH	PUNCH,abomlp
+	PUPWAITSWITCH	SUPERP,abomlp
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -1935,15 +2091,18 @@ gpsslp
 	DIE
 
 
+***********************************************************
+****1
+;dzA8 = player side (0,1)
  SUBRP	ring_out_powerup_check
-joiwlp
+vodxlp
 	clr	a11
-	PUPWAITSWITCH	DOWN,joiwlp
+	PUPWAITSWITCH	DOWN,vodxlp
 
 	movi	TSEC*2,a11
-	PUPWAITSWITCH	PUNCH,joiwlp
-	PUPWAITSWITCH	KICK,joiwlp
-	PUPWAITSWITCH	BLOCK,joiwlp
+	PUPWAITSWITCH	PUNCH,vodxlp
+	PUPWAITSWITCH	KICK,vodxlp
+	PUPWAITSWITCH	BLOCK,vodxlp
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -1955,15 +2114,18 @@ joiwlp
 	DIE
 
 
+***********************************************************
+****1
+;A8 = player side (0,1)
  SUBRP	no_ring_powerup_check
-yonqlp
+ftmslp
 	clr	a11
-	PUPWAITSWITCH	UP,yonqlp
+	PUPWAITSWITCH	UP,ftmslp
 
 	movi	TSEC*2,a11
-	PUPWAITSWITCH	RIGHT,yonqlp
-	PUPWAITSWITCH	DOWN,yonqlp
-	PUPWAITSWITCH	LEFT,yonqlp
+	PUPWAITSWITCH	RIGHT,ftmslp
+	PUPWAITSWITCH	DOWN,ftmslp
+	PUPWAITSWITCH	LEFT,ftmslp
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -1975,31 +2137,34 @@ yonqlp
 	DIE
 
 
+***********************************************************
+**a
+;eA8 = player side (0,1)
 
 	BSSX	buddy_mode_checked,16
 
  SUBRP	buddy_mode_powerup_check
 
-cznclp	;no buddy mode allowed if royal rumble.
+uhwdlp	;no buddy mode allowed if royal rumble.
 	move	@royal_rumble,a14
-	jrnz	czncdie
+	jrnz	uhwddie
 
 	;clear the too late flag
 	clr	a14
 	move	a14,@buddy_mode_checked
 
 	clr	a11
-	PUPWAITSWITCH	BLOCK,cznclp
+	PUPWAITSWITCH	BLOCK,uhwdlp
 
 	movi	TSEC*2,a11
-	PUPWAITSWITCH	BLOCK,cznclp
-	PUPWAITSWITCH	BLOCK,cznclp
-	PUPWAITSWITCH	BLOCK,cznclp
-	PUPWAITSWITCH	BLOCK,cznclp
+	PUPWAITSWITCH	BLOCK,uhwdlp
+	PUPWAITSWITCH	BLOCK,uhwdlp
+	PUPWAITSWITCH	BLOCK,uhwdlp
+	PUPWAITSWITCH	BLOCK,uhwdlp
 
 	;too late?
 	move	@buddy_mode_checked,a14
-	jrnz	czncdie
+	jrnz	uhwddie
 
 	sll	5,a8
 	addi	p1powerup_request,a8
@@ -2008,14 +2173,18 @@ cznclp	;no buddy mode allowed if royal rumble.
 	ori	BUDDY_MODE,a9
 	move	a9,*a8,L
 
-czncdie	DIE
+uhwddie	DIE
 
 
+***********************************************************
+**z
+;fA8 = player side (0,1)
  SUBRP	player_powerup_checker
 
 	CREATE	PU_CHECK_PID,no_block_powerup_check
 	CREATE	PU_CHECK_PID,move_names_powerup_check
 	CREATE	PU_CHECK_PID,drone_meters_powerup_check
+;	CREATE	PU_CHECK_PID,no_ring_powerup_check	; Disable until we get blimp module
 	CREATE	PU_CHECK_PID,hyper_match_powerup_check
 	CREATE	PU_CHECK_PID,combos_powerup_check
 	CREATE	PU_CHECK_PID,ring_out_powerup_check
@@ -2024,10 +2193,12 @@ czncdie	DIE
 	DIE
 
 
+***********************************************************
+*
  SUBR	powerup_check
 
 	move	@do_show_options,a14
-	jrz	loldpowerup_check_die
+	jrz	gecwpowerup_check_die
 
 	clr	a8
 	move	a8,@p1powerup_request,L
@@ -2048,12 +2219,14 @@ czncdie	DIE
 	movk	1,a8
 	CREATE	PU_CHECK_PID,player_powerup_checker
 
-loldpowerup_check_die
+gecwpowerup_check_die
 	.endif
 
 	DIE
 
 
+***********************************************************
+*
  SUBR	get_powerups
 	move	@p1powerup_request,a9,L		; Player 1 powerups
 	move	@p2powerup_request,a10,L	; Player 2 powerups
@@ -2067,14 +2240,15 @@ loldpowerup_check_die
 	move	a9,@p1powerup_request,L
 	move	a10,@p2powerup_request,L
 	or	a9,a10
+;Both players must select these
 	move	a9,a8
 	andi	BLOCKING_OFF,a8
-	jrz	sbkqblocking_on
+	jrz	zqrwblocking_on
 	movi	2020h,a8
-	jruc	sbkqset_blocking
-sbkqblocking_on
+	jruc	zqrwset_blocking
+zqrwblocking_on
 	clr	a8
-sbkqset_blocking
+zqrwset_blocking
 	move	a8,@blocking_off
 
 	move	a9,a8
@@ -2090,17 +2264,21 @@ sbkqset_blocking
 	move	a8,@no_ring_on
 
 	;this one is done earlier in the wrestle code!
+;	move	a9,a8
+;	andi	BUDDY_MODE,a8
+;	move	a8,@buddy_mode_on
 
 	move	a9,a8
 	andi	HYPER_MATCH_ON,a8
-	jrz	sbkqhyper_off
+	jrz	zqrwhyper_off
 	movi	1,a8
-	jruc	sbkqset_hyper
-sbkqhyper_off
+	jruc	zqrwset_hyper
+zqrwhyper_off
 	clr	a8
-sbkqset_hyper
+zqrwset_hyper
 	move	a8,@hyper_speed_on
 
+;Either player can select these
 	move	a10,a8
 	andi	D_METERS_ON,a8
 	move	a8,@drone_meters_on
@@ -2109,13 +2287,15 @@ sbkqset_hyper
 
 
 
+***********************************************************
+*
  SUBR	show_options
 	.if POWERUP_CODE_ON
 
 	move	@do_show_options,a9
-	jrnz	ogjmok_to_show_options
+	jrnz	plvmok_to_show_options
 	DIE
-ogjmok_to_show_options
+plvmok_to_show_options
 	callr	get_powerups
 
 	clr	a8
@@ -2126,26 +2306,27 @@ ogjmok_to_show_options
 	movk	1,a8
 	CREATE0	show_player_options
 
+;Make sure combo meter starts flashing!
 	.ref	SET_FLASHING
 
 	move	@instant_combos_on,a14
-	jrz	ogjmno
+	jrz	plvmno
 
 	clr	a10
 	calla	SET_FLASHING
 	movk	1,a10
 	calla	SET_FLASHING
-ogjmno
+plvmno
 
 	SLEEP	TSEC
 
 	movi	TSEC*2,a9
-ogjmshow_opt_wait
+plvmshow_opt_wait
 	SLEEPK	1
 	calla	get_all_buttons_cur
-	jrnz	ogjmshow_opt_done
-	dsjs	a9,ogjmshow_opt_wait
-ogjmshow_opt_done
+	jrnz	plvmshow_opt_done
+	dsjs	a9,plvmshow_opt_wait
+plvmshow_opt_done
 	movk	1,a8
 	move	a8,@show_options_die
 
@@ -2161,6 +2342,8 @@ ogjmshow_opt_done
 	DIE
 
 
+***********************************************************
+*
  SUBRP	pu_bar_text
 	.long	NOBLOCKA	; Blocking off
 	.long	INSTCOMB	; Combos on
@@ -2172,6 +2355,8 @@ ogjmshow_opt_done
 	.long	BUDDY		; Buddy mode on
 
 
+***********************************************************
+*
  SUBRP	move_pu_bars_on
 	PUSHP	a8,a9,a10,a11
 
@@ -2180,38 +2365,41 @@ ogjmshow_opt_done
 	movi	LPUBAROID,a9		; Player 1 pu bar objects
 	movk	PU_BAR_VELOCITY,a10	; Player 1 bar velocity
 	move	a8,a8			; Are we player 1?
-	jrz	xtxcp1_pu_bars		; br = yes
+	jrz	qcpzp1_pu_bars		; br = yes
 	movi	RPUBAROID,a9		; Player 2 pu bar objects
 	neg	a10			; Player 2 bar velocity
-xtxcp1_pu_bars
+qcpzp1_pu_bars
 	movi	OBJLST,a14		; Top of object list
-xtxcmove_lp
+qcpzmove_lp
 	move	*a14,a14,L		; Get object pointer
-	jrz	xtxclist_end		; List end? - br = yes
+	jrz	qcpzlist_end		; List end? - br = yes
 	move	*a14(OID),a1		; Get object ID
 	cmp	a9,a1			; Is this one I'm a lookin fer
-	jrnz	xtxcmove_lp
+	jrnz	qcpzmove_lp
 
 	move	*a14(OXPOS),a1		; Get current X position
 	add	a10,a1			; Add velocity
 	move	a1,*a14(OXPOS)		; Write it back
-	jruc	xtxcmove_lp		; Go chck next
+	jruc	qcpzmove_lp		; Go chck next
 
-xtxclist_end
+qcpzlist_end
 	SLEEPK	1			; Show em
 
 	subk	PU_BAR_VELOCITY,a11	; Are we done?
-	jrnz	xtxcp1_pu_bars		; br = no
+	jrnz	qcpzp1_pu_bars		; br = no
 
 	PULLP	a8,a9,a10,a11
 	RETP
 
 
 
+***********************************************************
+*
+;a8 = player number
  SUBRP	show_player_options
 	move	@PSTATUS2,a9
 	btst	a8,a9
-	jrz	vqypspo_die
+	jrz	xbnespo_die
 
 fini_wait
 	move	@in_finish_move,a14	; Are we doing a finishing move ?
@@ -2228,30 +2416,30 @@ fini_done
 	move	*a9,a9,L
 
 	movk	(NUM_POWERUPS-1),a10
-vqyppu_request
+xbnepu_request
 	btst	a10,a9
-	jrz	vqypno_pu
+	jrz	xbneno_pu
 
 	clr	a0
 	movi	DPLT_B_P,b0
 	move	a8,a8
-	jrz	vqypp1_xpos
+	jrz	xbnep1_xpos
 	movi	DPLT_R_P,b0
 	movi	[399,0],a0
-vqypp1_xpos
+xbnep1_xpos
 	move	a11,a1
 	movi	BONUSBAR,a2
 	movi	1800h,a3
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4
 	move	a8,a8
-	jrnz	vqypno_hflip
+	jrnz	xbneno_hflip
 	ori	M_FLIPH,a4
-vqypno_hflip
+xbneno_hflip
 	movi	LPUBAROID,a5
 	move	a8,a8
-	jrz	vqypp1_boid
+	jrz	xbnep1_boid
 	movi	RPUBAROID,a5
-vqypp1_boid
+xbnep1_boid
 	clr	a6
 	clr	a7
 	PUSH	a8
@@ -2260,9 +2448,9 @@ vqypp1_boid
 
 	movi	[PU_LTEXT_XPOS,0],a0
 	move	a8,a8
-	jrz	vqyplpu_p1_text
+	jrz	xbnelpu_p1_text
 	movi	[PU_RTEXT_XPOS,0],a0
-vqyplpu_p1_text
+xbnelpu_p1_text
 	move	a11,a1
 	move	a10,a2
 	sll	5,a2
@@ -2272,9 +2460,9 @@ vqyplpu_p1_text
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4
 	movi	LPUBAROID,a5
 	move	a8,a8
-	jrz	vqypp1_toid
+	jrz	xbnep1_toid
 	movi	RPUBAROID,a5
-vqypp1_toid
+xbnep1_toid
 	clr	a6
 	clr	a7
 	movi	WINFONT,b0
@@ -2283,20 +2471,22 @@ vqypp1_toid
 	PULL	a8
 	
 	addi	[PU_BAR_YSPACE,0],a11
-vqypno_pu
+xbneno_pu
 	subk	1,a10
-	jrnn	vqyppu_request
+	jrnn	xbnepu_request
 
 	JSRP	move_pu_bars_on
 
-vqypwait_die
+xbnewait_die
 	SLEEPK	1
 	move	@show_options_die,a14
-	jrz	vqypwait_die
+	jrz	xbnewait_die
 
-vqypspo_die
+xbnespo_die
 	DIE
 
+**********************************************************************
+*
 
 MYOBJ_REC_SIZE	.equ	(16*11)
 SIZEOF_JAM_STR	.equ	(16*10)
@@ -2322,93 +2512,99 @@ MYOBJECT	.macro	x,y,z,img,ctrl,id,xv,yv
 	.ref	mess_objid
 	.ref	WSF_W_P
 
- SUBRP	opqqmk3_tip_prompt1
+ SUBRP	lgaumk3_tip_prompt1
 	JAM_STR	wsf14_ascii,10,0,200,30,WSF_R_P,print_string_C2
 	.string	"CONGRATULATIONS!!!",0
 	.even
- SUBRP	opqqmk3_tip_prompt2
+ SUBRP	lgaumk3_tip_prompt2
 	JAM_STR	ogmd10_ascii,10,0,200,70,SGMD8GLD,print_string_C2
 	.string "YOU'VE ACHIEVED A LEVEL OF",0
 	.even
- SUBRP	opqqmk3_tip_prompt4
+ SUBRP	lgaumk3_tip_prompt4
 	JAM_STR	ogmd10_ascii,10,0,200,85,SGMD8GLD,print_string_C2
 	.string "PERFORMANCE THAT ENTITLES YOU",0
 	.even
- SUBRP	opqqmk3_tip_prompt5
+ SUBRP	lgaumk3_tip_prompt5
 	JAM_STR	ogmd10_ascii,10,0,200,100,SGMD8GLD,print_string_C2
 	.string "TO A TIP FOR MORTAL KOMBAT 3",0
 	.even
 
- SUBRP	opqqmk3_tip1_str1
+ SUBRP	lgaumk3_tip1_str1
 	JAM_STR	ogmd10_ascii,10,0,200,130,SGMD8BLU,print_string_C2
+; Compressed string "FOR TWO PLAYER GAMES, USE THE"
 	.byte	027h,03ch,007h,035h,00eh,007h,071h,02bh
 	.byte	0eah,0e6h,01ch,0a0h,0a2h,06bh,0d2h,04dh
 	.byte	060h,0d3h,066h,050h,0a7h,026h,000h
 	.even
- SUBRP	opqqmk3_tip1_str2
+ SUBRP	lgaumk3_tip1_str2
 	JAM_STR	ogmd10_ascii,10,0,200,145,SGMD8BLU,print_string_C2
+; Compressed string "FOLLOWING CODE TO ENABLE A"
 	.byte	027h,0dch,0b6h,030h,0aeh,0beh,068h,040h
 	.byte	0c2h,0a5h,019h,0d4h,070h,060h,0beh,0e2h
 	.byte	0d8h,09ah,081h,008h,000h
 	.even
- SUBRP	opqqmk3_tip1_str3
+ SUBRP	lgaumk3_tip1_str3
 	JAM_STR	ogmd10_ascii,10,0,200,160,SGMD8BLU,print_string_C2
+; Compressed string "SPECIAL FEATURE."
 	.byte	074h,06ch,092h,0aah,0d8h,006h,0a7h,029h
 	.byte	0d6h,0f6h,06ch,03eh,000h
 	.even
 
 
- SUBRP	opqqmk3_tip2_str1
+ SUBRP	lgaumk3_tip2_str1
 	JAM_STR	ogmd10_ascii,10,0,200,130,SGMD8BLU,print_string_C2
+; Compressed string "IN TWO PLAYER GAMES, ENTER"
 	.byte	0eah,01bh,0d4h,038h,01ch,0c4h,0adh,0a8h
 	.byte	09bh,073h,080h,08ah,0aeh,049h,037h,081h
 	.byte	0f9h,0d6h,0e6h,00ch,000h
 	.even
- SUBRP	opqqmk3_tip2_str2
+ SUBRP	lgaumk3_tip2_str2
 	JAM_STR	ogmd10_ascii,10,0,200,145,SGMD8BLU,print_string_C2
+; Compressed string "THE CODE BELOW TO TURN ON A"
 	.byte	075h,06ah,006h,024h,05ch,09ah,0c1h,068h
 	.byte	0b6h,030h,01eh,0d4h,070h,050h,0dbh,0f3h
 	.byte	01bh,0c0h,06fh,020h,002h
 	.even
- SUBRP	opqqmk3_tip2_str3
+ SUBRP	lgaumk3_tip2_str3
 	JAM_STR	ogmd10_ascii,10,0,200,160,SGMD8BLU,print_string_C2
+; Compressed string "HIDDEN FEATURE."
 	.byte	0a9h,05ah,096h,0e6h,01bh,09ch,0a6h,058h
 	.byte	0dbh,0b3h,0f9h,000h
 	.even
 
 
 
- SUBRP	opqqmk_code1_1
+ SUBRP	lgaumk_code1_1
 	.word	127+2+(24*0),179,4010h	;x,y,z
 	.long	I_GORO	;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code1_2
+ SUBRP	lgaumk_code1_2
 	.word	127+2+(24*1),179,4010h	;x,y,z
 	.long	I_SHOKAHN		;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code1_3
+ SUBRP	lgaumk_code1_3
 	.word	127+2+(24*2),179,4010h	;x,y,z
 	.long	I_SHOKAHN	;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code1_4
+ SUBRP	lgaumk_code1_4
 	.word	127+2+(24*3),179,4010h	;x,y,z
 	.long	I_QUESTION	;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code1_5
+ SUBRP	lgaumk_code1_5
 	.word	127+2+(24*4),179,4010h	;x,y,z
 	.long	I_YINYANG	;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code1_6
+ SUBRP	lgaumk_code1_6
 	.word	127+2+(24*5),179,4010h	;x,y,z
 	.long	I_YINYANG	;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
@@ -2417,106 +2613,106 @@ MYOBJECT	.macro	x,y,z,img,ctrl,id,xv,yv
 
 
 
- SUBRP	opqqmk_code2_1
+ SUBRP	lgaumk_code2_1
 	.word	127+2+(24*0),179,4010h	;x,y,z
 	.long	I_QUESTION	;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code2_2
+ SUBRP	lgaumk_code2_2
 	.word	127+2+(24*1),179,4010h	;x,y,z
 	.long	I_GORO		;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code2_3
+ SUBRP	lgaumk_code2_3
 	.word	127+2+(24*2),179,4010h	;x,y,z
 	.long	I_GORO		;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code2_4
+ SUBRP	lgaumk_code2_4
 	.word	127+2+(24*3),179,4010h	;x,y,z
 	.long	I_QUESTION	;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code2_5
+ SUBRP	lgaumk_code2_5
 	.word	127+2+(24*4),179,4010h	;x,y,z
 	.long	I_GORO		;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
- SUBRP	opqqmk_code2_6
+ SUBRP	lgaumk_code2_6
 	.word	127+2+(24*5),179,4010h	;x,y,z
 	.long	I_GORO		;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
 
- SUBRP	opqqmk_code_frame
+ SUBRP	lgaumk_code_frame
 	.word	127,177,4000h	;x,y,z
 	.long	BOX2		;Image
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSMK3
 	.long	0,0
 
- SUBRP	opqqmk_code_tbl1
-	.long	opqqmk_code1_1
-	.long	opqqmk_code1_2
-	.long	opqqmk_code1_3
-	.long	opqqmk_code1_4
-	.long	opqqmk_code1_5
-	.long	opqqmk_code1_6
-	.long	opqqmk_code_frame
+ SUBRP	lgaumk_code_tbl1
+	.long	lgaumk_code1_1
+	.long	lgaumk_code1_2
+	.long	lgaumk_code1_3
+	.long	lgaumk_code1_4
+	.long	lgaumk_code1_5
+	.long	lgaumk_code1_6
+	.long	lgaumk_code_frame
 	.long	0
 
- SUBRP	opqqmk_code_tbl2
-	.long	opqqmk_code2_1
-	.long	opqqmk_code2_2
-	.long	opqqmk_code2_3
-	.long	opqqmk_code2_4
-	.long	opqqmk_code2_5
-	.long	opqqmk_code2_6
-	.long	opqqmk_code_frame
+ SUBRP	lgaumk_code_tbl2
+	.long	lgaumk_code2_1
+	.long	lgaumk_code2_2
+	.long	lgaumk_code2_3
+	.long	lgaumk_code2_4
+	.long	lgaumk_code2_5
+	.long	lgaumk_code2_6
+	.long	lgaumk_code_frame
 	.long	0
 
- SUBRP	opqqmk3_tip1_str_tbl
-	.long	opqqmk3_tip1_str1
-	.long	opqqmk3_tip1_str2
-	.long	opqqmk3_tip1_str3
+ SUBRP	lgaumk3_tip1_str_tbl
+	.long	lgaumk3_tip1_str1
+	.long	lgaumk3_tip1_str2
+	.long	lgaumk3_tip1_str3
 	.long	0
-	.long	opqqmk_code_tbl1
+	.long	lgaumk_code_tbl1
 	
- SUBRP	opqqmk3_tip2_str_tbl
-	.long	opqqmk3_tip2_str1
-	.long	opqqmk3_tip2_str2
-	.long	opqqmk3_tip2_str3
+ SUBRP	lgaumk3_tip2_str_tbl
+	.long	lgaumk3_tip2_str1
+	.long	lgaumk3_tip2_str2
+	.long	lgaumk3_tip2_str3
 	.long	0
-	.long	opqqmk_code_tbl2
+	.long	lgaumk_code_tbl2
 
 
- SUBRP	opqqmk3_tip_str_tbl
-	.long	opqqmk3_tip1_str_tbl
-	.long	opqqmk3_tip2_str_tbl
+ SUBRP	lgaumk3_tip_str_tbl
+	.long	lgaumk3_tip1_str_tbl
+	.long	lgaumk3_tip2_str_tbl
 
- SUBRP	opqqmk3_tip_prompt_str_tbl
-	.long	opqqmk3_tip_prompt1
-	.long	opqqmk3_tip_prompt2
-	.long	opqqmk3_tip_prompt4
-	.long	opqqmk3_tip_prompt5
+ SUBRP	lgaumk3_tip_prompt_str_tbl
+	.long	lgaumk3_tip_prompt1
+	.long	lgaumk3_tip_prompt2
+	.long	lgaumk3_tip_prompt4
+	.long	lgaumk3_tip_prompt5
 	.long	0
 
 	.bss	resume,16
 
  SUBRP	suspend_game
-opqqlp
+lgaulp
 	move	@resume,a10
-	jrnz	opqqok_to_resume
+	jrnz	lgauok_to_resume
 	SLEEPK	1
 	callr	suspend_all
-	jruc	opqqlp
-opqqok_to_resume
+	jruc	lgaulp
+lgauok_to_resume
 	DIE
 
  SUBRP	mk3_coin
@@ -2556,6 +2752,9 @@ opqqok_to_resume
 
 	.ref	obj_aniq
 
+;a11 = [xpos,ypos]
+;a10 = *img tbl
+;a8  = flip/noflip
  SUBRP	anim_mk
 	move	a10,a9
 	move	a11,a1
@@ -2568,28 +2767,29 @@ opqqok_to_resume
 	movi	4000h,a3
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4
 	move	a8,a8
-	jrz	opqqno_flip
+	jrz	lgauno_flip
 	ori	M_FLIPH,a4
-opqqno_flip
+lgauno_flip
 	movi	CLSMK3,a5
 	clr	a6
 	clr	a7
 	calla	BEGINOBJ
-opqqmk_anim_lp
+lgaumk_anim_lp
 	SLEEPK	5
 	move	*a9+,a0,L
-	jrnz	opqqdo_mka
+	jrnz	lgaudo_mka
 	move	a10,a9
 	move	*a9+,a0,L
-opqqdo_mka
+lgaudo_mka
 	move	*a8(OCTRL),a1
 	calla	obj_aniq
-	jruc	opqqmk_anim_lp
+	jruc	lgaumk_anim_lp
 	DIE
 
 
  SUBR	show_mk3_tip
 
+;Disabled until we get real tips from end
 
 	clr	a0			; Make everyone wait
 	move	a0,@resume
@@ -2608,7 +2808,7 @@ opqqdo_mka
 
 	.ref	display_blank
 	.if MKDEBUG
-opqqreenter
+lgaureenter
 	.endif
 	calla	display_blank
 
@@ -2674,10 +2874,10 @@ opqqreenter
 
 	SLEEPK	1
 
-	movi	opqqmk3_tip_prompt_str_tbl,a9
-opqqmk3_tp_loop
+	movi	lgaumk3_tip_prompt_str_tbl,a9
+lgaumk3_tp_loop
 	move	*a9+,a2,L
-	jrz	opqqmk3_tp_done
+	jrz	lgaumk3_tp_done
 	move	a2,a10
 	calla	setup_message
 	movi	CLSMK3,a0
@@ -2685,21 +2885,21 @@ opqqmk3_tp_loop
 	addi	SIZEOF_JAM_STR,a10
 	move	a10,a4
 	calla	print_string_C2
-	jruc	opqqmk3_tp_loop
+	jruc	lgaumk3_tp_loop
 
-opqqmk3_tp_done
+lgaumk3_tp_done
 	movk	1,a0			; Get a random tip to show
 	calla	RNDRNG0
 	.if MKDEBUG
 	move	@mk3_tip_number,a0
 	.endif
 	sll	5,a0
-	addi	opqqmk3_tip_str_tbl,a0
+	addi	lgaumk3_tip_str_tbl,a0
 	move	*a0,a9,L		; a9 = *str table
 
-opqqmk3_t_loop
+lgaumk3_t_loop
 	move	*a9+,a2,L
-	jrz	opqqmk3_tip_done
+	jrz	lgaumk3_tip_done
 	move	a2,a10
 	calla	setup_message
 	movi	CLSMK3,a0
@@ -2712,21 +2912,21 @@ opqqmk3_t_loop
 	movi	message_buffer,a4
 	calla	print_string_C2
 	SLEEPK	15
-	jruc	opqqmk3_t_loop
+	jruc	lgaumk3_t_loop
 	
-opqqmk3_tip_done
+lgaumk3_tip_done
 	move	*a9,a2,L
-	jrz	opqqno_code
+	jrz	lgauno_code
 	move	a2,a9
-opqqmk3_c_loop
+lgaumk3_c_loop
 	move	*a9+,a0,L
-	jrz	opqqcode_done
+	jrz	lgaucode_done
 	calla	BEGINOBJ_TBL
-	jruc	opqqmk3_c_loop
-opqqcode_done
+	jruc	lgaumk3_c_loop
+lgaucode_done
 	CREATE	4001h,sparkle_frame
 
-opqqno_code
+lgauno_code
 	.ref	display_unblank
 	calla	display_unblank
 	.ref	SNDSND
@@ -2741,13 +2941,13 @@ opqqno_code
 
 	movi	TSEC*8,a9
 	.endif
-opqqdelay_loop				; Now wait on a button
+lgaudelay_loop				; Now wait on a button
 	SLEEPK	1
 	calla	get_all_buttons_cur
-	jrnz	opqqmk3t_exit
-	dsjs	a9,opqqdelay_loop
+	jrnz	lgaumk3t_exit
+	dsjs	a9,lgaudelay_loop
 
-opqqmk3t_exit
+lgaumk3t_exit
 	movi	4001h,a0
 	calla	KIL1C
 
@@ -2761,7 +2961,7 @@ opqqmk3t_exit
 	addk	1,a14
 	andi	1,a14
 	move	a14,@mk3_tip_number
-	jruc	opqqreenter
+	jruc	lgaureenter
 	.endif
 	clr	a10
 	movk	16,a11
@@ -2789,6 +2989,7 @@ sparkle_img
 	.long	SPRKLA13
 	.long	0
 
+; A9 = [x,y]
  SUBRP	anim_sparkle
 
 	movi	sparkle_img,a10
@@ -2835,9 +3036,9 @@ sp_exit
 
 	sll	16,a9			; Set X position
 	move	a0,a0			; top or bottom of frame ?
-	jrz	opqqtop			; br = top
+	jrz	lgautop			; br = top
 	ori	19,a9			; Set bottom
-opqqtop
+lgautop
 	addi	[127,177],a9		; Adjust for frame position
 	CREATE	4000h,anim_sparkle	; Animate a frame sparkle
 
@@ -2849,20 +3050,23 @@ opqqtop
 	
 	DIE
 
+;
+; A0 = *compressed string
+;
  SUBR	decompress_string
 	PUSH	a1,a2
 	movi	message_buffer,a1,L
 	pushst			; Save status
 	dint			; No interrupts during this
 	setf	6,0,0		; Field size = 6
-opqqdecompress_loop
+lgaudecompress_loop
 	move	*a0+,a2
-	jrz	opqqdecompress_done
+	jrz	lgaudecompress_done
 	addi	01fh,a2
 	movb	a2,*a1
 	addk	8,a1
-	jruc	opqqdecompress_loop
-opqqdecompress_done
+	jruc	lgaudecompress_loop
+lgaudecompress_done
 	popst
 	clr	a0
 	movb	a0,*a1
@@ -2922,9 +3126,9 @@ hello_prompt3
  SUBR	prog_specials
 
 	calla	get_all_buttons_cur
-	jrz	opqqno_prog
+	jrz	lgauno_prog
 	cmpi	B_PUNCH|B_SPUNCH|B_KICK|B_SKICK,a0
-	jrnz	opqqno_prog
+	jrnz	lgauno_prog
 
 	move	*a13(PROCID),a2
 	ori	4000h,a2
@@ -2933,14 +3137,14 @@ hello_prompt3
 	CREATE	4000h,hi_programmer
 	SLEEP	TSEC
 	movi	TSEC*5,a2
-opqqwait_loop
+lgauwait_loop
 	PUSHP	a2
 	SLEEPK	1
 	PULLP	a2
 	calla	get_all_buttons_cur
-	jrnz	opqqps_exit
-	dsjs	a2,opqqwait_loop
-opqqps_exit
+	jrnz	lgaups_exit
+	dsjs	a2,lgauwait_loop
+lgaups_exit
 	movk	1,a0			; Set ok to resume game
 	move	a0,@resume
 
@@ -2952,11 +3156,11 @@ opqqps_exit
 	movk	16,a11
 	CREATE	FADE_PID,fade_up
 	SLEEPK	31
-opqqno_prog
+lgauno_prog
 	RETP
 
 
-opqqsi_table
+lgausi_table
 	.long	0006864bh		; MARK
 	.long	00a0cdeeh		; JASON
 	.long	00050565h		; JAKE
@@ -2976,56 +3180,63 @@ opqqsi_table
 	.long	000a3dd9h		; TONY
 	.long	0
 
+; A4 = *beginning of string
+; A0 = character to add
+;
+; Returns
+;   Z  - Special Inits
+;   NZ - Not Special Inits
+;
  SUBR	are_special_inits
 	PUSH	a0,a1,a2,a4,a5,a6
 	move	a4,a6
 	subk	8,a6
-opqqrecheck1
+lgaurecheck1
 	addk	8,a6
 	move	a6,a4
 	movb	*a6,a2
-	jrz	opqqnot_special_inits1
+	jrz	lgaunot_special_inits1
 	clr	a1
-opqqget_inits_loop1
+lgauget_inits_loop1
 	movb	*a4,a2
-	jrz	opqqrecheck1
+	jrz	lgaurecheck1
 	cmpi	20h,a2
-	jrz	opqqnot_alpha1
+	jrz	lgaunot_alpha1
 	cmpi	21h,a2
-	jrz	opqqnot_alpha1
+	jrz	lgaunot_alpha1
 	cmpi	19h,a2
-	jrz	opqqnot_alpha1
+	jrz	lgaunot_alpha1
 	sll	5,a1
 	subi	40h,a2
 	andi	1fh,a2
 	or	a2,a1
-	callr	opqqcheck_it1
-opqqnot_alpha1
+	callr	lgaucheck_it1
+lgaunot_alpha1
 	addk	8,a4
-	jruc	opqqget_inits_loop1
-opqqgi_done1
+	jruc	lgauget_inits_loop1
+lgaugi_done1
 
-opqqcheck_it1
+lgaucheck_it1
 	PUSH	a4
-	movi	opqqsi_table,a4
+	movi	lgausi_table,a4
 	clr	a0
-opqqcheck_dw_loop1
+lgaucheck_dw_loop1
 	move	*a4+,a5,L
-	jrz	opqqcheck_done1
+	jrz	lgaucheck_done1
 	cmp	a1,a5
-	jrz	opqqis_special
-	jruc	opqqcheck_dw_loop1
-opqqcheck_done1
+	jrz	lgauis_special
+	jruc	lgaucheck_dw_loop1
+lgaucheck_done1
 	PULL	a4
 	rets
 
-opqqis_special
+lgauis_special
 	PULL	a4,a14			; This sucks don't change this
 	movk	1,a0			; or it will break
-	jruc	opqqaid_exit1
-opqqnot_special_inits1
+	jruc	lgauaid_exit1
+lgaunot_special_inits1
 	clr	a0
-opqqaid_exit1
+lgauaid_exit1
 	move	a0,a0
 	PULL	a0,a1,a2,a4,a5,a6
 	rets
@@ -3034,5 +3245,7 @@ opqqaid_exit1
 
 
 
+******************************************************************************
+*
 	.end
 

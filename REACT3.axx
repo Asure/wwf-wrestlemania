@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		8/8/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"react3.asm"
 	.title	"wrester reactions to hits"
@@ -20,6 +28,9 @@
 	.include	"lifebar.h"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
+*
 	.REF	CALL_MID_HIT
 
 	.REF	CALL_DROP_KICK
@@ -30,52 +41,72 @@
 	.ref	face_each_other
 	.ref	wres_slave_anim
 	.ref	set_getup_time
+;	.ref	check_dizzy
 	.ref	hit_damage_pending
 	.ref	DO_SCREAM
 
+******************************************************************************
+* EXTERNAL ANIM SEQUENCES
 
 
+;BAM BAM
 	.ref	bam_2_body_hit_anim,bam_4_body_hit_anim
 	.ref	bam_fall_back_anim
 
+;DOINK
 	.ref	dnk_fall_back_anim
 
+;BRET
 	.ref	hrt_fall_back_anim
+;LEX
 	.ref	lex_2_body_hit_anim,lex_4_body_hit_anim
 	.ref	lex_fall_back_anim
 
+;RAZOR
 	.ref	rzr_2_body_hit_anim,rzr_4_body_hit_anim
 	.ref	rzr_fall_back_anim
 
+;SHAWN
 	.ref	shn_2_body_hit_anim,shn_4_body_hit_anim
 	.ref	shn_fall_back_anim
 
+;TAKER
 	.ref	und_2_body_hit_anim,und_4_body_hit_anim
 	.ref	und_fall_back_anim
 	.ref	und_2_knee_hit_anim,und_4_knee_hit_anim
 
+;YOKO
 	.ref	yok_fall_back_anim
 
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
+
+******************************************************************************
+* EQUATES FOR THIS FILE
+
+*****************************************************************************
 
 
 
-
-
+*****************************************************************************
+;AMODE_BIGBOOT	11
  SUBR	hit_bigboot
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_RUNNING,a1
-	jrz	hlcdcont2
+;No hit if not running
+	jrz	kazecont2
 	cmpi	MODE_INAIR,a1
-	jrz	hlcdcont
-hlcdface
+	jrz	kazecont
+kazeface
 	CALLA	CALL_FACE_HIT
 
 	GETLIFE
-	jrz	hlcdisdead
+	jrz	kazeisdead
 
 	WRSNDX	FLYKICK_L1,FLYKICK_L2
+;this should really hurt.....
 	calla	DO_SCREAM
 
 	SETMODE	NORMAL
@@ -84,27 +115,31 @@ hlcdface
 	FACE24TBL head_hit2_tbl
 	calla	change_anim1a
 
-hlcdisdead
+kazeisdead
 	calla	wres_collis_off
 	rets
 
-hlcdcont2
+kazecont2
 	movi	100,a0
 	.ref	RNDPER
 	calla	RNDPER
-	jrhi	hlcdface
-hlcdcont
+	jrhi	kazeface
+kazecont
 	CALLA	CALL_DROP_KICK
 
 	WRSNDX	LBOWDROP_L1,LBOWDROP_L2
 	GETLIFE
-	jrz	hlcdskip
+	jrz	kazeskip
+
+;Any hit mode which does a fall back sequence onto the ground
+;will not check dizzy at the start.
+;The check dizzy happens in the sequence.
 
 
-
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
-hlcdskip
+kazeskip
 	clr	a0
 	move	a0,*a13(ROLL_POS)
 	calla	set_getup_time
@@ -117,54 +152,71 @@ hlcdskip
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	hlcdfall_right		;attacker on left
+	jrgt	kazefall_right		;attacker on left
 	movi	[-3,0],a2
-hlcdfall_right
+kazefall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 
 	calla	wres_collis_off
 	rets
 
-hlcdno_hit
+kazeno_hit
 	clr	a14
 	move	a14,@hit_damage_pending
 	calla	wres_collis_off
 	rets
 
 
+*****************************************************************************
+;AMODE_KNEE	12
  SUBR	hit_knee
 
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	adranoblock
+	jrnz	atrmnoblock
 
 	calla	block_hit
 	rets
 
-adranoblock
+atrmnoblock
 
 	CALLA	CALL_MID_HIT
 
 
 	GETLIFE
-	jrz	adraisdead
+	jrz	atrmisdead
 
 	WRSNDX	KICK_L1,KICK_L2
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	atrmdiz
+;
+;	calla	check_dizzy
+;	jrz	atrmnot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;atrmdiz
+; 	FACE24TBL atrmknee_hit_dizzy
+;	jruc	atrmcont
+;
+;atrmnot_dizzy
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
 
 	FACE24TBL knee_hit_tbl
-adracont
+atrmcont
 	calla	change_anim1a
 
 	move	*a10(OBJ_XVEL),a0,L		;slow down doink's
 	sra	3,a0				;x_vel after collis
 	move	a0,*a10(OBJ_XVEL),L
 
-adraisdead
+atrmisdead
 	calla	wres_collis_off
 	rets
 
@@ -189,8 +241,30 @@ adraisdead
 	.long	lex_2_knee_hit_anim,lex_4_knee_hit_anim		;8 Lex Luger
 	.long	0,0						;9 Referee
 
+;atrmknee_hit_dizzy
+;	.ref	hrt_4_knee_hit_dizzy_anim
+;	.ref	yok_4_knee_hit_dizzy_anim
+;	.ref	rzr_4_knee_hit_dizzy_anim
+;	.ref	und_4_knee_hit_dizzy_anim
+;	.ref	shn_4_knee_hit_dizzy_anim
+;	.ref	bam_4_knee_hit_dizzy_anim
+;	.ref	dnk_4_knee_hit_dizzy_anim
+;	.ref	lex_4_knee_hit_dizzy_anim
+;
+;	.long	hrt_4_knee_hit_dizzy_anim,hrt_4_knee_hit_dizzy_anim	;0 Bret Hart
+;	.long	rzr_4_knee_hit_dizzy_anim,rzr_4_knee_hit_dizzy_anim	;1 Razor Ramon
+;	.long	und_4_knee_hit_dizzy_anim,und_4_knee_hit_dizzy_anim	;4 Undertaker
+;	.long	yok_4_knee_hit_dizzy_anim,yok_4_knee_hit_dizzy_anim	;3 Yokozuna
+;	.long	shn_4_knee_hit_dizzy_anim,shn_4_knee_hit_dizzy_anim	;4 Shawn Michaels
+;	.long	bam_4_knee_hit_dizzy_anim,bam_4_knee_hit_dizzy_anim	;5 Bam Bam
+;	.long	dnk_4_knee_hit_dizzy_anim,dnk_4_knee_hit_dizzy_anim	;6 Doink
+;	.long	0,0							;7 spare
+;	.long	lex_4_knee_hit_dizzy_anim,lex_4_knee_hit_dizzy_anim	;8 Lex Luger
+;	.long	0,0							;9 Referee
 
 
+*****************************************************************************
+;AMODE_KNEE	27
  SUBR	hit_headknees
 
 	WRSNDX	KICK_L1,KICK_L2
@@ -198,13 +272,13 @@ adraisdead
 	movi	40000h,a0
 	move	a0,*a13(OBJ_YVEL),L
 
-	FACETBL nrijknee_hit
+	FACETBL xgbbknee_hit
 	calla	change_anim1a
 
 	calla	wres_collis_off
 	rets
 
-nrijknee_hit
+xgbbknee_hit
 	.ref	dnk_quick_knee_hit_anim
 	.ref	hrt_quick_knee_hit_anim
 	.ref	yok_quick_knee_hit_anim
@@ -226,30 +300,42 @@ nrijknee_hit
 	.long	0						;9 Referee
 
 
+*****************************************************************************
+;AMODE_BOXPUNCH 14
  SUBR	hit_boxpunch
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	tvpknoblock
+	jrnz	sbmdnoblock
 
+;	move	*a13(FACING_DIR),a0		;check for hit
+;	move	*a13(NEW_FACING_DIR),a1		;from behind
+;	and	a0,a1
+;	andi	MOVE_LEFT|MOVE_RIGHT,a1
+;	jrz	sbmdnoblock
 
 	calla	block_hit_flail
 	rets
 
-tvpknoblock
+sbmdnoblock
 
+;All of the damage amounts need to be in lookup tables linked to the wrestler
+;who actually struck the blow.
 
 	.ref	CALL_FACE_HIT
 	CALLA	CALL_FACE_HIT
 
+;Any hit mode which does a fall back sequence onto the ground
+;will not check dizzy at the start.
+;The check dizzy happens in the sequence.
 
 	WRSNDX	FLYKICK_L1,FLYKICK_L2
 	GETLIFE
-	jrz	tvpkskip
+	jrz	sbmdskip
 
 
 	SETMODE	NORMAL
-tvpkskip
+sbmdskip
 	movi	5*TSEC,a0
 	move	a0,*a13(GETUP_TIME)
 
@@ -260,16 +346,17 @@ tvpkskip
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	tvpkgo_rgt			;attacker on left
+	jrgt	sbmdgo_rgt			;attacker on left
 	neg	a2
-tvpkgo_rgt
+sbmdgo_rgt
 	move	a2,*a13(OBJ_XVEL),L
 
-tvpkisdead
+sbmdisdead
 	calla	wres_collis_off
 	rets
 
 
+******************************************************************************
 
 	.end
 

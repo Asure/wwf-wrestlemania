@@ -1,3 +1,20 @@
+**************************************************************
+* START
+* Software:		LARRY DEMAR and DR. J
+* Initiated:		?
+*
+* Modified:		Shawn Liptak, 11/1/91	-Total carnage
+* 			Shawn Liptak, 1/20/92	-Coinage from T2, Dipswitch
+* 			Shawn Liptak, 1/24/92	-Coinage corrections
+* 			Shawn Liptak, 3/4/92	-Basketball mods
+* 			Shawn Liptak, 10/2/92	-TUNIT sound mods
+*			Jason Skiles, 11/24/93	-DCS sound mods
+*			Jason Skiles, 12/3/93	-Strip audits for WWF
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 12/7/93 11:25
+**************************************************************
 	.file	"menu.asm"
 	.title	"test menus"
 	.width	132
@@ -18,6 +35,7 @@
 
 	.text
 
+;	 IN THIS MODULE
 
 	.DEF	MEN_MAIN,GET_CSPT
 	.DEF	MESS_FAC
@@ -42,6 +60,8 @@
 	.DEF	DIPCOINTAB
 	.def	RES_ALL
 
+******************************************************************************
+* EXTERNAL REFERENCES
 	.ref	_coin_addr
 	.ref	_switch_addr
 	.ref	_switch2_addr
@@ -181,6 +201,7 @@
 	;from UTIL.ASM
 	.ref	get_but_val_down,get_stick_val_cur,dpageflip_off
 
+******************************************************************************
 
 	.BSS	FAC_FLAG,16		;FLAG SAYS CLEAR AUDITS AND HSTABLE
 					;IF FACTORY SETTINGS SUCCEED.
@@ -192,6 +213,51 @@
 
 
 
+**************************************************************************
+*									 *
+*	   COIN TABLE							 *
+*									 *
+**************************************************************************
+*
+*	The coin table is made up of the normal entries from
+*	the pinball system, as well as some new ones that
+*	determine start and buy-in cost, and others that
+*	aid in the determination of a "total collection".
+*
+*	Left Slot Multiplier		word
+*	Center Slot Multiplier		word
+*	Right Slot Multiplier		word
+*	fourth slot Muliplier		word
+*	bill validator Muliplier	word
+*	Units for Credit		word
+*	Units for Bonus			word
+*	Minimum Units			word
+*	Credits to start		word
+*	Credits to Continue		word
+*	Divisor in money calculation	word   0 means "OFF"
+*
+* --------------------------------------------------------------
+* The above value get copied as adjustments (and are adjustable).
+* In addition, the coin table contains help on how to arrive at
+* the "Total Collection" for the coin audits.
+* --------------------------------------------------------------
+*
+*	Count for each Left coin		word
+*	Count for each Center coin		word
+*	Count for each Right coin		word
+*	Count for fourth coin			word
+*	Count for DBV				word
+*	Pointer to Leading text string		long
+*	Pointer to Following text string	long
+*
+**************************************************************************
+*
+*	GET_CSPT
+*
+*	THIS IS CALLED TO RETURN IN A6 THE CURRENT
+*	CSELCT LINE AS STORED IN THE ADJUSTMENT TABLE.
+*
+**************************************************************************
 GET_CSPT
 	PUSH	a0
 	movk	ADJPRICE,a0
@@ -200,6 +266,11 @@ GET_CSPT
 	PULL	a0
 	RETS
 	
+**************************************************************************
+* CS_POINT - Point at selected entry in the coinage select table
+* A0=Offset #
+* Rets: A6=*Coinage table
+**************************************************************************
 CS_POINT
 	MMTM	SP,A0,A1
 	MOVE	A0,A0		;ZERO?
@@ -217,6 +288,52 @@ CS1	MOVI	CS_SIZE,A1	;SIZE PER ENTRY
 	MMFM	SP,A0,A1
 	RETS
 
+**************************************************************************
+*
+*	CKPROMPT
+*
+*	IS THERE A PROMPT STRING FOR THE CREDITS PAGE.
+*
+*	A0 RETURNS:
+*
+*	YES.....RETURN POINTER TO SOMETHING
+*	NO......RETURN ZERO
+*
+*	IF A0 HAS A POINTER THEN....
+*
+*	IF A1 = 0 THEN A0 IS AN L_MESS STRING THAT SHOULD
+*		JUST BE SENT OUT.
+*
+*	IF A1 != 0 THEN A0 IS A POINTER LIST OF UP TO 2 MESSAGES.
+*		THAT GIVE PRICING INFO
+*
+*	A1 = 0 PLOT THE A0 STRING OUTRIGHT USING L_MESS
+*		(IT CONTAINS ALL DATA)
+*
+*	A1 = 1  PLOT ONLY THE STRING LIST (1 OR 2 POINTERS
+*		CENTERED APPROPRIATELY
+*
+*	A1 = 2  PLOT THE 1ST LINE OF THE STRING LIST ALONG
+*		WITH THE 2 CREDITS TO START...1 TO CONTINUE
+*
+*	A1 = 3  PLOT THE 2ND LINE OF THE STRING LIST ALONG
+*		WITH THE 2 CREDITS TO START...1 TO CONTINUE
+*
+*	A1 = 4  PLOT THE 3RD LINE OF THE STRING LIST ALONG
+*		WITH THE 2 CREDITS TO START...1 TO CONTINUE
+*
+*	A1 = 5  PLOT THE 1ST LINE OF THE STRING LIST ALONG
+*		ALONG WITH 2 COINS PER PLAYER
+*
+*	A1 = 6  PLOT THE 2ND LINE OF THE STRING LIST ALONG
+*		ALONG WITH 2 COINS PER PLAYER
+*
+*	A1 = 7  PLOT THE 3RD LINE OF THE STRING LIST ALONG
+*		ALONG WITH 2 COINS PER PLAYER
+*
+*	A1 = 8  CUSTOM MESSAGE
+*
+**************************************************************************
 								
 CKPROMPT
 	PUSH	a6
@@ -235,6 +352,8 @@ CKPROMPT
 	CALLA	GET_ADJ
 	JRZ	CKSPCASE		;YEP...GO FOR GENERIC "2 TO START"
 
+*	OPERATOR IS USING CANNED COINAGE....WE NEED TO USE THE
+*	CHECK IF ITS 2/1 OR 2/2
 
 	CALLR	CK_2_CRED		;IS IT A 2 CREDIT MODE?
 	JRZ	NOT_2_MODE		;NOPE...PRINT STOCK STUFF
@@ -244,6 +363,8 @@ CKPROMPT
 	MOVE	*A6(CS_PICK),A0		;GET INDICATION OF WHICH LINE
 	JRZ	CKSPCASE		;IT SAYS JUST ENUMERATE THE MODE!
 
+*	NOW....IF ITS 2/1, A0 HAS THE CORRECT RETURN CODE
+*	IF ITS 2/2 WE NEED TO ADD 2
 
 	subk	1,a1
 	JRZ	RET_A0_VAL		;2/1?
@@ -270,6 +391,8 @@ CK_BYE	PULL	a6
 	move	a0,a0			;Pass Z
 	rets
 
+*	CONTROL COMES HERE IF IT LOOKS LIKE NO MESSAGE IS
+*	APPROPRIATE....CHECK FOR 2 TO START 1 TO CONTINUE GENERIC NEEDED.
 
 CKSPCASE
 	CALLR	CK_2_CRED		;CHECK IF THERE ARE 2 CREDIT MODES.
@@ -291,6 +414,16 @@ RET_MAX	MOVI	MAX_C_M,A0
 	JRUC	CKEXIT
 
 
+**************************************************************************
+* CK_2_CRED - Checks if in a 2-credit to start mode
+*
+* A0=0	NOT 2/1 OR 2/2 CREDIT MODE
+* A0=1	2 TO START 1 TO CONTINUE
+* A0=2	2 TO START 2 TO CONTINUE
+*
+* Z	NOT 2/1 OR 2/2 CREDIT MODE
+* NZ	IS 2/1 OR 2/2 CREDIT MODE
+**************************************************************************
 CK_2_CRED
 	MOVI	ADJCSTRT,A0
 	CALLA	GET_ADJ 	;HOW MANY TO START
@@ -307,16 +440,41 @@ CK_2_CRED
 c2c20	clr	a0		;Pass Z
 	rets
 
+**************************************************************************
+*									 *
+*	   MENU HANDLING SOFTWARE					 *
+*									 *
+**************************************************************************
 
+**************************************************************************
+*									 *
+*	   FORCE_MAIN							 *
+*									 *
+*	   THIS IS CALLED TO GET TO MAIN MENU FROM LEVEL FURTHER	 *
+*	   THAN 1 DOWN.  IT SETS THE GLOBAL FLAG "MAIN_RET"		 *
+*	   NON ZERO.  GEN_MENU WILL KEEP RETURNING UNTIL		 *
+*	   IT GETS BACK TO THE MAIN MENU.				 *
+*									 *
+**************************************************************************
 FORCE_MAIN
 	MOVK	1,A0		;POSITIVE NUMBER FORCES MAIN MENU.
 	MOVE	A0,@MAIN_RET
 	RETP			;NOW "RETURN TO THE MENU"
 
+**************************************************************************
+*									 *
+*	  DIAGNOSTIC TESTS SELECTED......SHOW DIAGNOSTIC TEST MENU	 *
+*									 *
+**************************************************************************
 GO_DIAG
 	MOVI	MEN_DIAG,A8	;PUT UP THE MENU AND GO!
 	JAUC	GEN_MENU	;THIS WILL RETURN TO LEVEL ABOVE US!
 
+**************************************************************************
+*									 *
+*	  COIN BOOKKEEPING SELECTED					 *
+*									 *
+**************************************************************************
 gb20	JSRP	DO_CLCOIN
 GO_BOOK
 	CALLA	CLR_SCRN
@@ -337,6 +495,8 @@ GO_BOOK
 
 
 
+;	MOVI	COIN_A2,A0		;PUT PART 2 OF THE TABLE THERE.
+;	JSRP	PRNT_AUD
 
 	MOVI	MEN_DETAIL,A8
 	MOVK	2,A9			;CURSOR ON 2nd ENTRY
@@ -347,8 +507,78 @@ GO_BOOK
 	RETP
 
 
+;DETAIL_SCREEN
+;	 CALLA	 CLR_SCRN		;CLEAR OUT FOR ACTION!
+;
+;	 MOVI	 DT_Y1,A0		;HEIGHT OF TOP TITLE
+;	 MOVI	 ROBO_YELLOW,A9		;COLOR
+;	 CALLA	 F_TITLE		;FRAME IT
+;
+;	 MOVI	 DT_Y2,A0		;HEIGHT OF 2ND TITLE
+;	 CALLA	 F_TITLE		;FRAME IT
+;
+;	 MOVI	 DETAIL_TITLES,A8     ;NO ROOM FOR PRETTY TOP BOX...DO TITLES
+;	 JSRP	 L_MESS 	      ;ESTABLISH THE TITLES.
+;
+;	 MOVI	 COIN_D1,A0	      ;DETAILED AUDIT 1
+;	 JSRP	 PRNT_AUD	      ;PRINT IT
+;
+;	 MOVI	 AUDLCOIN,A8	      ;NOW PRINT MONEY FOR 1ST 3
+;	 JSRP	 PRINT_COL	
+;
+;	 MOVI	 AUDLCSUB,A8	      ;SUB-TOTAL OF TOTAL MONEY
+;	 JSRP	 PRINT_SUBTOTAL       ;PRINT IT.
+;
+;	 MOVI	 COIN_D2,A0	      ;DETAILED AUDIT 2
+;	 JSRP	 PRNT_AUD
+;
+;	 MOVI	 AUDLCDC,A8	      ;NOW PRINT MONEY FOR DOOR CLOSED SET
+;	 JSRP	 PRINT_COL
+;
+;	 MOVI	 AUDLCDCS,A8	      ;NOW PRINT SUB-TOTAL FOR DOOR CLOSED
+;	 JSRP	 PRINT_SUBTOTAL       ;THATS IT!
+;
+;	 MOVI	 MEN_CLR_SUB,A8       ;CLEAR SUBTOTAL OR RETURN TO MAIN MENU
+;	 MOVI	 2,A9		      ;CURSOR ON 2ND ENTRY
+;	 JSRP	 B_MENU 	
+;
+;	 CMPI	 1,A8		      ;CHOICE 1 IS CLEAR.....
+;	 JRNZ	 NO_CLEAR_SUB	      ;NOPE...RETURN TO CALLER!
+;
+;	 MOVI	 MESS_CLEAR_SUBS,A8   ;CLEAR COIN SUB-TOTALS...ARE YOU SURE
+;	 MOVI	 CLR_SUBS,A9	      ;ROUTINE TO DO IT
+;	 MOVI	 MESS_SUBS_CLEAR,A10  ;CONFIRMATION.
+;	 JSRP	 AREUSURE	      ;ASK EM.
+;	 JRUC	 DETAIL_SCREEN	      ;NOW PUT THIS SCREEN BACK UP.
+;
+;NO_CLEAR_SUB
+;NO_DETAIL
+;	 RETP			      ;AND RETURN TO OUR CALLER.
+;
+;PRINT_SUBTOTAL
+;	  CALLR   ADD_AUDIT_DY	       ;PUSH THE Y 1 LEVEL
+;	  MOVI	  T_SUB,A9	       ;USE "SUB-TOTAL" MESSAGE
+;	  JAUC	  PRINT_MONEY	       ;AND NOW PRINT THE REQUESTED SUM.
 
+**************************************************************************
+*									 *
+*	   GAME AUDITS SELECTED 					 *
+*									 *
+**************************************************************************
 
+**************************************************************************
+*									 *
+*	   AUDITS TO BE SHOWN ON GAME AUDITS PAGE:			 *
+*									 *
+*	   EXTRA MEN							 *
+*	   GAMES COMPLETED						 *
+*	   1 PLAYER MINUTES						 *
+*	   2 PLAYER MINUTES						 *
+*	   TOTAL HOURS PLAYED						 *
+*	   AVG "PLAYER" GAME TIME					 *
+*	   AVG. ELAPSED TIME / PLAY					 *
+*									 *
+**************************************************************************
 
 GO_AUD
 	CALLA	CLR_SCRN
@@ -367,7 +597,7 @@ GO_AUD
 	JRNZ	NO_AP2		;NOPE...RETURN TO OUR CALLER
 
 
-xopepage2
+qfdzpage2
 	CALLA	CLR_SCRN
 
 	MOVI	MES_AUD,A2
@@ -383,7 +613,7 @@ xopepage2
 	cmpi	2,A8		;DID WE GET 2nd ENTRY (RETURN TO PAGE 1)
 	jreq	GO_AUD		;YEP...PUT IT UP!
 
-xopepage2a
+qfdzpage2a
 	CALLA	CLR_SCRN
 
 	MOVI	MES_AUD,A2
@@ -397,9 +627,9 @@ xopepage2a
 	MOVK	1,A9		;CURSOR ON 1ST ENTRY
 	JSRP	B_MENU		;SEE IF THEY WANT PAGE 2.
 	cmpi	2,A8		;DID WE GET 2nd ENTRY (RETURN TO PAGE 1)
-	jreq	xopepage2		;YEP...PUT IT UP!
+	jreq	qfdzpage2		;YEP...PUT IT UP!
 
-xopepage3
+qfdzpage3
 	CALLA	CLR_SCRN
 
 	MOVI	MES_AUD,A2
@@ -440,7 +670,8 @@ xopepage3
 	MOVK	1,A9		;CURSOR ON 1ST ENTRY
 	JSRP	B_MENU		;SEE IF THEY WANT PAGE 2.
 	cmpi	2,A8		;DID WE GET 2nd ENTRY (RETURN TO PAGE 2)
-	jreq	xopepage2a		;YEP...PUT IT UP!
+;	jreq	qfdzpage2		;YEP...PUT IT UP!
+	jreq	qfdzpage2a		;YEP...PUT IT UP!
 
 NO_AP2
 	RETP
@@ -448,6 +679,9 @@ NO_AP2
 GO_UTIL
 	MOVI	MEN_UTIL,A8
 	JAUC	GEN_MENU	;PROCESS THE UTILITY MENU!
+*
+*	INDIVIDUAL UTILITY PROGRAMS
+*
 
 DO_CLCRED
 	MOVI	MESS_CLCRED,A8	;CLEAR COIN SUB-TOTALS...ARE YOU SURE
@@ -455,6 +689,11 @@ DO_CLCRED
 	MOVI	MESS_CCCONF,A10	;CONFIRMATION.
 	JAUC	AREUSURE	;ASK EM......THEN RETURN!
 
+**************************************************************************
+*									 *
+*	  VOLUME ADJUSTMENT SELECTED					 *
+*									 *
+**************************************************************************
 
 	.bss	bar_height,16
 
@@ -470,6 +709,8 @@ GO_VOL
 
 	create	FX_PID,background_sound	;noise
 
+;	movi	pf_volume_1,a8		;title/instructions
+;	JSRP	L_MESS
 	movi	pf_volume_2,a8
 	JSRP	L_MESS
 	movi	pf_volume_3,a8
@@ -477,6 +718,7 @@ GO_VOL
 
 	movi	bxy,a0			;frame
 	movi	bw|bh,a1
+;	movi	ROBO_GREEN,a2
 	movi	ROBO_BLUE,a2
 	fcall	RECTANGLE,b6
 
@@ -515,6 +757,7 @@ vol_loop_top
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	not	a0
+;	andi	0e7ffh,a0
 	andi	0e7efh,a0
 	or	a0,a1
 	jrnz	vol_loop_done
@@ -529,12 +772,14 @@ vol_loop_top
 	andi	0011b,a1		;filter out left/right
 
 	;listen to the coin door switches too.  OR them in.
+;	move	@COINS,a0		;the down switch
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	not	a0
 	andi	0800h,a0
 	srl	10,a0
 	or	a0,a1
+;	move	@COINS,a0		;the up switch
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	not	a0
@@ -549,6 +794,15 @@ vol_loop_top
 
 	;make sure the volume is in range
 	BADCHK	a0,1,255,28		;reg, lo, hi, val if bad
+;	cmpi	4,a0
+;	jrge	vol_notlow
+;	movi	4,a0
+;	jruc	vol_nothigh
+;vol_notlow
+;	cmpi	255,a0
+;	jrle	vol_nothigh
+;	movi	255,a0
+;vol_nothigh
 
 	btst	JOYDN,a1
 	jrnz	vol_dec
@@ -579,32 +833,38 @@ vol_loop_done
 	RETP
 
 
+***************************************
+* Adjusts the bar height
+* 0a0H=new height (1-170)
 
  SUBRP	adjust_bar_height
 
 	move	a0,a1
 	move	@bar_height,a0
-xfbyadjust_loop
+ndftadjust_loop
 	cmp	a1,a0
-	jreq	xfbydone
-	jrlt	xfbygrow_bar
+	jreq	ndftdone
+	jrlt	ndftgrow_bar
 
 	movi	ROBO_BLACK,a2
 	callr	vol_bar_line
 	dec	a0
-	jruc	xfbyadjust_loop
+	jruc	ndftadjust_loop
 
-xfbygrow_bar	
+ndftgrow_bar	
 	inc	a0
 	movi	ROBO_RED,a2
 	callr	vol_bar_line
-	jruc	xfbyadjust_loop
+	jruc	ndftadjust_loop
 
-xfbydone
+ndftdone
 	move	a0,@bar_height
 	rets
 
 
+****************************************
+* Draws a line on the volume bar, but won't overwrite green pixels (text)
+* 0a0H=line index (not Ypos) 0a2H=color
 
  SUBRP	vol_bar_line
 
@@ -619,6 +879,7 @@ xfbydone
 	movi	bw-6,a14
 vbl_pixel_loop
 	movb	*a0,a1
+;	cmpi	ROBO_GREEN&0Fh,a1
 	cmpi	ROBO_BLUE&0Fh,a1
 	jreq	vbl_skip_pixel
 	movb	a2,*a0
@@ -629,6 +890,10 @@ vbl_skip_pixel
 	PULL	a0,a1,a2
 	rets
 	
+****************************************
+* Converts a 0-255 volume value to a 1-170 bar height value
+* 0a0H=volume
+* <a0=height
 
  SUBRP	vol_to_ht
 
@@ -644,6 +909,9 @@ vbl_skip_pixel
 
 	rets
 
+****************************************
+* Makes noises during sound test.
+*
 
  SUBRP	background_sound
 	clr	a3
@@ -712,6 +980,13 @@ volume_table
 	.long	bthicky+bw+bthickx,bxy+bh	; height:width  /  y:x coordinates
 	.long	0
 
+**************************************************************************
+*									 *
+*	   CLR_CREDITS							 *
+*									 *
+*	   ROUTINE TO CLEAR OUT THE CREDITS POSTED ON THE GAME. 	 *
+*									 *
+**************************************************************************
 CLR_CREDITS
 	CALLA	NO_CREDS		;CALL THE ROUTINE THAT DOES IT
 	RETP
@@ -740,7 +1015,9 @@ DO_CLPLRECS
 	movi	MESS_CLPLRECSCONF,a10	;CONFIRMATION.
 	jauc	AREUSURE		;ASK EM......THEN RETURN!
 
+;	.global	clear_player_records
 clr_plr_records
+;	calla	clear_player_records
 	MOVI	AUD_BHART,A0
 	MOVI	LASTGAUD,A1
 	CALLA	CLR_AUDR
@@ -750,6 +1027,7 @@ CLR_AUDITS
 	MOVI	FRSTGAUD,A0
 	MOVI	LASTGAUD,A1
 	CALLA	CLR_AUDR
+;	CALLA	DUMP_FS 		;AND START THE "DUMP" RECORDS OVER
 	RETP
 
 DO_HSRES
@@ -762,6 +1040,14 @@ HSSOFT
 	CALLR	RES_ALL
 	RETP				;PROGRAM TO DO THE JOB!
 
+**************************************************************************
+*
+*	RES_ALL
+*
+*	RESET ALL TIME HIGH SCORE TABLE AND THE
+*	HIGH SCORE RESET COUNTER.
+*
+**************************************************************************
 RES_ALL
 	MOVI	STREAK_TAB,A8
 	CALLA	INIT_TB
@@ -782,6 +1068,20 @@ DO_FACSET
 	 MOVK	 1,A0
 	 JRUC	 DEF_ADJ_PART
 
+**************************************************************************
+*									 *
+*	   DO_DEF_ADJ	   THIS IS CALLED FROM UTILITY MENU TO		 *
+*			   DO THE DEFAULT ADJUSTMENTS.			 *
+*									 *
+*	   DEF_ADJ_PART    THIS IS CALLED OUT OF THE FULL		 *
+*			   FACTORY SETTING TO HANDLE THE		 *
+*			   ADJUSTMENT PART.				 *
+*									 *
+*			   A8 MUST HAVE THE MESSAGE FOR "ARE YOU SURE"	 *
+*			   A0 .NE. 0 FOR FULL FACTORY SETTINGS (ON	 *
+*				     SUCCESS OF ADJUSTMENT PART 	 *
+*									 *
+**************************************************************************
 DO_DEF_ADJ
 	MOVI	MESS_DEF_ADJ,A8
 	CLR	A0
@@ -794,6 +1094,9 @@ DEF_ADJ_PART
 	RETP
 
 DEFADJSOFT
+*
+*	NOW SMASH THE CHECKSUM
+*
 	CALLA	FORM_ADC	       ;FORM THE CKSUM
 	MOVE	A1,A0		       ;PUT IN CMOS WRITING REGGIE
 	MOVI	ADJ_CKSUM,A7
@@ -806,8 +1109,14 @@ DEFADJSOFT
 	move	a1,a0
 	movi	ADJ_CRC32,a7
 	calla	WC_LONG
+*
+*	NOW MAKE SURE ITS SMASHED
+*
 	CALLA	CMOS_VAL
 	JRZ	AD_FAIL 	       ;WE CAN'T DO IT.....PRINT FAILURE.
+*
+*	NOW SET THE ADJUSTMENTS TO THE FACTORY VALUE.
+*
 	clr	a0		;Full
 	CALLA	FAC_SET
 	CALLA	CMOS_VAL	;IS IT OK NOW?
@@ -827,6 +1136,11 @@ DEFADJSOFT
 NOTABS
 	RETP
 
+*
+*	ON A FULL FACTORY SETTING (EITHER REQUESTED OR
+*	ADJUSTMENT FAILURE) THIS CLEARS THE AUDITS AND
+*	HIGH SCORE TABLE.
+*
 FAC_STUF
 	CALLA	CLR_AUD 	;CLEAR AUDITS TOO
 	CALLR	RES_ALL 	;ALL TIME TABLE
@@ -842,10 +1156,29 @@ DAX
 	CALLA	CLR_SCRN
 	JSRP	SUR_MESS
 	RETP
+**************************************************************************
+*									 *
+*	   EXIST_LET							 *
+*									 *
+*	   IS THE E_INITS PROCESS RUNNING?				 *
+*									 *
+**************************************************************************
 EXIST_LET
 	MOVI	OPMES_PID,A0		       ;SETUP FOR THE EXISTP
 	MOVI	0FFFFH,A1
 	JAUC   EXISTP
+**************************************************************************
+*									 *
+*	   BUILD_ST							 *
+*									 *
+*	   THIS IS CALLED TO TAKE THE STRING POINTED TO 		 *
+*	   BY -A10- AND REMOVE LEADING AND TRAILING BLANKS		 *
+*	   AND MOVE THE STRING TO "STRNGRAM".				 *
+*									 *
+*	   RETURN THE NUMBER OF TRAILING BLANKS IN A2.			 *
+*	   RETURN .EQ. IF ALL BLANK!					 *
+*									 *
+**************************************************************************
 BUILD_ST
 	MMTM	SP,A0,A1,A3,A4,A5,A10
 	CLR	A4		       ;A4 = ZERO UNTIL 1ST NON-BLANK
@@ -862,6 +1195,9 @@ BSLOOP
 BS1
 	CMPI	SPACE,A3	     ;IS IT A SPACE?
 	JRZ	BS2		     ;IT IS...
+*
+*	NON-SPACE CHARACTER
+*
 	OR	A3,A4		     ;INDICATE 1ST NON-BLANK SEEN
 	MOVE	A1,A5		     ;INDICATE THIS IS CURRENT TERMINATOR.
 	JRUC	BS3
@@ -875,9 +1211,16 @@ BS3
 BS4
 	ADDK	BYTE_SIZE,A10	     ;PUSH SOURCE POINTER
 	DSJS	A2,BSLOOP	     ;AND FINISH PARSE
+*
+*	 A5 NOW POINTS AT LAST NON-BLANK CHARACTER
+*
 	ADDK	BYTE_SIZE,A5	     ;THIS IS 1 BEYOND
 	CLR	A2
 	MOVB	A2,*A5		     ;TERMINATE WITH A ZERO.
+*
+*	FOR OUR RETURN, WE NEED TO COMPUTE THE NUMBER OF
+*	TRAILING SPACES IGNORED.
+*
 	MOVE	A4,A4		     ;ALL BLANK?
 	JRNZ	NOT_BLNK
 	MOVI	CMESS_CHARS,A2	     ;ALL CHARS ARE TRAILING BLANKS
@@ -892,6 +1235,9 @@ BL_EX
 	MMFM	SP,A0,A1,A3,A4,A5,A10
 	RETS
 
+* A1 = <COLOR><PALETTE>
+* A3 = DAG OF AREA [YPOS,XPOS]						
+* A4 = [Y,X] SIZE OF AREA						
 
 GO_RED
 	MOVI	ROBO_RED,A1
@@ -910,6 +1256,7 @@ SC_COL
 	CALLA	FILLAREA	;THIS DOES THE SCREEN
 	movk	3,a1			; Any button map mode
 	move	a1,@_switch_map_mode,L
+;	JAUC	WAIT_BUT	;NOW WAIT FOR ANY BUTTON!
 	JSRP	WAIT_BUT
 	movk	1,a1
 	move	a1,@_switch_map_mode,L	; Back to menu map mode
@@ -924,10 +1271,15 @@ GO_CROSS
 	CALLA	CROSS_H
 	movk	3,a1			; Any button map mode
 	move	a1,@_switch_map_mode,L
+;	JAUC	WAIT_BUT	     ;NOW WAIT FOR ANY BUTTON!
 	JSRP	WAIT_BUT
 	movk	1,a1
 	move	a1,@_switch_map_mode,L	; Back to menu map mode
 	RETP
+;	JSRP	WAIT_BUT
+;	CALLA	SCRCLR
+;	CALLA	display_init
+;	RETP
 
 GO_SWTEST
 	CALLA	SCRCLR
@@ -936,6 +1288,8 @@ GO_SWTEST
 	JSRP	TOP_BOX
 	clr	a0
 	JSRP	SWITCHTEST
+;	CALLA	SCRCLR
+;	CALLA	display_init
 	RETP
 
 dipsw_test
@@ -947,18 +1301,29 @@ dipsw_test
 	JSRP	SWITCHTEST
 	RETP
 	
+;GO_ROMTEST
+;	JAUC	ROM_CHK
 
 GO_BARS
+;	MOVI	8000H,A1
+;	CLR	A0
+;	CALLA	KILALL
 	CALLA	SCRCLR
 	MMTM	SP,A12,A13
 	CALLA	COL_BARS
 	MMFM	SP,A12,A13
 	movk	3,a1			; Any button map mode
 	move	a1,@_switch_map_mode,L
+;	JAUC	WAIT_BUT	     ;NOW WAIT FOR ANY BUTTON!
 	JSRP	WAIT_BUT
 	movk	1,a1
 	move	a1,@_switch_map_mode,L	; Back to menu map mode
 	RETP
+;	JSRP	WAIT_BUT
+;	CALLA	SCRCLR
+;	CALLA	display_init
+;	CALLA	COLRSTRT
+;	RETP
 
 DO_BURN
 	MOVI	MESS_BURN,A8	     ;CLEAR COIN SUB-TOTALS...ARE YOU SURE
@@ -972,6 +1337,11 @@ ANY_BUT
 	JAUC	B_MENU		     ;DO IT....RETURN WHEN PRESSED.
 
 
+**************************************************************************
+*                                                                        *
+*         HARDWARE INFORMATION SELECTED                                  *
+*                                                                        *
+**************************************************************************
 	.data
 
 M_DIPTEST
@@ -1228,6 +1598,20 @@ TADJ_SETUP
 	.byte	0,0
 	.even
 
+;SNDRELEASE_NUM_PROMPT:
+;	MESS_MAC RD15FONT,SPACING07,200,130,ROBO_PURPLE,STRCNRM,0
+;	.string	"Sound Software Version:\n"
+;	.string "RELEASE %2ld"
+;	.byte	0,0
+;	.long	_serial_number
+;	.even
+;SNDPROTO_NUM_PROMPT:
+;	MESS_MAC RD15FONT,SPACING07,200,130,ROBO_PURPLE,STRCNRM,0
+;	.string	"Sound Software Version:\n"
+;	.string "PROTO %2ld"
+;	.byte	0,0
+;	.long	_serial_number
+;	.even
 
 WILLY_Y		EQU	50
 UNIT_Y		EQU	WILLY_Y+50
@@ -1293,16 +1677,27 @@ MEN_CLOCK
 	.word	ROBO_DECAY	;TEXT COLOR OF SELECTED ITEM (SHOULD BE DECAY)
 	.long	MESS_DISPLAY,GO_DISPLAY,CLK_DISPLAY_HELP
 	.long	MESS_SET,GO_TIME_SET,CLK_SET_HELP
+;	.long	MESS_CALIBRATE,GO_CALIBRATE,CLK_CALIBRATE_HELP
+;	.long	MESS_MM,RET_CLOCK,NO_HELP
 	.long	MESS_MM,RET_CLOCK,BLNK_HELP
 	.long	0
 
 
 
+*
+*	CLOCK SET MENU IS SKINNY..LEAVING ROOM FOR EXPLANATION.
+*
 CS_BDY	EQU	-2
 CS_WID	EQU	0A7H
 CS_X	EQU	TIT_ULX+GAP+MB_XWID+(CS_WID/2)+C_KLUDGE
 CS_Y	EQU	INST_LRY+BOX_YGAP+MB_YWID+GAP-CS_BDY
+*
+*	RIGHT MARGIN OF ADJUST MENU BOX
+*
 CS_RX	EQU	TIT_ULX+(2*GAP)+CS_WID+(2*MB_XWID)
+*
+*	LEFT MARGIN OF HELP BOX
+*
 CS_HX	EQU	CS_RX+BOX_XGAP
 
 M_TIME_SET
@@ -1712,6 +2107,7 @@ GO_CALIBRATE:
 	calla	CLR_SCRN
 	RETP				; All done
 
+; a0 = pointer to MESS_MAC TO COPY message is copied from message_buffer
 _setup_message:
 	movi	_setup_mess,a1
 	movk	10,a2
@@ -1733,6 +2129,10 @@ _sm_done
 	move	a2,*a1
 	rets
 
+*******************************************************************
+* _GetTime - Process subroutine to get the current time.  Time is
+*            returned in the _tXXXXXX globals.
+*
   SUBRP _GetTime
 	move	@_clk_rd,a0,L	;Save status of auto update
 	move	a0,@_auto_update_save,L
@@ -1745,6 +2145,7 @@ _sm_done
 	move	a0,@_clk_rd,L	;Restore auto update status
 	RETP			;All done
 
+; Process Subroutine to print time
 _display_time:
 	clr	a0
 	move	a0,@message_buffer
@@ -1844,6 +2245,11 @@ GO_DISPLAY:
 	movi	ROBO_GREEN,a3
 	JSRP	TOP_BOX
 GO_CLKS:
+;	move	@_clk_rd,a0,L		;Save current auto update state
+;	move	a0,@_auto_update_save,L
+;	clr	a0			;Enable auto update
+;	move	a0,@_clk_rd,L
+;	JSRP	_GetTime
 	movi	MESS_CLKD_PROMPTS,a8	; Put up assorted prompts
 	JSRP	L_MESS
 	SLEEP	5
@@ -1898,6 +2304,8 @@ _no_year_pad
 	movi	_setup_mess,a8
 	JSRP	L_MESS
 	JSRP	_display_time
+;	move	@_auto_update_save,a0,L	;Restore Auto Update state
+;	move	a0,@_clk_rd,L
 	movi	0c7h,a3
 	calla	SNDSND
 	RETP				; All done
@@ -1921,11 +2329,13 @@ GO_CLOCK_SET:
 	calla	_set_time
 	movi	MESS_RTC_SET,a8		; Put up "CLOCK SET" message
 	JSRP	L_MESS
+;	SLEEP	16
 	SLEEP	30
 	callr	_transfer_time
 	jauc	GO_CLKS
 
 GO_TIME_SET
+;	JSRP	_GetTime
 	callr	_transfer_time
 	movi	MEN_TIME_SET,a8
 GEN_TIME_SET
@@ -1961,6 +2371,11 @@ GO_TS_QUIT
 
 _do_title
 	mmtm	a12,a10,a11,a8	     ;SAVE STUFF FOR CALLER
+;	move	@_clk_rd,a0,L		;Save current auto update state
+;	move	a0,@_auto_update_save,L
+;	clr	a0			;Enable auto update
+;	move	a0,@_clk_rd,L
+;	JSRP	_GetTime
 	subk	4,a10
 	move	a11,a6
 	movi	CS_HX,a9
@@ -1981,6 +2396,8 @@ _adj_time_and_date
 	movi	DAY_TABLE,a8		; Put Day of week up
 	move	@_rtc_day,a0		; Day of week number (1-7)
 	dec	a0
+;	cmpi	6,a0
+;	jrgt	_abad_day
 	sll	5,a0
 	add	a0,a8
 	move	*a8,a4,L
@@ -1993,6 +2410,8 @@ _abad_day
 	movi	MONTH_TABLE,a8		; Put month of year up
 	move	@_rtc_month,a0		; Month of year number (1 - 12)
 	dec	a0
+;	cmpi	11,a0
+;	jrgt	_abad_month
 	sll	5,a0
 	add	a0,a8
 	move	*a8,a4,L
@@ -2149,6 +2568,9 @@ SECOND_SET
 	JSRP	_adj_time_and_date
 	RETP
 
+; a0 = value code
+; a8 = PTR to data struct
+; TRASHES a0, a3, a2
 _ts_val_up:
 	mmtm	sp,a0,a2,a3
 	sll	4,a0
@@ -2165,6 +2587,9 @@ _ts_vu_done
 	mmfm	sp,a0,a2,a3
 	rets
 
+; a0 = value code
+; a8 = PTR to data struct
+; TRASHES a0, a3
 _ts_val_down:
 	mmtm	sp,a0,a3,a1
 	sll	4,a0
@@ -2226,11 +2651,16 @@ TS_CAN:
 	RETP
 
 
+********************************
+* DIAGNOSTIC TESTS
+*
+* SOUND TEST STUFF
 
 NCHAN		EQU	6	;DECLARE NUMBER OF ALLOWED CHANNELS
 MUSICHAN	EQU	3	;THIS CHANNEL IS FOR THE TUNES
 
 
+;RESETBIT	EQU	0FE00H	;Sound board reset bit
 
 
 GO_STEST
@@ -2242,6 +2672,9 @@ GO_STEST
 
 	JAUC	GEN_MENU	     	;THIS WILL RETURN TO LEVEL ABOVE US!
 
+;	jsrp	B_MENU			;SEE IF THEY WANT PAGE 2.
+;	cmpi	1,A8			;DID WE GET 1'ST ENTRY?
+;	RETP
 
 SNDTST
 	MOVI	SNDMES,A8	;MESSAGE POINTER
@@ -2281,6 +2714,9 @@ SNDSLP1
 
 SNDX1	RETS
 
+*SOUND TABLE
+*MESSAGE,CHANNEL,SOUNDCODE
+*
 SNDMES	
 	.byte	"TUNE 1 (1)",0
 	.byte	MUSICHAN,1
@@ -2317,6 +2753,8 @@ snd_tout_mes
 	.byte	0,0,0
 	.even
 
+*************************************************************
+*
  SUBRP	GetSoundRev
 	move	@_coin_counter_addr,a0,L
 	movi	030h,a1				; Yank down the reset
@@ -2330,20 +2768,20 @@ snd_tout_mes
 	move	@_sound_addr,a0,L		; Bypass the diags
 	movb	a0,*a0
 	movi	500000,a1			; Wait fer a while
-nqgiswait_lp
-	dsjs	a1,nqgiswait_lp
+fgpdswait_lp
+	dsjs	a1,fgpdswait_lp
 	clr	a3			; Turn on the sounds
 	move	a3,@SOUNDSUP,W
 	movi	999,a3			; Send revision request sound call
 	calla	SNDSND
 	movi	1000000,a2
-nqgisndrev_loop
+fgpdsndrev_loop
 	move	@_soundirq_addr,a0,L	; Wait fer a response
 	move	*a0,a1,W
 	btst	B_SDAV,a1		; Got a response ?
-	jrz	nqgisnd_response		; BR = yes
-	dsjs	a2,nqgisndrev_loop
-nqgisnd_timeout
+	jrz	fgpdsnd_response		; BR = yes
+	dsjs	a2,fgpdsndrev_loop
+fgpdsnd_timeout
 	movi	SNDTIMEOUT,a4		; If we get here we never got a response
 	calla	copy_rom_string
 	movi	snd_tout_mes,a0
@@ -2351,8 +2789,8 @@ nqgisnd_timeout
 	movi	_setup_mess,a8
 	JSRP	L_MESS
 
-	jruc	nqgisndrev_done		; Then we be done
-nqgisnd_response
+	jruc	fgpdsndrev_done		; Then we be done
+fgpdsnd_response
 	movi	snd_vprompt,a4
 	calla	copy_rom_string
 
@@ -2362,15 +2800,15 @@ nqgisnd_response
 	move	a0,a1
 	andi	0ffh,a1
 	cmpi	0ffh,a1
-	jrz	nqgisnd_timeout
+	jrz	fgpdsnd_timeout
 	andi	0f0h,a1
 	cmpi	0d0h,a1
-	jrz	nqgiproto_version
+	jrz	fgpdproto_version
 	movi	SNDRELEASEPROMPT,a4
-	jruc	nqgido_snd_version
-nqgiproto_version
+	jruc	fgpddo_snd_version
+fgpdproto_version
 	movi	SNDPROTOPROMPT,a4
-nqgido_snd_version
+fgpddo_snd_version
 	calla	concat_rom_string
 	move	@_snd_chip_count,a0,W
 	andi	0fh,a0
@@ -2381,9 +2819,10 @@ nqgido_snd_version
 	callr	_setup_message
 	movi	_setup_mess,a8
 	JSRP	L_MESS
-nqgisndrev_done
+fgpdsndrev_done
 	RETP
 
+*******************************************************************************
 DO_GENTEST
 	
         CALLA   CLR_SCRN
@@ -2393,19 +2832,21 @@ DO_GENTEST
 
         CALLA   SURE_BOX		;PUT A NICE BOX UP!
 
-	movi	nqgisnd_testing_mess,a8
+	movi	fgpdsnd_testing_mess,a8
 	JSRP	L_MESS
 
 	JSRP	GetSoundRev
 
 	;reset the board
 	movi	SNDRSTBIT|32,a0		;pull bit low
+;	move	a0,@COIN_COUNTERS,W
 	move	@_coin_counter_addr,a8,L
 	move	a0,*a8,W
 	movi	8,a14			;wait a bit
 	dsjs	a14,$
 
 	movi	32,a0			;send it high again
+;	move	a0,@COIN_COUNTERS,W
 	move	@_coin_counter_addr,a8,L
 	move	a0,*a8,W
 
@@ -2414,6 +2855,7 @@ DO_GENTEST
 	movi	TSEC*7,a0		;wait for data available
 	JSRP	poll_sdav
 
+;	movb	@SOUNDR,a0		;read from the board (better be 0x79)
 	move	@_sound_addr,a0,L
 	movb	*a0,a0
 	cmpi	79h,a0
@@ -2422,6 +2864,7 @@ DO_GENTEST
 	movi	TSEC/5,a0
 	JSRP	poll_sdav		;great.  now wait for the bong count
 
+;	movb	@SOUNDR,a0
 	move	@_sound_addr,a0,L
 	movb	*a0,a0
 	X32	a0
@@ -2440,25 +2883,30 @@ sdav_not79
         jauc    ANY_BUT
 
 diag_message_table
-	.long	nqgicheck_hardware
-	.long	nqgiboard_ok
-	.long	nqgibad_u2_checksum
-	.long	nqgibad_u3_checksum
-	.long	nqgibad_u4_checksum
-	.long	nqgibad_u5_checksum
-	.long	nqgibad_u6_checksum
-	.long	nqgibad_u7_checksum
-	.long	nqgibad_u8_checksum
-	.long	nqgibad_u9_checksum
-	.long	nqgibad_ram
+	.long	fgpdcheck_hardware
+	.long	fgpdboard_ok
+	.long	fgpdbad_u2_checksum
+	.long	fgpdbad_u3_checksum
+	.long	fgpdbad_u4_checksum
+	.long	fgpdbad_u5_checksum
+	.long	fgpdbad_u6_checksum
+	.long	fgpdbad_u7_checksum
+	.long	fgpdbad_u8_checksum
+	.long	fgpdbad_u9_checksum
+	.long	fgpdbad_ram
 
 
+****************************************
+* Wait for sound board Data AVailable to go active, with timeout.
+* 0a0H=timeout
+* <a0=time remaining
 
  SUBR	poll_sdav
 	PUSHP	a8
 	move	a0,a8
 
 
+;psdav_0	move	@SOUNDIRQ,a1,W
 
 psdav_0
 	move	@_soundirq_addr,a1,L
@@ -2479,6 +2927,9 @@ psdav_timeout
 	RETP
 
 
+****************************************
+*blank the inside of the "are you sure" box
+*
 blnk_sure_box
 	MOVI	[41H,29H],A3
 	MOVI	[0F2H,166H]-[41H,29H],A4
@@ -2493,6 +2944,9 @@ SIRQ_DETECT
 	.STRING	"SOUND IRQ DETECT FUNCTIONAL.",0,0
 	.EVEN
 
+*
+*MESSAGE FOR SOUND BOARD IRQ NOT WORKING
+*
 SIRQ_ERR
 	MESS_MAC RD15FONT,SPACING07,200,95,COLOR_LF,STRCNRM,0
 	.STRING	"** WARNING! **",0,1
@@ -2540,12 +2994,12 @@ DAC_ERR
 	.STRING	"10 TONES - RAM TEST FAILED",0,0
 	.EVEN
 
-nqgisnd_testing_mess
+fgpdsnd_testing_mess
 	MESS_MAC RD7FONT,SPACING07,200,81,COLOR_YELLOW,STRCNRM,0
 	.STRING	"TESTING",0,0
 	.EVEN
 
-nqgicheck_hardware
+fgpdcheck_hardware
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"NO RESPONSE FROM SOUND SYSTEM",0,1
 	.EVEN
@@ -2553,56 +3007,57 @@ nqgicheck_hardware
 	.STRING	"CHECK HARDWARE",0,0
 	.EVEN
 
-nqgiboard_ok
+fgpdboard_ok
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"1 TONE - SOUND BOARD OK",0,0
 	.EVEN
 
-nqgibad_u2_checksum
+fgpdbad_u2_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U2 CHECKSUM",0,0
 	.EVEN
 
-nqgibad_u3_checksum
+fgpdbad_u3_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U3 CHECKSUM",0,0
 	.EVEN
 
-nqgibad_u4_checksum
+fgpdbad_u4_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U4 CHECKSUM",0,0
 	.EVEN
 
-nqgibad_u5_checksum
+fgpdbad_u5_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U5 CHECKSUM",0,0
 	.EVEN
 
-nqgibad_u6_checksum
+fgpdbad_u6_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U6 CHECKSUM",0,0
 	.EVEN
 
-nqgibad_u7_checksum
+fgpdbad_u7_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U7 CHECKSUM",0,0
 	.EVEN
 
-nqgibad_u8_checksum
+fgpdbad_u8_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U8 CHECKSUM",0,0
 	.EVEN
 
-nqgibad_u9_checksum
+fgpdbad_u9_checksum
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"BAD U9 CHECKSUM",0,1
 	.EVEN
 
-nqgibad_ram
+fgpdbad_ram
 	MESS_MAC RD7FONT,SPACING07,200,91,COLOR_YELLOW,STRCNRM,0
 	.STRING	"RAM TEST FAILED",0,1
 	.EVEN
 
+**************************************************************************
 DO_PLAYSOUNDS
 
 	MOVI	SND_INST,A8
@@ -2621,35 +3076,35 @@ DO_PLAYSOUNDS
 	callr	plot_sound
 	move	a10,a3
 	CALLR	MAKE_SOUND
-nqgiloop
+fgpdloop
 	SLEEPK	1
 
 	calla	fudge_switches2
 	move	@fswitches_down,a0,L
 	andi	START_BITS,a0
-	jrnz	nqgiexit
+	jrnz	fgpdexit
 
 	move	@fswitches_down,a0,L
 	andi	ACTION_BITS,a0
-	jrz	nqgino_play_sound
+	jrz	fgpdno_play_sound
 	move	a10,a3
 	CALLR	MAKE_SOUND
-	jruc	nqgiloop
-nqgino_play_sound
+	jruc	fgpdloop
+fgpdno_play_sound
 
 	move	a10,a2
 	move	@fswitches_cur,a0,L
 	andi	UP_BITS,a0
-	jrz	nqgino_down
+	jrz	fgpdno_down
 	inc	a2
-nqgino_down
+fgpdno_down
 	move	@fswitches_cur,a0,L
 	andi	DOWN_BITS,a0
-	jrz	nqgino_up
+	jrz	fgpdno_up
 	dec	a2
-nqgino_up
+fgpdno_up
 	cmp	a2,a10
-	jreq	nqgiloop		;no change
+	jreq	fgpdloop		;no change
 
 	push	a2
 	movi	ROBO_BLACK,a0
@@ -2665,20 +3120,23 @@ nqgino_up
 	CALLR	MAKE_SOUND
 
 	movi	30,a11
-nqgiwait_release
+fgpdwait_release
 
 	calla	fudge_switches2
 	move	@fswitches_cur,a0,L
 	andi	UP_BITS|DOWN_BITS,a0
-	jrz	nqgiloop
+	jrz	fgpdloop
 	SLEEPK	1
-	dsj	a11,nqgiwait_release
-	jruc	nqgiloop
+	dsj	a11,fgpdwait_release
+	jruc	fgpdloop
 
-nqgiexit
+fgpdexit
 	JSRP	QSNDRST
 	RETP
 
+**************************************************************************
+* colour in a0
+* sound number 0-3 passed in a1
 plot_sound
 	PUSH	a10
 	sll	5,a1			;x 32 bits
@@ -2691,16 +3149,39 @@ plot_sound
 	JSRP	LM_FINIS		;plot strings
 	PULL	a10
 	rets
+*
+*MAKE_SOUND - MAKE A SOUND TEST SOUND
+*A3 = INDEX INTO TEST SOUND LIST
+*NOTE: TRASHES A3
 MAKE_SOUND
 	SLL	4,A3
 	ADDI	TEST_SOUND_TAB,A3
 	MOVE	*A3,A3,W
 	JAUC	SNDSND
 
+**************************************************************************
+*									 *
+*	   MONITOR PATTERNS						 *
+*									 *
+**************************************************************************
 GO_PATTERNS
 	MOVI	MEN_PATTERNS,A8      ;PUT UP THE MENU AND GO!
 	JAUC	GEN_MENU	     ;THIS WILL RETURN TO LEVEL ABOVE US!
 
+*******************************************************************************
+*******************************************************************************
+*******************************************************************************
+*
+*	       A   U   D   I   T	D   I	S   P	L   A	Y   S
+*
+*******************************************************************************
+*******************************************************************************
+*******************************************************************************
+**************************************************************************
+*									 *
+*	   AUDIT TABLE STRUCTURE					 *
+*									 *
+**************************************************************************
 
 	STRUCT	0
 	APTR	AUD_MESS	;*Text
@@ -2727,6 +3208,8 @@ AUD_DY		EQU	14
 
 CP2_Y		EQU	156		;PART 2 OF COIN AUDIT PAGE.
 
+********************************
+* (doesn't display dollar values)
 
 COIN_OCTO_AUDS
 	.word	AUD_Y_STRT+50,12+8		;Y start, Y spacing
@@ -2739,6 +3222,8 @@ COIN_OCTO_AUDS
 
 
 
+********************************
+* TOP HALF OF COIN AUDIT PAGE 1 TABLE
 
 COIN_AUDS
 	.word	AUD_Y_STRT,12+5			;Y start, Y spacing
@@ -2749,6 +3234,8 @@ COIN_AUDS
 	AMAC	M_XCOIN,0,AUDXCOIN,ROBO_YELLOW
 	AMAC	M_DBV,0,AUD_DBV,ROBO_YELLOW
 	AMAC	M_START,STARTS,0,ROBO_GREEN
+;	AMAC	M_CONTO,0,AUD_CONTOFFERED,ROBO_GREEN
+;	AMAC	M_CONT,0,AUD_CONTTAKEN,ROBO_GREEN
 	.long	0
 
 COIN1_AUDS
@@ -2762,6 +3249,7 @@ COIN2_AUDS
 	.word	AUD_LM,AUD_RM			;LFT/RGT margin X
 	AMAC	M_SERV,0,AUDSERV,01212H
 	AMAC	M_PLAYS,DOPLAYS,0,ROBO_YELLOW
+;	AMAC	M_HSLEFT,DOHSLEFT,0,ROBO_YELLOW
 	.long	0
 
 amst_s	TXTLINE	"ATTRACT MODE STARTS"
@@ -2776,8 +3264,53 @@ M_AVGT	.byte	"AVG. ",ASCII_DQ,"PLAYER",ASCII_DQ," GAME TIME (MIN.)",0
 	.even
 
 
+;*	  BOTTOM HALF OF COIN AUDIT PAGE 1 TABLE
+;COIN_A2	.WORD CP2_Y 		;Y START
+;	.WORD AUD_DY		;Y BETWEEN ENTRIES
+;	.WORD AUD_LM		;LEFT MARGIN X
+;	.WORD AUD_RM		;RIGHT MARGIN X
+;	AMAC	M_START,STARTS,0,ROBO_YELLOW
+;	AMAC	M_CONT,CONTINS,0,ROBO_YELLOW
+;	AMAC	M_PLAYS,DOPLAYS,0,ROBO_YELLOW
+;	AMAC	M_HSLEFT,DOHSLEFT,0,ROBO_YELLOW
+;	.LONG 0
 
+**************************************************************************
+*									 *
+*	   COIN_D1							 *
+*									 *
+*	   THIS IS TOP HALF OF DETAILED COIN AUDIT PAGE 		 *
+*	   ITS THE SAME AS THE OTHER COIN PAGE WITH THE Y POSITIONING	 *
+*	   A LITTLE DIFFERENT						 *
+*									 *
+**************************************************************************
+;COIN_D1
+;	  .WORD   39H			;Y START
+;	  .WORD   11H			;Y BETWEEN ENTRIES
+;	  .WORD   AUD_LM		;LEFT MARGIN X
+;	  .WORD   AUD_RM		;RIGHT MARGIN X
+;	  AMAC	  M_LCOIN,0,AUDLCOIN,ROBO_YELLOW
+;	  AMAC	  M_CCOIN,0,AUDCCOIN,ROBO_YELLOW
+;	  AMAC	  M_RCOIN,0,AUDRCOIN,ROBO_YELLOW
+;	  .LONG   0
+*
+*	 DOOR CLOSED AUDITS.
+*
+;COIN_D2
+;	  .WORD   090H			;Y START
+;	  .WORD   11H			;Y BETWEEN ENTRIES
+;	  .WORD   AUD_LM		;LEFT MARGIN X
+;	  .WORD   AUD_RM		;RIGHT MARGIN X
+;	  AMAC	  M_LCOIN,0,AUDLCDC,ROBO_YELLOW
+;	  AMAC	  M_CCOIN,0,AUDCCDC,ROBO_YELLOW
+;	  AMAC	  M_RCOIN,0,AUDRCDC,ROBO_YELLOW
+;	  .LONG   0
 
+**************************************************************************
+*									 *
+*	   GAME PLAY AUDIT SCREEN					 *
+*									 *
+**************************************************************************
 
 	.asg	50,LM
 	.asg	400-50,RM
@@ -2810,6 +3343,7 @@ GAME_AUDS2
 	AMAC	str_fastcpuwin,	prn_fastcwin,0,	ROBO_GREEN
 	AMAC	str_combo_per,  prn_combogames,0,	ROBO_GREEN
 	AMAC	str_fasthumwin,	prn_fasthwin,0,	ROBO_GREEN
+;	AMAC	str_kanomorph,	prn_kanomorph,0,	ROBO_GREEN
 
 	AMAC	str_lockups,	0,AUD_LOCKUP,	ROBO_CYAN
 	AMAC	str_lockups2,	0,AUD_LOCKUP2,	ROBO_CYAN
@@ -2838,6 +3372,7 @@ GAME_AUDS3a
 	AMAC	str_bbbig,	0,AUD_BBBIG,	ROBO_PURPLE
 	AMAC	str_dclow,	0,AUD_DCLOW,	ROBO_GREEN
 	AMAC	str_lluge,	0,AUD_LLUGE,	ROBO_YELLOW
+;	AMAC	str_adam,	dummy,0,	ROBO_BLUE
 	.long	0
 
 GAME_AUDS3b
@@ -2874,6 +3409,7 @@ GAME_AUDS3d
 	AMAC	str_space,	bbbig_cwinpct,0,ROBO_PURPLE
 	AMAC	str_space,	dclow_cwinpct,0,ROBO_GREEN
 	AMAC	str_space,	lluge_cwinpct,0,ROBO_YELLOW
+;	AMAC	str_space,	prn_adam,0,	ROBO_WHITE
 	.long	0
 
 GAUD_P3HEAD1
@@ -2906,6 +3442,7 @@ GAUD_P3HEAD6
 	.STRING	"WINS",0,0
 	.EVEN
 
+;page 1
 str_totuptime	TXTLINE	"TOTAL GAME UPTIME (HRS:MINS)"
 str_totpltime	TXTLINE	"TOTAL GAME PLAY TIME (HRS:MINS)"
 str_1pplay	TXTLINE "ONE-PLAYER PLAY"
@@ -2925,22 +3462,25 @@ str_rumwins	TXTLINE	"ROYAL RUMBLE WINS"
 str_p1icons	TXTLINE	"PLAYER 1 MAX ICONS"
 str_p2icons	TXTLINE	"PLAYER 2 MAX ICONS"
 
+;page 2
 str_gametime	TXTLINE "AVG MATCH TIME (MIN:SEC)"
 str_vshumtime	TXTLINE "AVG HUMAN VS HUMAN TIME"
 str_cpuwintime	TXTLINE "AVG CPU WIN TIME"
 str_cpulosstime	TXTLINE "AVG CPU LOSS TIME"
 str_fasthvh	TXTLINE "FASTEST 2-PLAYER WIN"
+;str_kanomorph	TXTLINE	"KANO TRANSFORMATIONS"
 str_credlen	TXTLINE "AVG 1 PLAYER TIME PER CREDIT"
 str_fastcpuwin	TXTLINE "FASTEST CPU WIN"
 str_fasthumwin	TXTLINE "FASTEST CPU LOSS"
 str_combo_per	TXTLINE "HUMAN COMBO GAMES"
 str_lockups	TXTLINE	"DOGS"
 str_lockups2	TXTLINE	"PROCESS KO"
-str_snderr1	TXTLINE	"SND ERR nqgi1 (IRQ)"
-str_snderr2	TXTLINE	"SND ERR nqgi2 (ROM CHECKSUM)"
-str_snderr3	TXTLINE	"SND ERR nqgi3 (RAM TEST)"
-str_snderr4	TXTLINE	"SND ERR nqgi4 (SDAV)"
+str_snderr1	TXTLINE	"SND ERR fgpd1 (IRQ)"
+str_snderr2	TXTLINE	"SND ERR fgpd2 (ROM CHECKSUM)"
+str_snderr3	TXTLINE	"SND ERR fgpd3 (RAM TEST)"
+str_snderr4	TXTLINE	"SND ERR fgpd4 (SDAV)"
 
+;page 3
 str_bhart	TXTLINE	"BRET HART"
 str_rramo	TXTLINE	"RAZOR RAMON"
 str_under	TXTLINE "UNDERTAKER"
@@ -2949,6 +3489,7 @@ str_smich	TXTLINE "SHAWN MICHAELS"
 str_bbbig	TXTLINE "BAM BAM BIGELOW"
 str_dclow	TXTLINE "DOINK THE CLOWN"
 str_lluge	TXTLINE "LEX LUGER"
+;str_adam	TXTLINE "ADAM BOMB APPEARANCES"
 
 str_pct		TXTLINE	"%"
 
@@ -2977,6 +3518,8 @@ ROBO_BLACK	EQU	1414H	;BLACK AS COAL
  .endif
 
 
+*****************************************************************************
+* total uptime
 prn_uptime
 	movi	AUD_UPTIME,a0
 	calla	GET_AUD
@@ -2986,6 +3529,8 @@ prn_uptime
 	jruc	P_TIME
 
 
+*****************************************************************************
+* actual play time
 prn_pltime
 	movi	AUD_PLTIME,a0
 	calla	GET_AUD
@@ -2995,6 +3540,8 @@ prn_pltime
 	jruc	P_TIME
 
 
+*****************************************************************************
+* percentage of 1 player play
 prn_1plpct
 	movi	AUD_PLTIME,a0
 	calla	GET_AUD
@@ -3011,6 +3558,8 @@ prn_1plpct
 	jruc	PERCENT_WORK
 
 
+*****************************************************************************
+* percentage of 2 player play
 prn_2plpct
 	movi	AUD_PLTIME,a0
 	calla	GET_AUD
@@ -3027,6 +3576,8 @@ prn_2plpct
 	jruc	PERCENT_WORK
 
 
+*****************************************************************************
+*
 prn_cpuwins
 	movi	AUD_VSCPUF,a0
 	calla	GET_AUD
@@ -3043,6 +3594,8 @@ prn_cpuwins
 	jruc	PERCENT_WORK
 
 
+*****************************************************************************
+* avg battle time (all categories)
 
 prn_avgtime
 	movi	AUD_2PBTIME,a0
@@ -3067,6 +3620,8 @@ prn_avgtime
 	jruc	P_TIME
 
 
+*****************************************************************************
+* avg 2-player battle time
 
 prn_hvhtime
 	movi	AUD_2PBTIME,a0
@@ -3081,6 +3636,8 @@ prn_hvhtime
 	jruc	P_TIME
 
 
+*****************************************************************************
+* avg CPU win time
 
 prn_cwintime
 	movi	AUD_CPUWINTIME,a0
@@ -3095,6 +3652,8 @@ prn_cwintime
 	jruc	P_TIME
 
 
+*****************************************************************************
+* avg CPU loss time
 
 prn_closstime
 	movi	AUD_CPULOSETIME,a0
@@ -3113,12 +3672,46 @@ prn_closstime
 	jruc	P_TIME
 
 
+*****************************************************************************
+* fastest human v human win
 
 prn_fasthvh
 	movi	AUD_FASTHDH,a0
 	calla	GET_AUD
 	jruc	P_TIME
 
+*****************************************************************************
+;* KANO MORPHS
+;
+;prn_adam
+;prn_kanomorph
+;	movi	AUD_VSCPUF,a0
+;	calla	GET_AUD
+;	CMPI	3000,A1
+;	JRLE	ZERO_MORPHS
+;	MOVI	10,A0
+;	CALLA	RNDRNG0
+;	MOVE	A0,A8
+;	PUSH	A8
+;	MOVI	MESS_AUD_NUM,A8 	;SETUP FOR AUDIT NUMBER
+;	CALLA	LM_SETUP
+;	PULL	A8
+;	CALLA	HEXTOASC		;NOW WE POINT TO THE STRING.
+;	move	*a13(AT_PTR),a6,L	;Get *audit
+;	move	*a6(AUD_COLOR),a6
+;	JSRP	RIGHT_FINISH	;PRINT THE LINE
+;dummy
+;	RETP
+;
+;ZERO_MORPHS
+;	MOVI	MESS_AUD_NUM,A8 	;SETUP FOR AUDIT NUMBER
+;	CALLA	LM_SETUP
+;	CLR	A8
+;	CALLA	HEXTOASC		;NOW WE POINT TO THE STRING.
+;	move	*a13(AT_PTR),a6,L	;Get *audit
+;	move	*a6(AUD_COLOR),a6
+;	JSRP	RIGHT_FINISH	;PRINT THE LINE
+;	RETP
 
 
 prn_credlen
@@ -3134,6 +3727,8 @@ prn_credlen
 	jruc	P_TIME
 
 
+*****************************************************************************
+* fastest computer win
 
 prn_fastcwin
 	movi	AUD_FASTCDH,a0
@@ -3141,6 +3736,8 @@ prn_fastcwin
 	jruc	P_TIME
 
 
+*****************************************************************************
+* fastest computer loss
 
 prn_fasthwin
 	movi	AUD_FASTHDC,a0
@@ -3148,78 +3745,83 @@ prn_fasthwin
 	jruc	P_TIME
 
 
+*****************************************************************************
+* percentage of human combo games
 
 prn_combogames
 	movi	AUD_COMBO,a2
 	movi	AUD_TOTALGAMES,a0
-	jruc	aernset
+	jruc	qoglset
 
+******************************************************************************
+* wrestler win percentages
+*
 
 bhart_hwinpct
 	movi	AUD_BHART,a0
 	movi	AUD_BHARTHW,a2
-	jruc	aernset
+	jruc	qoglset
 bhart_cwinpct
 	movi	AUD_BHARTC,a0
 	movi	AUD_BHARTCW,a2
-	jruc	aernset
+	jruc	qoglset
 rramo_hwinpct
 	movi	AUD_RRAMO,a0
 	movi	AUD_RRAMOHW,a2
-	jruc	aernset
+	jruc	qoglset
 rramo_cwinpct
 	movi	AUD_RRAMOC,a0
 	movi	AUD_RRAMOCW,a2
-	jruc	aernset
+	jruc	qoglset
 under_hwinpct
 	movi	AUD_UNDER,a0
 	movi	AUD_UNDERHW,a2
-	jruc	aernset
+	jruc	qoglset
 under_cwinpct
 	movi	AUD_UNDERC,a0
 	movi	AUD_UNDERCW,a2
-	jruc	aernset
+	jruc	qoglset
 yoko_hwinpct
 	movi	AUD_YOKO,a0
 	movi	AUD_YOKOHW,a2
-	jruc	aernset
+	jruc	qoglset
 yoko_cwinpct
 	movi	AUD_YOKOC,a0
 	movi	AUD_YOKOCW,a2
-	jruc	aernset
+	jruc	qoglset
 smich_hwinpct
 	movi	AUD_SMICH,a0
 	movi	AUD_SMICHHW,a2
-	jruc	aernset
+	jruc	qoglset
 smich_cwinpct
 	movi	AUD_SMICHC,a0
 	movi	AUD_SMICHCW,a2
-	jruc	aernset
+	jruc	qoglset
 bbbig_hwinpct
 	movi	AUD_BBBIG,a0
 	movi	AUD_BBBIGHW,a2
-	jruc	aernset
+	jruc	qoglset
 bbbig_cwinpct
 	movi	AUD_BBBIGC,a0
 	movi	AUD_BBBIGCW,a2
-	jruc	aernset
+	jruc	qoglset
 dclow_hwinpct
 	movi	AUD_DCLOW,a0
 	movi	AUD_DCLOWHW,a2
-	jruc	aernset
+	jruc	qoglset
 dclow_cwinpct
 	movi	AUD_DCLOWC,a0
 	movi	AUD_DCLOWCW,a2
-	jruc	aernset
+	jruc	qoglset
 lluge_hwinpct
 	movi	AUD_LLUGE,a0
 	movi	AUD_LLUGEHW,a2
-	jruc	aernset
+	jruc	qoglset
 lluge_cwinpct
 	movi	AUD_LLUGEC,a0
 	movi	AUD_LLUGECW,a2
-	jruc	aernset
-aernset
+	jruc	qoglset
+qoglset
 	calla	GET_AUD
 	move	a1,a4
 	move	a2,a0
@@ -3232,6 +3834,9 @@ aernset
 	move	a2,a3
 	jruc	PERCENT_WORK
 
+**************************************************************************
+* NUMBER_WORK - Print audit number
+* A3=#
 
 PERCENT_WORK
 	MOVI	MESS_AUD_NUM,A8 	;SETUP FOR AUDIT NUMBER
@@ -3262,6 +3867,7 @@ PERCENT_WORK
 	move	a0,*a13(AT_RX)		;restore right margin
 	RETP
 
+*****************************************************************************
 
 MISC_AUD
 	.word	50,18,AUD_LM,AUD_RM		;Y start, Y spacing, LMar, RMar
@@ -3279,6 +3885,10 @@ adiff_s	TXTLINE	"GAME DIFFICULTY LEVEL"
 
 
 	.IF	0
+********************************
+* Display revision message
+* Do coin DIP if enabled
+* Check cmos, if bad reset to factory
 
 FACCHECK
 	calla	dpageflip_off
@@ -3351,6 +3961,8 @@ dipcoinage_mess
 	.ENDIF
 
 
+********************************
+* Octopus sucessful, show stats
 
 HID_P
 	CALLA	display_init 		;MAKE SURE A13 IS OK BEFORE ANY ACTIONS!
@@ -3360,6 +3972,9 @@ HID_P
 	MOVI	ROBO_LF,A3
 	JSRP	TOP_BOX 		;PRINT TITLE BOX.
 
+*	A4 = UPPER LEFT Y,X					      *
+*	A5 = LOWER RIGHT Y,X					      *
+*	A6 = NUMBER OF SLICES GOING IN. 			      *
 
 	calla	CLR_SCRN		;Clr screen
 
@@ -3416,6 +4031,8 @@ HID_P
 	JAUC	DIAG_EX			;NOW GET OUT!
 
 
+**************************************************************************
+* PRNT_AUD - THIS IS CALLED TO PRINT OUT AN AUDIT TABLE
 
 AT_PTR	 EQU	PDATA			;LONG
 AT_Y	 EQU	PDATA+LONG_SIZE		;WORD
@@ -3454,6 +4071,15 @@ PA1	JSRP	aud_prtone
 
 	RETP
 
+**************************************************************************
+*									 *
+*	   ADD_AUDIT_DY 						 *
+*									 *
+*	   THIS IS CALLED TO MOVE THE AUDIT Y (STORE IN 		 *
+*	   PROCESS AREA) TO THE NEXT AUDIT BY ADDING THE		 *
+*	   CURRENT DY (ALSO STORED IN PROCESS AREA).			 *
+*									 *
+**************************************************************************
 ADD_AUDIT_DY
 	MMTM	SP,A1,A2
 	MOVE	*A13(AT_Y),A1,W
@@ -3470,6 +4096,8 @@ BEGIN_AUDIT
 	MMFM	SP,A0
 	RETS
 
+********************************
+* Print an audit line
 
  SUBRP	aud_prtone
 
@@ -3498,6 +4126,12 @@ apo50
 	jruc	LEFT_FINISH
 
 
+********************************
+* LEFT_FINISH AND RIGHT_FINISH
+*
+* THESE ARE CALLED TO PUT AUDIT INFO
+* ON THE LEFT OR RIGHT SIDE ONCE A8 POINTS AT
+* THE CORRECT DATA TO PRINT
 
 LEFT_FINISH
 	CALLR	TURN_RED_IF_NEC
@@ -3555,6 +4189,9 @@ SET_RIGHT_X
 	MMFM	SP,A3
 	RETS
 
+**************************************************************************
+* NUMBER_WORK - Print audit number
+* A3=#
 
 NUMBER_WORK
 	MOVI	MESS_AUD_NUM,A8 	;SETUP FOR AUDIT NUMBER
@@ -3566,6 +4203,13 @@ NUMBER_WORK
 	move	*a6(AUD_COLOR),a6
 	jruc	RIGHT_FINISH
 
+**************************************************************************
+*									 *
+*	   GET_STARTS							 *
+*									 *
+*	   TOTAL GAME STARTS IN A2.					 *
+*									 *
+**************************************************************************
 GET_STARTS
 	MMTM	SP,A0,A1
 	MOVK	AUD1STRT,A0
@@ -3578,6 +4222,13 @@ GET_STARTS
 	MMFM	SP,A0,A1
 	RETS
 
+**************************************************************************
+*									 *
+*	   GET_CONTS							 *
+*									 *
+*	   TOTAL GAME CONTINUES IN A2.					 *
+*									 *
+**************************************************************************
 GET_CONTS
 	MMTM	SP,A0,A1
 	MOVK	AUD1CONT,A0
@@ -3591,9 +4242,15 @@ GET_CONTS
 	RETS
 
 
+**************************************************************************
+* Get total plays (Beginning+starts+continues)
+* Rets: A2=#
 
 GET_PLAYS
 	PUSH	a0
+;	movk	AUDBEGIN,a0
+;	calla	GET_AUD
+;	move	a1,a0
 	clr	a0
 	callr	GET_STARTS	;Actually middle starts
 	add	a2,a0
@@ -3602,6 +4259,19 @@ GET_PLAYS
 	PULL	a0
 	rets
 
+**************************************************************************
+*									 *
+*	   PRINT_MONEY							 *
+*									 *
+*	   THIS IS CALLED TO PRINT OUT THE "MONEY" ON THE MONEY 	 *
+*	   LINE OF THE AUDIT TABLE.					 *
+*									 *
+*	   AUDIT X AND Y IS SET FOR THE LINE TO DISPLAY IT ON.		 *
+*									 *
+*	   A8 HAS THE 1ST OF 3 AUDITS TO USE FOR THE CALCULATION	 *
+*	   A9 HAS THE MESSAGE TO LEFT JUSTIFY ON THE CURRENT LINE	 *
+*									 *
+**************************************************************************
 PRINT_COL
 	MOVI	T_MONEY,A9	     ;THIS ENTRYPOINT IS FOR COLLECTION MESSAGE
 	
@@ -3612,11 +4282,18 @@ PRINT_MONEY
 	JRZ	NO_MONEY	     ;THAT'S ALL FOLKS!
 
 	CALLR	BEGIN_AUDIT	     ;KEEP TRACK OF SANITY OF CALC.
+*
+*	ROUTINE IN A2 FORMS STRING BASED ON 3 AUDITS STARTING
+*	WITH THE NUMBER IN A8.
+*
 	CALLR	STR_OBJ 	     ;GET AN OBJECT FOR STRINGING
 	JRC	NO_MONEY	     ;COULDN'T GET AN OBJECT!
 
 	CALLR	SUM_COINS	     ;ADD UP THE COIN PARTS IN A2
 
+*
+*	WE'RE DOING A PREFIX STRING...NO PREFIX IF ITS BEEN TAMPERED
+*
 	CALLR	SIXP		     ;HAVE THE 6 BEEN TAMPERED
 	JRZ	NO_PREFIX
 	CALLR	GET_CSPT	     ;A6 POINTS AT CSECECT DATA.
@@ -3630,6 +4307,10 @@ NO_PREFIX
 
 	MOVI	ADJCDIV,A0	     ;GET THE COIN PARTS PLEASE
 	CALLA	GET_ADJ
+*
+*	GET QUOTIENT IN A2
+*	REMAINDER IN A3
+*
 DIV_BY_1
 	MOVE	A2,A3		     ;SETUP <A2><A3> AS DIVIDEND
 	CLR	A2
@@ -3642,8 +4323,14 @@ DIV_BY_1
 
 	CMPI	1,A0		     ;IS DIVISOR ONE??????
 	JRZ	NOFRAC		     ;YEP.......NO DECIMAL!
+*
+*	WE HAVE A DIVISOR.....WE NEED TO DISPLAY CENTS.
+*
 	MOVI	ME_DECIMAL,A8	     ;ADD DECIMAL POINT
 	CALLA	STRCAT		     ;ITS THERE!
+*
+*	REMAINDER IS IN A3....TURN IT TO 100THS.
+*
 	MOVI	100,A2
 	MPYU	A2,A3		     ;REMAINDER TIMES 100
 	MOVE	A3,A2		     ;DIVIDEND IN A2
@@ -3673,6 +4360,9 @@ COIN_SUF
 NO_MONEY
 	RETP
 
+**************************************************************************
+* prints up collection minus $$$
+*
 
 PRINT_COL2
 	MOVI	T_MONEY2,A9	     ;THIS ENTRYPOINT IS FOR COLLECTION MESSAGE
@@ -3683,11 +4373,22 @@ PRINT_COL2
 	JRZ	NO_MONEY2	     ;THAT'S ALL FOLKS!
 
 	CALLR	BEGIN_AUDIT	     ;KEEP TRACK OF SANITY OF CALC.
+*
+*	ROUTINE IN A2 FORMS STRING BASED ON 3 AUDITS STARTING
+*	WITH THE NUMBER IN A8.
+*
 	CALLR	STR_OBJ 	     ;GET AN OBJECT FOR STRINGING
 	JRC	NO_MONEY2	     ;COULDN'T GET AN OBJECT!
 
 	CALLR	SUM_COINS	     ;ADD UP THE COIN PARTS IN A2
 
+*
+*	WE'RE DOING A PREFIX STRING...NO PREFIX IF ITS BEEN TAMPERED
+*
+;;	CALLR	SIXP		     ;HAVE THE 6 BEEN TAMPERED
+;;	JRZ	NO_PREFIX2
+;;	CALLR	GET_CSPT	     ;A6 POINTS AT CSECECT DATA.
+;;	MOVE	*A6(CS_LMES),A8,L    ;LEFT STRING FOR MONEY TOTAL
 	movi	M_VERINF,a8
 	CALLA	STRCAT		     ;SHOVE THE STRING IN!
 
@@ -3698,6 +4399,10 @@ NO_PREFIX2
 
 	MOVI	ADJCDIV,A0	     ;GET THE COIN PARTS PLEASE
 	CALLA	GET_ADJ
+*
+*	GET QUOTIENT IN A2
+*	REMAINDER IN A3
+*
 DIV_BY_12
 	MOVE	A2,A3		     ;SETUP <A2><A3> AS DIVIDEND
 	CLR	A2
@@ -3710,8 +4415,15 @@ DIV_BY_12
 
 	CMPI	1,A0		     ;IS DIVISOR ONE??????
 	JRZ	NOFRAC2		     ;YEP.......NO DECIMAL!
+*
+*	WE HAVE A DIVISOR.....WE NEED TO DISPLAY CENTS.
+*
+;;	MOVI	ME_DECIMAL,A8	     ;ADD DECIMAL POINT
 	MOVI	ME_DASH,A8	     ;ADD DASH
 	CALLA	STRCAT		     ;ITS THERE!
+*
+*	REMAINDER IS IN A3....TURN IT TO 100THS.
+*
 	MOVI	100,A2
 	MPYU	A2,A3		     ;REMAINDER TIMES 100
 	MOVE	A3,A2		     ;DIVIDEND IN A2
@@ -3741,10 +4453,27 @@ COIN_SUF2
 NO_MONEY2
 	RETP
 
+**************************************************************************
+*									 *
+*	   STR_OBJ							 *
+*									 *
+*	   THIS IS CALLED TO GET AN OBJECT FOR				 *
+*	   CONCATONATING STRINGS TOGETHER.				 *
+*									 *
+*	   A7 POINTS AT NULL STRING					 *
+*									 *
+*	   NOTE THAT THIS IS NO LONGER RE-ENTRANT!			 *
+*									 *
+*	   YOU MUST CALL STR_FREE BEFORE SLEEPING!			 *
+*									 *
+**************************************************************************
 STR_OBJ
 	PUSH	a0,a1,a14
 	CALLA	GETOBJ		     ;USE AN OBJECT BLOCK FOR STRING MANIPULATION
 	JRNZ	STR_O1
+*
+*	NO OBJECTS DURING TEST MODE
+*
 	SETC	
 	JRUC	STR_OFAIL
 
@@ -3758,6 +4487,14 @@ STR_OFAIL
 	PULL	a0,a1,a14
 	RETS
 
+**************************************************************************
+*									 *
+*	   ROUNDED_A0_INTO_A2						 *
+*									 *
+*	   THIS DIVIDES A0 INTO A2.  IT LEAVES THE RESULT IN A2 	 *
+*	   AND ROUNDS UP IF NECESSARY.					 *
+*									 *
+**************************************************************************
 ROUNDED_A0_INTO_A2
 	MMTM	SP,A3
 	MOVE	A0,A0		     ;DIVIDE BY ZERO?
@@ -3776,6 +4513,17 @@ NOROUND
 	MMFM	SP,A3
 	RETS
 
+**************************************************************************
+*									 *
+*	   A2_100TH							 *
+*									 *
+*	   A7 HAS A STRING TO BE PRINTED.  WE HAVE THE			 *
+*	   LAST TWO NUMBERS (NOT TO BE LEAD ZERO BLANKED) IN		 *
+*	   A2.	CONCATONATE THEM ONTO THE A7 STRING.			 *
+*									 *
+*	   THIS IS USED FOR PENNIES, HOURS AND MINUTES. 		 *
+*									 *
+**************************************************************************
 A2_100TH
 	MMTM	SP,A8
 	CMPI	9,A2		     ;9 OR LESS REQUIES LEAD ZERO.
@@ -3791,6 +4539,15 @@ NOLEAD
 	MMFM	SP,A8
 	RETS
 
+**************************************************************************
+*									 *
+*	   SUM_COINS							 *
+*									 *
+*	   A8 HAS FIRST OF THE 4 AUDIT NUMBERS OF INTEREST		 *
+*									 *
+*	   RETURN COINS TIMES THEIR FACTORS IN A2.			 *
+*									 *
+**************************************************************************
 SUM_COINS
 	MMTM	SP,A0,A1,A3,A6,A4
 
@@ -3819,6 +4576,15 @@ ADD_AUD_A0_TIMES_A3_TO_A2
 	ADD	A3,A2
 	RETS
 
+**************************************************************************
+* FIX_A3
+*
+* THIS IS CALLED BY THE LOW LEVEL MONEY TOTALIZER.
+* THE MULTIPLIER FOR THE COIN SLOT THAT ITS WORKING
+* ON IS IN A3.  WE REPLACE IT WITH "1" TO SUM "TOTAL COINS"
+* IF ITS IN A NON-STANDARD COIN MODE.
+*
+**************************************************************************
 FIX_A3
 	CALLR	SIXP		     ;HAS IT BEEN TAMPERED WITH?
 	JRNZ	FIX_A3X 	     ;NOPE...LEAVE A3
@@ -3827,6 +4593,15 @@ FIX_A3
 FIX_A3X
 	RETS
 
+**************************************************************************
+* SIXP
+*
+* THIS IS CALLED TO SEE IF THE 1ST 6 COIN PARAMETERS HAVE
+* BEEN TAMPERED WITH.
+*
+* Z=YES
+*
+**************************************************************************
 SIXP
 	MMTM	SP,A0
 	MOVI	ADJ1ST6,A0
@@ -3909,6 +4684,13 @@ DO_ELAPSE
 
 
 keyavg_prt
+;	movi	AUDKEYTOT,a0
+;	calla	GET_AUD
+;	move	a1,a3
+;	movi	AUDFULLGAMES,a0
+;	calla	GET_AUD
+;	divs	a1,a3
+;	jruc	NUMBER_WORK	;Print it
 
 
 diff_prt
@@ -3918,6 +4700,14 @@ diff_prt
 	jruc	NUMBER_WORK	;Print it
 
 
+**************************************************************************
+*									 *
+*	   P_TIME							 *
+*									 *
+*	   THIS IS CALLED TO DISPLAY AN AUDIT IN TIME (0:00)		 *
+*	   FORMAT.  THE NUMBER TO BE USED IS PASSED IN A1.		 *
+*									 *
+**************************************************************************
 P_TIME
 	CALLR	STR_OBJ		;USE AN OBJECT BLOCK FOR STRING MANIPULATION
 	JRC	NO_OBJS		;NO OBJECTS....PRINT NOTHING
@@ -3958,6 +4748,14 @@ STR_FREE
 FREE_IT_NOW
 	jauc	FREEOBJ 	;AND LET IT GO.
 	
+**************************************************************************
+*									 *
+*	TOT_TIME							 *
+*									 *
+*	(1 * P1TIME) + (2 * P2TIME) IN A3				 *
+*	ELAPSED TIME IN A4						 *
+*									 *
+**************************************************************************
 TOT_TIME
 	MMTM	SP,A0,A1
 	MOVI	AUD1TIME,A0
@@ -3973,11 +4771,15 @@ TOT_TIME
 	RETS
 
 
+********************************
+**** DATA SECTION BEGINS ****
 
 	.DATA
 
 
 
+********************************
+* AUDIT TEXT
 
 MESS_ERROR
 	MESS_MAC RD7FONT,SPACING07,0,0,ROBO_RED,STRLNRM,0
@@ -4041,6 +4843,14 @@ M_SECBON
 	TXTLINE	"WARPS"
 
 
+**************************************************************************
+*									 *
+*	   MENU DESCRIPTORS						 *
+*									 *
+**************************************************************************
+*
+*	 MAIN TEST MENU
+*
 MEN_MAIN
 	 .LONG	 RD7FONT	;FONT	
 	 .LONG	 STRCNRM	;CENTER PLEASE
@@ -4066,6 +4876,7 @@ MEN_MAIN
 	 .LONG	 MESS_EXIT,0,EXIT_HELP	;SPECIAL CASE!
 	 .LONG	 0		;END
 
+* UTILITES MENU GOES LEFT OF CENTER
 
 UM_WID	 EQU	 206
 UM_X	 EQU	 TIT_ULX+GAP+MB_XWID+(UM_WID/2)+C_KLUDGE
@@ -4095,6 +4906,7 @@ MEN_UTIL
 	.LONG	MESS_MM,0,BLNK_HELP	;RETURN TO MAIN MENU
 	.LONG	0			;END
 
+* DIAGNOSTIC TESTS MENU
 
 MEN_DIAG
 	.LONG	RD7FONT		;FONT
@@ -4124,6 +4936,7 @@ RTR_LEV EQU	4		;TEST NUMBER FOLLOWING CPU TEST (FOR RETURN)
 STM_WID EQU	  250
 
 
+* PRESS ANY BUTTON TO CONTINUE
 
 ANY_MENU
 	.LONG	RD7FONT		;FONT
@@ -4142,6 +4955,7 @@ ANY_MENU
 	.LONG	MESS_ANY,0,NO_HELP
 	.LONG	0
 
+* MONITOR PATTERNS
 
 MEN_PATTERNS
 	.LONG	RD7FONT		;FONT
@@ -4166,6 +4980,7 @@ MEN_PATTERNS
 	.LONG	MESS_MM,FORCE_MAIN,NO_HELP	;RETURN TO MAIN MENU
 	.LONG	0
 
+* DETAILED COINAGE AVAILABLE (ON 1ST COINAGE PAGE)
 
 MEN_DETAIL
 	.LONG	RD7FONT	;FONT
@@ -4185,6 +5000,7 @@ MEN_DETAIL
 	.LONG	MESS_MM,FORCE_MAIN,NO_HELP	;RETURN TO MAIN MENU
 	.LONG	0
 
+* YES/NO   (FOR ARE YOU SURE?)
 
 MEN_YN	.LONG	 RD7FONT	;FONT
 	.LONG	 STRCNRM	;CENTER PLEASE
@@ -4203,6 +5019,7 @@ MEN_YN	.LONG	 RD7FONT	;FONT
 	.LONG	 MESS_NO,0,NO_HELP
 	.LONG	 0
 
+* NEXT AUDIT PAGE
 
 MEN_AP1 .LONG	 RD7FONT	;FONT
 	.LONG	 STRCNRM	;CENTER PLEASE
@@ -4276,6 +5093,14 @@ MEN_SOUNDTEST
 	.long	MESS_SNDTST4,FORCE_MAIN,NO_HELP
 	.LONG	0
 
+**************************************************************************
+*									 *
+*	  HELP MENUS FOR MAIN MENU					 *
+*									 *
+**************************************************************************
+*	 HM_JUST	 0 = CENTER   1 = LEFT
+*	 HM_COLOR
+*	 HM_ENTS
 
 DIAG_HELP
 	.WORD	0		;CENTER JUSTIFY
@@ -4336,6 +5161,8 @@ EXIT_HELP
 	.LONG	U_END
 
 
+********************************
+* HELP FOR UTILITY MENU
 
 CLCRED_HELP
 	.WORD	0		;CENTER JUSTIFY
@@ -4403,6 +5230,11 @@ OPMSG_HELP
 	.long	opmsgh3_s
 
 
+**************************************************************************
+*									 *
+*	   TEXT STRINGS 						 *
+*									 *
+**************************************************************************
 
 SIY0	equ	190
 SIY1	equ	212
@@ -4451,6 +5283,15 @@ MESS_YES
 MESS_NO .byte	 "NO",0
 	.EVEN
 
+;MESS_CLEAR_SUBS
+;	  .byte	  "CLEAR SUBTOTALS"
+;	  .BYTE 	  0
+;	  .EVEN
+;
+;MESS_SUBS_CLEAR
+;	  .byte	  "SUBTOTALS CLEARED"
+;	  .BYTE 	  0
+;	  .EVEN
 
 MESS_TOPAGE2
 	 .byte	 "NEXT AUDIT PAGE"
@@ -4572,7 +5413,15 @@ MESS_OTG
 	.byte	"OF THE GAME",0
 	.even
 
+;M_OPMESS_TIT
+;U_OPMESS	  .byte "OPERATOR MESSAGE"
+;	  .BYTE   0
+;	  .EVEN
 
+;M_SET_OMESS
+;;MESS_OPMESS	   .byte "SET OPERATOR MESSAGE"
+;	  .BYTE   0
+;	  .EVEN
 
 U_BURNIN	.byte "BURN-IN TEST",0
 	.even
@@ -4619,6 +5468,7 @@ MESS_CROSS	 .byte "CROSSHATCH  PATTERN",0
 MESS_DIAGM	 .byte "BACK TO DIAGNOSTICS MENU",0
 	.EVEN
 
+*	ON FULL RESTORE....THE FOLLOWING IS PRINTED.
 	;0 = END OF STRING...1 = MORE MESSAGES!
 
 MESS_RESET
@@ -4666,6 +5516,11 @@ CIY2	EQU	CIY1+15
 CIY3	EQU	CIY2+25
 CIY4	EQU	CIY3+25
 
+**************************************************************************
+*									 *
+*	   STRINGS FOR UTILITY HELP MENUS				 *
+*									 *
+**************************************************************************
 MEH_CLCRED1	 .byte "REMOVE ANY",0
 		 .EVEN
 MEH_CLCRED2	 .byte "POSTED CREDITS",0
@@ -4723,6 +5578,11 @@ MEH_FAC4
 	.EVEN
 
 
+**************************************************************************
+*									 *
+*	  MAIN MENU NAMES						 *
+*									 *
+**************************************************************************
 MESSMAIN
 	.byte	"WRESTLEMANIA TEST MENU",0
 	.even
@@ -4734,6 +5594,13 @@ MESSUTIL
 
 
 CSELCT
+**************************************************************************
+*											     *
+*   USA 1: 1 COIN = 1 CREDIT								     *
+* 											     *
+*          2 TO START / 2 TO CONTINUE							     *
+*											     *
+**************************************************************************
 	.WORD	1,0,1,0,4,1,0,0,2,2	;WILLY PRICING
 	.WORD	4			;4 COINS PER DOLLAR (FOR CALC)
 	.WORD	1			;DISPLAY COIN FRACTIONS
@@ -4745,6 +5612,13 @@ CSELCT
 	.WORD	SHOW_NONE		;NO PRICING LINE ON 2/1
 	.LONG	USA_QDQ			;QUARTER
 
+**************************************************************************
+*											     *
+*   USA 2: 1 COIN = 1 CREDIT								     *
+* 											     *
+*          2 TO START / 1 TO CONTINUE							     *
+*											     *
+**************************************************************************
 	.WORD	1,0,1,0,4,1,0,0,2,1	;WILLY PRICING
 	.WORD	4			;4 COINS PER DOLLAR (FOR CALC)
 	.WORD	1			;DISPLAY COIN FRACTIONS
@@ -4757,6 +5631,12 @@ CSELCT
 	.LONG	USA_QDQ			;QUARTER
 
 
+**************************************************************************
+*											     *
+* 	USA 3	 COINAGE IS 25 CENT		 					     *
+*		 1 TO START / 1 TO CONTINUE						*
+*											     *
+**************************************************************************
 
 	.WORD	1,0,1,0,4,1,0,0,1,1	   ;WILLY PRICING
 	.WORD	4				;4 COINS PER DOLLAR (FOR CALC)
@@ -4769,6 +5649,12 @@ CSELCT
 	.WORD	SHOW_NONE		;NO PRICING LINE ON 2/1
 	.LONG	USA_QDQ			;QUARTER
 
+**************************************************************************
+*											     *
+* 	USA 4	 COINAGE IS 50 CENT	 3/$1.00					     *
+*		 1 TO START / 1 TO CONTINUE						*
+*											     *
+**************************************************************************
 
 	.WORD	1,0,1,0,4,2,4,0,1,1     ; WILLY PRICING
 	.WORD	4		  	; 4 COINS PER DOLLAR (FOR CALC)
@@ -4782,9 +5668,20 @@ CSELCT
 	.LONG	USA_QDQ			; QUARTER
 						
 
+**************************************************************************
+*											     *
+*  ADDITION "FULL PRICE" COINAGES							     *
+*											     *
+**************************************************************************
 
 	.IF	FULLPRICE
 
+**************************************************************************
+*											     *
+* 	USA 5	 COINAGE IS 50 CENT	 4/$1.00					     *
+*		 2 TO START / 1 TO CONTINUE						*
+*											     *
+**************************************************************************
 
 	.WORD	3,0,3,0,12,4,12,6,2,1	 ;WILLY PRICING
 	.WORD	4			;4 COINS PER DOLLAR (FOR CALC)
@@ -4797,6 +5694,9 @@ CSELCT
 	.WORD	SHOW_2			;SHOW LINE 2
 	.LONG	USA_QDQ			;QUARTER
 
+*
+*	USA 6	 50 PER CREDIT
+*
 	.WORD	1,0,1,0,4,2,0,0,1,1	; WILLY PRICING
 	.WORD	4				;4 COINS PER DOLLAR (FOR CALC)
 	.WORD	1				;DISPLAY COIN FRACTIONS
@@ -4807,6 +5707,9 @@ CSELCT
 	.LONG	F_F_1S1C		 ;2 COINS PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_1			;SHOW LINE 1
 	.LONG	USA_QDQ			;QUARTER
+*						
+*	USA 7	 COINAGE IS 50 CENT	 3/$1.00
+*
 
 	.WORD	1,0,1,0,4,2,4,0,1,1     ; WILLY PRICING
 	.WORD	4				;4 COINS PER DOLLAR (FOR CALC)
@@ -4819,6 +5722,10 @@ CSELCT
 	.WORD	SHOW_2			;SHOW LINE 2
 	.LONG	USA_QDQ			;QUARTER
 
+*						
+*	USA 8	 COINAGE IS 50 CENT	 4/$1.00
+*
+*	       L, C,R, 4,DBV,U/C,U/B,MINUNITS /START /CONTINUE
 	.WORD	3,0,3,0,12,4,12,6,2,2	 ;WILLY PRICING
 	.WORD	4				;4 COINS PER DOLLAR (FOR CALC)
 	.WORD	0				;NO COIN FRACTIONS
@@ -4830,6 +5737,9 @@ CSELCT
 	.WORD	SHOW_2			;SHOW LINE 2
 	.LONG	USA_QDQ			;QUARTER
 
+*	USA 9	 COINAGE IS 50 CENT	 4/$1.00
+*
+*	       L, C,R, 4,DBV,U/C,U/B,MINUNITS /START /CONTINUE
 	.WORD	1,0,1,0,4,1,0,1,3,2	 ;WILLY PRICING
 	.WORD	4				;4 COINS PER DOLLAR (FOR CALC)
 	.WORD	0				;NO COIN FRACTIONS
@@ -4841,6 +5751,8 @@ CSELCT
 	.WORD	SHOW_2			;SHOW LINE 2
 	.LONG	USA_QDQ			;QUARTER
 
+*	USA 10	 COINAGE IS 50 CENT	 4/$1.00
+*
 	.WORD	1,0,1,0,4,1,0,1,3,3	 ;WILLY PRICING
 	.WORD	4				;4 COINS PER DOLLAR (FOR CALC)
 	.WORD	0				;NO COIN FRACTIONS
@@ -4853,6 +5765,9 @@ CSELCT
 	.LONG	USA_QDQ			;QUARTER
 
 	.ENDIF
+*
+*	USA ELECTRONIC
+*
 	.WORD	20,2,5,1,20,5,0,0,2,2	; L,C,R,4,U/C,U/B,MINUNITS
 	.WORD	20			; COINS/DOLLAR
 	.WORD	1			; DISPLAY FRACTIONS
@@ -4864,6 +5779,10 @@ CSELCT
 	.WORD	SHOW_2			; LINES TO SHOW ON
 	.LONG	USA_ESLOT		; QUARTER
 
+*
+*	GERMAN 1    COINAGE IS 6 PLAYS FOR 5 DM
+*			 2 TO START, 2 TO CONTINUE
+*
 	.WORD	6,0,30,0,0,5,0,0,2,2	 ;WILLY PRICING
 	.WORD	1		   	 ;DMS HAVE NO FRACTIONS
 	.WORD	0			 ;DON'T DISPLAY COIN FRACTIONS
@@ -4876,6 +5795,10 @@ CSELCT
 	.LONG	GERMAN_15			;1 DM / 5 DM
 
 G1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR GERMAN 1
+*
+*	GERMAN 2    COINAGE IS 7 PLAYS FOR 5 DM
+*			 2 TO START, 1 TO CONTINUE
+*
 	.WORD	6,0,30,0,0,5,30,0,2,1		;WILLY PRICING
 	.WORD	1				;DMS HAVE NO FRACTIONS
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4886,6 +5809,10 @@ G1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR GERMAN 1
 	.LONG	DM_7			  ;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_2
 	.LONG	GERMAN_15			;1 DM / 5 DM
+*
+*	GERMAN 3    COINAGE IS 8 PLAYS FOR 5 DM
+*			 2 TO START, 1 TO CONTINUE
+*
 	.WORD	7,0,35,0,0,5,35,0,2,1		;WILLY PRICING
 	.WORD	1				;DMS HAVE NO FRACTIONS
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4896,6 +5823,10 @@ G1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR GERMAN 1
 	.LONG	DM_8			  ;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_2
 	.LONG	GERMAN_15			;1 DM / 5 DM
+*
+*	GERMAN 4    COINAGE IS 5 PLAYS FOR 5 DM
+*			 2 TO START, 1 TO CONTINUE
+*
 	.WORD	1,0,5,0,0,1,0,0,2,1	   ;WILLY PRICING
 	.WORD	1				;DMS HAVE NO FRACTIONS
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4907,6 +5838,10 @@ G1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR GERMAN 1
 	.WORD	SHOW_2
 	.LONG	GERMAN_15			;1 DM / 5 DM
 
+*
+*	GERMAN 5    COINAGE IS 6 PLAYS FOR 5 DM
+*			 2 TO START, 1 TO CONTINUE
+*
 	.WORD	6,0,30,0,0,5,0,0,2,1	 ;WILLY PRICING
 	.WORD	1		   	 ;DMS HAVE NO FRACTIONS
 	.WORD	0			 ;DON'T DISPLAY COIN FRACTIONS
@@ -4918,6 +5853,10 @@ G1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR GERMAN 1
 	.WORD	SHOW_2
 	.LONG	GERMAN_15			;1 DM / 5 DM
 
+*
+*	GERMAN ELECTRONIC
+*			 2 TO START, 2 TO CONTINUE
+*
 	.WORD	60,12,24,0,0,10,0,0,2,2	; L,C,R,4,U/C,U/B,MINUNITS
 	.WORD	1			; COINS/DOLLAR
 	.WORD	0			; DISPLAY FRACTIONS
@@ -4929,6 +5868,25 @@ G1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR GERMAN 1
 	.WORD	SHOW_3			; LINES TO SHOW ON
 	.LONG	GERMAN_ESLOT		; QUARTER
 
+****************************************************************************
+****************************************************************************
+*******	THE FOLLOWING NUMBERS ARE FIGURED FOR THE FRENCH SETTINGS
+*******	REQUESTED BY DIMITRI K. OF P.S.D.
+*******
+*******			 	1F   5F   10F   U/C   U/B  M/U
+*******				--------------------------------
+*******	1/2F  3/5F    7/10F	3	15	 30	  5	  30    0
+*******	1/3F  2/5F    5/10F	2	10	 20	  5	  20    0
+*******	1/5F  3/10F		1	 5	 10    5    10    0
+*******	1/5F  3/10F   7/20F	3	15	 30	 10	  60   15
+*******	2/5F  4/10F   9/20F	2	10	 20	  5	  40   10
+*******	2/5F  5/10F  11/20F	1	 5	 10	  2	  20    5
+*******
+*
+*
+*	FRENCH 1	      2/5F	 5/10F
+*
+*
 	.WORD	2,0,4,0,0,1,4,0,2,2		; 2/5F    5/10F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4942,6 +5900,10 @@ G1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR GERMAN 1
 
 F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 
+*
+*	FRENCH 2	      2/5F	 4/10F
+*
+*
 	.WORD	2,0,4,0,0,1,0,0,2,1	   ; 2/5F    4/10F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4952,6 +5914,10 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	FOUR_10			;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_2
 	.LONG	FRENCH510
+*
+*	FRENCH 3	      1/5F  3/10F	
+*
+*
 	.WORD	1,0,2,0,0,1,2,0,2,1	    ;1/5F  3/10F	
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4962,6 +5928,10 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	THREE_10			 ;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_2
 	.LONG	FRENCH510
+*
+*	FRENCH 4	      1/5F  2/10F 
+*
+*
 	.WORD	1,0,2,0,0,1,0,0,2,1	 ;1/5F  2/10F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4975,6 +5945,11 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 
 	.IF	FULLPRICE
 
+*
+*
+*	FRENCH 5	      2/5F	 5/10F	11/2 X 10F
+*
+*
 	.WORD	5,0,10,0,0,2,20,0,2,1		 ;2/5F  5/10F	11/20F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4985,6 +5960,10 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	FIVE_10_11		    ;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_3			;USE LINE 3 WHEN ONLY 1 WILL FIT
 	.LONG	FRENCH510
+*
+*	FRENCH 6	      2/5F	 4/10F	9/2 X 10F
+*
+*
 	.WORD	2,0,4,0,0,1,8,0,2,1		   ;2/5F	4/10F   9/20F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -4995,6 +5974,10 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	FOUR_10_9			;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_3			;USE LINE 3 WHEN ONLY 1 WILL FIT
 	.LONG	FRENCH510
+*
+*	FRENCH 7	      1/5F	 3/10F	7/2 X 10F
+*
+*
 	.WORD	3,0,6,0,0,2,12,0,2,1		  ;1/5F  3/10F   7/20F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -5005,6 +5988,10 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	THREE_10_7		    ;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_3			;USE LINE 3 WHEN ONLY 1 WILL FIT
 	.LONG	FRENCH510
+*
+*	FRENCH 8	      1/5F	 2/10F	5/2 X 10F
+*
+*
 	.WORD	1,0,2,0,0,1,4,0,2,1		   ;1/5F	2/10F  5/20F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -5016,6 +6003,12 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_3			;USE LINE 3 WHEN ONLY 1 WILL FIT
 	.LONG	FRENCH510
 
+*
+*	FRENCH 9	      1/3 X 1F	  2/5F
+*
+*	COIN SLOTS ARE	1F -- 5F
+*
+*
 	.WORD	2,0,10,0,0,5,0,0,2,1		  ;1/3X1F  2/5F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -5026,6 +6019,12 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	F1325			 ;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_2			;USE LINE 2 WHEN ONLY 1 WILL FIT
 	.LONG	FRENCH1F5F
+*
+*	FRENCH 10	      1/2 X 1F	  3/5F
+*
+*	COIN SLOTS ARE	1F -- 5F
+*
+*
 	.WORD	3,0,15,0,0,5,0,0,2,1		  ;1/2X1F  3/5F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -5036,6 +6035,12 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	F1235			 ;1 COIN PER CREDIT (SERIES OF STRINGS)
 	.WORD	SHOW_2			;USE LINE 2 WHEN ONLY 1 WILL FIT
 	.LONG	FRENCH1F5F
+*
+*	FRENCH 11	      1/3 X 1F	  2/5F	5/2 X 5F
+*
+*	COIN SLOTS ARE	1F -- 5F
+*
+*
 	.WORD	2,0,10,0,0,5,20,0,2,1		 ;1/3X1F	2/5F  5/10F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -5047,6 +6052,12 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_3			;USE LINE 2 WHEN ONLY 1 WILL FIT
 	.LONG	FRENCH1F5F
 
+*
+*	FRENCH 12	      1/2 X 1F	  3/5F	  7 / 2 X 5F
+*
+*	COIN SLOTS ARE	1F -- 5F
+*
+*
 	.WORD	3,0,15,0,0,5,30,0,2,1		 ;1/2X1F	3/5F  7/10F
 	.WORD	1				;1 FRANC PER FRANC
 	.WORD	0				;DON'T DISPLAY COIN FRACTIONS
@@ -5060,6 +6071,9 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 
 	.ENDIF
 
+*
+*	FRANCE ELECTRONIC
+*
 	.WORD	1,15,6,0,0,3,0,0,2,2	; L,C,R,4,U/C,U/B,MINUNITS
 	.WORD	1			; COINS/DOLLAR
 	.WORD	0			;DON'T DISPLAY COIN FRACTIONS
@@ -5071,6 +6085,9 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_3			;THREE LINES FOR THIS BABY
 	.LONG	FRANCE_ESLOT		; QUARTER
 
+*
+*	CANADA    COINAGE IS 50 CENT   3/$1.00
+*
 	.WORD   1,0,4,0,4,2,4,0,2,2    ;WILLY PRICING
 	.WORD	4			;4 COINS PER DOLLAR (FOR CALC)
 	.WORD	1			;DISPLAY COIN FRACTIONS
@@ -5084,6 +6101,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 
 	.IF	FULLPRICE
 
+*	SWISS 1    COINAGE IS 6 PLAYS FOR 5 FRANC
 
 	.WORD	6,0,30,0,0,5,0,0,2,2		 ;WILLY PRICING
 	.WORD	1				;FRANCS HAVE NO FRACTIONS
@@ -5096,6 +6114,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	SWISS15
 
+*	SWISS 2    COINAGE IS 7 PLAYS FOR 5 FRANC
 
 	.WORD	6,0,30,0,0,5,30,0,2,2		;WILLY PRICING
 	.WORD	1				;FRANCS HAVE NO FRACTIONS
@@ -5108,6 +6127,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	SWISS15
 
+*	SWISS 3     COINAGE IS 8 PLAYS FOR 5 FRANC
 
 	.WORD	7,0,35,0,0,5,35,0,2,2		;WILLY PRICING
 	.WORD	1				;FRANCS HAVE NO FRACTIONS
@@ -5120,10 +6140,12 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	SWISS15
 
+*	ITALY COINAGE IS 1 PLAYS FOR 500 LIRE
 
 	.WORD	1,0,1,0,0,1,0,0,2,2		;WILLY PRICING
 	.WORD	1				;LIRE HAVE NO FRACTIONS
 	.WORD	0				;DON'T DISPLAY COIN FRACTIO
+;	.WORD	500,0,500,0,0			 ;COIN VALUE
 	.WORD	1,0,1,0,0			 ;COIN VALUE
 	.LONG	NULL_ST,LIRE_TRAIL		 ;CHARACTER STRINGS.
 	.LONG	CSM_LIST
@@ -5132,8 +6154,13 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	ITALYLIRE
 
+*	U.K. ELECTRONIC 1
 
+*	CENTER = 20P  XTRA = 10P  LEFT = 1P  RIGHT = 50P
+*	1 PLAY / 50 P
+*	3 PLAY / 1 POUND
 
+*		 L, C,	R, 4,DBV,U/C,U/B,MINUNITS /START /CONTINUE
 	.WORD	10, 2, 5, 1, 0, 5,  10,0,1,1		;NUMBERS FOR 1L/20P/50P/10P
 	.WORD	10					;PENCE SUCK!
 	.WORD	0					;DON'T DISPLAY COIN FRACTIO
@@ -5145,10 +6172,16 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	UK_ELEC
 
+*	U.K. ELECTRONIC 2  (CCU)
 
+*	CREDITS ARE AWARDED 1 COIN / 1 PLAY.....
 
+*	CCU ACCUMULATES 4 COINS AND STROKES US AS FOLLOWS:
 
+*	1 PLAY / 50 P
+*	2 PLAY / 1 POUND
 
+*		 L, C,	R, 4,DBV,U/C,U/B,MINUNITS /START /CONTINUE
 	.WORD	10, 2, 5, 1, 0, 5,  0,0,1,1		;NUMBERS FOR 1L/20P/50P/10P
 	.WORD	10				;PENCE ARE FRACTIONS!
 	.WORD	0				;DON'T DISPLAY COIN FRACTIO
@@ -5160,6 +6193,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	UK_ELEC
 
+*	U.K. 3	 COINAGE IS 1 PLAY FOR 30P   2 FOR 50P  5 FOR 1.00
 
 	.WORD	20,4,10,2,0,5,20,0,1,1	;WILLY PRICING
 	.WORD	10			;PENCE ARE FRACTIONS!
@@ -5172,6 +6206,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	UK_ELEC
 
+*	U.K. 4  
 
 	.WORD	10, 0, 5, 0, 0, 5,  10,0,1,1		;NUMBERS FOR 1L/20P/50P/10P
 	.WORD	10					;PENCE SUCK!
@@ -5184,9 +6219,13 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	UK2050
 
+*	U.K. 5  
 
 
+*	1 PLAY / 50 P
+*	2 PLAY / 1 POUND
 
+*		 L, C,	R, 4,DBV,U/C,U/B,MINUNITS /START /CONTINUE
 	.WORD	10, 0, 5, 0, 0, 5,  0,0,1,1		;NUMBERS FOR 1L/20P/50P/10P
 	.WORD	10				;PENCE ARE FRACTIONS!
 	.WORD	0				;DON'T DISPLAY COIN FRACTIO
@@ -5198,7 +6237,9 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	UK2050
 
+*	DONE BECAUSE WE LEARNED SOME NEW SPANISH SHIT!
 
+*	SPAIN 1     1 PLAY / 100 PESETA   6 PLAY / 500 PESETA
 
 	.WORD	1,0,5,0,0,1,5,0,2,2		;WILLY PRICING
 	.WORD	1				;NO FRACTIONS
@@ -5212,6 +6253,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	PESETA100
 
 
+*	SPAIN 2     1 PLAY / 25 PESETA   5 PLAY / 100 PESETA
 
 	.WORD	1,0,5,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;NO FRACTIONS
@@ -5225,6 +6267,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	PESETA100
 
 
+*	AUSTRALIA 1   1 PLAY / 3 X 20 CENTS	2 FOR $1.00
 
 	.WORD	2,0,10,0,0,5,0,0,2,2		  ;WILLY PRICING
 	.WORD	5				;DOLLARS
@@ -5236,6 +6279,9 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	AU_60			 ;1 COIN PER CREDIT (SERIES OF S
 	.WORD	SHOW_2
 	.LONG	AUST20C
+*
+*	AUSTRALIA 2   1 PLAY / $1.00    2 PLAYS FOR $2.00
+*
 	.WORD	1,0,5,0,0,5,0,0,1,1	 ; WILLY PRICING
 	.WORD	5			 ; DOLLARS
 	.WORD	1			 ; SHOW FRACTIONS FOR THE 3 C
@@ -5249,6 +6295,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 
 	.ENDIF
 
+*	JAPAN 1  1 PLAY / 100 YEN
 
 	.WORD	1,0,1,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5262,6 +6309,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	YEN100
 
 	.IF	FULLPRICE
+*	JAPAN 2  2 PLAY / 100 YEN
 
 	.WORD	2,0,2,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5274,6 +6322,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	YEN100
 
+*	AUSTRIA  1   1 PLAY / 5 SCHILLING  2 PLAY / 10 SCHILLING
 
 	.WORD	1,0,2,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5286,6 +6335,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	SHILL510
 
+*	AUSTRIA  2   1 PLAY / 2 X 5 SCHILLING	3 PLAY / 10 SCHILLING
 
 	.WORD	1,0,2,0,0,2,4,0,2,2		   ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5298,6 +6348,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	SHILL510
 
+*	BELGIUM 1  1 PLAY / 20F
 
 	.WORD	1,0,1,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5310,6 +6361,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	FRANC20
 
+*	BELGIUM 2  3 PLAY / 20F
 
 	.WORD	3,0,3,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5322,6 +6374,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	FRANC20
 
+*	BELGIUM 3  2 PLAY / 20F
 
 	.WORD	2,0,2,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5334,6 +6387,9 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	FRANC20
 
+*
+*	BELGIUM ELECTRONIC
+*
 	.WORD	10,1,4,0,0,4,0,0,2,2		; L,C,R,4,U/C,U/B,MINUNITS
 	.WORD	1			; COINS/DOLLAR
 	.WORD	1			; DISPLAY FRACTIONS
@@ -5345,6 +6401,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2			; LINES TO SHOW ON
 	.LONG	BELGIUM_ESLOT		; QUARTER
 
+*	SWEDEN	1 PLAY / 3 X 1 KRONA   2 PLAY	5 KRONA
 
 	.WORD	2,0,10,0,0,5,0,0,2,2		 ;WILLY PRICING
 	.WORD	1				;DOLLARS
@@ -5357,6 +6414,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	KRONA5
 
+*	NEW ZEALAND 1	1 PLAY / 3 X 20 CENT
 
 	.WORD	1,0,1,0,0,3,0,0,1,1		   ;WILLY PRICING
 	.WORD	5				;FIVE PER
@@ -5370,6 +6428,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	NZ20
 
 
+*	NEW ZEALAND 2	1 PLAY / 2 X 20 CENT
 
 	.WORD	1,0,1,0,0,2,0,0,1,1		   ;WILLY PRICING
 	.WORD	5				;FIVE PER
@@ -5382,6 +6441,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	NZ20
 
+*	NETHERLANDS	1 PLAY / 1 HFL.	3 PLAY / 2.5 HFL.
 
 	.WORD	1,0,3,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;FIVE PER
@@ -5395,6 +6455,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	HFSLOT
 
 
+*	FINLAND	1 PLAY / 1 MARKKA
 
 	.WORD	1,0,1,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;FIVE PER
@@ -5407,6 +6468,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	MKSLOT
 
+*	NORWAY	1 PLAY / 2 X 1 KRONE    3/ 5 X 1 KRONE
 
 	.WORD	3,0,3,0,0,5,0,0,2,2		   ;WILLY PRICING
 	.WORD	1				;FIVE PER
@@ -5419,6 +6481,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_2
 	.LONG	NKRSLOT
 
+*	DENMARK	1 PLAY / 2 X 1 KRONE    3/ 5 KRONE	  7 / 10 KRONE
 
 	.WORD	3,0,15,0,0,5,30,0,2,2		 ;WILLY PRICING
 	.WORD	1				;FIVE PER
@@ -5432,6 +6495,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.LONG	DKRSLOT
 
 
+*	ANTILLES      1 PLAY / 25 CENTS	4 PLAYS / 1 GUILDER
 
 	.WORD	1,0,4,0,0,1,0,0,2,2		   ;WILLY PRICING
 	.WORD	4				;FIVE PER
@@ -5444,6 +6508,7 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 	.WORD	SHOW_1
 	.LONG	ANTSLOT
 
+*	HUNGARY     1 CREDIT / 2X10 FORINT  3 CREDITS / 2X20 FORINT
 
 	.WORD	1,0,2,0,0,2,4,0,2,2		;WILLY PRICING
 	.WORD	1				;1 TO 1
@@ -5461,6 +6526,9 @@ F1SEL	EQU	($-CSELCT)/CS_SIZE	    ;COIN SELECT VALUE FOR FRENCH 1
 CS_ENTS	EQU	($-CSELCT)/CS_SIZE	    ;NUMBER OF ENTRIES IN TABLE
 
 
+;
+;	DIP SWITCH TABLES
+;
 
 USABASE	EQU	1
 GERBASE	EQU	G1SEL
@@ -5494,6 +6562,11 @@ FRADIP	.WORD	FRABASE+0, FRABASE+1, FRABASE+2, FRABASE+3, FRABASE+4
 DIPCOINTAB	.LONG	USADIP, GERDIP, FRADIP, USADIP
 
 
+**************************************************************************
+*									*
+*	 COLLECTION MESSAGES					  *
+*									*
+**************************************************************************
 ME_ZERO	 .STRING "0"
 	.BYTE	0
 	.EVEN
@@ -5589,6 +6662,12 @@ FORINT_TRAIL
 	.STRING	"  FT",0
 	.ENDIF
 
+*
+*	FOR THE COINAGE ADJUSTMENT MODE:
+*
+*
+*	THIS SET IS TITLES FOR THE CANNED MODES.
+*
 USA_1	.STRING "USA 1",0
 	.EVEN
 USA_2	.STRING "USA 2",0
@@ -5772,27 +6851,46 @@ HUNGARY
 	.EVEN
 
 	.ENDIF
+*
+*	THIS SECTION IS A POINTER TO STRING LISTS
+*	FOR THE "CURRENT SETTING" BOX.
+*
 USA_EL
 	.LONG	EC1
 	.LONG	DOLL4
 	.LONG	0
+*
+*	1 COIN / 1 CREDIT
 Q_Q
 	.LONG	C11		 ;THIS POINTS AT MESSAGE
 	.LONG	0		   ;THIS ENDS LIST
+*
+*	2 COINS / 1 CREDIT
+*
 F_F_1S1C
 	.LONG	C21
 	.LONG	0
 
+*************************************************************************
 
 
+*
+*	2 COINS / 1 CREDIT
+*	4 COINS / 3 CREDITS
+*
 DOLLAR_3 .LONG	C21
 	.LONG	C43
 	.LONG	0
+*
+*	2 COINS / 1 CREDIT
+*	4 COINS / 4 CREDITS
+*
 DOLLAR_4 .LONG	C21
 	.LONG	C44
 	.LONG	0
 
 
+********************************************************************
 
 
 	.IF	FULLPRICE
@@ -5801,6 +6899,9 @@ U1Q4D	.LONG	C11		 ;THIS POINTS AT MESSAGE
 	.LONG	DOLL4		;4 FOR A DOLLAR
 	.LONG	0
 
+;UFS2D	.LONG	C21		; THIS POINTS AT MESSAGE
+;	.LONG	DOLL2		; 2 FOR A DOLLAR
+;	.LONG	0
 
 UFS3D	.LONG	C21		 ;THIS POINTS AT MESSAGE
 	.LONG	DOLL3		;3 FOR A DOLLAR
@@ -5812,6 +6913,10 @@ UFS4D	.LONG	C21		 ;THIS POINTS AT MESSAGE
 
 	.ENDIF
 
+*
+*	1 PLAY 1/DM
+*	5 PLAY 5/DM
+*
 DM_5	.LONG	DM11
 	.LONG	DM55
 	.LONG	0
@@ -5850,6 +6955,9 @@ SFRANC_7     .LONG   SFRANC11
 SFRANC_8     .LONG   SFRANC11
 	.LONG	SFRANC85
 	.LONG	0
+*
+*	2 PLAYS 5F / 5 PLAYS 10F
+*
 FIVE_10	.LONG	F25
 	.LONG	F510
 	.LONG	0
@@ -5895,6 +7003,7 @@ F1325	.LONG	F3X1F
 
 F13255	.LONG	F3X1F
 	.LONG	F2F5
+;	.LONG	F52X5
 	.LONG	F5X10F
 	.LONG	0
 
@@ -5909,25 +7018,32 @@ F12355	.LONG	F2X1F
 
 	.IF	FULLPRICE
 
+*	500 LIRE
 
 P1500L	.LONG	P1500L_P
 	.LONG	0
 
+*	1 PLAY / 20 P	 3 PLAYS 50 P
 
 UK_120	.LONG	UK_1201
 	.LONG	UK_1202
 	.LONG	UK_1203
 	.LONG	0
 
+;UK_220	.LONG	UK_2201
+;	.LONG	UK_2202
+;	.LONG	0
 
 UK_520
 UK_320	.LONG	UK_3201
+;	.LONG	UK_3202
 	.LONG	UK_3203
 	.LONG	0
 
 UK_220
 UK_420	.LONG	UK_4201
 	.LONG	UK_4202
+;	.LONG	UK_4203
 	.LONG	0
 
 SP_4100	.LONG	SP_11
@@ -6147,6 +7263,9 @@ UK_2202	.STRING	"5 CREDITS / 50 P"
 UK_3201	.STRING	"1 CREDIT / 50 P"
 	.BYTE 0
 	.EVEN
+;UK_3202	.STRING	"2 CREDITS / 50 P"
+;	.BYTE 0
+;	.EVEN
 UK_3203	.STRING	"2 CREDITS / L1.00"
 	.BYTE 0
 	.EVEN
@@ -6157,6 +7276,9 @@ UK_4201	.STRING	"1 CREDIT / 50 P"
 UK_4202	.STRING	"3 CREDITS / L1.00"
 	.BYTE 0
 	.EVEN
+;UK_4203	.STRING	"7 CREDITS / L1.00"
+;	.BYTE 0
+;	.EVEN
 
 SP_11	.STRING	"1 CREDIT / 100 PESETA"
 	.BYTE	0
@@ -6274,6 +7396,11 @@ HUNG2X20
 
 	.ENDIF
 
+**************************************************************************
+*									*
+*	 COIN SLOT TITLES						*
+*									*
+**************************************************************************
 
 USA_ESLOT	
 	.STRING	"$1.00  .10    .25     .5    $1.00 ",0
@@ -6383,6 +7510,11 @@ HUNGSLOT
 	.EVEN
 	.ENDIF
 
+;;CP_CX	EQU	200
+;;CP_11	EQU	11
+;;CP_13	EQU	13
+;;CP_23	EQU	23
+;;CP_33	EQU	33
 
 
 OCOP	MESS_MAC  RD7FONT,SPACING07,CP_CX,CP_11,ROBO_YELLOW,STRCNRM,0
@@ -6455,6 +7587,14 @@ UK_ELECTRONIC3
 
 
 
+*
+*	THE FOLLOWING 2 MESSAGES ARE GENERIC AND WILL
+*	BE DISPLAYED IF THE MODE MATCHES AND NO
+*	APPROPRIATE MESSAGE EXISTS
+*
+*	THIS IS FOR THIS BEING THE ONLY MESSAGE DISPLAYED ON
+*	THE SCREEN
+*
 TWO_TO_START
 	MESS_MAC RD15FONT,SPACING20,CP_CX,CP_12,ROBO_LASER,STRCNRM,0
 	.byte	"2 CREDITS TO START",0,1
@@ -6470,6 +7610,9 @@ TWO_TO_START_2C
 	MESS_MAC RD15FONT,SPACING20,CP_CX,CP_22,ROBO_LASER,STRCNRM,0
 	.byte	"2 CREDITS TO CONTINUE",0,0
 	.even
+*
+*	 THIS IS FOR LINES TWO AND 3 WITH AN ADDITIONAL LINE ABOVE
+*
 
 TWO_TS	MESS_MAC RD15FONT,SPACING20,CP_CX,CP_23,ROBO_LASER,STRCNRM,0
 	.byte   "2 CREDITS TO START",0,1
@@ -6491,6 +7634,7 @@ MAX_C_M MESS_MAC RD15FONT,SPACING20,CP_CX,CP_11,ROBO_LF,STRCNRM,0
 	.byte   "MAXIMUM CREDITS!",0,0
 	.even
 
+******************************************************************************
 
 	.end
 

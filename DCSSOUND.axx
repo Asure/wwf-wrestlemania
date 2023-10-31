@@ -1,3 +1,16 @@
+**************************************************************
+*
+* Software:		Ed Boon
+* Initiated:		?
+*
+* Modified:		Jason Skiles,	23 Nov 93 - WWF conversion
+*			Jake Simpson,	Announcers, new scheduling,
+*					and various other features.
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 1/10/94 12:02
+**************************************************************
 
 	.file	"dcssound.asm"
 	.title	"sound processor"
@@ -18,6 +31,35 @@
 	.include	"snddebug.h"
 
 	.text
+;************************************************************************
+;*									*
+;* OK people, there are several ready made speech call routines for	*
+;* you to use. I'll go through them, with where you should call them	*
+;* from and what they are for.						*
+;* vvvvvv All These to be called from scripts VVVVVVVV			*
+;* CALL_MISSES - If you attempt to do something and miss,		*
+;* 	E.g. head grab....						*
+;* CALL_SPECIAL_MOVE - For the 5 dollar moves, the pile drivers etc	*
+;* CALL_ANI_AVERAGE_MOVE - For the Average moves that are fairly easy to*
+;* 	fire off. E.g. Back hand slap, Shawns spin kick			*
+;* DO_REVERSAL - When a move is reversed against the opponent		*
+;* CALL_MISS_YOKO -  For use when you try to do a move against YOKO and *
+;*		     fail.						*
+;* CALL_THROWN_OUT - Been chucked out of the ring			*
+;* CALL_OTHER_AVERAGE - Another Average move speech call, to provide	*
+;*			variety.					*
+;* CALL_NASTY_MOVE - When you do something against the rules, 		*
+;* 	E.g. Doink buzzer, Doink Hammer, Shawn arm break		*
+;* CALL_SETUP - Set up for a better move, E.g. Head grab, Picking up	*
+;*		over							*
+;* 									*
+;* vvvvvv All these calls come from the REACT subroutines VVVVV		*
+;* CALL_FACE_HIT - Any thing that *JUST* hits the face Eg. Head butts	*
+;* CALL_MID_HIT - Any thing that *JUST* hits the midsection		*
+;* CALL_DROP_KICK - For any move that results in both wrestlers		*
+;* 	hitting the ground.						*
+;*									*
+;************************************************************************
 
 	.DEF	MAYBE_SHOCKING
 	.DEF	MAYBE_TOUGH_ENOUGH
@@ -158,6 +200,11 @@ ex	.set	08000H			; flag: extended sound call !!
 	.bss	repeat_mode_exists,16
 	.bss	razor_swear_exists,16
 
+**************************************************************************
+*												*
+*	Sound type priorities
+*												*
+**************************************************************************
 
 sp_robo		equ	 1 << 8			; robotron sounds
 sp_mat1		equ	 4 << 8			; mat noises
@@ -174,6 +221,16 @@ sp_system3	equ	44 << 8			; system stuff
 sp_anncer	equ	100 << 8		; announcer speech
 
 
+**************************************************************************
+*											     *
+*    TRIPLE SOUND TABLE format:								     *
+* 											     *
+*              .word   0aaaaH,0bbbbH							     *
+* 											     *
+*       where:  aaaa = priority / duration						     *
+*               bbbb = channel 1 sound call					     *
+*											     *
+**************************************************************************
 
 triple_sndtab
 	.word	0,0			;  0 =
@@ -284,6 +341,7 @@ triple_sndtab
 	.word	0,0			; 5f
 
 	;SHAWN SPEECH
+;	.word	sp_wspch|269,0280H	; 60 = lucky you...breaking bones
 	.word	sp_wspch|255,0280H	; 60 = lucky you...breaking bones
 	.word	sp_wspch|130,0284H	; 61 = wrestler o' 90's
 	.word	sp_wspch|132,0288H	; 62 = how could...hurt so bad
@@ -493,6 +551,7 @@ announcer_start
 	.word	sp_anncer|107,3256	;10e = ...Lex Luger!
 	.word	sp_anncer|110,3260	;10f = ...Bret Hart!
 	.word	sp_anncer|121,3264	;110 = ...Yokozuna!
+;LEAVE PLENTY OF SPACE FOR FUTURE SOUNDS
 					;Tonites match up....
 	.word	sp_anncer|100,3412   ;111	= ...Doink!
 	.word	sp_anncer|100,3416   ;112	= ...Shawn Michaels!
@@ -1011,6 +1070,15 @@ wrestle_end
 triple_end	;end of triple sound tables
 
 
+******************************************************************************
+*
+* sound table format:  each row contains the triple_sound_table indices of
+* the four sound calls associated with a given move.  the first two are the
+* noises a wrestler makes when he throws the move, and the second two are
+* the noises he makes when he's hit with the move.  if the value is DEFLT,
+* the value will be read from DEFAULT_SOUND_TABLE instead of the wrestler's
+* custom table.
+*
 
 DEFLT	.equ	8000h
 
@@ -1040,6 +1108,7 @@ DEFAULT_SOUND_TABLE
 	.word	0059h			;yellthrow
 
 MASTER_SOUND_TABLE
+;Bret Hart	00
 	;	whsh  grunt smak  ouch
 	.word	DEFLT,1022H,DEFLT,1030H	;punch
 	.word	DEFLT,1023H,DEFLT,1031H	;headbutt
@@ -1063,6 +1132,7 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,DEFLT	;rzr slash
 	.word	DEFLT			;yellthrow
 
+;Razor Ramon	01
 	;	whsh  grunt smak  ouch
 	.word	DEFLT,0031h,DEFLT,103fh	;punch
 	.word	DEFLT,0274H,DEFLT,0269H	;headbutt
@@ -1086,6 +1156,7 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,026fH	;rzr slash
 	.word	DEFLT			;yellthrow
 
+;Undertaker	02
 	.word	DEFLT,1022H,DEFLT,1030H	;punch
 	.word	DEFLT,1023H,DEFLT,1031H	;headbutt
 	.word	DEFLT,1024H,DEFLT,1032H	;kick
@@ -1108,6 +1179,7 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,DEFLT	;rzr slash
 	.word	DEFLT			;yellthrow
 
+;Yokozuna	03
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;punch
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;headbutt
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;kick
@@ -1130,6 +1202,7 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,DEFLT	;rzr slash
 	.word	DEFLT			;yellthrow
 
+;Shawn Michaels	04
 	;	whsh  grunt smak  ouch
 	.word	DEFLT,1022H,DEFLT,1030H	;punch
 	.word	DEFLT,1023H,DEFLT,1031H	;headbutt
@@ -1154,6 +1227,7 @@ MASTER_SOUND_TABLE
 	.word	DEFLT			;yellthrow
 
 
+;Bam Bam Bigelow 05
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;punch
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;headbutt
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;kick
@@ -1176,6 +1250,7 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,DEFLT	;rzr slash
 	.word	DEFLT			;yellthrow
 
+;Doink the Clown 06
 	;	whsh  grunt smak  ouch
 	.word	DEFLT,1006h,DEFLT,1013H	;punch
 	.word	DEFLT,1007h,1000h,1014H	;headbutt
@@ -1199,6 +1274,7 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,DEFLT	;rzr slash
 	.word	DEFLT			;yellthrow
 
+;Adam Bomb	07
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;punch
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;headbutt
 	.word	DEFLT,DEFLT,DEFLT,DEFLT	;kick
@@ -1221,6 +1297,7 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,DEFLT	;rzr slash
 	.word	DEFLT			;yellthrow
 
+;Lex Luger	08
 	.word	DEFLT,1022H,DEFLT,1030H	;punch
 	.word	DEFLT,1023H,DEFLT,1031H	;headbutt
 	.word	DEFLT,1024H,DEFLT,1032H	;kick
@@ -1242,7 +1319,13 @@ MASTER_SOUND_TABLE
 	.word	            DEFLT,103DH	;rug slam
 	.word	            DEFLT,DEFLT	;rzr slash
 	.word	DEFLT			;yellthrow
+;MISSING LINES
 
+*****************************************************************************
+*
+* Play a sound from the tables.
+* 0a0H = sound number (or'ed with 1000h for a random table)
+*
 
  SUBR	table_sound
 
@@ -1253,7 +1336,7 @@ MASTER_SOUND_TABLE
 	PUSH	a2
 	xori	1000h,a0
 	X32	a0
-	addi	qgjrrandom_sound_tables,a0
+	addi	gqarrandom_sound_tables,a0
 	move	*a0,a2,L
 	move	*a2+,a0,W
 	calla	RNDRNG0
@@ -1263,223 +1346,234 @@ MASTER_SOUND_TABLE
 	PULL	a2
 	jruc	triple_sound
 
-qgjrrandom_sound_tables
-	.long	qgjrdoink_hdbutt_l		; 0
-	.long	qgjrgeneric_punch_l	; 1
-	.long	qgjrgeneric_rugslam_l	; 2
-	.long	qgjrgeneric_rslam_impact_l	; 3
-	.long	qgjrdoink_rugslam_l	; 4
-	.long	qgjrdoink_rugslam_impact_l	; 5
+gqarrandom_sound_tables
+	.long	gqardoink_hdbutt_l		; 0
+	.long	gqargeneric_punch_l	; 1
+	.long	gqargeneric_rugslam_l	; 2
+	.long	gqargeneric_rslam_impact_l	; 3
+	.long	gqardoink_rugslam_l	; 4
+	.long	gqardoink_rugslam_impact_l	; 5
 
-	.long	qgjrdoink_face_a	   ;6
-	.long	qgjrdoink_head_a	   ;7
-	.long	qgjrdoink_kick_a	   ;8
-	.long	qgjrdoink_drop_a	   ;9
-	.long	qgjrdoink_knee_a	   ;a
-	.long	qgjrdoink_reach_a	   ;b
-	.long	qgjrdoink_elbow_a	   ;c
-	.long	qgjrdoink_stomp_a	   ;d
-	.long	qgjrdoink_push_a	   ;e
-	.long	qgjrdoink_hip_a	   ;f
-	.long	qgjrdoink_jump_a	   ;10
-	.long	qgjrdoink_super_a	   ;11
-	.long	qgjrdoink_slam_a	   ;12
+	.long	gqardoink_face_a	   ;6
+	.long	gqardoink_head_a	   ;7
+	.long	gqardoink_kick_a	   ;8
+	.long	gqardoink_drop_a	   ;9
+	.long	gqardoink_knee_a	   ;a
+	.long	gqardoink_reach_a	   ;b
+	.long	gqardoink_elbow_a	   ;c
+	.long	gqardoink_stomp_a	   ;d
+	.long	gqardoink_push_a	   ;e
+	.long	gqardoink_hip_a	   ;f
+	.long	gqardoink_jump_a	   ;10
+	.long	gqardoink_super_a	   ;11
+	.long	gqardoink_slam_a	   ;12
 
-	.long	qgjrdoink_face_v	   ;13
-	.long	qgjrdoink_head_v	   ;14
-	.long	qgjrdoink_kick_v	   ;15
-	.long	qgjrdoink_drop_v	   ;16
-	.long	qgjrdoink_knee_v	   ;17
-	.long	qgjrdoink_reach_v	   ;18
-	.long	qgjrdoink_elbow_v	   ;19
-	.long	qgjrdoink_stomp_v	   ;1a
-	.long	qgjrdoink_push_v	   ;1b
-	.long	qgjrdoink_hip_v	   ;1c
-	.long	qgjrdoink_jump_v	   ;1d
-	.long	qgjrdoink_super_v	   ;1e
-	.long	qgjrdoink_slam_v	   ;1f
+	.long	gqardoink_face_v	   ;13
+	.long	gqardoink_head_v	   ;14
+	.long	gqardoink_kick_v	   ;15
+	.long	gqardoink_drop_v	   ;16
+	.long	gqardoink_knee_v	   ;17
+	.long	gqardoink_reach_v	   ;18
+	.long	gqardoink_elbow_v	   ;19
+	.long	gqardoink_stomp_v	   ;1a
+	.long	gqardoink_push_v	   ;1b
+	.long	gqardoink_hip_v	   ;1c
+	.long	gqardoink_jump_v	   ;1d
+	.long	gqardoink_super_v	   ;1e
+	.long	gqardoink_slam_v	   ;1f
 		
-	.long	qgjrdoink_lift_a	   ;20
-	.long	qgjrdoink_lift_v	   ;21
+	.long	gqardoink_lift_a	   ;20
+	.long	gqardoink_lift_v	   ;21
 
-	.long	qgjrhart_face_a	   ;22
-	.long	qgjrhart_head_a	   ;23
-	.long	qgjrhart_kick_a	   ;24
-	.long	qgjrhart_drop_a	   ;25
-	.long	qgjrhart_knee_a	   ;26
-	.long	qgjrhart_reach_a	   ;27
-	.long	qgjrhart_lift_a	   ;28
-	.long	qgjrhart_elbow_a	   ;29
-	.long	qgjrhart_stomp_a	   ;2a
-	.long	qgjrhart_push_a	   ;2b
-	.long	qgjrhart_hip_a	   ;2c
-	.long	qgjrhart_jump_a	   ;2d
-	.long	qgjrhart_super_a	   ;2e
-	.long	qgjrhart_slam_a	   ;2f
+	.long	gqarhart_face_a	   ;22
+	.long	gqarhart_head_a	   ;23
+	.long	gqarhart_kick_a	   ;24
+	.long	gqarhart_drop_a	   ;25
+	.long	gqarhart_knee_a	   ;26
+	.long	gqarhart_reach_a	   ;27
+	.long	gqarhart_lift_a	   ;28
+	.long	gqarhart_elbow_a	   ;29
+	.long	gqarhart_stomp_a	   ;2a
+	.long	gqarhart_push_a	   ;2b
+	.long	gqarhart_hip_a	   ;2c
+	.long	gqarhart_jump_a	   ;2d
+	.long	gqarhart_super_a	   ;2e
+	.long	gqarhart_slam_a	   ;2f
 
-	.long	qgjrhart_face_v	   ;30
-	.long	qgjrhart_head_v	   ;31
-	.long	qgjrhart_kick_v	   ;32
-	.long	qgjrhart_drop_v	   ;33
-	.long	qgjrhart_knee_v	   ;34
-	.long	qgjrhart_reach_v	   ;35
-	.long	qgjrhart_lift_v	   ;36
-	.long	qgjrhart_elbow_v	   ;37
-	.long	qgjrhart_stomp_v	   ;38
-	.long	qgjrhart_push_v	   ;39
-	.long	qgjrhart_hip_v	   ;3a
-	.long	qgjrhart_jump_v	   ;3b
-	.long	qgjrhart_super_v	   ;3c
-	.long	qgjrhart_slam_v	   ;3d
+	.long	gqarhart_face_v	   ;30
+	.long	gqarhart_head_v	   ;31
+	.long	gqarhart_kick_v	   ;32
+	.long	gqarhart_drop_v	   ;33
+	.long	gqarhart_knee_v	   ;34
+	.long	gqarhart_reach_v	   ;35
+	.long	gqarhart_lift_v	   ;36
+	.long	gqarhart_elbow_v	   ;37
+	.long	gqarhart_stomp_v	   ;38
+	.long	gqarhart_push_v	   ;39
+	.long	gqarhart_hip_v	   ;3a
+	.long	gqarhart_jump_v	   ;3b
+	.long	gqarhart_super_v	   ;3c
+	.long	gqarhart_slam_v	   ;3d
 
-	.long	qgjrrazor_medium_pain	;3e
-	.long	qgjrrazor_face_hit		;3f
-	.long	qgjrrazor_medium_effort	;40
-	.long	qgjrrazor_double_effort	;41
+	.long	gqarrazor_medium_pain	;3e
+	.long	gqarrazor_face_hit		;3f
+	.long	gqarrazor_medium_effort	;40
+	.long	gqarrazor_double_effort	;41
 
-	.long	qgjrbam_mult_fire_hits  ;42
+	.long	gqarbam_mult_fire_hits  ;42
 		
-qgjrdoink_hdbutt_l
+gqardoink_hdbutt_l
 	.word	3,1Bh,1Bh,1Bh,0B2h
 
-qgjrgeneric_punch_l
+gqargeneric_punch_l
 	.word	3,1h,2h,19h,1Bh
 
-qgjrgeneric_rugslam_l
+gqargeneric_rugslam_l
 	.word	5,072h,071h,07Ch,074h,0AEh,0AFh
 
-qgjrgeneric_rslam_impact_l
+gqargeneric_rslam_impact_l
 	.word	1,0C1h,0C3h
 
-qgjrdoink_rugslam_l
+gqardoink_rugslam_l
 	.word	5,072h,071h,07Ch,074h,0AEh,0AFh
 
-qgjrdoink_rugslam_impact_l
+gqardoink_rugslam_impact_l
 	.word	5,0C1h,0C1h,0C3h,0C3h,0ACh,0ADh
 
 
-qgjrdoink_face_a
+gqardoink_face_a
 	.word	1,235h,21bh
-qgjrdoink_head_a
+gqardoink_head_a
 	.word	1,234h,21ch
-qgjrdoink_kick_a
-qgjrdoink_knee_a
-qgjrdoink_slam_a
+gqardoink_kick_a
+gqardoink_knee_a
+gqardoink_slam_a
 	.word	2,224h,225h,226h
-qgjrdoink_drop_a
-qgjrdoink_elbow_a
+gqardoink_drop_a
+gqardoink_elbow_a
 	.word	2,21dh,21eh,21fh
-qgjrdoink_reach_a
+gqardoink_reach_a
 	.word	1,220h,221h
-qgjrdoink_lift_a
+gqardoink_lift_a
 	.word	1,222h,223h
-qgjrdoink_stomp_a
+gqardoink_stomp_a
 	.word	3,21bh,224h,225h,226h
-qgjrdoink_push_a
+gqardoink_push_a
 	.word	1,227h,228h
-qgjrdoink_hip_a
+gqardoink_hip_a
 	.word	5,21dh,21eh,21fh,207h,208h,209H
-qgjrdoink_jump_a
+gqardoink_jump_a
 	.word	1,229h,22ah
-qgjrdoink_super_a
+gqardoink_super_a
 	.word	1,206h,21bh
 
 
-qgjrdoink_face_v
+gqardoink_face_v
 	.word	2,200h,201h,202h
-qgjrdoink_head_v
+gqardoink_head_v
 	.word	1,200H,22BH
-qgjrdoink_kick_v
+gqardoink_kick_v
 	.word	1,205H,22CH
-qgjrdoink_drop_v
+gqardoink_drop_v
 	.word	5,22BH,200H,202H,202H,202H,202H
-qgjrdoink_knee_v
-qgjrdoink_elbow_v
+gqardoink_knee_v
+gqardoink_elbow_v
 	.word	2,22CH,203H,22DH
-qgjrdoink_reach_v
-qgjrdoink_lift_v
+gqardoink_reach_v
+gqardoink_lift_v
 	.word	1,22EH,22FH
-qgjrdoink_stomp_v
+gqardoink_stomp_v
 	.word	2,22CH,22DH,204H,20BH
-qgjrdoink_push_v
+gqardoink_push_v
 	.word	1,230H,231H
-qgjrdoink_hip_v
+gqardoink_hip_v
 	.word	1,232H,233H
-qgjrdoink_jump_v
+gqardoink_jump_v
 	.word	2,22BH,204H,22CH
-qgjrdoink_super_v
+gqardoink_super_v
 	.word	1,20AH,20CH,20DH
-qgjrdoink_slam_v
+gqardoink_slam_v
 	.word	2,203H,204H,22CH
 
-qgjrhart_face_a
+gqarhart_face_a
 	.word	2,23Eh,240H,242H
-qgjrhart_head_a
+gqarhart_head_a
 	.word	2,23DH,240H,24AH
-qgjrhart_kick_a
+gqarhart_kick_a
 	.word	1,242H,24DH
-qgjrhart_drop_a	
+gqarhart_drop_a	
 	.word	2,247H,248h,249h
-qgjrhart_knee_a
+gqarhart_knee_a
 	.word	1,241H,24DH
-qgjrhart_reach_a
+gqarhart_reach_a
 	.word	2,23FH,24BH,24CH
-qgjrhart_lift_a
+gqarhart_lift_a
 	.word	1,243H,244H
-qgjrhart_elbow_a
+gqarhart_elbow_a
 	.word	2,247H,248H,249H
-qgjrhart_stomp_a
+gqarhart_stomp_a
 	.word	1,23DH,240H
-qgjrhart_push_a
+gqarhart_push_a
 	.word	1,24FH,24AH
-qgjrhart_hip_a
+gqarhart_hip_a
 	.word	4,242H,244H,247H,248H,249H
-qgjrhart_jump_a
+gqarhart_jump_a
 	.word	1,245H,24EH
-qgjrhart_super_a
+gqarhart_super_a
 	.word	1,242H,24DH
-qgjrhart_slam_a
+gqarhart_slam_a
 	.word	2,240H,24FH,240H
 
-qgjrhart_face_v
+gqarhart_face_v
 	.word	2,251H,252H,253H
-qgjrhart_head_v
+gqarhart_head_v
 	.word	2,25CH,253H,262H
-qgjrhart_kick_v
-qgjrhart_knee_v
+gqarhart_kick_v
+gqarhart_knee_v
 	.word	2,250H,254H,255H
-qgjrhart_drop_v	
+gqarhart_drop_v	
 	.word	3,251H,252H,253H,25CH
-qgjrhart_reach_v
+gqarhart_reach_v
 	.word	1,258H,259H
-qgjrhart_lift_v
+gqarhart_lift_v
 	.word	1,25AH,25BH
-qgjrhart_elbow_v
-qgjrhart_stomp_v
+gqarhart_elbow_v
+gqarhart_stomp_v
 	.word	1,256H,257H
-qgjrhart_push_v
+gqarhart_push_v
 	.word	1,25DH,25EH
-qgjrhart_hip_v
+gqarhart_hip_v
 	.word	1,25FH,260H
-qgjrhart_jump_v
+gqarhart_jump_v
 	.word	2,264H,256H,261H
-qgjrhart_super_v
+gqarhart_super_v
 	.word	2,262H,25CH,261H
-qgjrhart_slam_v
+gqarhart_slam_v
 	.word	2,261H,256H,257H
 
-qgjrrazor_medium_pain
+gqarrazor_medium_pain
 	.word	3,26ah,26bh,26ch,271h
-qgjrrazor_face_hit
+gqarrazor_face_hit
 	.word	3,267h,268h,269h,26fh
-qgjrrazor_medium_effort
+gqarrazor_medium_effort
 	.word	2,272h,273h,274h
-qgjrrazor_double_effort
+gqarrazor_double_effort
 	.word	3,275h,276h,277h,279h
-qgjrbam_mult_fire_hits
+gqarbam_mult_fire_hits
 	.word	1,99h,9ah
 
 
+******************************************************************************
+*												*
+* reset sound board										*
+*												*
+* this is a full reset, checksum dings and all. this is the same routine
+* that was in the old (gspsnd) processor. (ed boon)
+*
+* NOTE: If any data are sent to the sound board within ~270msec of the
+*       reset signal, diagnostics will be skipped and there won't be any
+*       loud and annoying bongs.
+*
 
  SUBR	snd_reset
 
@@ -1506,6 +1600,17 @@ qgjrbam_mult_fire_hits
 	rets
 
 
+******************************************************************************
+*
+* quiet sound board reset
+*
+* Just like snd_reset, but without the diagnostic tests and consequent chimes.
+* It also sets the volume to the CMOS level.
+* 
+* NOTE: Don't CALLx this function, JSRP it.  It SLEEPs.
+*
+* Trashes everything except the reggies which get saved by default when
+* you sleep...
 
  SUBR	QSNDRST
 
@@ -1546,6 +1651,9 @@ qgjrbam_mult_fire_hits
 
 	RETP
 
+*****************************************************************************
+* Process that quietly resets the sound board, then dies.  Useful when you
+* don't feel like waiting for the reset to finish before you move on.
 
  SUBR	qsndrst_proc
 
@@ -1553,91 +1661,113 @@ qgjrbam_mult_fire_hits
 
 	DIE
 
+******************************************************************************
 
  SUBR	snd_play1
 	rets
 
 
+*****************************************************************************
+* Wrestlemania tune
 
  SUBR	wmania_tune
 
 	movi	11,a3
 	callr	SNDSND
-mlxjloop
+vkwxloop
 	SLEEP	TSEC*8
 	movi	14,a3
 	callr	SNDSND
 	SLEEP	TSEC*8
 	movi	13,a3
 	callr	SNDSND
-	jruc	mlxjloop
+	jruc	vkwxloop
 
 
+*****************************************************************************
+* Rings the match start bell a few times. (process)
+*
+* Note:  This uses the channel_sound routine to conserve tracks.  If, for
+*        whatever reason, these rings are spaced out by more than 89 ticks,
+*        (the duration of the bell sound), then this should NOT be done as
+*        it could result in other sound calls being truncated prematurely.
+*
 
 bell_snd	equ	0B1h
 
 	STRUCTPD
-	WORD	pxwuBELL_CHANNEL	;UHW snd channel of bell
+	WORD	iqmcBELL_CHANNEL	;UHW snd channel of bell
 
  SUBR	ring_bell
 
 	movi	bell_snd,a0
 	callr	triple_sound
 	sra	16,a14
-	move	a14,*a13(pxwuBELL_CHANNEL),W
+	move	a14,*a13(iqmcBELL_CHANNEL),W
 
 	SLEEP	TSEC/3
 
 	movi	bell_snd,a0
-	move	*a13(pxwuBELL_CHANNEL),a1,W
+	move	*a13(iqmcBELL_CHANNEL),a1,W
 	callr	channel_sound
 
 	SLEEP	TSEC/3
 
 	movi	bell_snd,a0
-	move	*a13(pxwuBELL_CHANNEL),a1,W
+	move	*a13(iqmcBELL_CHANNEL),a1,W
 	callr	channel_sound
 
 	DIE
 
 
+*****************************************************************************
+* Runs the speech call for a given wrestler, after waiting for channel 1 to
+* clear.
+*
+*0a0H=wrestler #
 
  SUBR	select_speech
 
 	X32	a0
-	addi	fxrrwrestler_sounds,a0
+	addi	yioxwrestler_sounds,a0
 	move	*a0+,a8,W
-	jrz	fxrrdone
+	jrz	yioxdone
 	move	*a0,a9,W
 
 	CREATE	DELAYSND_PID,delay_code_a3
 
-fxrrdone
+yioxdone
 	rets
 
 	.bss	delay_code_a3_exists,16
 
  SUBRP	delay_code_a3
 
-fxrrloop1
+yioxloop1
 	;if this is the only delay_code_a3 process, do the sound, wait out
 	; the duration, then die.
+;	movi	DELAYSND_PID,a0
+;	movi	0FFFFh,a1
+;	calla	EXISTP
+;	jrz	yioxgo
+;	SLEEPK	1
+;	jruc	yioxloop1
 
 	move	@delay_code_a3_exists,a14
-	jrz	fxrrno_exist
+	jrz	yioxno_exist
 	SLEEPK	1
-	jruc	fxrrloop1
-fxrrno_exist
+	jruc	yioxloop1
+yioxno_exist
 	movk	1,a14
 	move	a14,@delay_code_a3_exists
 
-fxrrgo
+yioxgo
 	move	a8,a3
 	callr	send_code_a3
 
-fxrrloop2
+yioxloop2
 	SLEEPK	1
-	dsj	a9,fxrrloop2
+	dsj	a9,yioxloop2
 
 	clr	a14
 	move	a14,@delay_code_a3_exists
@@ -1645,7 +1775,7 @@ fxrrloop2
 	DIE
 
 
-fxrrwrestler_sounds
+yioxwrestler_sounds
 	.word	0000h,0		;HART
 	.word	0300h,94	;RAZOR
 	.word	0000h,0		;TAKER
@@ -1656,9 +1786,18 @@ fxrrwrestler_sounds
 	.word	0000h,0		;ADAM BOMB
 	.word	0000h,0		;PERFECT
 	.word	0000h,0		;LUGER
-fxrrwrestler_soundsX
+yioxwrestler_soundsX
 
 
+*****************************************************************************
+* channel_sound
+*
+* like triple_sound, only you specify the channel it goes on, priorities
+* notwithstanding.  This isn't quite the same thing as SNDSND, tho, since
+* chanXpri, chanXdur, and chanXsnd are updated.
+*
+* 0a0H = sound call (index), 0a1H=channel (1-4)
+*
 
  SUBR	channel_sound
 
@@ -1673,50 +1812,61 @@ fxrrwrestler_soundsX
 	move	*a0,a4,W	;a4 = call (channel 1)
 
 	dec	a1
-	jrz	izflchan1
+	jrz	sofqchan1
 	inc	a4
 	dec	a1
-	jrz	izflchan2
+	jrz	sofqchan2
 	inc	a4
 	dec	a1
-	jrz	izflchan3
+	jrz	sofqchan3
 	inc	a4
 	dec	a1
-	jrz	izflchan4
+	jrz	sofqchan4
 
 	;error!
 	.if DEBUG
 	LOCKUP
 	.endif
-	jruc	izfldone
-izflchan1
+	jruc	sofqdone
+sofqchan1
 	move	a2,@chan1dur,W
 	move	a3,@chan1pri,W
 	move	a4,@chan1snd,W
-	jruc	izflsend
-izflchan2
+	jruc	sofqsend
+sofqchan2
 	move	a2,@chan2dur,W
 	move	a3,@chan2pri,W
 	move	a4,@chan2snd,W
-	jruc	izflsend
-izflchan3
+	jruc	sofqsend
+sofqchan3
 	move	a2,@chan3dur,W
 	move	a3,@chan3pri,W
 	move	a4,@chan3snd,W
-	jruc	izflsend
-izflchan4
+	jruc	sofqsend
+sofqchan4
 	move	a2,@chan4dur,W
 	move	a3,@chan4pri,W
 	move	a4,@chan4snd,W
+;	jruc	sofqsend
 
-izflsend
+sofqsend
 	move	a4,a3
 	callr	send_code_a3
 
-izfldone
+sofqdone
 	PULL	a0,a1,a2,a3,a4
 	rets
 
+*****************************************************************************
+* announcer_sound
+*
+* Lots like triple_sound, except that it identifies the announcer who's
+* talking, and if he's already saying something, the new call cuts off
+* the old one.
+*
+* 0a0H = sound call (index into triple_sound table)
+* <a0 = sound call duration in ticks (-1 if not announcer speech)
+*
 
 WHO_IS_IT
 	;figure out who it is.
@@ -1725,56 +1875,59 @@ WHO_IS_IT
 	addi	triple_sndtab,a1
 
 	cmpi	announcer_start,a1
-	jrlt	pzgaerror1			;too low -- not an announcer
+	jrlt	aysjerror1			;too low -- not an announcer
 
 	cmpi	vince_end,a1
-	jrlt	pzgavince			;it's vince
+	jrlt	aysjvince			;it's vince
 
 	cmpi	randy_end,a1
-	jrlt	pzgarandy			;it's jerry
+	jrlt	aysjrandy			;it's jerry
 
 	cmpi	howards_end,a1
-	jrlt	pzgahoward			;it's howard
+	jrlt	aysjhoward			;it's howard
 
 	cmpi	more_jerry,a1
-	jrlt	pzgaerror2			;between howard and jerry - bogus
+	jrlt	aysjerror2			;between howard and jerry - bogus
 
 	cmpi	triple_end,a1
-	jrge	pzgaerror3			;long after the table.  error.
-	jruc	pzgarandy			;more jerry (randy)
+	jrge	aysjerror3			;long after the table.  error.
+	jruc	aysjrandy			;more jerry (randy)
 	
-pzgavince
+aysjvince
 	movi	vincechan,a1
 	movi	vincedur,a2
-	jruc	pzgacont
-pzgarandy
+	jruc	aysjcont
+aysjrandy
 	movi	randychan,a1
 	movi	randydur,a2
-	jruc	pzgacont
-pzgahoward
+	jruc	aysjcont
+aysjhoward
 	movi	howardchan,a1	;a1 = pointer to announcer channel
 	movi	howarddur,a2	;a2 = pointer to announcer duration
 
-pzgacont
+aysjcont
 	clrc
 	move	*a2,a14
 	RETS
 
-pzgaerror1
+aysjerror1
 	.if DEBUG
+;	LOCKUP		;call # too low - not an announcer.
 	.endif
 	setc
 	rets
 
-pzgaerror2
+aysjerror2
 	.if DEBUG
+;	LOCKUP		;call # in that range between howard and 2nd jerry.
 	.endif
 	setc
 	rets
 
 
-pzgaerror3
+aysjerror3
 	.if DEBUG
+;	LOCKUP		;call # higher than end of table - not an announcer.
 	.endif
 	setc
 	rets
@@ -1785,8 +1938,8 @@ pzgaerror3
 	PUSH	a1,a2,a3,a4,a5
 	CALLR	WHO_IS_IT
 
-	JRC	pzgaerror
-	jrz	pzgano_cutoff
+	JRC	aysjerror
+	jrz	aysjno_cutoff
 
 	;Guy is already talking.  Start the new call on the same track.
 	X32	a0
@@ -1799,53 +1952,54 @@ pzgaerror3
 
 	move	*a1,a0
 	dec	a0
-	jrz	pzgachan1
+	jrz	aysjchan1
 	inc	a5
 	dec	a0
-	jrz	pzgachan2
+	jrz	aysjchan2
 	inc	a5
 	dec	a0
-	jrz	pzgachan3
+	jrz	aysjchan3
 	inc	a5
 	dec	a0
-	jrz	pzgachan4
+	jrz	aysjchan4
 
 	;bad channel?!  This should never happen.  Stop right there.
 	.if DEBUG
 	LOCKUP
 	.endif
 	movi	-1,a0
-	jruc	pzgaend
+	jruc	aysjend
 
-pzgachan1
+aysjchan1
 	move	a4,@chan1pri,W
 	move	a3,@chan1dur,W
-	jruc	pzgafire
-pzgachan2
+	jruc	aysjfire
+aysjchan2
 	move	a4,@chan2pri,W
 	move	a3,@chan2dur,W
-	jruc	pzgafire
-pzgachan3
+	jruc	aysjfire
+aysjchan3
 	move	a4,@chan3pri,W
 	move	a3,@chan3dur,W
-	jruc	pzgafire
-pzgachan4
+	jruc	aysjfire
+aysjchan4
 	move	a4,@chan4pri,W
 	move	a3,@chan4dur,W
+;	jruc	aysjfire
 
-pzgafire
+aysjfire
 	move	a3,*a2,W	;set announcer duration
 	move	a3,a0
 	move	a5,a3
 	callr	send_code_a3
-	jruc	pzgaend
+	jruc	aysjend
 
-pzgaerror
+aysjerror
 	;not an announcer call!  Desist!
 	movi	-1,a0
-	jruc	pzgaend
+	jruc	aysjend
 
-pzgano_cutoff
+aysjno_cutoff
 	;announcer isn't already talking.  Fire off a triple_sound as normal
 	calla	triple_sound
 	move	a14,*a2,W
@@ -1854,11 +2008,18 @@ pzgano_cutoff
 	sra	16,a14
 	move	a14,*a1,W
 
-pzgaend
+aysjend
 	PULL	a1,a2,a3,a4,a5
 	rets
 
 
+*****************************************************************************
+* wrtable_sound
+*
+* performs a sound call from the master table for a wrestler
+*
+* 0a10H = *wrestlerproc 0a0H = sound call index (might be OR'ed with 8000h)
+*
 
  SUBR	wrtable_sound
 
@@ -1875,27 +2036,34 @@ pzgaend
 	add	a0,a1
 	addi	MASTER_SOUND_TABLE,a1
 	move	*a1,a1,W
-	jrnn	lhweokay
+	jrnn	wxpmokay
 
 	;oops.  use the default table instead
 	addi	DEFAULT_SOUND_TABLE,a0
 	move	*a0,a1,W
-lhweokay
+wxpmokay
 	move	a1,a0
-	jrz	lhwedone
+	jrz	wxpmdone
 	calla	triple_sound
 
-lhwedone
+wxpmdone
 	pull	a1,a4
 	rets
 
+*****************************************************************************
+*
+*  triple_sound - Make a sound call from the triple_sndtab sound table
+*
+*  input: a0 = sound call offset into table
+*  output: a14 = [channel,duration] of call. (0 if not played)
+*
 
  SUBR	triple_sound
 
 	cmpi	211h,a3
-	jrne	wftgokx
+	jrne	vtbmokx
 	LOCKUP
-wftgokx
+vtbmokx
 	move	@SOUNDSUP,b3,W		; are we allowed ??
 	jrne	send_rets		; no
 
@@ -1929,12 +2097,12 @@ wftgokx
 	.endif
 
 	TEST	a0
-	jrn	wftga0lo
+	jrn	vtbma0lo
 
 	X32	a0			; 32 bits per table entry
 	addi	triple_sndtab,a0 	; a0 --> our entry
 	cmpi	triple_end,a0		; past the end of the table ?
-	jrhs	wftga0hi			; yes, sans
+	jrhs	vtbma0hi			; yes, sans
 
 tsnd0	move	*a0+,a1,W		; a1 = [priority , duration]
 	jreq	tsnd9			; zero entry = skip
@@ -1944,7 +2112,12 @@ tsnd0	move	*a0+,a1,W		; a1 = [priority , duration]
 	sll	32-8,a4
 	srl	32-8,a4			; a4 = duration only
 	move	*a0+,a3,W		; a3 = channel 1 sound call
-	jrz	wftgzcall			; quit if zero
+	jrz	vtbmzcall			; quit if zero
+*
+* a1 = priority
+* a3 = channel 1 sound call
+* a4 = duration
+*
 
 	.if SND_DEBUG
 	;tentatively set SDA_EMPTY.  we might change that later.
@@ -1961,33 +2134,37 @@ tsnd0	move	*a0+,a1,W		; a1 = [priority , duration]
 	jreq	tsnd3			; channel 3
 	move	@chan4pri,a0,W
 	jreq	tsnd4			; channel 4
+*
+* all channels used up ---> see if I am more important
+*
 
 
+;New Method = find lowest-priority call and bump it if I outrank it.
 
 	move	@chan1pri,a5,W
 	movi	tsnd1,a6
 
 	move	@chan2pri,a14
 	cmp	a5,a14
-	jrge	wftgcheck_3
+	jrge	vtbmcheck_3
 	move	a14,a5
 	movi	tsnd2,a6
-wftgcheck_3
+vtbmcheck_3
 	move	@chan3pri,a14
 	cmp	a5,a14
-	jrge	wftgcheck_4
+	jrge	vtbmcheck_4
 	move	a14,a5
 	movi	tsnd3,a6
-wftgcheck_4
+vtbmcheck_4
 	move	@chan4pri,a14
 	cmp	a5,a14
-	jrge	wftglowest_found
+	jrge	vtbmlowest_found
 	move	a14,a5
 	movi	tsnd4,a6
 
-wftglowest_found
+vtbmlowest_found
 	cmp	a5,a1			; who is more important ?
-	jrlt	wftgno_preempt		; him.  forget it.
+	jrlt	vtbmno_preempt		; him.  forget it.
 
 	.if SND_DEBUG
 	;set ACTION to SDA_PREEMPT
@@ -1998,7 +2175,7 @@ wftglowest_found
 
 	jump	a6
 		
-wftgno_preempt
+vtbmno_preempt
 	.if SND_DEBUG
 	;set ACTION to SDA_LOPRI
 	move	@sdram_ptr,a0,L
@@ -2010,7 +2187,7 @@ wftgno_preempt
 send_rets
 	.if SND_DEBUG
 	;increment sdram_ptr
-	callr	wftginc_sdram
+	callr	vtbminc_sdram
 	.endif
 	clr	a14
 	clrc
@@ -2058,14 +2235,14 @@ tsnd7
 tsnd9
 	.if SND_DEBUG
 	;increment sdram_ptr
-	callr	wftginc_sdram
+	callr	vtbminc_sdram
 	.endif
 
 	PULL	a0,a1,a2,a3,a4,a5,a6
 	setc	 			; carry set = success
 	rets
 
-wftgzcall
+vtbmzcall
 	.if SND_DEBUG
 	move	@sdram_ptr,a0,L
 	movi	SDA_ZCALL,a1
@@ -2073,8 +2250,8 @@ wftgzcall
 	.endif
 	jruc	tsnd9
 
-wftga0hi
-wftga0lo
+vtbma0hi
+vtbma0lo
 	.if SND_DEBUG
 	move	@sdram_ptr,a0,L
 	movi	SDA_BADNDX,a1
@@ -2084,17 +2261,17 @@ wftga0lo
 
 	.if SND_DEBUG
 
- SUBRP	wftginc_sdram
+ SUBRP	vtbminc_sdram
 
 	PUSH	a14
 
 	move	@sdram_ptr,a14,L
 	addi	SNDCALSIZ,a14
 	cmpi	sdram_ptr,a14
-	jrlt	wftgis_ok
+	jrlt	vtbmis_ok
 	movi	SDRAM,a14
 
-wftgis_ok	move	a14,@sdram_ptr,L
+vtbmis_ok	move	a14,@sdram_ptr,L
 	PULL	a14
 	rets
 
@@ -2103,30 +2280,34 @@ wftgis_ok	move	a14,@sdram_ptr,L
 
 
 
+*****************************************************************************
 
  SUBR	snd_update
 
 	;update announcer bits
 	move	@vincedur,a0,W
-	jrz	ihmono_vince
+	jrz	ktodno_vince
 	dec	a0
 	move	a0,@vincedur,W
-ihmono_vince
+ktodno_vince
 
 	move	@randydur,a0,W
-	jrz	ihmono_randy
+	jrz	ktodno_randy
 	dec	a0
 	move	a0,@randydur,W
-ihmono_randy
+ktodno_randy
 
 	move	@howarddur,a0,W
-	jrz	ihmono_howard
+	jrz	ktodno_howard
 	dec	a0
 	move	a0,@howarddur,W
-ihmono_howard
+ktodno_howard
 
-	move	@chan1dur,a0,W			; channel ihmo1 timing down ?
+	move	@chan1dur,a0,W			; channel ktod1 timing down ?
 	jrz	sup2				; nope....
+;	inc	a0
+;	jrz	sup2
+;	dec	a0
 	dec	a0				; yes, count this tick !!
 	move	a0,@chan1dur,W			; update duration ram
 	jrnz	sup2
@@ -2138,8 +2319,11 @@ ihmono_howard
 	jruc	sup2
 sup1	move	a1,@chan1pri,W			; no script --> priority = 0
 
-sup2	move	@chan2dur,a0,W			; channel ihmo2 timing down ?
+sup2	move	@chan2dur,a0,W			; channel ktod2 timing down ?
 	jrz	sup3				; nope....
+;	inc	a0
+;	jrz	sup3
+;	dec	a0
 	dec	a0				; yes, count this tick !!
 	move	a0,@chan2dur,W			; update duration ram
 	jrnz	sup3
@@ -2150,8 +2334,11 @@ sup2	move	@chan2dur,a0,W			; channel ihmo2 timing down ?
 	jruc	sup3
 sup25	move	a1,@chan2pri,W			; no script --> priority = 0
 
-sup3	move	@chan3dur,a0,W			; channel ihmo3 timing down ?
+sup3	move	@chan3dur,a0,W			; channel ktod3 timing down ?
 	jrz	sup4				; nope....
+;	inc	a0
+;	jrz	sup4
+;	dec	a0
 	dec	a0				; yes, count this tick !!
 	move	a0,@chan3dur,W			; update duration ram
 	jrnz	sup4
@@ -2162,8 +2349,11 @@ sup3	move	@chan3dur,a0,W			; channel ihmo3 timing down ?
 	jruc	sup4
 sup35	move	a1,@chan3pri,W			; no script --> priority = 0
 
-sup4	move	@chan4dur,a0,W			; channel ihmo4 timing down ?
+sup4	move	@chan4dur,a0,W			; channel ktod4 timing down ?
 	jrz	supexit				; nope....
+;	inc	a0
+;	jrz	supexit
+;	dec	a0
 	dec	a0				; yes, count this tick !!
 	move	a0,@chan4dur,W			; update duration ram
 	jrnz	supexit
@@ -2176,6 +2366,16 @@ sup45	move	a1,@chan4pri,W			; no script --> priority = 0
 
 supexit	rets
 
+*****************************************************************************
+*  do_tune_commands
+*
+*  run and execute a list of tune commands until a "sleep" or "endtune"
+*  is reached
+*
+*  input:
+*	a0 = top of current channel's ram storage
+*	a1 = current script position
+*
 
  SUBRP	do_tune_commands
 	move	*a1+,a3,W			; get [parameter,command]
@@ -2253,6 +2453,12 @@ tc_setpri2
 	move	a3,*a1(sndpri),W    	; set it
 	jruc	do_tune_commands
 
+*****************************************************************************
+*  nosounds
+*
+*  cancels all sound calls. zeros all priorities and stops all
+*  currently running tunes.
+*
 
  SUBR	nosounds
 
@@ -2264,6 +2470,7 @@ tc_setpri2
 
 	rets
 
+*****************************************************************************
 
  SUBRP	clear_sound_ram
 
@@ -2275,6 +2482,10 @@ nos2	move	a0,*a1+,W		; zero u out !!!
 
 	rets
 
+*****************************************************************************
+* Sets the volume of the DCS.
+* 0a0H=volume (0-255)
+*
 
  SUBR	set_volume
 
@@ -2301,6 +2512,9 @@ nos2	move	a0,*a1+,W		; zero u out !!!
 	PULL	a0,a1,a3
 	rets
 
+*****************************************************************************
+* Raw hardware sound call.
+* 0a3H=sound code (0-1ff)
 
  SUBR	SNDSND
  SUBRP	send_code_a3
@@ -2315,12 +2529,18 @@ nos2	move	a0,*a1+,W		; zero u out !!!
 	move	a3,a0
 	sll	32-16,a3
 	srl	32-8,a3			; a3 = high byte
+*
+* send high byte
+*
 	move	@_sound_addr,a4,L
 	move	a3,*a4
 
 	movk	2,a2
 	dsj	a2,$			; time for signal to get through
  	callr	poll_sirq
+*
+* send low byte
+*
 	sll	32-8,a0
 	srl	32-8,a0			; a3 = low byte
 	move	@_sound_addr,a4,L
@@ -2331,20 +2551,26 @@ nos2	move	a0,*a1+,W		; zero u out !!!
 sendx	PULL	a0,a1,a2,a3,a4
 	rets
 
+*****************************************************************************
+* Poll sound IRQ.  When IRQ goes high, sound board is ready for next call.
+* Do timeout so sound board can't screw things up.
+*
 
  SUBRP	poll_sirq
 	movi	390/3,a4		; 180 micros max firq delay on snd board
 
+;feeipoll3	movb	@SOUNDIRQ+B_SIRQ-7,a1
 
-dxwlpoll3
+feeipoll3
 	move	@_soundirq_addr,a1,L
 	addi	(B_SIRQ-7),a1
 	movb	*a1,a1
 
-	jrn	dxwlpoll9			; done?
-	dsj	a4,dxwlpoll3
-dxwlpoll9	rets
+	jrn	feeipoll9			; done?
+	dsj	a4,feeipoll3
+feeipoll9	rets
 
+*****************************************************************************
 
 VOLDN	.equ	11
 VOLUP	.equ	12
@@ -2353,67 +2579,72 @@ VOLUP	.equ	12
 
 	;in diagnostics?
 	move	@GAMSTATE,a0,W
-	jrn	nhtgdone
+	jrn	lfhgdone
 
 	;already adjusting?
 	movi	VOLADJ_PID,a0
 	movi	0FFFFh,a1
 	calla	EXISTP
-	jrnz	nhtgdone
+	jrnz	lfhgdone
 
 	;okay, adjust
 	movi	VOLADJ_PID,a14
 	move	a14,*a13(PROCID),W
 
+;	move	@COINS,a0
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	btst	VOLDN,a0
-	jrz	nhtgvoldn_loop
+	jrz	lfhgvoldn_loop
 	
 
-nhtgvolup_loop
+lfhgvolup_loop
 	;increment the volume
 	movi	ADJVOLUME,a0
 	calla	GET_ADJ
 	BADCHK	a0,0,255,28		;reg, lo, hi, val if bad
 	inc	a0
 	cmpi	255,a0
-	jrle	nhtgup_okay
+	jrle	lfhgup_okay
 	movi	255,a0
-nhtgup_okay
+lfhgup_okay
 	calla	set_volume
 	SLEEPK	1
 
 	;if the vol+ button is no longer down, die
+;	move	@COINS,a0
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	btst	VOLUP,a0
-	jrnz	nhtgdone
-	jruc	nhtgvolup_loop
+	jrnz	lfhgdone
+	jruc	lfhgvolup_loop
 
-nhtgvoldn_loop
+lfhgvoldn_loop
 	;decrement the volume
 	movi	ADJVOLUME,a0
 	calla	GET_ADJ
 	BADCHK	a0,0,255,28		;reg, lo, hi, val if bad
 	dec	a0
-	jrnn	nhtgdn_okay
+	jrnn	lfhgdn_okay
 	clr	a0
-nhtgdn_okay
+lfhgdn_okay
 	calla	set_volume
 	SLEEPK	1
 
 	;if the vol- button is no longer down, die
+;	move	@COINS,a0
 	move	@_coin_addr,a0,L
 	move	*a0,a0
 	btst	VOLDN,a0
-	jrnz	nhtgdone
-	jruc	nhtgvoldn_loop
+	jrnz	lfhgdone
+	jruc	lfhgvoldn_loop
 
-nhtgdone
+lfhgdone
 	DIE
 
+;missing KILL_HOWARD
 
+;missing DO_HOWARD
 VINCE_START_GAME
 	MOVI	MATCHUP_TAB,A2
 	MOVE	@HCOUNT,A1
@@ -2472,6 +2703,15 @@ MAKE_ANNOUNCEMENT
 	CALLA	ADD_VOICE
 	RETS
 
+;Bret
+;Razor
+;Taker
+;Yoko
+;Shawn
+;Bam Bam
+;Doink
+;spare
+;Lex
 WHICH_WRESTLER
 	.WORD	131H
 	.WORD	12DH
@@ -2541,6 +2781,23 @@ RAND_START_2_3
 	.WORD	2D9H,0
 	.WORD	2DAH,0
 
+;**************************************************************************
+;*											      *
+;* TABLES ARE SET UP AS FOLLOWS -								 *
+;* 	WORD x(NUMBER OF TABLE ENTRIES -1), TABLE ENTRY SIZE			 *
+;* LABEL												 *
+;* 	WORD TABLE ENTRY 1									 *
+;* 	...											 *
+;* 	WORD TABLE ENTRY x									 *
+;* 												 *
+;* TABLES CAN HAVE MORE THAN ONE CALL PER ENTRY						 *
+;* CALL EITHER ADD_TO_QUEUE OF ADD_IF_SILENT WITH TABLE ADDRESS IN A2	 *
+;* CALL WITH A0 SET TO RANDOMNESS OF ACTUALLY MAKING A SOUND CALL		 *
+;* A0 = 0 NO CHANCE, A0=1000 100% CHANCE							 *
+;* IF CALLING A TABLE WITH EITHER 'GIVE CREDIT' OR					 *
+;* 'VERY_IMPRESSIVE' IN IT, A5 MUST REFLECT THE ATTACKING WRESTLER NUMBER *
+;*											      *
+;**************************************************************************
 
 RESET_VOICE_QUEUE
 	MOVI	ANNOUNCE_QUEUE,A1
@@ -2568,6 +2825,11 @@ ADD_VOICE
 	MOVE	A0,A0
 	JRN	OUT_OF_RANGE_SOUND
 
+;	;temp!
+;	cmpi	9Eh,a0
+;	jrne	lfhgfoo
+;	LOCKUP
+;lfhgfoo
 
 	MOVE	A0,*A1+
 	CMPI	EOF_ANNOUNCE_QUEUE,A1
@@ -2600,6 +2862,13 @@ NO_ADD
 	JREQ	NOTHING_TO_DO_NOW
 
 
+;	move	@GAMSTATE,a0
+;	subk	INAMODE,a0
+;	jrnz	lfhgno
+;Check AMODE SOUND ON CMOS flag
+;	ADJUST	ADJMUSIC
+;	jrnz	NOTHING_TO_DO_NOW
+;lfhgno
 
 
 
@@ -2634,6 +2903,7 @@ NO_RESET_QUEUE3
 	MOVE	A2,@CURRENT_ANN_QUEUE,L
 	SLOOP	1,ANNOUNCE_VOICE
 
+*******************************************************************************
 
 	bssx	which_table,32
 	bssx	which_one_first,16
@@ -2704,12 +2974,14 @@ DO_THE_SPEECH
 	CALLR	ADD_SPEECH_TO_LIST
 	MOVE	B3,B3
 	JRNZ	ADD_ANYWAY
+**************************************
 	.IF DEBUG
 	MOVE	A0,A0
 	JRNN	OKAY
 	LOCKUP
 OKAY
 	.ENDIF
+**************************************
 	CALLA	IF_SILENT_ADD_VOICE
 	JRUC	SPEECH_ADDED
 ADD_ANYWAY
@@ -2778,6 +3050,9 @@ DO_CROWD_ANYWAY
 	SLL	6,A0
 	ADD	A3,A0
 	MOVE	A0,A4
+;	MOVI	CROWD_SOUND_PID,A0
+;	MOVI	-1,A1
+;	CALLA	EXISTP
 	move	@crowd_dummy_exists,a0
 	JRNZ	NO_CROWD_ALREADY_GOING
 	MOVE	A4,A0
@@ -2846,6 +3121,9 @@ MADE_RIGHT_TABLE
 SET_DUMMY_SLEEP
 	PUSH	A1
 	move	@repeat_mode_exists,a0
+;	MOVI	REPEAT_MODE_PID,A0
+;	MOVI	-1,A1
+;	CALLA	EXISTP
 	JRZ	NO_DUMMY_TO_SET
 	MOVI	80,A1
 	MOVE	A1,*A0(PTIME)
@@ -2988,6 +3266,7 @@ CLIMB_ROPES
 	.WORD	6,020H
 JUMP_ROPES
 	.WORD	KABOOM_OH,KABOOM
+;	.WORD	REPEAT_MODE,0
 	.WORD	OOOH,0
 	.WORD	BOOMSHAKALAKA,0
 	.WORD	OFF_THE_TOP,0
@@ -3114,12 +3393,16 @@ DROP_KICK
 	.WORD	LISTEN_TO_THE_CROWD
 	.WORD	REPEAT_MODE
 	.WORD	NICELY_DONE
+;	.WORD	BOTH_MEN_DOWN
 	.WORD	OH_MY
+;	.WORD	OH_THAT_HURTS_0
 	.WORD	WITH_AUTHORITY
 	.WORD	KABOOM
 	.WORD	BOOMSHAKALAKA
 	.WORD	R_TASTE_OF_HIS_OWN
 	.WORD	VERY_IMPRESSIVE
+;	.WORD	ITS_PAND_OUT_THERE
+;	.WORD	WHAT_SPEED
 	.WORD	TO_THE_FACE
 	.WORD	AWESOME
 	.WORD	GOODNIGHT
@@ -3130,6 +3413,7 @@ DROP_KICK
 	.WORD	LISTEN_TO_THE_CROWD
 	.WORD	NICELY_DONE
 	.WORD	GOODNIGHT
+;	.WORD	BOTH_MEN_DOWN
 	.WORD	OH_MY
 
 CALL_FACE_HIT
@@ -3152,12 +3436,14 @@ FACE_HIT
 	.WORD	TO_THE_FACE
 	.WORD	R_WHAT_SPEED
 	.WORD	TO_THE_FACE
+;	.WORD	WHAT_POWER
 	.WORD	TO_THE_FACE
 	.WORD	WHAT_A_BLOW
 	.WORD	HELLO
 	.WORD	R_GOODNIGHT
 
 	.WORD	TO_THE_FACE
+;	.WORD	WHAT_SPEED
 	.WORD	R_WHAT_POWER
 	.WORD	OH_MY
 	.WORD	HELLO
@@ -3180,6 +3466,7 @@ PROC_MID_HIT
 	.WORD	7,010H
 MID_HIT
 	.WORD	TO_THE_MIDSECTION
+;	.WORD	WHAT_SPEED
 	.WORD	TO_THE_MIDSECTION
 	.WORD	R_WHAT_POWER
 	.WORD	TO_THE_MIDSECTION
@@ -3189,6 +3476,7 @@ MID_HIT
 	.WORD	L_HIT_HIM
 
 	.WORD	TO_THE_MIDSECTION
+;	.WORD	WHAT_SPEED
 	.WORD	R_WHAT_POWER
 	.WORD	OH_MY
 	.WORD	L_HIT_HIM
@@ -3216,14 +3504,17 @@ PROC_AVERAGE_MOVE
 	.WORD	17,010H
 AVERAGE_MOVE
 	.WORD	END_GAME_STUFF
+;	.WORD	OH_THAT_HURTS_1
 	.WORD	REPEAT_MODE
 	.WORD	OH_0
 	.WORD	WITH_AUTHORITY
 	.WORD	NICELY_DONE
 	.WORD	NICE_EXECUTION
 	.WORD	OOOH_0
+;	.WORD	OH_MY_GOODNESS_2
 	.WORD	R_RIGHT_TO_THE_KISSER
 	.WORD	ITS_PAND_IN_THE_RING
+;	.WORD	WHAT_POWER
 	.WORD	WHAT_SKILL
 	.WORD	R_WHAT_AGILITY
 	.WORD	R_AWESOME
@@ -3234,6 +3525,7 @@ AVERAGE_MOVE
 	.WORD	AWESOME
 	.WORD	R_IMPRESSIVE_MOVE
 
+;	.WORD	OH_THAT_HURTS_1
 	.WORD	AWESOME
 	.WORD	OH_0
 	.WORD	WITH_AUTHORITY
@@ -3245,23 +3537,23 @@ DO_REVERSAL
 	MOVE	*A8(WRESTLERNUM),A5
 
 	;make sure wrestlernum is valid!
-	jrn	nhtgbad_a5
+	jrn	lfhgbad_a5
 	cmpi	7,a5
-	jreq	nhtgbad_a5
+	jreq	lfhgbad_a5
 	cmpi	8,a5
-	jrle	nhtgok_a5
-nhtgbad_a5
+	jrle	lfhgok_a5
+lfhgbad_a5
 	.if DEBUG
 	LOCKUP
 	.endif
-	jruc	nhtgdr_done
-nhtgok_a5
+	jruc	lfhgdr_done
+lfhgok_a5
 
 	MOVI	REVERSAL,A2
 	MOVI	500,A0
 	CALLR	ADD_IF_SILENT
 	pull	a8
-nhtgdr_done
+lfhgdr_done
 	RETS
 
 	.WORD	0
@@ -3277,6 +3569,7 @@ REVERSAL
 	.WORD	R_THAT_WAS_DUMB
 	.WORD	WHATS_THIS
 	.WORD	R_NO_WAIT_A_MINUTE
+;	.WORD	WHAT
 	.WORD	WHAT_THE
 	.WORD	MOST_IMPRESSIVE
 	.WORD	YES_V
@@ -3326,8 +3619,10 @@ THROWN_OUT
 	.WORD	NICE_EXECUTION
 	.WORD	UNBEELEVABLE_1
 	.WORD	IVE_NEVER_SEEN_THAT
+;	.WORD	OH_THAT_HURTS_0
 	.WORD	WITH_AUTHORITY
 	.WORD	WHAT_A_TURN_OF_EVENTS
+;	.WORD	WHAT_POWER
 	.WORD	R_WHAT_SPEED
 	.WORD	WHAT_SKILL
 	.WORD	R_WHAT_AGILITY
@@ -3361,8 +3656,10 @@ OTHER_AVERAGE
 	.WORD	NICE_EXECUTION
 	.WORD	UNBEELEVABLE_1
 	.WORD	IVE_NEVER_SEEN_THAT
+;	.WORD	OH_THAT_HURTS_0
 	.WORD	WITH_AUTHORITY
 	.WORD	WHAT_A_TURN_OF_EVENTS
+;	.WORD	WHAT_POWER
 	.WORD	R_WHAT_SPEED
 	.WORD	WHAT_SKILL
 	.WORD	R_WHAT_AGILITY
@@ -3462,6 +3759,7 @@ SETUP_MOVE
 	.WORD	R_DIG_IT
 	.WORD	L_WHATS_HE_UP_TO
 	.WORD	L_WHO_DOES_HE_THINK
+;	.WORD	L_THE_SUSPENSE
 	.WORD	HES_GOT_HIM
 
 	.WORD	HERES_THE_SETUP
@@ -3479,15 +3777,18 @@ SPECIAL_LAST_STUFF
 	.WORD	LOOKS_LIKE_ITS_OVER
 	.WORD	R_GAME_OVER
 	.WORD	L_NO_ONE_CAN_TOUCH
+;	.WORD	L_THE_SUSPENSE
 
 	.WORD	THIS_COULD_BE_IT
 	.WORD	R_THIS_COULD_BE_IT
 	.WORD	YOU_CANT_GET_ANY_CLOSER
 	.WORD	WHAT_KEEPING_THEM_UP
 
+******************************************************************************
 
 	.ref	match_winner
 
+* 0a0H = winning team (0 or 1)
 
  SUBR	CALL_MATCH_OVER
 
@@ -3504,12 +3805,12 @@ SPECIAL_LAST_STUFF
 
 	;did a drone lose?
 	xor	a8,a9
-	jrz	nhtgdrn_l
+	jrz	lfhgdrn_l
 
 	movi	MATCH_OVER,A2
-	jruc	nhtgcont
-nhtgdrn_l	movi	MATCH_OVER_DL,A2
-nhtgcont	move	*a10(WRESTLERNUM),a5
+	jruc	lfhgcont
+lfhgdrn_l	movi	MATCH_OVER_DL,A2
+lfhgcont	move	*a10(WRESTLERNUM),a5
 	MOVI	200,A0
 	CALLA	RNDPER
 	JRHI	WRESTLER_SPEECH
@@ -3543,6 +3844,7 @@ SPECIAL_DONE
 
 
 
+;Use this table if the loser is a player.  Lawlor cheers/Vince gripes
 	.word	-1
 	.long	0
 	.word	6,010H
@@ -3560,6 +3862,7 @@ MATCH_OVER
 	.word	L_PULLED_IT_OFF
 	.word	L_EXACT_WHAT_HE_DESERVED
 
+;Use this table if the loser is a drone.  Vince cheers/Lawlor gripes
 	.word	-1
 	.long	0
 	.word	3,010H
@@ -3575,6 +3878,7 @@ MATCH_OVER_DL
 	.word	L_WHAT_A_RIPOFF
 	.word	L_WHAT_A_SCAM
 
+******************************************************************************
 
 WRESTLER_SPEECH
 	SLL	5,A5
@@ -3641,6 +3945,10 @@ LUGER_FINISHES
 
  SUBR	END_MATCH_SPEECH
 
+;	MOVI	IT_DOESNT_LOOK_GOOD,A0
+;	MOVE	*A13(WRESTLERNUM),A5
+;	CALLR	SET_UP_PERSONAL_CALL
+;	CALLR	ADD_VOICE
 
 	CLR	A9
 	CREATE	PIN_HIM_PID,PIN_HIM_PROC
@@ -3652,7 +3960,7 @@ PIN_HIM_PROC
 	jals	SUCIDE
 
 	movk	8,a11
-nhtglp
+lfhglp
 	movk	3,a0
 	CALLA	RNDRNG0
 	MOVE	A0,A1
@@ -3669,10 +3977,11 @@ NO_NEED_TO_DO_NEXT_ONE
 	MOVX	A14,A0
 	subk	20,a0
 	CALLA	PRCSLP
-	dsj	a11,nhtglp
+	dsj	a11,lfhglp
 
 	DIE
 
+;	JRUC	PIN_HIM_PROC
 
 WHICH_PIN_HIM
 	.WORD	0D3H,0D4H,0D5H,0d3h,0D4H
@@ -3684,8 +3993,15 @@ WHICH_PIN_HIM
 	CALLA	KILALL
 	RETS
 
+*****************************************************************
+* INDIVIDUAL SOUND ROUTINES
 
 HIT_THE_MAT
+;	;if I'm outside the ring, do the concrete sound instead
+;	;;;No, don't.  It doesn't sound right.  Wrong call, maybe?
+;	movi	37h,a0
+;	move	*a13(INRING),a14
+;	jrnz	lfhghm_snd
 
 	MOVI	0C1H,A0
 	CALLA	triple_sound
@@ -3694,8 +4010,8 @@ HIT_THE_MAT
 	SLL	4,A0
 	ADDI	MAT_HITS,a0
 	MOVE	*A0,A0
-nhtghm_snd	CALLA	triple_sound
-nhtgrets	RETS
+lfhghm_snd	CALLA	triple_sound
+lfhgrets	RETS
 
 	;low-priority mat hits
 MAT_HITS
@@ -3721,6 +4037,7 @@ SMALL_RUN
 
 small_bounce_sounds
 	.word	0C0H,0C2H,0DH	;<--- this one is way too loud
+;	.word	0dh,0ch,0bh
 
 small_run_sounds
 	.word	0C0H,0C2H,0C0H
@@ -3769,6 +4086,10 @@ DO_PUSH_SPEECH
 	MOVI	500,A0
 	CALLA	RNDPER
 	JRLS	NO_SOUNDS
+;	MOVI	RAZOR_SWEAR_PID,A0
+;	CLR	A1
+;	NOT	A1
+;	CALLA	EXISTP
 	move	@razor_swear_exists,a14
 	JRNZ	NO_SOUNDS
 	CREATE	RAZOR_SWEAR_PID,DUMMY_WAIT
@@ -3934,6 +4255,7 @@ DO_BLOCK_SND
 	SLL	4,A0
 	ADDI	BLOCK_SOUNDS,a0
 	MOVE	*A0,A0
+;	MOVK	19H,A0
 	CALLA	triple_sound
 	RETS
 
@@ -4097,10 +4419,10 @@ MAYBE_TOUGH_ENOUGH
 	MOVK	4,A0
 	CALLA	RNDRNG0
 	MOVE	A0,A0
-	JRNZ	nhtgnot_tough
+	JRNZ	lfhgnot_tough
 	MOVI	ARE_YOU_TOUGH_ENOUGH,A0
 	CALLA	ADD_VOICE
-nhtgnot_tough
+lfhgnot_tough
 	rets
 
 MAYBE_SHOCKING
@@ -4116,6 +4438,8 @@ MAYBE_SHOCKING
 NO_SHOCKING
 	DIE
 
+**************************************************************
+*CROWD TABLES
 	.WORD	3
 SETUP_TABLE
 	.WORD	CROWD_CRESCENDO,D_CROWD_CRESCENDO,C_LONG|C_OVERIDE,0
@@ -4163,7 +4487,11 @@ CROWD_ORDINARY
 	.WORD	CROWD_OH_CHEER,D_CROWD_OH_CHEER,C_SHORT|C_OVERIDE|C_RANDOM,250
 	.WORD	CROWD_WHISTLE_1,D_CROWD_WHISTLE_1,C_SHORT|C_OVERIDE|C_RANDOM,250
 
+****************************************************************************
+* SOUND VOLUME CONTROLS
 
+;A11 = WHICH CHANNEL, -1 = MASTER
+;A8 = TICKS TO FADE OVER
 FADE_MASTER_VOL
 	MOVI	ADJVOLUME,A0
 	CALLA	GET_ADJ
@@ -4185,6 +4513,8 @@ NEXT_FADE
 	CALLR	SET_LOWER_VOL
 	DIE
 
+;A1 WHICH CHANNEL
+;A0 WHAT TO SET CHANNEL VOL TO 255=100%
 SET_LOWER_VOL
 	MOVI	55ABH,A3
 	ADD	A1,A3
@@ -4218,6 +4548,7 @@ SET_LOWER_VOL
 	calla	SNDSND
 	rets
 
+******************************************************************************
 
 	.end
 

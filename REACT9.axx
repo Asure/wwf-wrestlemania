@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		8/8/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"react9.asm"
 	.title	"wrester reactions to hits"
@@ -20,6 +28,8 @@
 	.include	"lifebar.h"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	fall_back_tbl,head_hit_dizzy_tbl,head_hit_tbl,head_hit2_tbl
 	.ref	block_hit_flail,triple_sound,hit_damage_pending
@@ -27,51 +37,92 @@
 	.ref	CALL_FACE_HIT,hitonground_tbl
 	.ref	knee_hit_tbl,burn_tbl
 
+******************************************************************************
+* EXTERNAL ANIM SEQUENCES
+
+;BAM BAM
+;DOINK
+;BRET
+;LEX
+;RAZOR
+;SHAWN
+;TAKER
+;YOKO
 
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
+
+******************************************************************************
+* EQUATES FOR THIS FILE
 
 
-
-
+*****************************************************************************
+;AMODE_RSLASH	40
  SUBR	hit_rslash
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	vaoinoblock
+	jrnz	cpjonoblock
 
+;	move	*a13(FACING_DIR),a0		;check for hit
+;	move	*a13(NEW_FACING_DIR),a1		;from behind
+;	and	a0,a1
+;	andi	MOVE_LEFT|MOVE_RIGHT,a1
+;	jrz	cpjonoblock
 
 	calla	block_hit_flail
 	rets
 
-vaoinoblock
+cpjonoblock
 
+;All of the damage amounts need to be in lookup tables linked to the wrestler
+;who actually struck the blow.
 
 	CALLA	CALL_FACE_HIT
 
 	GETLIFE
-	jrz	vaoiisdead
+	jrz	cpjoisdead
 
+;	calla	create_damage_points
 
 	WRSNDX	RSLASH_L1,RSLASH_L2
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	cpjodiz
+;
+;	calla	check_dizzy
+;	jrz	cpjonot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;cpjodiz
+;	FACE24TBL head_hit_dizzy_tbl
+;	calla	change_anim1a
+;
+;
+;cpjonot_dizzy
+;
+;	calla	inc_burnout
 
 	SETMODE	NORMAL
 
-vaoido_hit
+cpjodo_hit
 	move	*a13(OBJ_YPOSINT),a14
 	move	*a13(GROUND_Y),a0
 	sub	a0,a14
 	cmpi	20,a14
-	jrge	vaoifall_back
+	jrge	cpjofall_back
 
 	;normal punch
 	FACE24TBL head_hit2_tbl
 	calla	change_anim1a
-vaoiisdead
+cpjoisdead
 	calla	wres_collis_off
 	rets
 
-vaoifall_back
+cpjofall_back
 	FACETBL fall_back_tbl
 
 	calla	change_anim1a
@@ -81,20 +132,22 @@ vaoifall_back
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	vaoifall_right		;attacker on left
+	jrgt	cpjofall_right		;attacker on left
 	neg	a2
-vaoifall_right
+cpjofall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 	rets
 
+*****************************************************************************
+;AMODE_HEADDSLASH	41
 
  SUBR	hit_headdslash
 
 	WRSNDX	RSLASH_L1,RSLASH_L2
 
 	GETLIFE
-	jrz	fkhbisdead
+	jrz	lswxisdead
 
 
 	FACE24TBL knee_hit_tbl
@@ -110,16 +163,16 @@ vaoifall_right
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1
-	jrle	fkhbok
+	jrle	lswxok
    	neg	a2
-fkhbok
+lswxok
 	add	a2,a1
 	move	a1,*a13(OBJ_XPOSINT)
 
 	calla	wres_collis_off
 	rets
 
-fkhbisdead
+lswxisdead
 
 	FACETBL	fall_back_tbl
 	calla	change_anim1a
@@ -128,21 +181,23 @@ fkhbisdead
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	fkhbgo_rgt			;attacker on left
+	jrgt	lswxgo_rgt			;attacker on left
 	neg	a2
-fkhbgo_rgt
+lswxgo_rgt
 	move	a2,*a13(OBJ_XVEL),L
 
 	calla	wres_collis_off
 	rets
 
+*****************************************************************************
+;AMODE_HEADUSLASH	42
 
  SUBR	hit_headuslash
 
 	WRSNDX	RSLASH_L1,RSLASH_L2
 
 	GETLIFE
-	jrz	rjdzisdead
+	jrz	svmcisdead
 
 	FACE24TBL knee_hit_tbl
 	calla	change_anim1a
@@ -155,7 +210,7 @@ fkhbgo_rgt
 	calla	wres_collis_off
 	rets
 
-rjdzisdead
+svmcisdead
 
 	FACETBL	fall_back_tbl
 	calla	change_anim1a
@@ -164,14 +219,16 @@ rjdzisdead
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	rjdzgo_rgt			;attacker on left
+	jrgt	svmcgo_rgt			;attacker on left
 	neg	a2
-rjdzgo_rgt
+svmcgo_rgt
 	move	a2,*a13(OBJ_XVEL),L
 
 	calla	wres_collis_off
 	rets
 
+*****************************************************************************
+;AMODE_NAPALM	55
 
  SUBR	hit_napalm
 
@@ -179,20 +236,20 @@ rjdzgo_rgt
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_NORMAL,a0
 
-	jreq	cbvjmode_normal
+	jreq	wndemode_normal
 
 	cmpi	MODE_BLOCK,a0
-	jreq	cbvjmode_normal
+	jreq	wndemode_normal
 
 	calla	wres_collis_off
 
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_ONGROUND,a0
-	jrz	cbvjon_grnd
+	jrz	wndeon_grnd
 	cmpi	MODE_DEAD,a0
-	jrnz	cbvjisdead
+	jrnz	wndeisdead
 
-cbvjon_grnd
+wndeon_grnd
 	FACETBL burn_tbl
 	calla	change_anim1a
 
@@ -206,16 +263,17 @@ cbvjon_grnd
 	movi	43h,a0
 	calla	triple_sound
 
-cbvjisdead	calla	wres_collis_off
+wndeisdead	calla	wres_collis_off
 	rets
 
-cbvjmode_normal
+wndemode_normal
 	;OOPS!  Don't do any damage.
 	clr	a14
 	move	a14,@hit_damage_pending
-	jruc	cbvjisdead
+	jruc	wndeisdead
 
 
+******************************************************************************
 
 	.end
 

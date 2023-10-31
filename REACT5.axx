@@ -1,3 +1,11 @@
+**************************************************************
+*
+* Software:		Jamie Rivett
+* Initiated:		8/8/94
+*
+* COPYRIGHT (C) 1992 WILLIAMS ELECTRONICS GAMES, INC.
+*
+**************************************************************
 
 	.file	"react5.asm"
 	.title	"wrester reactions to hits"
@@ -21,25 +29,34 @@
 	.include	"damage.equ"
 
 
+******************************************************************************
+* EXTERNAL REFERENCES
 
 	.ref	change_anim1a
 	.ref	wres_collis_off
+;	.ref	inc_burnout
 	.ref	block_hit_flail
 	.ref	block_hit
+;	.ref	create_damage_points
 	.ref	slide_offscr
+;	.ref	check_dizzy
 	.ref	wres_slave_anim
 	.ref	triple_sound,CALL_AVERAGE_MOVE
 	.ref	CALL_NASTY_MOVE,PCNT
 
 
+******************************************************************************
+* EXTERNAL ANIM SEQUENCES
 
 
+;BAM BAM
 	.ref	bam_2_head_hit2_anim
 	.ref	bam_4_head_hit2_anim
 	.ref	bam_4_losebal_anim
 	.ref	bam_fall_back_anim
 	.ref	bam_get_buzz_anim
 
+;DOINK
 	.ref	dnk_2_bncoff_anim
 	.ref	dnk_4_bncoff_dizzy_anim
 	.ref	dnk_4_bncoff_anim
@@ -51,28 +68,33 @@
 	.ref	dnk_2_head_hit2_anim,dnk_4_head_hit2_anim
 	.ref	dnk_fall_back_anim
 
+;BRET
 	.ref	hrt_fall_back_anim,hrt_4_losebal_dizzy_anim
 	.ref	hrt_2_head_hit2_anim,hrt_4_head_hit2_anim
 	.ref	hrt_4_head_hit_dizzy_anim
 	.ref	hrt_get_buzz_anim,hrt_4_losebal_anim
 
+;LEX
 	.ref	lex_2_head_hit2_anim,lex_4_head_hit2_anim
 	.ref	lex_head_hit_dizzy_anim
 	.ref	lex_4_losebal_anim
 	.ref	lex_fall_back_anim
 	.ref	lex_get_buzz_anim
 
+;RAZOR
 	.ref	rzr_2_head_hit2_anim,rzr_4_head_hit2_anim
 	.ref	rzr_4_losebal_anim
 	.ref	rzr_fall_back_anim
 	.ref	rzr_get_buzz_anim
 
+;SHAWN
 	.ref	shn_4_head_hit_dizzy_anim
 	.ref	shn_2_head_hit3_anim,shn_4_head_hit3_anim
 	.ref	shn_fall_back_anim
 	.ref	shn_4_losebal_anim
 	.ref	shn_get_buzz_anim
 
+;TAKER
 	.ref	und_fall_back_anim
 	.ref	und_get_buzz_anim
 	.ref	und_2_head_hit2_anim,und_4_head_hit2_anim
@@ -82,85 +104,107 @@
 	.ref	und_4_bncoff_dizzy_anim
 	.ref	und_2_bncoff_anim,und_4_bncoff_anim
 
+;YOKO
 	.ref	yok_fall_back_anim
 	.ref	yok_get_buzz_anim
 	.ref	yok_4_losebal_anim
 
 
+******************************************************************************
+* SYMBOLS DEFINED IN THIS FILE
 
+******************************************************************************
+* EQUATES FOR THIS FILE
 
+*****************************************************************************
 
+*****************************************************************************
+;AMODE_RUN	20
 
+;Return carry set if the run hit is good and will count, clear if it's going
+; to be discarded anyway.
 
  SUBR	good_run_hit
 
+;Ignore most running collisions
 	move	*a13(OBJ_ZPOS),a0,L
 	move	*a10(OBJ_ZPOS),a1,L
 	sub	a0,a1
 	abs	a1
 	srl	16,a1
+;FIXX!!  Unless it is Yoko!
 	move	*a10(WRESTLERNUM),a0
 	cmpi	3,a0
-	jrnz	hpginotyok
+	jrnz	zowhnotyok
+;Yoko
 
 
+;This fixes YOKO gut hitting you after he is flung
 	move	*a10(GETUP_TIME),a0		;delay b4 gaining control
-	jrnz	hpgibad
+	jrnz	zowhbad
 
 
 
 
 	cmpi	5,a1		;if yoko	;15
-	jrlt	hpgigood
-hpginotyok	
+	jrlt	zowhgood
+zowhnotyok	
 	cmpi	2,a1		;6
-	jrgt	hpgibad
+	jrgt	zowhbad
 
-hpgigood	setc
+zowhgood	setc
 	rets
-hpgibad	clrc
+zowhbad	clrc
 	rets
 
  SUBR	hit_run
 
+;Tell running wrestler to stop running, and push other guy out of the way.
 	callr	good_run_hit
-	jrnc	hpgiskip
+	jrnc	zowhskip
 
 	move	*a13(PLYRMODE),a1
 
 	cmpi	MODE_INAIR,a1
-	jrz	hpgiisdead
+	jrz	zowhisdead
 	cmpi	MODE_INAIR2,a1
-	jrz	hpgiisdead
+	jrz	zowhisdead
 
 	cmpi	MODE_BLOCK,a1
-	jrnz	hpginoblock
+	jrnz	zowhnoblock
 
+;	move	*a13(FACING_DIR),a0		;check for hit
+;	move	*a13(NEW_FACING_DIR),a1		;from behind
+;	and	a0,a1
+;	andi	MOVE_LEFT|MOVE_RIGHT,a1
+;	jrz	zowhnoblock
 
 	calla	block_hit_flail
 
 	movi	[3,0],a0
 	move	a0,*a13(OBJ_YVEL),L
 
-	jruc	hpgigotblk
+	jruc	zowhgotblk
 
-hpginoblock
+zowhnoblock
+;If player is on ground, ignore running collisions!
 	move	*a13(PLYRMODE),a0
 	cmpi	MODE_ONGROUND,a0
-	jrz	hpgiisdead
+	jrz	zowhisdead
 
 	GETLIFE
-	jrz	hpgiisdead
+	jrz	zowhisdead
 
 	WRSNDX	LBOWDROP_L1,LBOWDROP_L2
 
 	SETMODE	NORMAL
 
-	FACETBL	hpgilosebal
+	FACETBL	zowhlosebal
 
 	move	*a10(WRESTLERNUM),a1
 	cmpi	3,a1
-	jrnz	hpginotyok2
+	jrnz	zowhnotyok2
+;Yoko ran into me!
 	.ref	fall_back_tbl
 	FACETBL fall_back_tbl
 	calla	change_anim1a
@@ -175,20 +219,27 @@ hpginoblock
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	hpgifall_right		;attacker on left
+	jrgt	zowhfall_right		;attacker on left
 	movi	[-3,0],a2
-hpgifall_right
+zowhfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
-	jruc	hpgigotblk
+	jruc	zowhgotblk
 
+;	move	*a13(PLYR_DIZZY),a1
+;	jrz	zowhnotdiz
+;;Guy is dizzy, need to stay in dizzy after losing balance
+;	FACETBL	zowhlosebal_dizzy
+;
+;zowhnotdiz
 
-hpginotyok2
+zowhnotyok2
 	calla	change_anim1a
 
-hpgigotblk
+zowhgotblk
 	calla	wres_collis_off
 
+;This is what happens to running wrestler.
 
 	movi	[3,0],a0
 	move	a0,*a10(OBJ_YVEL),L
@@ -197,22 +248,24 @@ hpgigotblk
 	move	a0,*a10(PLYRMODE)
 
 	move	*a10(PLYR_DIZZY),a0
-	jrz	hpginotdiz0
+	jrz	zowhnotdiz0
 
+;Running guy is in dizzy mode, bounce off and stay dizzy!
 	clr	a0
 	move	a0,*a10(RUN_TIME)
 	SWAP	a10,a13
 
-	FACETBL	hpgibncoff_dizzy
-	jruc	hpgicnt
+	FACETBL	zowhbncoff_dizzy
+	jruc	zowhcnt
 
-hpginotdiz0
+zowhnotdiz0
 	move	*a10(GETUP_TIME),a0
-	jrz	hpgiskipm
+	jrz	zowhskipm
 
 
+;Cause getup meter to slide off screen.
 	move	*a10(METER_PROC),a0,L
-	jrz	hpgiskipm			;skip if we don't have a getup meter
+	jrz	zowhskipm			;skip if we don't have a getup meter
 	PUSH	a8,a9,a10
 	move	*a0(PA8),a8,L
 	move	*a0(PA9),a9,L
@@ -222,7 +275,7 @@ hpginotdiz0
 	calla	XFERPROC
 	PULL	a8,a9,a10
 
-hpgiskipm	clr	a0
+zowhskipm	clr	a0
 	move	a0,*a10(RUN_TIME)
 	move	a0,*a13(RUN_TIME)
 	move	a0,*a10(GETUP_TIME)
@@ -231,7 +284,7 @@ hpgiskipm	clr	a0
 	SWAP	a10,a13
 
 	FACE24TBL bncoff
-hpgicnt
+zowhcnt
 	calla	change_anim1a
 	SWAP	a10,a13
 
@@ -239,21 +292,21 @@ hpgicnt
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrlt	hpgiright
+	jrlt	zowhright
 	neg	a2
-hpgiright
+zowhright
 	move	a2,*a10(OBJ_XVEL),L
 
-hpgiisdead
+zowhisdead
 	calla	wres_collis_off
 	rets
-hpgiskip	move	*a13(MOVE_DIR),a14
+zowhskip	move	*a13(MOVE_DIR),a14
 	.ref	new_victim_movedir
 	move	a14,@new_victim_movedir
 	calla	wres_collis_off
 	rets
 
-hpgilosebal
+zowhlosebal
 	.long	hrt_4_losebal_anim		;0 Bret Hart
 	.long	rzr_4_losebal_anim		;1 Razor Ramon
 	.long	und_4_losebal_anim		;2 Undertaker
@@ -265,6 +318,18 @@ hpgilosebal
 	.long	lex_4_losebal_anim		;8 Lex Luger
 	.long	dnk_4_losebal_anim		;9 Referee
 
+;Fix!!!
+;zowhlosebal_dizzy
+;	.long	hrt_4_losebal_dizzy_anim	;0 Bret Hart
+;	.long	dnk_4_losebal_dizzy_anim	;1 Razor Ramon
+;	.long	und_4_losebal_dizzy_anim	;2 Undertaker
+;	.long	dnk_4_losebal_dizzy_anim	;3 Yokozuna
+;	.long	dnk_4_losebal_dizzy_anim	;4 Shawn Michaels
+;	.long	dnk_4_losebal_dizzy_anim	;5 Bam Bam
+;	.long	dnk_4_losebal_dizzy_anim	;6 Doink
+;	.long	dnk_4_losebal_dizzy_anim	;7 spare
+;	.long	dnk_4_losebal_dizzy_anim	;8 Lex Luger
+;	.long	dnk_4_losebal_dizzy_anim	;9 Referee
  SUBR    bncoff
 	.ref	rzr_2_bncoff_anim,rzr_4_bncoff_anim
 	.ref	hrt_2_bncoff_anim,hrt_4_bncoff_anim
@@ -301,7 +366,7 @@ hpgilosebal
 	.long	dnk_2_bncoff_anim,dnk_4_bncoff_anim	;9 Referee
 
 
-hpgibncoff_dizzy
+zowhbncoff_dizzy
 	.ref	rzr_4_bncoff_dizzy_anim
 	.ref	hrt_4_bncoff_dizzy_anim
 	.ref	bam_4_bncoff_dizzy_anim
@@ -322,18 +387,24 @@ hpgibncoff_dizzy
 	.long	dnk_4_bncoff_dizzy_anim		;9 Referee
 
 
+*****************************************************************************
+;AMODE_PUPPET	21
  SUBR	hit_puppet
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	katvnoblock
+	jrnz	cugsnoblock
 
 	calla	block_hit
 	rets
 
-katvnoblock
+cugsnoblock
 	;no need for this check now.  AMODE_PUPPET vs. dead guy won't even
 	; register a collision now.
+;	;don't grab dead guys
+;	move	*a13(PLYRMODE),a14
+;	cmpi	MODE_DEAD,a14
+;	jreq	cugsdone
 
  SUBR	hit_puppet_even_if_dead
 	SETMODE	PUPPET
@@ -347,23 +418,27 @@ katvnoblock
 	clr	a0
 	move	a0,*a13(GETUP_TIME)
 
-katvdone	calla	wres_collis_off
+cugsdone	calla	wres_collis_off
 	rets
 
+*****************************************************************************
+;AMODE_PUPPET	53
  SUBR	hit_puppet_noflail
+;Used for puppet moves that will not flail opponent
+;just cause them to do regular hit block
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	yolsnoblock
+	jrnz	yugwnoblock
 
 	calla	block_hit
 	rets
 
-yolsnoblock
+yugwnoblock
 	;don't grab dead guys
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	yolsdone
+	jreq	yugwdone
 
 	SETMODE	PUPPET
 
@@ -376,19 +451,23 @@ yolsnoblock
 	clr	a0
 	move	a0,*a13(GETUP_TIME)
 
-yolsdone	calla	wres_collis_off
+yugwdone	calla	wres_collis_off
 	rets
 
+*****************************************************************************
+;AMODE_PUPPET2	31
  SUBR	hit_puppet2
 
+;A puppet mode for ignoring puppet move if getup time is zero
+;Used for hair pickup against a rolling/getting up opponent!
 
 	move	*a13(GETUP_TIME),a0
-	jrz	mttvout
+	jrz	ewaaout
 
 	;don't grab dead guys
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	mttvdone
+	jreq	ewaadone
 
 	SETMODE	PUPPET
 
@@ -403,32 +482,36 @@ yolsdone	calla	wres_collis_off
 
 	calla	wres_collis_off
 	rets
-mttvout
+ewaaout
 	move	*a10(ANIMODE),a1
 	andni	MODE_STATUS2,a1
 	move	a1,*a10(ANIMODE)
 
-mttvdone	calla	wres_collis_off
+ewaadone	calla	wres_collis_off
 	rets
 
 
+*****************************************************************************
+;AMODE_PUPPET	32
  SUBR	hit_puppet_hdgrab
 
+;This is a special attack mode which ignores blocking opponents!
+;UNLESS they've got a safe time set.
 	move	*a13(SAFE_TIME),a0
-	jrz	yxqqnoblock
+	jrz	kmfbnoblock
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrne	yxqqnoblock
+	jrne	kmfbnoblock
 
 	calla	block_hit_flail
 	rets
 
-yxqqnoblock
+kmfbnoblock
 	;don't grab dead guys
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	yxqqdone
+	jreq	kmfbdone
 
 	clr	a14
 	move	a14,*a10(HITBLOCKER)
@@ -447,49 +530,62 @@ yxqqnoblock
 	clr	a0
 	move	a0,*a13(GETUP_TIME)
 
-yxqqdone	calla	wres_collis_off
+kmfbdone	calla	wres_collis_off
 	rets
 
 
+*****************************************************************************
+;AMODE_PUPPET	54
  SUBR	hit_puppet_toss
 
+;This is a special attack mode which ignores blocking opponents!
 	move	*a13(SAFE_TIME),a0
-	jrz	fxamnoblock
+	jrz	thycnoblock
 
+;If safe time is set, just holding block will suffice
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	fxamnoblock2
+	jrnz	thycnoblock2
 
 	calla	block_hit
 	rets
 
-fxamnoblock
+thycnoblock
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	fxamnoblock2
+	jrnz	thycnoblock2
 
+;If stick is down & away - skip toss
 	move	*a13(STICK_VAL_CUR),a14
 	andi	0ch,a14
-	jrz	fxamnoblock2
+	jrz	thycnoblock2
 	move	*a13(NEW_FACING_DIR),a1
 	andi	0ch,a1
 	cmp	a14,a1
-	jrz	fxamnoblock2
+	jrz	thycnoblock2
 
 	move	*a13(STICK_VAL_CUR),a14
 	btst	1,a14
-	jrz	fxamnoblock2
+	jrz	thycnoblock2
+;Pulling down & away!
+;Don't allow hiptoss
 
 	calla	block_hit
 	rets
 
 
-fxamnoblock2
+thycnoblock2
 
+;;don't grab dead guys
+;	move	*a13(PLYRMODE),a14
+;	cmpi	MODE_DEAD,a14
+;	jreq	thycdone
 
 	clr	a14
 	move	a14,*a10(HITBLOCKER)
 
+;	move	@PCNT,a14
+;	move	a14,*a13(HEAD_GRAB_TIME)
 
 	SETMODE	PUPPET
 
@@ -502,56 +598,74 @@ fxamnoblock2
 	clr	a0
 	move	a0,*a13(GETUP_TIME)
 
-fxamdone	calla	wres_collis_off
+thycdone	calla	wres_collis_off
 	rets
 
+*****************************************************************************
+;AMODE_BACKHAND	22 - SLAP
  SUBR	hit_backhand
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	kqywnoblock
+	jrnz	pipqnoblock
 
 	calla	block_hit_flail
 	rets
 
-kqywnoblock
+pipqnoblock
 
 	;if it's shawn, do 33h instead of 43h
 	movi	33h,a0
 	move	*a10(WRESTLERNUM),a14
 	subk	W_SHAWN,a14
-	jrz	kqywsnd_ok
+	jrz	pipqsnd_ok
 	movi	43h,a0
-kqywsnd_ok	calla	triple_sound
+pipqsnd_ok	calla	triple_sound
 
 	calla	CALL_AVERAGE_MOVE
 
 	GETLIFE
-	jrz	kqywisdead
+	jrz	pipqisdead
 
 	WRSNDX	UPRCUT_L2
 
+;	WRSNDX	HDBUTT_L1,HDBUTT_L2
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	pipqdiz
+;
+;	calla	check_dizzy
+;	jrz	pipqnot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;pipqdiz
+;	FACE24TBL pipqhead_hit_dizzy
+;	calla	change_anim1a
+;
+;
+;pipqnot_dizzy
 
 	SETMODE	NORMAL
 	move	*a13(OBJ_YPOSINT),a14
 	move	*a13(GROUND_Y),a0
 	sub	a0,a14
 	cmpi	20,a14
-	jrge	kqywfall_back
+	jrge	pipqfall_back
 
 
-	FACE24TBL kqywhead_hit2
+	FACE24TBL pipqhead_hit2
 	calla	change_anim1a
 	calla	wres_collis_off
 
 	rets
 
-kqywisdead
+pipqisdead
 	calla	wres_collis_off
 	rets
 
-kqywfall_back
+pipqfall_back
 	FACETBL	fall_back_tbl
 
 	calla	change_anim1a
@@ -561,14 +675,15 @@ kqywfall_back
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	kqywfall_right		;attacker on left
+	jrgt	pipqfall_right		;attacker on left
 	neg	a2
-kqywfall_right
+pipqfall_right
 	move	a2,*a13(OBJ_XVEL),L
 
 	rets
 
-kqywhead_hit2
+pipqhead_hit2
+;No z float..
 	.ref	lex_2_head_hit3_anim,lex_4_head_hit3_anim
 	.ref	rzr_2_head_hit3_anim,rzr_4_head_hit3_anim
 	.ref	yok_2_head_hit3_anim,yok_4_head_hit3_anim
@@ -585,37 +700,72 @@ kqywhead_hit2
 	.long	lex_2_head_hit3_anim,lex_4_head_hit3_anim		;8 Lex Luger
 	.long	0,0							;9 Referee
 
+;pipqhead_hit_dizzy
+;	.ref	bam_head_hit_dizzy_anim,rzr_4_head_hit_dizzy_anim
+;	.ref	und_head_hit_dizzy_anim,yok_4_head_hit_dizzy_anim
+;
+;	.long	hrt_4_head_hit_dizzy_anim,hrt_4_head_hit_dizzy_anim	;0 Bret Hart
+;	.long	rzr_4_head_hit_dizzy_anim,rzr_4_head_hit_dizzy_anim	;1 Razor Ramon
+;	.long	und_head_hit_dizzy_anim,und_head_hit_dizzy_anim		;2 Undertaker
+;	.long	yok_4_head_hit_dizzy_anim,yok_4_head_hit_dizzy_anim	;3 Yokozuna
+;	.long	shn_4_head_hit_dizzy_anim,shn_4_head_hit_dizzy_anim	;4 Shawn Michaels
+;	.long	bam_head_hit_dizzy_anim,bam_head_hit_dizzy_anim		;5 Bam Bam
+;	.long	dnk_head_hit_dizzy_anim,dnk_head_hit_dizzy_anim		;6 Doink
+;	.long	0,0							;7 spare
+;	.long	lex_head_hit_dizzy_anim,lex_head_hit_dizzy_anim		;8 Lex Luger
+;	.long	0,0							;9 Referee
+;
 
+*****************************************************************************
+;AMODE_EARSLAP	28 - SLAP
  SUBR	hit_earslap
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	jrpnnoblock
+	jrnz	ehzjnoblock
 
 	calla	block_hit
 	rets
 
-jrpnnoblock
+ehzjnoblock
 
 	movi	43h,a0
 	calla	triple_sound
 
 	GETLIFE
-	jrz	jrpnisdead
+	jrz	ehzjisdead
 
 	WRSNDX	HDBUTT_L2
 
+;	move	*a13(PLYR_DIZZY),a0
+;	jrnz	ehzjdiz
+;
+;	calla	check_dizzy
+;	jrz	ehzjnot_dizzy
+;
+;	movi	5*TSEC,a0
+;	move	a0,*a13(GETUP_TIME)
+;
+;ehzjdiz
+;	FACETBL ehzjhead_hit_dizzy
+;	calla	change_anim1a
+;
+;ehzjisdead
+;	calla	wres_collis_off
+;	rets
+;ehzjnot_dizzy
 
 	SETMODE	NORMAL
 
-	FACETBL jrpnhead_hit2
+	FACETBL ehzjhead_hit2
 	calla	change_anim1a
 
-jrpnisdead
+ehzjisdead
 	calla	wres_collis_off
 	rets
 
-jrpnhead_hit2
+ehzjhead_hit2
+;No z float..
 	.ref	lex_4_head_hit4_anim
 	.ref	rzr_4_head_hit4_anim
 	.ref	yok_4_head_hit4_anim
@@ -636,41 +786,64 @@ jrpnhead_hit2
 	.long	lex_4_head_hit4_anim		;8 Lex Luger
 	.long	0							;9 Referee
 
+;ehzjhead_hit_dizzy
+;
+;	.long	hrt_4_head_hit_dizzy_anim
+;	.long	rzr_4_head_hit_dizzy_anim
+;	.long	und_head_hit_dizzy_anim
+;	.long	yok_4_head_hit_dizzy_anim
+;	.long	shn_4_head_hit_dizzy_anim
+;	.long	bam_head_hit_dizzy_anim
+;	.long	dnk_head_hit_dizzy_anim
+;	.long	0							;7 spare
+;	.long	lex_head_hit_dizzy_anim
+;	.long	0							;9 Referee
 
 
+*****************************************************************************
+;AMODE_BUZZ	23
  SUBR	hit_buzz
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	lxyqnoblock
+	jrnz	zbnbnoblock
 
 	calla	block_hit
 	rets
 
-lxyqnoblock
+zbnbnoblock
 
+;All of the damage amounts need to be in lookup tables linked to the wrestler
+;who actually struck the blow.
+;	calla	CALL_NASTY_MOVE
 
 
 	GETLIFE
-	jrz	lxyqisdead
+;Bug!  We want to see the electrocution!
+;FIX!!
+	jrz	zbnbisdead
 
 	SETMODE	NORMAL
 
-lxyqisdead
+zbnbisdead
 	move	a10,*a13(ATTACH_PROC),L		;proc attached to
 	move	a13,*a10(ATTACH_PROC),L
 
+;	movi	wres_slave_anim,a0
+;	calla	change_anim1a
 
 
+;	calla	create_damage_points
+;Buzz sound
 	WRSNDX	PUNCH_L1,PUNCH_L2
 
-	FACETBL	lxyqget_buzz
+	FACETBL	zbnbget_buzz
 	calla	change_anim1a
 	calla	wres_collis_off
 
 	rets
 
-lxyqget_buzz
+zbnbget_buzz
 	.long	hrt_get_buzz_anim		;0 Bret Hart
 	.long	rzr_get_buzz_anim		;1 Razor Ramon
 	.long	und_get_buzz_anim		;2 Undertaker
@@ -682,43 +855,50 @@ lxyqget_buzz
 	.long	lex_get_buzz_anim		;8 Lex Luger
 	.long	0				;9 Referee
 
+*****************************************************************************
+;AMODE_HAYMAKER	24
  SUBR	hit_haymaker
 
 	move	*a13(PLYRMODE),a1
 	cmpi	MODE_BLOCK,a1
-	jrnz	arvpnoblock
+	jrnz	txionoblock
 
 	calla	block_hit_flail
 	rets
 
-arvpnoblock
+txionoblock
 
 
+;	movi	40,a0
+;	calla	inc_getup_time
 
+;Any hit mode which does a fall back sequence onto the ground
+;will not check dizzy at the start.
+;The check dizzy happens in the sequence.
 
 	WRSNDX	FLYKICK_L1,FLYKICK_L2
 	GETLIFE
-	jrz	arvpskip
+	jrz	txioskip
 
 	SETMODE	NORMAL
-arvpskip
-	FACETBL	arvpfall_back
+txioskip
+	FACETBL	txiofall_back
 	calla	change_anim1a
 
 	movi	[4,0],a2
 	move	*a10(OBJ_XPOSINT),a0
 	move	*a13(OBJ_XPOSINT),a1
 	cmp	a0,a1			;offx - defx
-	jrgt	arvpgo_rgt			;attacker on left
+	jrgt	txiogo_rgt			;attacker on left
 	neg	a2
-arvpgo_rgt
+txiogo_rgt
 	move	a2,*a13(OBJ_XVEL),L
 
-arvpisdead
+txioisdead
 	calla	wres_collis_off
 	rets
 
-arvpfall_back
+txiofall_back
 	.long	hrt_fall_back_anim		;0 Bret Hart
 	.long	rzr_fall_back_anim		;1 Razor Ramon
 	.long	und_fall_back_anim		;2 Undertaker
@@ -731,6 +911,7 @@ arvpfall_back
 	.long	0				;9 Referee
 
 
+******************************************************************************
 
 	.end
 

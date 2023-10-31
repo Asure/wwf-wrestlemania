@@ -1,3 +1,12 @@
+**************************************************************
+*
+* Software:	Jason Skiles
+* Initiated:	28 Apr 94
+*
+* COPYRIGHT (C) 1993 WILLIAMS ELECTRONICS GAMES, INC.
+*
+*.Last mod - 4/28/94 22:12
+**************************************************************
 
 	.file	"crowd.asm"
 	.title	"crowd stuff"
@@ -22,9 +31,11 @@
 	.include	"bgndtbl.glo"
 	.include	"imgtbl.glo"
 
+*****************************************************************************
 
 	.ref	BAKLST,RNDRNG0,RNDPER,START_FLASHES,no_debris,reduce_bog
 
+*****************************************************************************
 
 DEF_ANISPD	equ	8
 SPD_FOREVER	equ	7FFFh
@@ -40,6 +51,7 @@ CANI_CODE	EQU	3 + 8000H
 CANI_REPEAT	EQU	4 + 8000H
 CANI_SHOULD_REPEAT EQU	5 + 8000H
 
+*STRUCT BOBJANIM
 SCPTR	.set	000	;UHL script pointer (next instruction)
 TIME	.set	020h	;UHW time to hold
 FRAME	.set	030h	;UHL current obj
@@ -47,6 +59,7 @@ CHEER1	.set	050h	;UHL cheer1 jump point
 CHEER2	.set	070h	;UHL cheer2 jump point
 REPEAT_P .SET	090H	;UHL REPEAT POINT TO JUMP BACK TO
 REPEAT_N .SET	0B0H	;UHW REPEAT THIS NUMBER OF TIMES
+*ENDSTRUCT
 BSIZE		equ	REPEAT_N+10h
 
 NUMCROWD	equ	30
@@ -57,7 +70,12 @@ HICROWDZ	equ	58/2		;high z (after shift)
 
 	BSSX	crowd_process,32
 
+*****************************************************************************
+* Main crowd control process
+*
 
+;NOTE:  The background stuff is doing SOMETHING with ODXOFF and ODYOFF, so
+;       I'm storing anim points in OXVEL and OYVEL instead.  Those seem safe.
 
  SUBR	crowd_anim
 
@@ -67,7 +85,7 @@ HICROWDZ	equ	58/2		;high z (after shift)
 	movi	NUMCROWD,a0
 	movi	CROWD_ANIMS,a1
 	movi	CROWDDATA,a2
-yzfxinitloop
+fpclinitloop
 	move	*a1+,a3,L
 	move	*a3+,a14,W
 	move	a14,*a2(TIME),W
@@ -82,43 +100,43 @@ yzfxinitloop
 	MOVE	A14,*A2(REPEAT_P),L
 	MOVE	A14,*A2(REPEAT_N)
 	addi	BSIZE,a2
-	dsj	a0,yzfxinitloop
+	dsj	a0,fpclinitloop
 
 	clr	a14
 	move	a14,*a2(SCPTR),L
 
-yzfxmain_loop
+fpclmain_loop
 	;if we're in reduce_bog mode, sleep until someone wakes us up.
 	movk	1,a0
 	move	@reduce_bog,a14
-	jrz	yzfxslp
+	jrz	fpclslp
 	movi	7FFFh,a0
-yzfxslp	SLEEPR	a0
+fpclslp	SLEEPR	a0
 
 	;update CROWDDATA
 	movi	CROWDDATA-BSIZE,a4
-yzfxcd_loop
+fpclcd_loop
 	addi	BSIZE,a4
 	move	*a4(SCPTR),a14,L
-	jrz	yzfxcd_done
+	jrz	fpclcd_done
 	callr	animate_back
-	jruc	yzfxcd_loop
+	jruc	fpclcd_loop
 
 
  SUBR	animate_back
 	move	*a4(TIME),a14,W
 	dec	a14
-	jrz	yzfxnext_command
+	jrz	fpclnext_command
 	move	a14,*a4(TIME),W
 	MOVK	1,A14
 	rets
 
 
-yzfxnext_command
+fpclnext_command
 	move	*a4(SCPTR),a5,L
-yzfxnext_in_the_QUEUE
+fpclnext_in_the_QUEUE
 	move	*a5+,a14,W
-	jrn	yzfxcani_command
+	jrn	fpclcani_command
 	move	a14,*a4(TIME),W
 	move	*a5+,a14,L
 	move	a14,*a4(FRAME),L
@@ -129,53 +147,55 @@ yzfxnext_in_the_QUEUE
 	DEC	A14
 	rets
 
-yzfxcani_command
+fpclcani_command
 	andi	7FFFh,a14
 	X32	a14
-	addi	yzfxcani_commands,a14
+	addi	fpclcani_commands,a14
 	move	*a14,a14,L
 	jump	a14
 
-yzfxcani_commands
-	.long	yzfx_goto
-	.long	yzfx_rndwait
-	.LONG	yzfx_END_ANIM
-	.LONG	yzfx_CODE
-	.LONG	yzfx_RANDOM_REPEAT
-	.LONG	yzfx_SHOULD_WE_WE_REPEAT
+fpclcani_commands
+	.long	fpcl_goto
+	.long	fpcl_rndwait
+	.LONG	fpcl_END_ANIM
+	.LONG	fpcl_CODE
+	.LONG	fpcl_RANDOM_REPEAT
+	.LONG	fpcl_SHOULD_WE_WE_REPEAT
 
-yzfx_CODE
+**********
+fpcl_CODE
 	MOVE	*A5+,A0,L
 	MMTM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A14
 	CALL	A0
 	MMFM	SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A14
-	jruc	yzfxnext_in_the_QUEUE
+	jruc	fpclnext_in_the_QUEUE
 
 
-yzfx_END_ANIM
+fpcl_END_ANIM
 	MOVI	-1,A14
 	RETS
 
-yzfx_goto
+fpcl_goto
 	move	*a5+,a5,L
 	move	a5,*a4(SCPTR),L
-	jruc	yzfxnext_command
+	jruc	fpclnext_command
 
-yzfx_rndwait
+**********
+fpcl_rndwait
 	move	*a5+,a0,W
 	calla	RNDRNG0
 	move	a0,*a4(TIME),W
 	move	a5,*a4(SCPTR),L
 	rets
 
-yzfx_RANDOM_REPEAT
+fpcl_RANDOM_REPEAT
 	MOVE	*A5+,A0
 	MOVE	A5,*A4(REPEAT_P),L
 	CALLA	RNDRNG0
 	MOVE	A0,*A4(REPEAT_N)
-	jruc	yzfxnext_in_the_QUEUE
+	jruc	fpclnext_in_the_QUEUE
 
-yzfx_SHOULD_WE_WE_REPEAT
+fpcl_SHOULD_WE_WE_REPEAT
 	MOVE	*A4(REPEAT_N),A0
 	DEC	A0
 	MOVE	A0,*A4(REPEAT_N)
@@ -183,30 +203,30 @@ yzfx_SHOULD_WE_WE_REPEAT
 	JRN	REACHED_LAST_LOOP
 	MOVE	*A4(REPEAT_P),*A4(SCPTR),L
 	MOVE	*A4(REPEAT_P),A5,L
-	jruc	yzfxnext_in_the_QUEUE
+	jruc	fpclnext_in_the_QUEUE
 REACHED_LAST_LOOP
 	CLR	A0
 	MOVE	A0,*A4(REPEAT_N)
-	jruc	yzfxnext_in_the_QUEUE
+	jruc	fpclnext_in_the_QUEUE
 
 
 
-yzfxcd_done
+fpclcd_done
 	.ref	PCNT
 	move	@PCNT,a14
 	btst	0,a14
-	jrz	yzfxmain_loop
+	jrz	fpclmain_loop
 
 
 	;update BAKLST
 	move	@BAKLST,a8,L
 
-yzfxbakloop
+fpclbakloop
 	move	*a8(OZPOS),a0,W
 	srl	1,a0
-	jrc	yzfxbakskip
+	jrc	fpclbakskip
 	cmpi	HICROWDZ,a0
-	jrgt	yzfxbakskip
+	jrgt	fpclbakskip
 
 	move	a0,a1
 	X64	a1
@@ -217,8 +237,9 @@ yzfxbakloop
 	move	*a0(FRAME),a0,L
 	move	*a8(OIMG),a1,L
 	cmp	a0,a1
-	jreq	yzfxbakskip
+	jreq	fpclbakskip
 
+;	callr	anibobj
 	move	*a8(OCTRL),a1,W
 
 	move	*a8(OXPOS),a2,W
@@ -226,7 +247,7 @@ yzfxbakloop
 	move	*a0(IANIOFFX),a4,W
 	clr	a5
 	btst	B_FLIPH,a1
-	jrz	yzfxnoflip
+	jrz	fpclnoflip
 
 	;obj is horz-flipped.  negate the Xanim point and adjust X pos
 	; by XSZold-XSZnew
@@ -234,7 +255,7 @@ yzfxbakloop
 	move	*a8(OSIZEX),a5,W
 	move	*a0(ISIZEX),a14,W
 	sub	a14,a5
-yzfxnoflip
+fpclnoflip
 	add	a3,a2
 	sub	a4,a2
 	add	a5,a2
@@ -259,788 +280,853 @@ yzfxnoflip
 
 	setf	5,0,0
 	move	*a2(ICTRL+7),*a8(OCTRL+7) ;Write 5 z comp bits
+;	setf	6,0,0
+;	move	a3,*a8(OCTRL)		;Write 6 low bits
 	setf	16,1,0
-yzfxbakskip
+fpclbakskip
 	move	*a8,a8,L
- 	jrnz	yzfxbakloop
+ 	jrnz	fpclbakloop
 
 
-	jruc	yzfxmain_loop
+	jruc	fpclmain_loop
 
 
+;crowd anim starting points
 CROWD_ANIMS
-	.long	yzfxjasoncrd_norm, yzfxjasoncrd_cheer1,yzfxjasoncrd_cheer2
-	.long	yzfxtonycrd_norm,  yzfxtonycrd_cheer1 ,yzfxtonycrd_cheer1
-	.long	yzfxvogel_norm,    yzfxvogel_cheer1	 ,yzfxvogel_cheer2
-	.long	yzfxtobias_norm,   yzfxtobias_cheer1	 ,yzfxtobias_cheer2
-	.long	yzfxalex_norm,     yzfxalex_cheer1	 ,yzfxalex_cheer2
+	.long	fpcljasoncrd_norm, fpcljasoncrd_cheer1,fpcljasoncrd_cheer2
+	.long	fpcltonycrd_norm,  fpcltonycrd_cheer1 ,fpcltonycrd_cheer1
+	.long	fpclvogel_norm,    fpclvogel_cheer1	 ,fpclvogel_cheer2
+	.long	fpcltobias_norm,   fpcltobias_cheer1	 ,fpcltobias_cheer2
+	.long	fpclalex_norm,     fpclalex_cheer1	 ,fpclalex_cheer2
 
-	.long	yzfxmarine_norm,   yzfxmarine_cheer1	 ,yzfxmarine_cheer2
-	.long	yzfxjake_norm,     yzfxjake_cheer1	 ,yzfxjake_cheer2
-	.long	yzfxjohnc_norm,    yzfxjohnc_cheer1	 ,yzfxjohnc_cheer2
-	.long	yzfxdewey_norm,    yzfxdewey_cheer1	 ,yzfxdewey_cheer2
-	.long	yzfxjason_norm,    yzfxjason_cheer1	 ,yzfxjason_cheer2
+	.long	fpclmarine_norm,   fpclmarine_cheer1	 ,fpclmarine_cheer2
+	.long	fpcljake_norm,     fpcljake_cheer1	 ,fpcljake_cheer2
+	.long	fpcljohnc_norm,    fpcljohnc_cheer1	 ,fpcljohnc_cheer2
+	.long	fpcldewey_norm,    fpcldewey_cheer1	 ,fpcldewey_cheer2
+	.long	fpcljason_norm,    fpcljason_cheer1	 ,fpcljason_cheer2
 
-	.long	yzfxjamie_norm,    yzfxjamie_cheer1	 ,yzfxjamie_cheer2
-	.long	yzfxsheridan_norm, yzfxsheridan_cheer1,yzfxsheridan_cheer2
-	.long	yzfxsal_norm,      yzfxsal_cheer1	 ,yzfxsal_cheer2
-	.long	yzfxjosh_norm,     yzfxjosh_cheer1	 ,yzfxjosh_cheer2
-	.long	yzfxmark_norm,     yzfxmark_cheer1	 ,yzfxmark_cheer1
+	.long	fpcljamie_norm,    fpcljamie_cheer1	 ,fpcljamie_cheer2
+	.long	fpclsheridan_norm, fpclsheridan_cheer1,fpclsheridan_cheer2
+	.long	fpclsal_norm,      fpclsal_cheer1	 ,fpclsal_cheer2
+	.long	fpcljosh_norm,     fpcljosh_cheer1	 ,fpcljosh_cheer2
+	.long	fpclmark_norm,     fpclmark_cheer1	 ,fpclmark_cheer1
 
-	.long	yzfxtony_norm,     yzfxtony_cheer1	 ,yzfxtony_cheer2
-	.long	yzfxcarlos_norm,   yzfxcarlos_cheer1	 ,yzfxcarlos_cheer2
-	.long	yzfxnewc_norm,     yzfxnewc_cheer1	 ,yzfxnewc_cheer2
-	.long	yzfxjoy_norm,      yzfxjoy_cheer1	 ,yzfxjoy_cheer1
-	.long	yzfxside1_norm,    yzfxside1_cheer1	 ,yzfxside1_cheer1
+	.long	fpcltony_norm,     fpcltony_cheer1	 ,fpcltony_cheer2
+	.long	fpclcarlos_norm,   fpclcarlos_cheer1	 ,fpclcarlos_cheer2
+	.long	fpclnewc_norm,     fpclnewc_cheer1	 ,fpclnewc_cheer2
+	.long	fpcljoy_norm,      fpcljoy_cheer1	 ,fpcljoy_cheer1
+	.long	fpclside1_norm,    fpclside1_cheer1	 ,fpclside1_cheer1
 
-	.long	yzfxside2_norm,    yzfxside2_cheer1	 ,yzfxside2_cheer1
-	.long	yzfxside3_norm,    yzfxside3_cheer1	 ,yzfxside3_cheer1
-	.long	yzfxgeorge_norm,   yzfxgeorge_cheer1	 ,yzfxgeorge_cheer1
-	.long	yzfxdave_norm,     yzfxdave_cheer1	 ,yzfxdave_cheer1
-	.long	yzfxsophia_norm,   yzfxsophia_cheer1	 ,yzfxsophia_cheer2
+	.long	fpclside2_norm,    fpclside2_cheer1	 ,fpclside2_cheer1
+	.long	fpclside3_norm,    fpclside3_cheer1	 ,fpclside3_cheer1
+	.long	fpclgeorge_norm,   fpclgeorge_cheer1	 ,fpclgeorge_cheer1
+	.long	fpcldave_norm,     fpcldave_cheer1	 ,fpcldave_cheer1
+	.long	fpclsophia_norm,   fpclsophia_cheer1	 ,fpclsophia_cheer2
 
-	.long	yzfxmancow_norm,   yzfxmancow_cheer1	 ,yzfxmancow_cheer2
-	.long	yzfxjak2_norm,	yzfxjak2_cheer1	 ,yzfxjak2_cheer2
-	.long	yzfxeugene_norm,	yzfxeugene_cheer1	 ,yzfxeugene_cheer2
-	.long	yzfxpenacho_norm,	yzfxpenacho_cheer1 ,yzfxpenacho_cheer2
-	.long	yzfxjenni_norm,	yzfxjenni_cheer1 	 ,yzfxjenni_cheer2
+	.long	fpclmancow_norm,   fpclmancow_cheer1	 ,fpclmancow_cheer2
+	.long	fpcljak2_norm,	fpcljak2_cheer1	 ,fpcljak2_cheer2
+	.long	fpcleugene_norm,	fpcleugene_cheer1	 ,fpcleugene_cheer2
+	.long	fpclpenacho_norm,	fpclpenacho_cheer1 ,fpclpenacho_cheer2
+	.long	fpcljenni_norm,	fpcljenni_cheer1 	 ,fpcljenni_cheer2
 
 
+**********
+* SOPHIA
 
-yzfxSOPHIA_SPD	equ	7
+fpclSOPHIA_SPD	equ	7
 
-yzfxsophia_norm
+fpclsophia_norm
 	WL	SPD_FOREVER,SOFI1
-	WL	CANI_GOTO,yzfxsophia_norm
+	WL	CANI_GOTO,fpclsophia_norm
 
-yzfxsophia_cheer1
-	WL	yzfxSOPHIA_SPD,SOFI2
-	WL	yzfxSOPHIA_SPD,SOFI3
-	WL	yzfxSOPHIA_SPD,SOFI4
-	WL	yzfxSOPHIA_SPD,SOFI3
-	WL	yzfxSOPHIA_SPD,SOFI2
-	WL	CANI_GOTO,yzfxsophia_norm
+fpclsophia_cheer1
+	WL	fpclSOPHIA_SPD,SOFI2
+	WL	fpclSOPHIA_SPD,SOFI3
+	WL	fpclSOPHIA_SPD,SOFI4
+	WL	fpclSOPHIA_SPD,SOFI3
+	WL	fpclSOPHIA_SPD,SOFI2
+	WL	CANI_GOTO,fpclsophia_norm
 
-yzfxsophia_cheer2
-	WL	yzfxSOPHIA_SPD,SOFI2
+fpclsophia_cheer2
+	WL	fpclSOPHIA_SPD,SOFI2
 	.WORD	CANI_REPEAT,4
-	WL	yzfxSOPHIA_SPD,SOFI3
-	WL	yzfxSOPHIA_SPD,SOFI4
+	WL	fpclSOPHIA_SPD,SOFI3
+	WL	fpclSOPHIA_SPD,SOFI4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxSOPHIA_SPD,SOFI3
-	WL	yzfxSOPHIA_SPD,SOFI2
-	WL	CANI_GOTO,yzfxsophia_norm
+	WL	fpclSOPHIA_SPD,SOFI3
+	WL	fpclSOPHIA_SPD,SOFI2
+	WL	CANI_GOTO,fpclsophia_norm
 
+**********
+* MANCOW
 
-yzfxMANCOW_SPD	equ	6
+fpclMANCOW_SPD	equ	6
 
-yzfxmancow_norm
+fpclmancow_norm
 	WL	SPD_FOREVER,MANC1
-	WL	CANI_GOTO,yzfxmancow_norm
+	WL	CANI_GOTO,fpclmancow_norm
 
-yzfxmancow_cheer1
-	WL	yzfxMANCOW_SPD,MANC2
-	WL	yzfxMANCOW_SPD,MANC3
-	WL	yzfxMANCOW_SPD,MANC4
-	WL	yzfxMANCOW_SPD,MANC5
-	WL	yzfxMANCOW_SPD,MANC4
-	WL	yzfxMANCOW_SPD,MANC3
-	WL	yzfxMANCOW_SPD,MANC2
-	WL	CANI_GOTO,yzfxmancow_norm
+fpclmancow_cheer1
+	WL	fpclMANCOW_SPD,MANC2
+	WL	fpclMANCOW_SPD,MANC3
+	WL	fpclMANCOW_SPD,MANC4
+	WL	fpclMANCOW_SPD,MANC5
+	WL	fpclMANCOW_SPD,MANC4
+	WL	fpclMANCOW_SPD,MANC3
+	WL	fpclMANCOW_SPD,MANC2
+	WL	CANI_GOTO,fpclmancow_norm
 
-yzfxmancow_cheer2
-	WL	yzfxMANCOW_SPD,MANC2
+fpclmancow_cheer2
+	WL	fpclMANCOW_SPD,MANC2
 	.WORD	CANI_REPEAT,6
-	WL	yzfxMANCOW_SPD,MANC3
-	WL	yzfxMANCOW_SPD,MANC4
-	WL	yzfxMANCOW_SPD,MANC5
-	WL	yzfxMANCOW_SPD,MANC4
+	WL	fpclMANCOW_SPD,MANC3
+	WL	fpclMANCOW_SPD,MANC4
+	WL	fpclMANCOW_SPD,MANC5
+	WL	fpclMANCOW_SPD,MANC4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxMANCOW_SPD,MANC3
-	WL	yzfxMANCOW_SPD,MANC2
-	WL	CANI_GOTO,yzfxmancow_norm
+	WL	fpclMANCOW_SPD,MANC3
+	WL	fpclMANCOW_SPD,MANC2
+	WL	CANI_GOTO,fpclmancow_norm
 
+**********
+* JAK
 
-yzfxJAK_SPD	equ	7
+fpclJAK_SPD	equ	7
 
-yzfxjak2_norm
+fpcljak2_norm
 	WL	SPD_FOREVER,JAK1
-	WL	CANI_GOTO,yzfxjak2_norm
+	WL	CANI_GOTO,fpcljak2_norm
 
-yzfxjak2_cheer1
-	WL	yzfxJAK_SPD,JAK2
-	WL	yzfxJAK_SPD,JAK3
-	WL	yzfxJAK_SPD,JAK4
-	WL	yzfxJAK_SPD+3,JAK5
-	WL	yzfxJAK_SPD,JAK4
-	WL	yzfxJAK_SPD,JAK3
-	WL	yzfxJAK_SPD,JAK2
-	WL	CANI_GOTO,yzfxjak2_norm
+fpcljak2_cheer1
+	WL	fpclJAK_SPD,JAK2
+	WL	fpclJAK_SPD,JAK3
+	WL	fpclJAK_SPD,JAK4
+	WL	fpclJAK_SPD+3,JAK5
+	WL	fpclJAK_SPD,JAK4
+	WL	fpclJAK_SPD,JAK3
+	WL	fpclJAK_SPD,JAK2
+	WL	CANI_GOTO,fpcljak2_norm
 
-yzfxjak2_cheer2
-	WL	yzfxJAK_SPD,JAK2
+fpcljak2_cheer2
+	WL	fpclJAK_SPD,JAK2
 	.WORD	CANI_REPEAT,7
-	WL	yzfxJAK_SPD,JAK3
-	WL	yzfxJAK_SPD,JAK4
-	WL	yzfxJAK_SPD+3,JAK5
-	WL	yzfxJAK_SPD,JAK4
+	WL	fpclJAK_SPD,JAK3
+	WL	fpclJAK_SPD,JAK4
+	WL	fpclJAK_SPD+3,JAK5
+	WL	fpclJAK_SPD,JAK4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxJAK_SPD,JAK3
-	WL	yzfxJAK_SPD,JAK2
-	WL	CANI_GOTO,yzfxjak2_norm
+	WL	fpclJAK_SPD,JAK3
+	WL	fpclJAK_SPD,JAK2
+	WL	CANI_GOTO,fpcljak2_norm
 
 
+**********
+* EUGENE
 
-yzfxEUGENE_SPD	equ	7
+fpclEUGENE_SPD	equ	7
 
-yzfxeugene_norm
+fpcleugene_norm
 	WL	SPD_FOREVER,EUG1
-	WL	CANI_GOTO,yzfxeugene_norm
+	WL	CANI_GOTO,fpcleugene_norm
 
-yzfxeugene_cheer1
-	WL	yzfxEUGENE_SPD,EUG2
-	WL	yzfxEUGENE_SPD,EUG3
-	WL	yzfxEUGENE_SPD,EUG4
-	WL	yzfxEUGENE_SPD,EUG3
-	WL	yzfxEUGENE_SPD,EUG2
-	WL	CANI_GOTO,yzfxeugene_norm
+fpcleugene_cheer1
+	WL	fpclEUGENE_SPD,EUG2
+	WL	fpclEUGENE_SPD,EUG3
+	WL	fpclEUGENE_SPD,EUG4
+	WL	fpclEUGENE_SPD,EUG3
+	WL	fpclEUGENE_SPD,EUG2
+	WL	CANI_GOTO,fpcleugene_norm
 
-yzfxeugene_cheer2
-	WL	yzfxEUGENE_SPD,EUG2
+fpcleugene_cheer2
+	WL	fpclEUGENE_SPD,EUG2
 	.WORD	CANI_REPEAT,3
-	WL	yzfxEUGENE_SPD,EUG3
-	WL	yzfxEUGENE_SPD,EUG4
+	WL	fpclEUGENE_SPD,EUG3
+	WL	fpclEUGENE_SPD,EUG4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxEUGENE_SPD,EUG3
-	WL	yzfxEUGENE_SPD,EUG2
-	WL	CANI_GOTO,yzfxeugene_norm
+	WL	fpclEUGENE_SPD,EUG3
+	WL	fpclEUGENE_SPD,EUG2
+	WL	CANI_GOTO,fpcleugene_norm
 
+**********
+* JENNI
 
-yzfxJENNI_SPD	equ	7
+fpclJENNI_SPD	equ	7
 
-yzfxjenni_norm
+fpcljenni_norm
 	WL	SPD_FOREVER,JENI1
-	WL	CANI_GOTO,yzfxjenni_norm
+	WL	CANI_GOTO,fpcljenni_norm
 
-yzfxjenni_cheer1
-	WL	yzfxJENNI_SPD,JENI2
-	WL	yzfxJENNI_SPD,JENI3
-	WL	yzfxJENNI_SPD,JENI4
-	WL	yzfxJENNI_SPD,JENI3
-	WL	yzfxJENNI_SPD,JENI2
-	WL	CANI_GOTO,yzfxjenni_norm
+fpcljenni_cheer1
+	WL	fpclJENNI_SPD,JENI2
+	WL	fpclJENNI_SPD,JENI3
+	WL	fpclJENNI_SPD,JENI4
+	WL	fpclJENNI_SPD,JENI3
+	WL	fpclJENNI_SPD,JENI2
+	WL	CANI_GOTO,fpcljenni_norm
 
-yzfxjenni_cheer2
-	WL	yzfxJENNI_SPD,JENI2
+fpcljenni_cheer2
+	WL	fpclJENNI_SPD,JENI2
 	.WORD	CANI_REPEAT,3
-	WL	yzfxJENNI_SPD,JENI3
-	WL	yzfxJENNI_SPD,JENI4
+	WL	fpclJENNI_SPD,JENI3
+	WL	fpclJENNI_SPD,JENI4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxJENNI_SPD,JENI3
-	WL	yzfxJENNI_SPD,JENI2
-	WL	CANI_GOTO,yzfxjenni_norm
+	WL	fpclJENNI_SPD,JENI3
+	WL	fpclJENNI_SPD,JENI2
+	WL	CANI_GOTO,fpcljenni_norm
 
+**********
+* PENACHO
 
-yzfxPENACHO_SPD	equ	7
+fpclPENACHO_SPD	equ	7
 
-yzfxpenacho_norm
+fpclpenacho_norm
 	WL	SPD_FOREVER,PENA1
-	WL	CANI_GOTO,yzfxpenacho_norm
+	WL	CANI_GOTO,fpclpenacho_norm
 
-yzfxpenacho_cheer1
-	WL	yzfxPENACHO_SPD,PENA2
-	WL	yzfxPENACHO_SPD,PENA3
-	WL	yzfxPENACHO_SPD,PENA4
-	WL	yzfxPENACHO_SPD,PENA3
-	WL	yzfxPENACHO_SPD,PENA2
-	WL	CANI_GOTO,yzfxpenacho_norm
+fpclpenacho_cheer1
+	WL	fpclPENACHO_SPD,PENA2
+	WL	fpclPENACHO_SPD,PENA3
+	WL	fpclPENACHO_SPD,PENA4
+	WL	fpclPENACHO_SPD,PENA3
+	WL	fpclPENACHO_SPD,PENA2
+	WL	CANI_GOTO,fpclpenacho_norm
 
-yzfxpenacho_cheer2
+fpclpenacho_cheer2
 	.WORD	CANI_REPEAT,4
-	WL	yzfxPENACHO_SPD,PENA2
-	WL	yzfxPENACHO_SPD,PENA3
-	WL	yzfxPENACHO_SPD,PENA4
-	WL	yzfxPENACHO_SPD,PENA3
+	WL	fpclPENACHO_SPD,PENA2
+	WL	fpclPENACHO_SPD,PENA3
+	WL	fpclPENACHO_SPD,PENA4
+	WL	fpclPENACHO_SPD,PENA3
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxPENACHO_SPD,PENA2
-	WL	CANI_GOTO,yzfxpenacho_norm
+	WL	fpclPENACHO_SPD,PENA2
+	WL	CANI_GOTO,fpclpenacho_norm
 
 
 
 
+**********
+* Alex
 
-yzfxALEX_SPD	equ	6
+fpclALEX_SPD	equ	6
 
-yzfxalex_norm
+fpclalex_norm
 	WL	SPD_FOREVER,ALEX1
-	WL	CANI_GOTO,yzfxalex_norm
+	WL	CANI_GOTO,fpclalex_norm
 
-yzfxalex_cheer1
-	WL	yzfxALEX_SPD,ALEX2
-	WL	yzfxALEX_SPD,ALEX3
-	WL	yzfxALEX_SPD,ALEX4
-	WL	yzfxALEX_SPD,ALEX2
-	WL	CANI_GOTO,yzfxalex_norm
-yzfxalex_cheer2
-	WL	yzfxALEX_SPD,ALEX2
-	WL	yzfxALEX_SPD,ALEX3
+fpclalex_cheer1
+	WL	fpclALEX_SPD,ALEX2
+	WL	fpclALEX_SPD,ALEX3
+	WL	fpclALEX_SPD,ALEX4
+	WL	fpclALEX_SPD,ALEX2
+	WL	CANI_GOTO,fpclalex_norm
+fpclalex_cheer2
+	WL	fpclALEX_SPD,ALEX2
+	WL	fpclALEX_SPD,ALEX3
 	.WORD	CANI_REPEAT,7
-	WL	yzfxALEX_SPD,ALEX4
-	WL	yzfxALEX_SPD,ALEX3
+	WL	fpclALEX_SPD,ALEX4
+	WL	fpclALEX_SPD,ALEX3
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxALEX_SPD,ALEX2
-	WL	CANI_GOTO,yzfxalex_norm
+	WL	fpclALEX_SPD,ALEX2
+	WL	CANI_GOTO,fpclalex_norm
 
+**********
+* Carlos
 
-yzfxCARLOS_SPD	equ	7
+fpclCARLOS_SPD	equ	7
 
-yzfxcarlos_norm
+fpclcarlos_norm
 	WL	SPD_FOREVER,CARLO1
-	WL	CANI_GOTO,yzfxcarlos_norm
+	WL	CANI_GOTO,fpclcarlos_norm
 
-yzfxcarlos_cheer1
-	WL	yzfxCARLOS_SPD,CARLO2
-	WL	yzfxCARLOS_SPD,CARLO3
-	WL	yzfxCARLOS_SPD,CARLO4
-	WL	yzfxCARLOS_SPD,CARLO2
-	WL	CANI_GOTO,yzfxcarlos_norm
+fpclcarlos_cheer1
+	WL	fpclCARLOS_SPD,CARLO2
+	WL	fpclCARLOS_SPD,CARLO3
+	WL	fpclCARLOS_SPD,CARLO4
+	WL	fpclCARLOS_SPD,CARLO2
+	WL	CANI_GOTO,fpclcarlos_norm
 
-yzfxcarlos_cheer2
-	WL	yzfxCARLOS_SPD,CARLO2
-	WL	yzfxCARLOS_SPD,CARLO3
-	WL	yzfxCARLOS_SPD,CARLO4
+fpclcarlos_cheer2
+	WL	fpclCARLOS_SPD,CARLO2
+	WL	fpclCARLOS_SPD,CARLO3
+	WL	fpclCARLOS_SPD,CARLO4
 	.WORD	CANI_REPEAT,7
-	WL	yzfxCARLOS_SPD,CARLO3
-	WL	yzfxCARLOS_SPD,CARLO4
+	WL	fpclCARLOS_SPD,CARLO3
+	WL	fpclCARLOS_SPD,CARLO4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxCARLOS_SPD,CARLO2
-	WL	CANI_GOTO,yzfxcarlos_norm
+	WL	fpclCARLOS_SPD,CARLO2
+	WL	CANI_GOTO,fpclcarlos_norm
 
+**********
+* Dave
 
-yzfxDAVE_SPD	equ	8
+fpclDAVE_SPD	equ	8
 
-yzfxdave_norm
+fpcldave_norm
 	WL	SPD_FOREVER,DAVEMSK1
-	WL	CANI_GOTO,yzfxdave_norm
+	WL	CANI_GOTO,fpcldave_norm
 
-yzfxdave_cheer1
-	WL	yzfxDAVE_SPD,DAVEMSK2
-	WL	yzfxDAVE_SPD,DAVEMSK3
-	WL	yzfxDAVE_SPD,DAVEMSK4
-	WL	yzfxDAVE_SPD,DAVEMSK3
-	WL	yzfxDAVE_SPD,DAVEMSK2
-	WL	CANI_GOTO,yzfxdave_norm
+fpcldave_cheer1
+	WL	fpclDAVE_SPD,DAVEMSK2
+	WL	fpclDAVE_SPD,DAVEMSK3
+	WL	fpclDAVE_SPD,DAVEMSK4
+	WL	fpclDAVE_SPD,DAVEMSK3
+	WL	fpclDAVE_SPD,DAVEMSK2
+	WL	CANI_GOTO,fpcldave_norm
 
-yzfxdave_cheer2
+fpcldave_cheer2
 	.WORD	CANI_REPEAT,7
-	WL	yzfxDAVE_SPD,DAVEMSK2
-	WL	yzfxDAVE_SPD,DAVEMSK3
+	WL	fpclDAVE_SPD,DAVEMSK2
+	WL	fpclDAVE_SPD,DAVEMSK3
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxDAVE_SPD,DAVEMSK4
-	WL	yzfxDAVE_SPD,DAVEMSK3
-	WL	yzfxDAVE_SPD,DAVEMSK2
-	WL	CANI_GOTO,yzfxdave_norm
+	WL	fpclDAVE_SPD,DAVEMSK4
+	WL	fpclDAVE_SPD,DAVEMSK3
+	WL	fpclDAVE_SPD,DAVEMSK2
+	WL	CANI_GOTO,fpcldave_norm
 
+**********
+* Dewey
 
-yzfxDEWEY_SPD	equ	7
+fpclDEWEY_SPD	equ	7
 
-yzfxdewey_norm
-	WL	yzfxDEWEY_SPD,DEWY1
+fpcldewey_norm
+	WL	fpclDEWEY_SPD,DEWY1
 	.word	CANI_RNDWAIT,TSEC*10
-	WL	yzfxDEWEY_SPD,DEWY2
-	WL	yzfxDEWEY_SPD,DEWY3
-	WL	yzfxDEWEY_SPD,DEWY4
-	WL	yzfxDEWEY_SPD,DEWY3
-	WL	yzfxDEWEY_SPD,DEWY2
-	WL	CANI_GOTO,yzfxdewey_norm
+	WL	fpclDEWEY_SPD,DEWY2
+	WL	fpclDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY4
+	WL	fpclDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY2
+	WL	CANI_GOTO,fpcldewey_norm
 
-yzfxdewey_cheer1
-	WL	yzfxDEWEY_SPD,DEWY1
-	WL	yzfxDEWEY_SPD,DEWY2
-	WL	yzfxDEWEY_SPD,DEWY3
-	WL	yzfxDEWEY_SPD,DEWY4
-	WL	yzfxDEWEY_SPD,DEWY3
-	WL	yzfxDEWEY_SPD,DEWY2
-	WL	CANI_GOTO,yzfxdewey_norm
+fpcldewey_cheer1
+	WL	fpclDEWEY_SPD,DEWY1
+	WL	fpclDEWEY_SPD,DEWY2
+	WL	fpclDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY4
+	WL	fpclDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY2
+	WL	CANI_GOTO,fpcldewey_norm
 
-yzfxdewey_cheer2
-	WL	yzfxDEWEY_SPD,DEWY1
+fpcldewey_cheer2
+	WL	fpclDEWEY_SPD,DEWY1
 	.WORD	CANI_REPEAT,7
-	WL	yzfxDEWEY_SPD,DEWY2
-	WL	yzfxDEWEY_SPD,DEWY3
-	WL	yzfxDEWEY_SPD,DEWY4
-	WL	yzfxDEWEY_SPD,DEWY3
-	WL	yzfxDEWEY_SPD,DEWY2
-	WL	yzfxDEWEY_SPD,DEWY3
-	WL	yzfxDEWEY_SPD,DEWY4
-	WL	yzfxDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY2
+	WL	fpclDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY4
+	WL	fpclDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY2
+	WL	fpclDEWEY_SPD,DEWY3
+	WL	fpclDEWEY_SPD,DEWY4
+	WL	fpclDEWEY_SPD,DEWY3
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxDEWEY_SPD,DEWY2
-	WL	CANI_GOTO,yzfxdewey_norm
+	WL	fpclDEWEY_SPD,DEWY2
+	WL	CANI_GOTO,fpcldewey_norm
 
+**********
+* George
 
-yzfxGEORGE_SPD	equ	8
+fpclGEORGE_SPD	equ	8
 
-yzfxgeorge_norm
-	WL	yzfxGEORGE_SPD,GEORGE1
+fpclgeorge_norm
+	WL	fpclGEORGE_SPD,GEORGE1
 	.word	CANI_RNDWAIT,TSEC*4
-	WL	yzfxGEORGE_SPD,GEORGE2
-	WL	yzfxGEORGE_SPD,GEORGE3
-	WL	yzfxGEORGE_SPD,GEORGE4
-	WL	yzfxGEORGE_SPD,GEORGE3
-	WL	yzfxGEORGE_SPD,GEORGE2
-	WL	CANI_GOTO,yzfxgeorge_norm
+	WL	fpclGEORGE_SPD,GEORGE2
+	WL	fpclGEORGE_SPD,GEORGE3
+	WL	fpclGEORGE_SPD,GEORGE4
+	WL	fpclGEORGE_SPD,GEORGE3
+	WL	fpclGEORGE_SPD,GEORGE2
+	WL	CANI_GOTO,fpclgeorge_norm
 
-yzfxgeorge_cheer1
+fpclgeorge_cheer1
 	.WORD	CANI_REPEAT,2
-	WL	yzfxGEORGE_SPD,GEORGE1
-	WL	yzfxGEORGE_SPD,GEORGE2
-	WL	yzfxGEORGE_SPD,GEORGE3
-	WL	yzfxGEORGE_SPD,GEORGE4
-	WL	yzfxGEORGE_SPD,GEORGE3
-	WL	yzfxGEORGE_SPD,GEORGE2
+	WL	fpclGEORGE_SPD,GEORGE1
+	WL	fpclGEORGE_SPD,GEORGE2
+	WL	fpclGEORGE_SPD,GEORGE3
+	WL	fpclGEORGE_SPD,GEORGE4
+	WL	fpclGEORGE_SPD,GEORGE3
+	WL	fpclGEORGE_SPD,GEORGE2
 	.WORD	CANI_SHOULD_REPEAT
-	WL	CANI_GOTO,yzfxgeorge_norm
+	WL	CANI_GOTO,fpclgeorge_norm
 
+**********
+* Jake
 
-yzfxJAKE_SPD	equ	8
+fpclJAKE_SPD	equ	8
 
-yzfxjake_norm
+fpcljake_norm
 	WL	SPD_FOREVER,JAKE1
-	WL	CANI_GOTO,yzfxjake_norm
+	WL	CANI_GOTO,fpcljake_norm
 
-yzfxjake_cheer1
-	WL	yzfxJAKE_SPD,JAKE2
-	WL	yzfxJAKE_SPD,JAKE3
-	WL	yzfxJAKE_SPD,JAKE4
-	WL	yzfxJAKE_SPD,JAKE2
-	WL	CANI_GOTO,yzfxjake_norm
+fpcljake_cheer1
+	WL	fpclJAKE_SPD,JAKE2
+	WL	fpclJAKE_SPD,JAKE3
+	WL	fpclJAKE_SPD,JAKE4
+	WL	fpclJAKE_SPD,JAKE2
+	WL	CANI_GOTO,fpcljake_norm
 
-yzfxjake_cheer2
-	WL	yzfxJAKE_SPD,JAKE2
+fpcljake_cheer2
+	WL	fpclJAKE_SPD,JAKE2
 	.WORD	CANI_REPEAT,4
-	WL	yzfxJAKE_SPD,JAKE3
-	WL	yzfxJAKE_SPD,JAKE4
+	WL	fpclJAKE_SPD,JAKE3
+	WL	fpclJAKE_SPD,JAKE4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxJAKE_SPD,JAKE2
-	WL	CANI_GOTO,yzfxjake_norm
+	WL	fpclJAKE_SPD,JAKE2
+	WL	CANI_GOTO,fpcljake_norm
 
+**********
+* Jamie
 
-yzfxJAMIE_SPD	equ	5
+fpclJAMIE_SPD	equ	5
 
-yzfxjamie_norm
+fpcljamie_norm
 	WL	SPD_FOREVER,JAMIE1
-	WL	CANI_GOTO,yzfxjamie_norm
+	WL	CANI_GOTO,fpcljamie_norm
 
-yzfxjamie_cheer1
-	WL	yzfxJAMIE_SPD,JAMIE2
-	WL	yzfxJAMIE_SPD,JAMIE3
-	WL	yzfxJAMIE_SPD,JAMIE4
-	WL	yzfxJAMIE_SPD,JAMIE5
-	WL	yzfxJAMIE_SPD,JAMIE6
-	WL	CANI_GOTO,yzfxjamie_norm
+fpcljamie_cheer1
+	WL	fpclJAMIE_SPD,JAMIE2
+	WL	fpclJAMIE_SPD,JAMIE3
+	WL	fpclJAMIE_SPD,JAMIE4
+	WL	fpclJAMIE_SPD,JAMIE5
+	WL	fpclJAMIE_SPD,JAMIE6
+	WL	CANI_GOTO,fpcljamie_norm
 
-yzfxjamie_cheer2
+fpcljamie_cheer2
 	.WORD	CANI_REPEAT,7
-	WL	yzfxJAMIE_SPD,JAMIE2
-	WL	yzfxJAMIE_SPD,JAMIE3
+	WL	fpclJAMIE_SPD,JAMIE2
+	WL	fpclJAMIE_SPD,JAMIE3
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxJAMIE_SPD,JAMIE4
-	WL	yzfxJAMIE_SPD,JAMIE5
-	WL	yzfxJAMIE_SPD,JAMIE6
-	WL	CANI_GOTO,yzfxjamie_norm
+	WL	fpclJAMIE_SPD,JAMIE4
+	WL	fpclJAMIE_SPD,JAMIE5
+	WL	fpclJAMIE_SPD,JAMIE6
+	WL	CANI_GOTO,fpcljamie_norm
 
+**********
+* Jason
 
-yzfxJASON_SPD	equ	6
+fpclJASON_SPD	equ	6
 
-yzfxjason_norm
+fpcljason_norm
 	WL	SPD_FOREVER,SERG1
-	WL	CANI_GOTO,yzfxjason_norm
+	WL	CANI_GOTO,fpcljason_norm
 
-yzfxjason_cheer1
-	WL	yzfxJASON_SPD,SERG2
-	WL	yzfxJASON_SPD,SERG3
-	WL	yzfxJASON_SPD,SERG4
-	WL	yzfxJASON_SPD,SERG5
-	WL	yzfxJASON_SPD,SERG4
-	WL	yzfxJASON_SPD,SERG3
-	WL	yzfxJASON_SPD,SERG2
-	WL	CANI_GOTO,yzfxjason_norm
+fpcljason_cheer1
+	WL	fpclJASON_SPD,SERG2
+	WL	fpclJASON_SPD,SERG3
+	WL	fpclJASON_SPD,SERG4
+	WL	fpclJASON_SPD,SERG5
+	WL	fpclJASON_SPD,SERG4
+	WL	fpclJASON_SPD,SERG3
+	WL	fpclJASON_SPD,SERG2
+	WL	CANI_GOTO,fpcljason_norm
 
-yzfxjason_cheer2
-	WL	yzfxJASON_SPD,SERG2
-	WL	yzfxJASON_SPD,SERG3
+fpcljason_cheer2
+	WL	fpclJASON_SPD,SERG2
+	WL	fpclJASON_SPD,SERG3
 	.WORD	CANI_REPEAT,7
-	WL	yzfxJASON_SPD,SERG4
-	WL	yzfxJASON_SPD,SERG5
-	WL	yzfxJASON_SPD,SERG4
-	WL	yzfxJASON_SPD,SERG3
+	WL	fpclJASON_SPD,SERG4
+	WL	fpclJASON_SPD,SERG5
+	WL	fpclJASON_SPD,SERG4
+	WL	fpclJASON_SPD,SERG3
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxJASON_SPD,SERG2
-	WL	CANI_GOTO,yzfxjason_norm
+	WL	fpclJASON_SPD,SERG2
+	WL	CANI_GOTO,fpcljason_norm
 
 
+**********
+* Jason crowd
 
-yzfxJCROWD_SPD	equ	8
+fpclJCROWD_SPD	equ	8
 
-yzfxjasoncrd_norm
+fpcljasoncrd_norm
 	WL	SPD_FOREVER,JASONCRD1
-	WL	CANI_GOTO,yzfxjasoncrd_norm
+	WL	CANI_GOTO,fpcljasoncrd_norm
 
-yzfxjasoncrd_cheer1
-	WL	yzfxJCROWD_SPD,JASONCRD2
-	WL	yzfxJCROWD_SPD,JASONCRD3
-	WL	yzfxJCROWD_SPD,JASONCRD4
-	WL	yzfxJCROWD_SPD,JASONCRD5
-	WL	CANI_GOTO,yzfxjasoncrd_norm
+fpcljasoncrd_cheer1
+	WL	fpclJCROWD_SPD,JASONCRD2
+	WL	fpclJCROWD_SPD,JASONCRD3
+	WL	fpclJCROWD_SPD,JASONCRD4
+	WL	fpclJCROWD_SPD,JASONCRD5
+	WL	CANI_GOTO,fpcljasoncrd_norm
 
-yzfxjasoncrd_cheer2
-	WL	yzfxJCROWD_SPD,JASONCRD2
-	WL	yzfxJCROWD_SPD,JASONCRD3
+fpcljasoncrd_cheer2
+	WL	fpclJCROWD_SPD,JASONCRD2
+	WL	fpclJCROWD_SPD,JASONCRD3
 	.WORD	CANI_REPEAT,7
-	WL	yzfxJCROWD_SPD,JASONCRD4
-	WL	yzfxJCROWD_SPD,JASONCRD5
+	WL	fpclJCROWD_SPD,JASONCRD4
+	WL	fpclJCROWD_SPD,JASONCRD5
 	.WORD	CANI_SHOULD_REPEAT
-	WL	CANI_GOTO,yzfxjasoncrd_norm
+	WL	CANI_GOTO,fpcljasoncrd_norm
 
 
+**********
+* JohnC
 
-yzfxJOHNC_SPD	equ	8
+fpclJOHNC_SPD	equ	8
 
-yzfxjohnc_norm
+fpcljohnc_norm
 	WL	SPD_FOREVER,JOHNC1
-	WL	CANI_GOTO,yzfxjohnc_norm
+	WL	CANI_GOTO,fpcljohnc_norm
 
-yzfxjohnc_cheer1
-	WL	yzfxJOHNC_SPD,JOHNC2
-	WL	yzfxJOHNC_SPD,JOHNC3
-	WL	yzfxJOHNC_SPD*3,JOHNC4
-	WL	yzfxJOHNC_SPD,JOHNC3
-	WL	yzfxJOHNC_SPD,JOHNC2
-	WL	CANI_GOTO,yzfxjohnc_norm
+fpcljohnc_cheer1
+	WL	fpclJOHNC_SPD,JOHNC2
+	WL	fpclJOHNC_SPD,JOHNC3
+	WL	fpclJOHNC_SPD*3,JOHNC4
+	WL	fpclJOHNC_SPD,JOHNC3
+	WL	fpclJOHNC_SPD,JOHNC2
+	WL	CANI_GOTO,fpcljohnc_norm
 
-yzfxjohnc_cheer2
-	WL	yzfxJOHNC_SPD,JOHNC2
-	WL	yzfxJOHNC_SPD,JOHNC3
-	WL	yzfxJOHNC_SPD,JOHNC4
-	WL	yzfxJOHNC_SPD,JOHNC3
-	WL	yzfxJOHNC_SPD*3,JOHNC4
-	WL	yzfxJOHNC_SPD,JOHNC3
-	WL	yzfxJOHNC_SPD,JOHNC2
-	WL	CANI_GOTO,yzfxjohnc_norm
+fpcljohnc_cheer2
+	WL	fpclJOHNC_SPD,JOHNC2
+	WL	fpclJOHNC_SPD,JOHNC3
+	WL	fpclJOHNC_SPD,JOHNC4
+	WL	fpclJOHNC_SPD,JOHNC3
+	WL	fpclJOHNC_SPD*3,JOHNC4
+	WL	fpclJOHNC_SPD,JOHNC3
+	WL	fpclJOHNC_SPD,JOHNC2
+	WL	CANI_GOTO,fpcljohnc_norm
 
+**********
+* Josh
 
-yzfxJOSH_SPD	equ	7
+fpclJOSH_SPD	equ	7
 
-yzfxjosh_norm
+fpcljosh_norm
 	WL	SPD_FOREVER,JOSH1
-	WL	CANI_GOTO,yzfxjosh_norm
+	WL	CANI_GOTO,fpcljosh_norm
 
-yzfxjosh_cheer1
-	WL	yzfxJOSH_SPD,JOSH2
-	WL	yzfxJOSH_SPD,JOSH3
-	WL	yzfxJOSH_SPD,JOSH4
-	WL	yzfxJOSH_SPD,JOSH3
-	WL	yzfxJOSH_SPD,JOSH4
-	WL	yzfxJOSH_SPD,JOSH2
-	WL	CANI_GOTO,yzfxjosh_norm
+fpcljosh_cheer1
+	WL	fpclJOSH_SPD,JOSH2
+	WL	fpclJOSH_SPD,JOSH3
+	WL	fpclJOSH_SPD,JOSH4
+	WL	fpclJOSH_SPD,JOSH3
+	WL	fpclJOSH_SPD,JOSH4
+	WL	fpclJOSH_SPD,JOSH2
+	WL	CANI_GOTO,fpcljosh_norm
 
-yzfxjosh_cheer2
-	WL	yzfxJOSH_SPD,JOSH2
-	WL	yzfxJOSH_SPD,JOSH3
-	WL	yzfxJOSH_SPD,JOSH4
+fpcljosh_cheer2
+	WL	fpclJOSH_SPD,JOSH2
+	WL	fpclJOSH_SPD,JOSH3
+	WL	fpclJOSH_SPD,JOSH4
 	.WORD	CANI_REPEAT,6
-	WL	yzfxJOSH_SPD,JOSH3
-	WL	yzfxJOSH_SPD,JOSH4
+	WL	fpclJOSH_SPD,JOSH3
+	WL	fpclJOSH_SPD,JOSH4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxJOSH_SPD,JOSH2
-	WL	CANI_GOTO,yzfxjosh_norm
+	WL	fpclJOSH_SPD,JOSH2
+	WL	CANI_GOTO,fpcljosh_norm
 
 
+**********
+* Joy (side crowd)
 
-yzfxJOY_SPD	equ	8
+fpclJOY_SPD	equ	8
 
-yzfxjoy_norm
+fpcljoy_norm
 	WL	SPD_FOREVER,JOY1
-	WL	CANI_GOTO,yzfxjoy_norm
-yzfxjoy_cheer1
-	WL	yzfxJOY_SPD,JOY1
-	WL	yzfxJOY_SPD,JOY2
-	WL	yzfxJOY_SPD,JOY3
-	WL	yzfxJOY_SPD,JOY4
-	WL	yzfxJOY_SPD,JOY5
-	WL	yzfxJOY_SPD,JOY4
-	WL	yzfxJOY_SPD,JOY3
-	WL	CANI_GOTO,yzfxjoy_norm
+	WL	CANI_GOTO,fpcljoy_norm
+fpcljoy_cheer1
+	WL	fpclJOY_SPD,JOY1
+	WL	fpclJOY_SPD,JOY2
+	WL	fpclJOY_SPD,JOY3
+	WL	fpclJOY_SPD,JOY4
+	WL	fpclJOY_SPD,JOY5
+	WL	fpclJOY_SPD,JOY4
+	WL	fpclJOY_SPD,JOY3
+	WL	CANI_GOTO,fpcljoy_norm
 
+**********
+* Marine
 
-yzfxMARINE_SPD	equ	8
+fpclMARINE_SPD	equ	8
 
-yzfxmarine_norm
+fpclmarine_norm
 	WL	SPD_FOREVER,MARINE1
-	WL	CANI_GOTO,yzfxmarine_norm
+	WL	CANI_GOTO,fpclmarine_norm
 
-yzfxmarine_cheer1
-	WL	yzfxMARINE_SPD,MARINE2
-	WL	yzfxMARINE_SPD,MARINE3
-	WL	yzfxMARINE_SPD,MARINE4
-	WL	yzfxMARINE_SPD,MARINE2
-	WL	CANI_GOTO,yzfxmarine_norm
+fpclmarine_cheer1
+	WL	fpclMARINE_SPD,MARINE2
+	WL	fpclMARINE_SPD,MARINE3
+	WL	fpclMARINE_SPD,MARINE4
+	WL	fpclMARINE_SPD,MARINE2
+	WL	CANI_GOTO,fpclmarine_norm
 
-yzfxmarine_cheer2
-	WL	yzfxMARINE_SPD,MARINE2
+fpclmarine_cheer2
+	WL	fpclMARINE_SPD,MARINE2
 	.WORD	CANI_REPEAT,6
-	WL	yzfxMARINE_SPD,MARINE3
-	WL	yzfxMARINE_SPD,MARINE4
+	WL	fpclMARINE_SPD,MARINE3
+	WL	fpclMARINE_SPD,MARINE4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxMARINE_SPD,MARINE3
-	WL	yzfxMARINE_SPD,MARINE2
-	WL	CANI_GOTO,yzfxmarine_norm
+	WL	fpclMARINE_SPD,MARINE3
+	WL	fpclMARINE_SPD,MARINE2
+	WL	CANI_GOTO,fpclmarine_norm
 
+**********
+* Mark
 
-yzfxMARK_SPD	equ	8
+fpclMARK_SPD	equ	8
 
-yzfxmark_norm
+fpclmark_norm
 	WL	SPD_FOREVER,TURMEL1
-	WL	CANI_GOTO,yzfxmark_norm
+	WL	CANI_GOTO,fpclmark_norm
 
-yzfxmark_cheer1
-	WL	yzfxMARK_SPD,TURMEL2
-	WL	yzfxMARK_SPD,TURMEL3
+fpclmark_cheer1
+	WL	fpclMARK_SPD,TURMEL2
+	WL	fpclMARK_SPD,TURMEL3
 	WL	20,TURMEL4
-	WL	yzfxMARK_SPD,TURMEL3
-	WL	yzfxMARK_SPD,TURMEL2
-	WL	CANI_GOTO,yzfxmark_norm
+	WL	fpclMARK_SPD,TURMEL3
+	WL	fpclMARK_SPD,TURMEL2
+	WL	CANI_GOTO,fpclmark_norm
 
+**********
+* Newc
 
-yzfxNEWC_SPD	equ	9
+fpclNEWC_SPD	equ	9
 
-yzfxnewc_norm
+fpclnewc_norm
 	WL	SPD_FOREVER,NEWCOM1
-	WL	CANI_GOTO,yzfxnewc_norm
+	WL	CANI_GOTO,fpclnewc_norm
 
-yzfxnewc_cheer1
-	WL	yzfxNEWC_SPD,NEWCOM2
-	WL	yzfxNEWC_SPD,NEWCOM3
-	WL	yzfxNEWC_SPD,NEWCOM4
-	WL	yzfxNEWC_SPD,NEWCOM3
-	WL	yzfxNEWC_SPD,NEWCOM4
-	WL	yzfxNEWC_SPD,NEWCOM3
-	WL	yzfxNEWC_SPD,NEWCOM2
-	WL	CANI_GOTO,yzfxnewc_norm
+fpclnewc_cheer1
+	WL	fpclNEWC_SPD,NEWCOM2
+	WL	fpclNEWC_SPD,NEWCOM3
+	WL	fpclNEWC_SPD,NEWCOM4
+	WL	fpclNEWC_SPD,NEWCOM3
+	WL	fpclNEWC_SPD,NEWCOM4
+	WL	fpclNEWC_SPD,NEWCOM3
+	WL	fpclNEWC_SPD,NEWCOM2
+	WL	CANI_GOTO,fpclnewc_norm
 
-yzfxnewc_cheer2
-	WL	yzfxNEWC_SPD,NEWCOM2
+fpclnewc_cheer2
+	WL	fpclNEWC_SPD,NEWCOM2
 	.WORD	CANI_REPEAT,6
-	WL	yzfxNEWC_SPD,NEWCOM3
-	WL	yzfxNEWC_SPD,NEWCOM4
+	WL	fpclNEWC_SPD,NEWCOM3
+	WL	fpclNEWC_SPD,NEWCOM4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxNEWC_SPD,NEWCOM2
-	WL	CANI_GOTO,yzfxnewc_norm
+	WL	fpclNEWC_SPD,NEWCOM2
+	WL	CANI_GOTO,fpclnewc_norm
 
+**********
+* Sal
 
-yzfxSAL_SPD	equ	8
+fpclSAL_SPD	equ	8
 
-yzfxsal_norm
+fpclsal_norm
 	WL	SPD_FOREVER,SAL1
-	WL	CANI_GOTO,yzfxsal_norm
+	WL	CANI_GOTO,fpclsal_norm
 
-yzfxsal_cheer1
-	WL	yzfxSAL_SPD,SAL2
-	WL	yzfxSAL_SPD,SAL3
-	WL	yzfxSAL_SPD,SAL4
-	WL	yzfxSAL_SPD,SAL3
-	WL	yzfxSAL_SPD,SAL4
-	WL	yzfxSAL_SPD,SAL3
-	WL	yzfxSAL_SPD,SAL2
-	WL	CANI_GOTO,yzfxsal_norm
+fpclsal_cheer1
+	WL	fpclSAL_SPD,SAL2
+	WL	fpclSAL_SPD,SAL3
+	WL	fpclSAL_SPD,SAL4
+	WL	fpclSAL_SPD,SAL3
+	WL	fpclSAL_SPD,SAL4
+	WL	fpclSAL_SPD,SAL3
+	WL	fpclSAL_SPD,SAL2
+	WL	CANI_GOTO,fpclsal_norm
 
-yzfxsal_cheer2
-	WL	yzfxSAL_SPD,SAL2
+fpclsal_cheer2
+	WL	fpclSAL_SPD,SAL2
 	.WORD	CANI_REPEAT,7
-	WL	yzfxSAL_SPD,SAL3
-	WL	yzfxSAL_SPD,SAL4
+	WL	fpclSAL_SPD,SAL3
+	WL	fpclSAL_SPD,SAL4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxSAL_SPD,SAL2
-	WL	CANI_GOTO,yzfxsal_norm
+	WL	fpclSAL_SPD,SAL2
+	WL	CANI_GOTO,fpclsal_norm
 
+**********
+* Sheridan
 
-yzfxSHERIDAN_SPD	equ	8
+fpclSHERIDAN_SPD	equ	8
 
-yzfxsheridan_norm
+fpclsheridan_norm
 	WL	1,SHERID1
 	.word	CANI_RNDWAIT,TSEC*20
-	WL	yzfxSHERIDAN_SPD,SHERID6
-	WL	yzfxSHERIDAN_SPD,SHERID7
-	WL	yzfxSHERIDAN_SPD*2,SHERID8
-	WL	yzfxSHERIDAN_SPD,SHERID7
-	WL	yzfxSHERIDAN_SPD,SHERID6
-	WL	CANI_GOTO,yzfxsheridan_norm
+	WL	fpclSHERIDAN_SPD,SHERID6
+	WL	fpclSHERIDAN_SPD,SHERID7
+	WL	fpclSHERIDAN_SPD*2,SHERID8
+	WL	fpclSHERIDAN_SPD,SHERID7
+	WL	fpclSHERIDAN_SPD,SHERID6
+	WL	CANI_GOTO,fpclsheridan_norm
 
-yzfxsheridan_cheer1
-	WL	yzfxSHERIDAN_SPD,SHERID1
-	WL	yzfxSHERIDAN_SPD,SHERID2
-	WL	yzfxSHERIDAN_SPD,SHERID3
-	WL	yzfxSHERIDAN_SPD,SHERID4
-	WL	yzfxSHERIDAN_SPD,SHERID5
-	WL	yzfxSHERIDAN_SPD,SHERID6
-	WL	yzfxSHERIDAN_SPD,SHERID7
-	WL	yzfxSHERIDAN_SPD*2,SHERID8
-	WL	yzfxSHERIDAN_SPD,SHERID7
-	WL	yzfxSHERIDAN_SPD,SHERID6
-	WL	CANI_GOTO,yzfxsheridan_norm
+fpclsheridan_cheer1
+	WL	fpclSHERIDAN_SPD,SHERID1
+	WL	fpclSHERIDAN_SPD,SHERID2
+	WL	fpclSHERIDAN_SPD,SHERID3
+	WL	fpclSHERIDAN_SPD,SHERID4
+	WL	fpclSHERIDAN_SPD,SHERID5
+	WL	fpclSHERIDAN_SPD,SHERID6
+	WL	fpclSHERIDAN_SPD,SHERID7
+	WL	fpclSHERIDAN_SPD*2,SHERID8
+	WL	fpclSHERIDAN_SPD,SHERID7
+	WL	fpclSHERIDAN_SPD,SHERID6
+	WL	CANI_GOTO,fpclsheridan_norm
 
-yzfxsheridan_cheer2
-	WL	yzfxSHERIDAN_SPD,SHERID1
-	WL	yzfxSHERIDAN_SPD,SHERID2
-	WL	yzfxSHERIDAN_SPD,SHERID3
+fpclsheridan_cheer2
+	WL	fpclSHERIDAN_SPD,SHERID1
+	WL	fpclSHERIDAN_SPD,SHERID2
+	WL	fpclSHERIDAN_SPD,SHERID3
 	.WORD	CANI_REPEAT,3
-	WL	yzfxSHERIDAN_SPD,SHERID4
-	WL	yzfxSHERIDAN_SPD,SHERID5
+	WL	fpclSHERIDAN_SPD,SHERID4
+	WL	fpclSHERIDAN_SPD,SHERID5
 	.WORD	CANI_SHOULD_REPEAT
-	WL	CANI_GOTO,yzfxsheridan_norm
+	WL	CANI_GOTO,fpclsheridan_norm
 
+**********
+* Side crowd
 
-yzfxSDCRD_SPD	equ	8
+fpclSDCRD_SPD	equ	8
 
-yzfxside1_norm
+fpclside1_norm
 	WL	SPD_FOREVER,SDCRD1A
-	WL	CANI_GOTO,yzfxside1_norm
+	WL	CANI_GOTO,fpclside1_norm
 
-yzfxside1_cheer1
-	WL	yzfxSDCRD_SPD,SDCRD2A
-	WL	yzfxSDCRD_SPD,SDCRD3A
-	WL	yzfxSDCRD_SPD,SDCRD4A
-	WL	yzfxSDCRD_SPD,SDCRD3A
-	WL	yzfxSDCRD_SPD,SDCRD2A
-	WL	CANI_GOTO,yzfxside1_norm
+fpclside1_cheer1
+	WL	fpclSDCRD_SPD,SDCRD2A
+	WL	fpclSDCRD_SPD,SDCRD3A
+	WL	fpclSDCRD_SPD,SDCRD4A
+	WL	fpclSDCRD_SPD,SDCRD3A
+	WL	fpclSDCRD_SPD,SDCRD2A
+	WL	CANI_GOTO,fpclside1_norm
 
-yzfxside2_norm
+fpclside2_norm
 	WL	SPD_FOREVER,SDCRD1B
-	WL	CANI_GOTO,yzfxside2_norm
+	WL	CANI_GOTO,fpclside2_norm
 
-yzfxside2_cheer1
-	WL	yzfxSDCRD_SPD,SDCRD2B
-	WL	yzfxSDCRD_SPD,SDCRD3B
-	WL	yzfxSDCRD_SPD,SDCRD4B
-	WL	yzfxSDCRD_SPD,SDCRD3B
-	WL	yzfxSDCRD_SPD,SDCRD2B
-	WL	CANI_GOTO,yzfxside2_norm
+fpclside2_cheer1
+	WL	fpclSDCRD_SPD,SDCRD2B
+	WL	fpclSDCRD_SPD,SDCRD3B
+	WL	fpclSDCRD_SPD,SDCRD4B
+	WL	fpclSDCRD_SPD,SDCRD3B
+	WL	fpclSDCRD_SPD,SDCRD2B
+	WL	CANI_GOTO,fpclside2_norm
 
-yzfxside3_norm
+fpclside3_norm
 	WL	SPD_FOREVER,SDCRD1C
-	WL	CANI_GOTO,yzfxside3_norm
+	WL	CANI_GOTO,fpclside3_norm
 
-yzfxside3_cheer1
-	WL	yzfxSDCRD_SPD,SDCRD2C
-	WL	yzfxSDCRD_SPD,SDCRD3C
-	WL	yzfxSDCRD_SPD,SDCRD4C
-	WL	yzfxSDCRD_SPD,SDCRD3C
-	WL	yzfxSDCRD_SPD,SDCRD2C
-	WL	CANI_GOTO,yzfxside3_norm
+fpclside3_cheer1
+	WL	fpclSDCRD_SPD,SDCRD2C
+	WL	fpclSDCRD_SPD,SDCRD3C
+	WL	fpclSDCRD_SPD,SDCRD4C
+	WL	fpclSDCRD_SPD,SDCRD3C
+	WL	fpclSDCRD_SPD,SDCRD2C
+	WL	CANI_GOTO,fpclside3_norm
 
+**********
+* Tobias
 
-yzfxTOBIAS_SPD	equ	7
+fpclTOBIAS_SPD	equ	7
 
-yzfxtobias_norm
+fpcltobias_norm
 	WL	SPD_FOREVER,TOBIAS1
-	WL	CANI_GOTO,yzfxtobias_norm
+	WL	CANI_GOTO,fpcltobias_norm
 
-yzfxtobias_cheer1
-	WL	yzfxTOBIAS_SPD,TOBIAS2
-	WL	yzfxTOBIAS_SPD,TOBIAS3
-	WL	yzfxTOBIAS_SPD,TOBIAS4
-	WL	yzfxTOBIAS_SPD,TOBIAS2
-	WL	CANI_GOTO,yzfxtobias_norm
+fpcltobias_cheer1
+	WL	fpclTOBIAS_SPD,TOBIAS2
+	WL	fpclTOBIAS_SPD,TOBIAS3
+	WL	fpclTOBIAS_SPD,TOBIAS4
+	WL	fpclTOBIAS_SPD,TOBIAS2
+	WL	CANI_GOTO,fpcltobias_norm
 
-yzfxtobias_cheer2
-	WL	yzfxTOBIAS_SPD,TOBIAS2
+fpcltobias_cheer2
+	WL	fpclTOBIAS_SPD,TOBIAS2
 	.WORD	CANI_REPEAT,7
-	WL	yzfxTOBIAS_SPD,TOBIAS3
-	WL	yzfxTOBIAS_SPD,TOBIAS4
+	WL	fpclTOBIAS_SPD,TOBIAS3
+	WL	fpclTOBIAS_SPD,TOBIAS4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxTOBIAS_SPD,TOBIAS2
-	WL	CANI_GOTO,yzfxtobias_norm
+	WL	fpclTOBIAS_SPD,TOBIAS2
+	WL	CANI_GOTO,fpcltobias_norm
 
+**********
+* Tony
 
-yzfxTONY_SPD	equ	7
+fpclTONY_SPD	equ	7
 
-yzfxtony_norm
+fpcltony_norm
 	WL	SPD_FOREVER,CRAZY1
-	WL	CANI_GOTO,yzfxtony_norm
+	WL	CANI_GOTO,fpcltony_norm
 
-yzfxtony_cheer1
-	WL	yzfxTONY_SPD,CRAZY2
-	WL	yzfxTONY_SPD,CRAZY3
-	WL	yzfxTONY_SPD,CRAZY4
-	WL	yzfxTONY_SPD,CRAZY5
-	WL	yzfxTONY_SPD,CRAZY4
-	WL	yzfxTONY_SPD,CRAZY5
-	WL	yzfxTONY_SPD,CRAZY4
-	WL	yzfxTONY_SPD,CRAZY3
-	WL	yzfxTONY_SPD,CRAZY2
-	WL	CANI_GOTO,yzfxtony_norm
+fpcltony_cheer1
+	WL	fpclTONY_SPD,CRAZY2
+	WL	fpclTONY_SPD,CRAZY3
+	WL	fpclTONY_SPD,CRAZY4
+	WL	fpclTONY_SPD,CRAZY5
+	WL	fpclTONY_SPD,CRAZY4
+	WL	fpclTONY_SPD,CRAZY5
+	WL	fpclTONY_SPD,CRAZY4
+	WL	fpclTONY_SPD,CRAZY3
+	WL	fpclTONY_SPD,CRAZY2
+	WL	CANI_GOTO,fpcltony_norm
 
-yzfxtony_cheer2
-	WL	yzfxTONY_SPD,CRAZY2
-	WL	yzfxTONY_SPD,CRAZY3
+fpcltony_cheer2
+	WL	fpclTONY_SPD,CRAZY2
+	WL	fpclTONY_SPD,CRAZY3
 	.WORD	CANI_REPEAT,4
-	WL	yzfxTONY_SPD,CRAZY4
-	WL	yzfxTONY_SPD,CRAZY5
-	WL	yzfxTONY_SPD,CRAZY4
-	WL	yzfxTONY_SPD,CRAZY3
-	WL	yzfxTONY_SPD,CRAZY4
-	WL	yzfxTONY_SPD,CRAZY5
+	WL	fpclTONY_SPD,CRAZY4
+	WL	fpclTONY_SPD,CRAZY5
+	WL	fpclTONY_SPD,CRAZY4
+	WL	fpclTONY_SPD,CRAZY3
+	WL	fpclTONY_SPD,CRAZY4
+	WL	fpclTONY_SPD,CRAZY5
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxTONY_SPD,CRAZY4
-	WL	yzfxTONY_SPD,CRAZY3
-	WL	yzfxTONY_SPD,CRAZY2
-	WL	CANI_GOTO,yzfxtony_norm
+	WL	fpclTONY_SPD,CRAZY4
+	WL	fpclTONY_SPD,CRAZY3
+	WL	fpclTONY_SPD,CRAZY2
+	WL	CANI_GOTO,fpcltony_norm
 
 
+**********
+* Tony crowd
 
-yzfxTONYC_SPD	equ	8
+fpclTONYC_SPD	equ	8
 
-yzfxtonycrd_norm
+fpcltonycrd_norm
 	WL	SPD_FOREVER,TONYCRD1
-	WL	CANI_GOTO,yzfxtonycrd_norm
+	WL	CANI_GOTO,fpcltonycrd_norm
 
-yzfxtonycrd_cheer1
-	WL	yzfxTONYC_SPD,TONYCRD2
-	WL	yzfxTONYC_SPD,TONYCRD3
-	WL	yzfxTONYC_SPD,TONYCRD4
-	WL	yzfxTONYC_SPD,TONYCRD5
-	WL	CANI_GOTO,yzfxtonycrd_norm
+fpcltonycrd_cheer1
+	WL	fpclTONYC_SPD,TONYCRD2
+	WL	fpclTONYC_SPD,TONYCRD3
+	WL	fpclTONYC_SPD,TONYCRD4
+	WL	fpclTONYC_SPD,TONYCRD5
+	WL	CANI_GOTO,fpcltonycrd_norm
 
+**********
+* Vogel
 
-yzfxVOGEL_SPD	equ	8
+fpclVOGEL_SPD	equ	8
 
-yzfxvogel_norm
+fpclvogel_norm
 	WL	SPD_FOREVER,VOGEL1
-	WL	CANI_GOTO,yzfxvogel_norm
+	WL	CANI_GOTO,fpclvogel_norm
 
-yzfxvogel_cheer1
-	WL	yzfxVOGEL_SPD,VOGEL2
-	WL	yzfxVOGEL_SPD,VOGEL3
-	WL	yzfxVOGEL_SPD,VOGEL4
-	WL	yzfxVOGEL_SPD,VOGEL3
-	WL	yzfxVOGEL_SPD,VOGEL2
-	WL	CANI_GOTO,yzfxvogel_norm
+fpclvogel_cheer1
+	WL	fpclVOGEL_SPD,VOGEL2
+	WL	fpclVOGEL_SPD,VOGEL3
+	WL	fpclVOGEL_SPD,VOGEL4
+	WL	fpclVOGEL_SPD,VOGEL3
+	WL	fpclVOGEL_SPD,VOGEL2
+	WL	CANI_GOTO,fpclvogel_norm
 
-yzfxvogel_cheer2
-	WL	yzfxVOGEL_SPD,VOGEL2
+fpclvogel_cheer2
+	WL	fpclVOGEL_SPD,VOGEL2
 	.WORD	CANI_REPEAT,7
-	WL	yzfxVOGEL_SPD,VOGEL3
-	WL	yzfxVOGEL_SPD,VOGEL4
+	WL	fpclVOGEL_SPD,VOGEL3
+	WL	fpclVOGEL_SPD,VOGEL4
 	.WORD	CANI_SHOULD_REPEAT
-	WL	yzfxVOGEL_SPD,VOGEL2
-	WL	CANI_GOTO,yzfxvogel_norm
+	WL	fpclVOGEL_SPD,VOGEL2
+	WL	CANI_GOTO,fpclvogel_norm
 
  SUBR	DO_CROWD_CHEER
 	MOVK	C_OVERIDE|C_LONG,A3
 	CLR	A4
 
+*****************************************************************************
+* Causes the crowd to cheer.
 
+;INPUT A3 = BIT 0 1=LONG OR 0=SHORT TYPE OF ANIMATION
+;           BIT 1 1=OVERRIDE WHAT IS ALREADY GOING ON OR NOT
+;      	   BIT 2 1=DO RANDOM NUMBER OF PEOPLE IN AUDIENCE 
+;      A4 = RNDPER VALUE IF BIT 2 SET IN A3
  SUBR	crowd_cheer
 		   
 	CLR	A7
@@ -1051,13 +1137,13 @@ NO_RANDOMNESS
 	movi	CROWDDATA,a4
 	movi	NUMCROWD,a5
 	movk	1,a6
-yzfxloop
+fpclloop
 	MOVE	*A4(CHEER1),A1,L
-	CMPI	yzfxside2_cheer1,A1
+	CMPI	fpclside2_cheer1,A1
 	JREQ	DO_NEXT_PERSON
-	CMPI	yzfxside3_cheer1,A1
+	CMPI	fpclside3_cheer1,A1
 	JREQ	DO_NEXT_PERSON
-	CMPI	yzfxdave_cheer1,A1
+	CMPI	fpcldave_cheer1,A1
 	JREQ	DO_NEXT_PERSON
 	MOVE	A7,A0
 	JRZ	DO_THEM_ALL
@@ -1078,8 +1164,9 @@ JUST_DO_IT_ANYWAY
 OKAY_DO_SHORT
 	move	a6,*a4(TIME),W
 
+;MAKE SURE WE DO ALL THE SIDE CROWD AT ONCE
 	move	*a4(CHEER1),A1,L
-	CMPI	yzfxside1_cheer1,A1
+	CMPI	fpclside1_cheer1,A1
 	JRNE	DO_NEXT_PERSON
 	addi	BSIZE,a4
 	move	*a4(CHEER1),*a4(SCPTR),L
@@ -1095,13 +1182,14 @@ OKAY_DO_SHORT
 	subk	4,a5
 DO_NEXT_PERSON
 	addi	BSIZE,a4
-	dsj	a5,yzfxloop
+	dsj	a5,fpclloop
 	
 	CALLA	START_FLASHES
 
 	rets
 
 
+******************************************************************************
 
 	.end
 

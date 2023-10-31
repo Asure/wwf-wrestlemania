@@ -71,7 +71,7 @@ OCUR_FRAME	equ	OANICNT+10h		;long
 
 	.ref	match_time
 	move	@match_time,a0,L
-	jrz	pzax
+	jrz	zrcax
 
 ;	callr	animate_wrestler1
 ;	callr	animate_wrestler2
@@ -84,7 +84,7 @@ OCUR_FRAME	equ	OANICNT+10h		;long
 	addi	ANIMODE2,a10		;secondary animation
 	callr	animate
 
-pzax
+zrcax
 	PULL	a4,a10
 	rets
 
@@ -122,7 +122,7 @@ animate	;a10 = * anim variables base
 *** temp patch to step through images on player 1 !!!!
 
 	move	*a13(PLYRNUM),a0
-	jrnz	pzaskippit
+	jrnz	zrcaskippit
 
 	move	*a10(OANIBASE),a0,L
 	move	*a10(OANIPC),a1,L
@@ -133,7 +133,7 @@ animate	;a10 = * anim variables base
 	move	a0,a0
 	jrnz	_next_command
 	rets
-pzaskippit
+zrcaskippit
  .endif
 
 ***
@@ -148,7 +148,7 @@ _next_command
 	move	*a10(OANIPC),a4,L
 _next_command1
 	move	*a4+,a0			;tick count or command
-	jrn	pzacommand
+	jrn	zrcacommand
 	jrz	_ani_zip		;no-op
 
 	move	*a13(ANI_SPEED),a1
@@ -158,9 +158,9 @@ _next_command1
 	srl	a14,a1
 	.if DEBUG
 	move	a1,a1
-	jrge	pzanot_z
+	jrge	zrcanot_z
 	LOCKUP
-pzanot_z
+zrcanot_z
 	.endif
 	move	a1,*a10(OANICNT)	;# ticks to hold cur frame
 
@@ -174,44 +174,44 @@ pzanot_z
 
 	.if DEBUG
 	cmpi	0ff800000H,a0
-	jrhs	pzaimg_ok
+	jrhs	zrcaimg_ok
 	LOCKUP	;bogus image pointer
-pzaimg_ok
+zrcaimg_ok
 	.endif
 
 	move	*a0,a0,L		;* image
  .if DEBUG
- 	jrnz	pzaok
+ 	jrnz	zrcaok
 	LOCKUP
-	jruc	pzaskp
-pzaok
+	jruc	zrcaskp
+zrcaok
  .endif
 	move	a0,*a10(OCUR_FRAME),L
-pzaskp
+zrcaskp
 	move	a4,*a10(OANIPC),L
 
 _exit
 	rets
 
 
-pzacommand
+zrcacommand
 ;	andi	0ffh,a0
 ;	sll	5,a0			;x 32
 	sll	24,a0
 	srl	19,a0
-	addi	pzaani_commands,a0
+	addi	zrcaani_commands,a0
 
 	.if DEBUG
-	cmpi	pzaani_commands_end,a0
-	jrlt	pzacmd_ok
+	cmpi	zrcaani_commands_end,a0
+	jrlt	zrcacmd_ok
 	LOCKUP	;bogus ani command
-pzacmd_ok
+zrcacmd_ok
 	.endif
 
 	move	*a0,a0,L
 	jump	a0
 
-pzaani_commands
+zrcaani_commands
 	.long	_ani_zip		;0
 	.long	_ani_repeat		;1
 	.long	_ani_setmode		;2
@@ -347,7 +347,7 @@ pzaani_commands
 	.long	_ani_clear_climb	;128
 	.long	_ani_opp_face		;129
 	.long	_ani_setflag		;130
-pzaani_commands_end
+zrcaani_commands_end
 
 ********
 _ani_zip	;0
@@ -407,21 +407,21 @@ _ani_setplyrmode ;4
 	move	*a4+,a0
 	move	*a13(PLYRMODE),a1		;this is a temp fudge!!!
 	cmpi	MODE_DEAD,a1
-	jreq	cdjnoset
+	jreq	ilfrnoset
 
 ;If going into head hold mode, don't allow getup meter
 ;to come out for awhile.
 	cmpi	MODE_HEADHOLD,a0
-	jrnz	cdjskp
+	jrnz	ilfrskp
 	move	*a13(DELAY_METER),a14
 	cmpi	6*60,a14
-	jrge	cdjskp
+	jrge	ilfrskp
 	movi	9*60,a14
 	move	a14,*a13(DELAY_METER)
-cdjskp
+ilfrskp
 
 	move	a0,*a13(PLYRMODE)
-cdjnoset
+ilfrnoset
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -520,16 +520,16 @@ _ani_leapatopp	;8
 ;	x,y,z offset of attack box
 
 	STRUCT	0
-	WORD	rfsTICKS
-	WORD	rfsMAX_TOTAL_DIST
-	WORD	rfsMAX_X_DIST
-	WORD	rfsMAX_Z_DIST
-	LONG	rfsMAX_Y_VEL
-	WORD	rfsTRGT
-	WORD	rfsATT_X_OFF
-	WORD	rfsATT_Y_OFF
-	WORD	rfsATT_Z_OFF
-	LABEL	rfsSIZE
+	WORD	oziyTICKS
+	WORD	oziyMAX_TOTAL_DIST
+	WORD	oziyMAX_X_DIST
+	WORD	oziyMAX_Z_DIST
+	LONG	oziyMAX_Y_VEL
+	WORD	oziyTRGT
+	WORD	oziyATT_X_OFF
+	WORD	oziyATT_Y_OFF
+	WORD	oziyATT_Z_OFF
+	LABEL	oziySIZE
 
 
 	.bss	oppx,32
@@ -538,7 +538,7 @@ _ani_leapatopp	;8
 
 
 	move	a4,a14
-	addi	rfsSIZE,a14
+	addi	oziySIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(CLOSEST_NUM),a11
@@ -550,10 +550,10 @@ _ani_leapatopp	;8
 
 	move	*a11(PLYRMODE),a14
 	cmpi	MODE_RUNNING,a14
-	jrne	rfsoutring
+	jrne	oziyoutring
 
 	move	a0,a0
-	jrnz	rfsoutring
+	jrnz	oziyoutring
 
 ;if opponent is inside the ring, running and near the ropes
 ;then target where he is now (don't add in xvel)
@@ -561,16 +561,16 @@ _ani_leapatopp	;8
 	move	*a11(OBJ_XPOSINT),a1
 
 	move	a5,a5		;xvel
-	jrp	rfsrun_right
+	jrp	oziyrun_right
 ;run_left
 	cmpi	RING_X_CENTER,a1
-	jrgt	rfsoutring
-	jruc	rfscnt
+	jrgt	oziyoutring
+	jruc	oziycnt
 
-rfsrun_right
+oziyrun_right
 	cmpi	RING_X_CENTER,a1
-	jrlt	rfsoutring
-rfscnt
+	jrlt	oziyoutring
+oziycnt
 
 	PUSH	a13
 	move	a11,a13
@@ -580,10 +580,10 @@ rfscnt
 	sub	a1,a0
 	abs	a0
 	cmpi	70,a0
-	jrgt	rfsoutring
+	jrgt	oziyoutring
 
 	clr	a5		;clr xvel
-rfsoutring
+oziyoutring
 
 	move	*a11(OBJ_ZVEL),a6,L
 	move	*a11(OBJ_YVEL),a7,L
@@ -597,25 +597,25 @@ rfsoutring
 	addi	[256,0],a3
 
 
-	move	*a4(rfsTICKS),a0
+	move	*a4(oziyTICKS),a0
 
 	move	*a13(OBJ_GRAVITY),a14,L
-rfslp0
+oziylp0
 	add	a5,a1			;x + xvel
 	add	a6,a2			;z + zvel
 
 	move	a7,a7
-	jrz	rfsok
+	jrz	oziyok
 
 	add	a7,a3			;y + yvel
 	sub	a14,a7		;yvel - gravity
 	cmp	a3,a8		;hit ground?
-	jrgt	rfsok
+	jrgt	oziyok
 	move	a8,a3
-	jruc	rfsdn
-rfsok
-	dsj	a0,rfslp0
-rfsdn
+	jruc	oziydn
+oziyok
+	dsj	a0,oziylp0
+oziydn
 	subi	[256,0],a3
 
 	move	a1,@oppx,L
@@ -623,36 +623,36 @@ rfsdn
 	move	a3,@oppy,L
 
 
-	move	*a4(rfsTRGT),a0
-	jrn	rfsuser
+	move	*a4(oziyTRGT),a0
+	jrn	oziyuser
 	btst	B_TGT_GROUND,a0
-	jrz	rfsngrnd
+	jrz	oziyngrnd
 	andni	TGT_GROUND,a0
 	calla	set_target_offsets
 	calla	tgt_ground
-	jruc	rfsuser
-rfsngrnd
+	jruc	oziyuser
+oziyngrnd
 	calla	set_target_offsets
-rfsuser
+oziyuser
 
 	move	*a13(TGT_XOFF),a0	;target x offset
 	sll	16,a0
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	rfsright1
+	jrz	oziyright1
 	neg	a0
-rfsright1
+oziyright1
 ;;;	move	*a11(OBJ_XPOS),a1,L
 	move	@oppx,a1,L
 	add	a0,a1			;def target x
 
-	move	*a4(rfsATT_X_OFF),a0
+	move	*a4(oziyATT_X_OFF),a0
 	sll	16,a0
 	move	*a13(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	rfsright0
+	jrz	oziyright0
 	neg	a0
-rfsright0
+oziyright0
 	move	*a13(OBJ_XPOS),a2,L
 	add	a0,a2			;att x
 
@@ -660,20 +660,20 @@ rfsright0
 	move	a1,a14
 	abs	a14
 
-	move	*a4(rfsMAX_X_DIST),a0
-	jrn	rfsxok
+	move	*a4(oziyMAX_X_DIST),a0
+	jrn	oziyxok
 	sll	16,a0
 	cmp	a14,a0
-	jrge	rfsxok
+	jrge	oziyxok
 
 	move	a1,a1
-	jrp	rfsno_negx
+	jrp	oziyno_negx
 	neg	a0
-rfsno_negx
+oziyno_negx
 	move	a0,a1
-rfsxok
+oziyxok
 	move	a1,a5			;delta x
-	move	*a4(rfsTICKS),a0
+	move	*a4(oziyTICKS),a0
 	divs	a0,a1			;a1 / a0
 	move	a1,*a13(OBJ_XVEL),L
 
@@ -686,7 +686,7 @@ rfsxok
 	add	a0,a1			;def target z
 
 	move	*a13(OBJ_ZPOS),a2,L
-	move	*a4(rfsATT_Z_OFF),a0
+	move	*a4(oziyATT_Z_OFF),a0
 	sll	16,a0
 	add	a0,a2			;att z
 
@@ -694,26 +694,26 @@ rfsxok
 	move	a1,a14
 	abs	a14
 
-	move	*a4(rfsMAX_Z_DIST),a0
-	jrn	rfszok
+	move	*a4(oziyMAX_Z_DIST),a0
+	jrn	oziyzok
 	sll	16,a0
 	cmp	a14,a0
-	jrge	rfszok
+	jrge	oziyzok
 
 	move	a1,a1
-	jrp	rfsno_negz
+	jrp	oziyno_negz
 	neg	a0
-rfsno_negz
+oziyno_negz
 	move	a0,a1
-rfszok
+oziyzok
 	move	a1,a6			;delta z
-	move	*a4(rfsTICKS),a0
+	move	*a4(oziyTICKS),a0
 	divs	a0,a1			;a1 / a0
 	move	a1,*a13(OBJ_ZVEL),L
 
 
-	move	*a4(rfsMAX_TOTAL_DIST),a9
-	jrn	rfsmaxok
+	move	*a4(oziyMAX_TOTAL_DIST),a9
+	jrn	oziymaxok
 
 	abs	a5
 	srl	16,a5
@@ -731,7 +731,7 @@ rfszok
 	calla	square_root
 
 	cmp	a0,a9			;a9-a0 (will we exceed max dist?)
-	jrgt	rfsmaxok
+	jrgt	oziymaxok
 
 	sll	8,a9			;x 256 (8 bits fractional)
 	divu	a0,a9			;a9/a0
@@ -747,7 +747,7 @@ rfszok
 	mpys	a0,a1			;scale down yvel
 	sra	8,a1			;shift off fractional
 	move	a1,*a13(OBJ_ZVEL),L
-rfsmaxok
+oziymaxok
 
 
 
@@ -756,7 +756,7 @@ rfsmaxok
 ;use y-y0 = v0*t + 0.5*a*t^2
 
 
-	move	*a4(rfsTICKS),a8
+	move	*a4(oziyTICKS),a8
 	move	a8,a1
 	mpyu	a8,a1			;t^2
 	move	*a13(OBJ_GRAVITY),a0,L
@@ -771,27 +771,27 @@ rfsmaxok
 	add	a14,a0
 
 	move	*a13(OBJ_YPOS),a2,L	;y0
-	move	*a4(rfsATT_Y_OFF),a14
+	move	*a4(oziyATT_Y_OFF),a14
 	sll	16,a14
 
 	add	a14,a2
 
 	sub	a2,a0			;a0 = a0-a2 (y - y0)
 	add	a0,a1
-	jrnn	rfsyvel_okay
+	jrnn	oziyyvel_okay
 
 ;	LOCKUP
 
 	clr	a1
-	jruc	rfsyok
-rfsyvel_okay
+	jruc	oziyyok
+oziyyvel_okay
 	divu	a8,a1			;a1 = a1/a8 ( ((y-y0)+(1/2*a*t^2)) / t )
 
-	move	*a4(rfsMAX_Y_VEL),a0,L
+	move	*a4(oziyMAX_Y_VEL),a0,L
 	cmp	a1,a0
-	jrge	rfsyok
+	jrge	oziyyok
 	move	a0,a1
-rfsyok
+oziyyok
 	move	a1,*a13(OBJ_YVEL),L
 
 
@@ -799,7 +799,7 @@ rfsyok
 	move	*a11(INRING),a0
 	move	*a13(INRING),a1
 	cmp	a0,a1
-	jreq	rfsdone
+	jreq	oziydone
 
 	;uh-oh.  our INRING's don't match.  Unless we're on the
 	; turnbuckle (or flying from it), zero the X and Z
@@ -814,22 +814,22 @@ rfsyok
 	; that sure looks like a turnbuckle, so go with it.
 	move	*a13(ANIMODE),a14
 	btst	MODE_NOGRAVITY_BIT,a14
-	jrz	rfsnt
+	jrz	oziynt
 
 	move	*a13(OBJ_YPOSINT),a0
 	move	*a13(GROUND_Y),a14
 	sub	a14,a0
 	subi	80,a0
-	jrnn	rfsdone
+	jrnn	oziydone
 
-rfsnt	;no good.  leap in place
+oziynt	;no good.  leap in place
 	clr	a14
 	move	a14,*a13(OBJ_XVEL),L
 	move	a14,*a13(OBJ_ZVEL),L
 	movi	[5,0],a14
 	move	a14,*a13(OBJ_YVEL),L
 
-rfsdone
+oziydone
 	jruc	_next_command
 
 
@@ -851,37 +851,37 @@ _ani_attach	;9
 _ani_detach	;10
 
 	move	*a13(ATTACH_PROC),a1,L
-	jrz	kqhdone_really
+	jrz	lozwdone_really
 	clr	a0
 	move	a0,*a13(ATTACH_PROC),L		;not attached to anything
 
 	move	*a1(ATTACH_PROC),a2,L
 	cmp	a2,a13
-	jrne	kqhdone_really			;attach_procs don't match!
+	jrne	lozwdone_really			;attach_procs don't match!
 
 	move	a0,*a1(ATTACH_PROC),L		;not attached to anything
-kqhdone
+lozwdone
 
 	;if our victim is still in mode puppet, puppet2, headheld, or
 	; attached, instead put him in ONGROUND.
 	move	*a1(PLYRMODE),a14
 	cmpi	MODE_PUPPET,a14
-	jreq	kqhfix_opp
+	jreq	lozwfix_opp
 	cmpi	MODE_PUPPET2,a14
-	jreq	kqhfix_opp
+	jreq	lozwfix_opp
 ;This was fucking up the shawn franknsteiner move from headhold!
 ;Forcing him to dive down too low!
 ;	cmpi	MODE_HEADHELD,a14
-;	jreq	kqhfix_opp
+;	jreq	lozwfix_opp
 	cmpi	MODE_ATTACHED,a14
-	jreq	kqhfix_opp
-	jruc	kqhdone_really
+	jreq	lozwfix_opp
+	jruc	lozwdone_really
 
-kqhfix_opp
+lozwfix_opp
 	movi	MODE_ONGROUND,a14
 	move	a14,*a1(PLYRMODE)
 
-kqhdone_really
+lozwdone_really
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -890,46 +890,46 @@ kqhdone_really
 _ani_waithitgnd	;11
 
 	move	*a13(OBJ_YVEL),a0,L	;must have down velocity
-	jrp	jzmno_gnd
+	jrp	vdgwno_gnd
 
 	;if we're the master and the attach is valid, check and see if
 	; our puppet has hit the ground.
 	move	*a13(ANIMODE),a14
 	btst	MODE_KEEPATTACHED_BIT,a14
-	jrz	jzmskip_pcheck
+	jrz	vdgwskip_pcheck
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrz	jzmskip_pcheck		;we're attached?
+	jrz	vdgwskip_pcheck		;we're attached?
 	move	*a0(ATTACH_PROC),a14,L
-	jrz	jzmskip_pcheck		;they're attached?
+	jrz	vdgwskip_pcheck		;they're attached?
 	cmp	a13,a14
-	jrne	jzmskip_pcheck		;to each other?
+	jrne	vdgwskip_pcheck		;to each other?
 
 	;ah, but if the opponent's MODE_GHOST bit is set, ignore him
 	move	*a0(ANIMODE),a14
 	btst	MODE_GHOST_BIT,a14
-	jrnz	jzmskip_pcheck
+	jrnz	vdgwskip_pcheck
 
 	move	*a0(OBJ_YPOSINT),a1,W
 	move	*a0(GROUND_Y),a2,W
 	sub	a1,a2
 
-	jrnn	jzmhit_gnd
+	jrnn	vdgwhit_gnd
 
-jzmskip_pcheck
+vdgwskip_pcheck
 
 	move	*a13(OBJ_YPOSINT),a0
 	move	*a13(GROUND_Y),a1
 	cmp	a1,a0			;a0-a1
-	jrgt	jzmno_gnd
+	jrgt	vdgwno_gnd
 
-jzmhit_gnd
+vdgwhit_gnd
 	CALLA	SMALL_BOUNCE
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
 
-jzmno_gnd
+vdgwno_gnd
 	movk	1,a0
 	move	a0,*a10(OANICNT)	;# ticks to hold cur frame
 	rets
@@ -1069,14 +1069,14 @@ _ani_waitrelease ;20
 
 	move	*a4+,a1			;button bit
 	btst	a1,a0			;still down?
-	jrz	bldbutton_up
+	jrz	ziygbutton_up
 
 	;since we do the flip here, we have to update FACING_DIR too.
 	move	*a13(NEW_FACING_DIR),*a13(FACING_DIR)
 
 	move	*a13(NEW_FACING_DIR),a14
 	btst	PLAYER_RIGHT_BIT,a14
-	jrnz	bldright
+	jrnz	ziygright
 
 	move	*a13(OBJ_CONTROL),a14
 	ori	M_FLIPH,a14
@@ -1085,7 +1085,7 @@ _ani_waitrelease ;20
 	movk	1,a0
 	move	a0,*a10(OANICNT)	;# ticks to hold cur frame
 	rets
-bldright
+ziygright
 	move	*a13(OBJ_CONTROL),a14
 	andni	M_FLIPH,a14
 	move	a14,*a13(OBJ_CONTROL)
@@ -1094,7 +1094,7 @@ bldright
 	move	a0,*a10(OANICNT)	;# ticks to hold cur frame
 	rets
 
-bldbutton_up
+ziygbutton_up
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -1105,9 +1105,9 @@ _ani_offset	;21
 	move	*a4+,a1			;x offset
 	move	*a13(FACING_DIR),a0
 	btst	MOVE_RIGHT_BIT,a0
-	jrnz	jhsright
+	jrnz	unuiright
 	neg	a1
-jhsright
+unuiright
 	move	*a13(OBJ_XPOSINT),a0
 	add	a1,a0
 	move	a0,*a13(OBJ_XPOSINT)
@@ -1154,9 +1154,9 @@ _ani_min_yvel	;23
 	move	*a4+,a0,L
 	move	*a13(OBJ_YVEL),a14,L
 	cmp	a0,a14
-	jrge	vycset
+	jrge	peswset
 	move	a0,*a13(OBJ_YVEL),L
-vycset	move	a4,*a10(OANIPC),L
+peswset	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
 
@@ -1164,36 +1164,36 @@ vycset	move	a4,*a10(OANIPC),L
 _ani_attachvel	;24
 
 	STRUCT	0
-	LONG	lxuXVEL
-	LONG	lxuYVEL
-	LONG	lxuZVEL
-	LABEL	lxuSIZE
+	LONG	jxchXVEL
+	LONG	jxchYVEL
+	LONG	jxchZVEL
+	LABEL	jxchSIZE
 
 	;x velocity is always relative to attacker FACING_DIR
 
 	move	a4,a14
-	addi	lxuSIZE,a14
+	addi	jxchSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a2,L		;proc attached to
-	jrz	lxunot_attached
+	jrz	jxchnot_attached
 	move	*a2(ATTACH_PROC),a0,L
-	jrz	lxunot_attached
+	jrz	jxchnot_attached
 
-	move	*a4(lxuYVEL),a0,L
+	move	*a4(jxchYVEL),a0,L
 	move	a0,*a2(OBJ_YVEL),L
-	move	*a4(lxuZVEL),a0,L
+	move	*a4(jxchZVEL),a0,L
 	move	a0,*a2(OBJ_ZVEL),L
 
-	move	*a4(lxuXVEL),a0,L
+	move	*a4(jxchXVEL),a0,L
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	lxuxok
+	jrnz	jxchxok
 	neg	a0
-lxuxok
+jxchxok
 	move	a0,*a2(OBJ_XVEL),L
 
-lxunot_attached
+jxchnot_attached
 	jruc	_next_command
 
 ********
@@ -1208,7 +1208,7 @@ _ani_sound	;26
 
 	move	*a4+,a0
 	cmpi	run_snd,a0
-	jrne	wmdnot_run
+	jrne	qjiunot_run
 
 	;if there's been another foot noise from this guy within the last
 	; 12 ticks, give it a miss.
@@ -1218,22 +1218,22 @@ _ani_sound	;26
 	sub	a1,a14
 	abs	a14
 	cmpi	12,a14
-	jrlt	wmddone
+	jrlt	qjiudone
 	move	@PCNT,a1
 	move	a1,*a13(FOOT_PCNT)
 	calla	triple_sound
-	jruc	wmddone
+	jruc	qjiudone
 
-wmdnot_run
+qjiunot_run
 	move	a0,a0
-	jrn	wmdtable_lookup
+	jrn	qjiutable_lookup
 	calla	triple_sound
-	jruc	wmddone
+	jruc	qjiudone
 
-wmdtable_lookup
+qjiutable_lookup
 	calla	wrtable_sound
 
-wmddone
+qjiudone
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -1264,10 +1264,10 @@ _ani_ifstatus	;29
 	move	*a4+,a0,L		;this is a conditional goto
 	move	*a13(ANIMODE),a1	;if MODE_STATUS set then
 	btst	MODE_STATUS_BIT,a1	;branch is taken
-	jrz	djcskip
+	jrz	adwfskip
 
 	move	a0,a4			;new ani pc
-djcskip
+adwfskip
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -1314,9 +1314,9 @@ _ani_faceup	;33
 	movk	MOVE_UP_RIGHT,a1
 	move	*a13(OBJ_CONTROL),a0
 	btst	B_FLIPH,a0
-	jrz	hfjright
+	jrz	odtjright
 	movk	MOVE_UP_LEFT,a1
-hfjright	move	a1,*a13(FACING_DIR)
+odtjright	move	a1,*a13(FACING_DIR)
 
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
@@ -1328,9 +1328,9 @@ _ani_facedown	;34
 	movk	MOVE_DOWN_RIGHT,a1
 	move	*a13(OBJ_CONTROL),a0
 	btst	B_FLIPH,a0
-	jrz	qxlright
+	jrz	dwznright
 	movk	MOVE_DOWN_LEFT,a1
-qxlright	move	a1,*a13(FACING_DIR)
+dwznright	move	a1,*a13(FACING_DIR)
 
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
@@ -1342,16 +1342,16 @@ _ani_bouncerope	;35
 	movi	ROPE_LEFT,a0
 	move	*a13(OBJ_XPOSINT),a14
 	cmpi	RING_X_CENTER,a14
-	jrle	dlydir_set
+	jrle	fjcwdir_set
 	movi	ROPE_RIGHT,a0
-dlydir_set
+fjcwdir_set
 	movi	ROPE_SIDES,a1
 	move	*a13(OBJ_ZPOS),a3,L
 	move	*a4+,a2,W
 	move	a4,*a10(OANIPC),L
-	jrnn	dlyno_release
+	jrnn	fjcwno_release
 	movi	ROPE_SIDESR,a1
-dlyno_release
+fjcwno_release
 	calla	rope_command
 	movi	3ch,a0
 	calla	triple_sound
@@ -1377,10 +1377,10 @@ _ani_shakeropes	;36
 	movi	ROPE_LEFT,a0
 	move	*a13(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrnz	kjqcont
+	jrnz	nmtlcont
 
 	movi	ROPE_RIGHT,a0
-kjqcont
+nmtlcont
 	calla	rope_command
 
 	movi	3ch,a0
@@ -1394,16 +1394,16 @@ _ani_bendrope	;37
 	movi	ROPE_LEFT,a0
 	move	*a13(OBJ_XPOSINT),a14
 	cmpi	RING_X_CENTER,a14
-	jrle	ipodir_set
+	jrle	piwbdir_set
 	movi	ROPE_RIGHT,a0
-ipodir_set
+piwbdir_set
 	movi	ROPE_DOWNS,a1
 	move	*a13(OBJ_ZPOS),a3,L
 	move	*a4+,a2,W
 	move	a4,*a10(OANIPC),L
-	jrnn	ipono_release
+	jrnn	piwbno_release
 	movi	ROPE_DOWNSR,a1
-ipono_release
+piwbno_release
 	calla	rope_command
 	jruc	_next_command
 
@@ -1421,7 +1421,7 @@ _ani_setspeed	;38
 ********
 _ani_leapatpos	;39
 
-;WORD	- hjvticks to reach destination
+;WORD	- jyurticks to reach destination
 ;WORD	- max distance to travel
 ;WORD	- x,y,z offset of attack box (eg. attacker's fist)
 
@@ -1431,7 +1431,7 @@ _ani_leapatpos	;39
 	move	*a4+,a8			;# ticks
 	move	*a4+,a9			;max distance to travel
 
-hjvuser
+jyuruser
 	move	*a13(TGT_XOFF),a1	;target x
 	sll	16,a1
 
@@ -1439,9 +1439,9 @@ hjvuser
 	sll	16,a0
 	move	*a13(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	hjvright0
+	jrz	jyurright0
 	neg	a0
-hjvright0
+jyurright0
 	move	*a13(OBJ_XPOS),a2,L
 	add	a0,a2			;att x
 
@@ -1474,9 +1474,9 @@ hjvright0
 	divu	a8,a1			;a1 = a1/a8 ( ((y-y0)+(1/2*a*t^2)) / t )
 
 	cmpi	00f0000H,a1
-	jrlt	hjvyok
+	jrlt	jyuryok
 	movi	00f0000H,a1
-hjvyok	move	a1,*a13(OBJ_YVEL),L
+jyuryok	move	a1,*a13(OBJ_YVEL),L
 
 
 	move	*a13(TGT_ZOFF),a1	;target z
@@ -1510,7 +1510,7 @@ hjvyok	move	a1,*a13(OBJ_YVEL),L
 	calla	square_root
 
 	cmp	a0,a9			;a9-a0 (will we exceed max dist?)
-	jrgt	hjvok
+	jrgt	jyurok
 
 	sll	8,a9			;x 256 (8 bits fractional)
 	divu	a0,a9			;a9/a0
@@ -1527,7 +1527,7 @@ hjvyok	move	a1,*a13(OBJ_YVEL),L
 	sra	8,a1			;shift off fractional
 	move	a1,*a13(OBJ_ZVEL),L
 
-hjvok
+jyurok
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -1552,10 +1552,10 @@ _ani_rope_z		;41
 	move	@right_rproc,a0,L
 	move	*a13(OBJ_XPOS),a14,L
 	cmpi	RING_X_CENTER<<16,a14
-	jrgt	goiright
+	jrgt	rxbzright
 
 	move	@left_rproc,a0,L
-goiright
+rxbzright
 	move	*a4+,a1,W		;rope index
 	move	*a4+,a2,W		;action
 	calla	set_rope_z
@@ -1571,36 +1571,36 @@ _ani_loop		;42
 
 	move	@p1rounds,a0
 	cmpi	2,a0
-	jrz	xenat_end
+	jrz	mlgtat_end
 	move	@p2rounds,a0
 	cmpi	2,a0
-	jreq	xenat_end
+	jreq	mlgtat_end
 
 	;oooh, wait.  If we've pinned someone, and announce_rnd_winner
 	; is waiting on the result (they'll be waiting to wake up at
 	; arw_bwait if they are) then we should wake it up.
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_PINNED,a14
-	jrz	xenno_pin
+	jrz	mlgtno_pin
 
 	movi	ANNC_PID,a0
 	clr	a1
 	not	a1
 	calla	EXISTP
-	jrnz	xenno_pin		;annc exists?
+	jrnz	mlgtno_pin		;annc exists?
 
 	move	*a0(PWAKE),a14,L
 	cmpi	arw_bwait,a14
-	jrne	xenno_pin		;waiting for a pin?
+	jrne	mlgtno_pin		;waiting for a pin?
 
 	movk	1,a14
 	move	a14,*a0(PTIME)	;wake it up.
 
-xenno_pin	movk	1,a0
+mlgtno_pin	movk	1,a0
 	move	a0,*a10(OANICNT)
 	rets
 
-xenat_end
+mlgtat_end
 	jruc	_ani_detach	;10
 ;
 ;	move	a4,*a10(OANIPC),L
@@ -1629,33 +1629,33 @@ _ani_set_xvel		;44
 					;if MODE=3  vel is new_face relative
 	move	*a4+,a0,L
 	move	*a4+,a1
-	jrz	hydabs
+	jrz	ubgoabs
 	dec	a1
-	jrz	hydface
+	jrz	ubgoface
 	dec	a1
-	jrz	hydhit
+	jrz	ubgohit
 
 ;new_facing relative
 	move	*a13(NEW_FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	hydabs			;right
+	jrnz	ubgoabs			;right
 	neg	a0			;left
-	jruc	hydabs
+	jruc	ubgoabs
 
-hydhit
+ubgohit
 ;hit relative
 	move	*a13(PLYR_HIT_SIDE),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	hydabs			;hit from right
+	jrnz	ubgoabs			;hit from right
 
 	neg	a0			;hit from left
-	jruc	hydabs
-hydface
+	jruc	ubgoabs
+ubgoface
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	hydabs			;right
+	jrnz	ubgoabs			;right
 	neg	a0			;left
-hydabs
+ubgoabs
 	move	a0,*a13(OBJ_XVEL),L
 
 	move	a4,*a10(OANIPC),L
@@ -1669,10 +1669,10 @@ _ani_ifnotstatus	;45
 	move	*a4+,a0,L		;this is a conditional goto
 	move	*a13(ANIMODE),a1	;if MODE_STATUS clear then
 	btst	MODE_STATUS_BIT,a1	;branch is taken
-	jrnz	fxgskip
+	jrnz	lokiskip
 
 	move	a0,a4			;new ani pc
-fxgskip
+lokiskip
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -1687,24 +1687,24 @@ _ani_slide_back
 
 	move	*a13(ANIMODE),a14	;was there a collision?
 	btst	MODE_STATUS_BIT,a14
-	jrz	djfno_slide
+	jrz	vvlano_slide
 
 
 	move	*a13(WHOIHIT),a6,L
 
 ;	move	*a6(PLYRMODE),a5
 ;	cmpi	MODE_BLOCK,a5
-;	jrz	djfno_slide
+;	jrz	vvlano_slide
 
 	move	*a6(OBJ_XPOSINT),a5
 	move	*a13(OBJ_XPOSINT),a0
 
 	cmp	a5,a0			;a0-a5
-	jrgt	djfhit_from_right
+	jrgt	vvlahit_from_right
 
 ;hit_from_left
 	move	*a13(INRING),a0
-	jrnz	djfoutside1
+	jrnz	vvlaoutside1
 
 	PUSH	a6,a13
 	move	a6,a13
@@ -1715,10 +1715,10 @@ _ani_slide_back
 	sub	a1,a0
 	abs	a0
 	cmp	a8,a0
-	jrgt	djfno_slide
-	jruc	djfslide
+	jrgt	vvlano_slide
+	jruc	vvlaslide
 
-djfoutside1
+vvlaoutside1
 	;hit from left outside ring.
 	; get left matedge first.  if it's zero, or greater than our
 	; x pos, check against right fence instead.
@@ -1727,17 +1727,17 @@ djfoutside1
 	calla	calc_line_x
 	PULL	a6
 	TEST	a0
-	jrz	djfcheck_right_fence
+	jrz	vvlacheck_right_fence
 	move	*a6(OBJ_XPOSINT),a1
 	sub	a1,a0
-	jrlt	djfcheck_right_fence
+	jrlt	vvlacheck_right_fence
 
 	;less than a nonzero left matedge val.  check against it.
 	cmp	a1,a8
-	jrgt	djfno_slide
-	jruc	djfslide
+	jrgt	vvlano_slide
+	jruc	vvlaslide
 
-djfcheck_right_fence
+vvlacheck_right_fence
 	PUSH	a6,a13
 	move	a6,a13
 	movi	vln_right_fence,a6
@@ -1747,12 +1747,12 @@ djfcheck_right_fence
 	sub	a1,a0
 	abs	a0
 	cmp	a8,a0
-	jrgt	djfno_slide
-	jruc	djfslide
+	jrgt	vvlano_slide
+	jruc	vvlaslide
 
-djfhit_from_right
+vvlahit_from_right
 	move	*a13(INRING),a0
-	jrnz	djfoutside2
+	jrnz	vvlaoutside2
 
 	PUSH	a6,a13
 	move	a6,a13
@@ -1763,11 +1763,11 @@ djfhit_from_right
 	sub	a1,a0
 	abs	a0
 	cmp	a8,a0
-	jrgt	djfno_slide
+	jrgt	vvlano_slide
 
 	neg	a9
-	jruc	djfslide
-djfoutside2
+	jruc	vvlaslide
+vvlaoutside2
 	;hit from right outside ring.
 	; get right matedge first.  if it's zero, or greater than our
 	; x pos, check against left fence instead.
@@ -1776,18 +1776,18 @@ djfoutside2
 	calla	calc_line_x
 	PULL	a6
 	TEST	a0
-	jrz	djfcheck_left_fence
+	jrz	vvlacheck_left_fence
 	move	*a6(OBJ_XPOSINT),a1
 	sub	a0,a1
-	jrlt	djfcheck_left_fence
+	jrlt	vvlacheck_left_fence
 
 	;greater than a nonzero right matedge val.  check against it.
 	cmp	a1,a8
-	jrle	djfno_slide
+	jrle	vvlano_slide
 	neg	a9
-	jruc	djfslide
+	jruc	vvlaslide
 
-djfcheck_left_fence
+vvlacheck_left_fence
 	PUSH	a6,a13
 	move	a6,a13
 	movi	vln_left_fence,a6
@@ -1797,10 +1797,10 @@ djfcheck_left_fence
 	sub	a1,a0
 	abs	a0
 	cmp	a8,a0
-	jrgt	djfno_slide
+	jrgt	vvlano_slide
 	neg	a9
 
-djfslide
+vvlaslide
 	move	a9,*a13(OBJ_XVEL),L
 
 
@@ -1812,7 +1812,7 @@ djfslide
 	move	a0,*a13(ANIMODE)
 	jruc	_next_command
 
-djfno_slide
+vvlano_slide
 	move	a7,*a10(OANIPC),L
 	jruc	_next_command
 
@@ -1833,22 +1833,22 @@ _ani_set_zvel		;48
 					;if MODE=2  vel is hit relative
 	move	*a4+,a0,L
 	move	*a4+,a1
-	jrz	ailabs
+	jrz	ltyqabs
 	dec	a1
-	jrz	ailface
+	jrz	ltyqface
 ;hit relative
 	move	*a13(PLYR_HIT_SIDE),a14
 	btst	MOVE_UP_BIT,a14
-	jrnz	ailabs			;hit from above
+	jrnz	ltyqabs			;hit from above
 
 	neg	a0			;hit from below
-	jruc	ailabs
-ailface
+	jruc	ltyqabs
+ltyqface
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_DOWN_BIT,a14
-	jrnz	ailabs			;down
+	jrnz	ltyqabs			;down
 	neg	a0			;up
-ailabs
+ltyqabs
 	move	a0,*a13(OBJ_ZVEL),L
 
 	move	a4,*a10(OANIPC),L
@@ -1865,7 +1865,7 @@ _ani_checkword	;49
 	move	a4,*a10(OANIPC),L
 	add	a13,a0
 	move	*a0,a0
-	jrz	sqtclr
+	jrz	yfuwclr
 
 ;hit.  set mode_status
 	move	*a13(ANIMODE),a0
@@ -1875,7 +1875,7 @@ _ani_checkword	;49
 	jruc	_next_command
 
 
-sqtclr
+yfuwclr
 ;clear mode_status
 	move	*a13(ANIMODE),a0
 	andni	MODE_STATUS2,a0
@@ -1894,9 +1894,9 @@ _ani_face	;50
 
 	move	*a13(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	yzsno_flip
+	jrz	atkono_flip
 	xori	MOVE_LEFT|MOVE_RIGHT,a0
-yzsno_flip
+atkono_flip
 	move	a0,*a13(FACING_DIR)
 
 	jruc	_next_command
@@ -1925,11 +1925,11 @@ _ani_getup	;52
 	move	*a4+,a0
 
 	move	*a13(PLYR_DIZZY),a14
-	jrnz	aiyskip
+	jrnz	nrilskip
 
 	move	a0,*a13(GETUP_TIME)
 
-aiyskip
+nrilskip
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -1938,13 +1938,13 @@ aiyskip
 _ani_getup_wait	;53
 
 	move	*a13(GETUP_TIME),a0
-	jrnz	tynno_done
+	jrnz	gtudno_done
 
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
 
-tynno_done
+gtudno_done
 	movk	1,a0
 	move	a0,*a10(OANICNT)	;# ticks to hold cur frame
 	rets
@@ -2068,7 +2068,7 @@ _ani_superslave	;63
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a0,L
 	cmp	a13,a0
-	jrne	fbldone
+	jrne	wwuidone
 
 	move	*a11(WRESTLERNUM),a0
 	X32	a0
@@ -2076,10 +2076,10 @@ _ani_superslave	;63
 	move	*a0,a5,L
  .if DEBUG
  	move	*a5,a0,L		;table defined?
-	jrnz	fblok1
+	jrnz	wwuiok1
 	LOCKUP
 ;	no slave table defined!
-fblok1
+wwuiok1
  .endif
 
 	movi	80,a1	;LWWW
@@ -2089,10 +2089,10 @@ fblok1
 	move	*a5+,a0,L		;* * image
 	move	*a0,a0,L		;* image
  .if DEBUG
- 	jrnz	fblok
+ 	jrnz	wwuiok
 	LOCKUP
 ;	image not loaded! (null pointer)
-fblok
+wwuiok
  .endif
 	move	a0,*a11(CUR_FRAME),L	;primary frame
 
@@ -2105,21 +2105,21 @@ fblok
 
 	move	*a13(FACING_DIR),a14
 	btst	PLAYER_RIGHT_BIT,a14
-	jrnz	fblright
+	jrnz	wwuiright
 ;left
 	andni	M_FLIPH,a3		;clear flip bit
-	jruc	fblcnt
-fblright
+	jruc	wwuicnt
+wwuiright
 	ori	M_FLIPH,a3		;set flip
-fblcnt
+wwuicnt
 	move	*a5+,a0			;flip flag
-	jrz	fblskip
+	jrz	wwuiskip
 
 	xori	M_FLIPH,a3		;invert
-fblskip
+wwuiskip
 	move	a3,*a11(OBJ_CONTROL)
 
-fbldone
+wwuidone
 	jruc	_next_command
 
 ********
@@ -2135,19 +2135,19 @@ _ani_slaveanim	;64
 	move	*a13(ATTACH_PROC),a2,L
 	move	*a2(ATTACH_PROC),a0,L
 	cmp	a13,a0
-	jrne	cnbdone
+	jrne	lhvjdone
 
 	move	*a2(WRESTLERNUM),a0
 	X32	a0
 	add	a0,a5
 	move	*a5,a0,L
-	jrnz	cnbok1
+	jrnz	lhvjok1
  .if DEBUG
 	LOCKUP
 ;	no slave anim table defined!
  .endif
 	jruc	_next_command
-cnbok1
+lhvjok1
 ;a0 = * animation script
 ;a2 = * wrestler process
 
@@ -2158,7 +2158,7 @@ cnbok1
 
 	PULL	a10,a13
 
-cnbdone
+lhvjdone
 	jruc	_next_command
 
 ********
@@ -2177,41 +2177,41 @@ _ani_damageopp	;66
 	.ref	any_hits,DAM_MULT,FIRSTATT_MESS
 
 	STRUCT	0
-	WORD	osiFULL_DAMAGE
-	WORD	osiREDUCED_DAMAGE
-	LABEL	osiSIZE
+	WORD	srjlFULL_DAMAGE
+	WORD	srjlREDUCED_DAMAGE
+	LABEL	srjlSIZE
 
 	move	a4,a14
-	addi	osiSIZE,a14
+	addi	srjlSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	;get victim process ptr
 	move	*a13(ATTACH_PROC),a2,L
-	jrnz	osiattach_found
+	jrnz	srjlattach_found
 	move	*a13(WHOIHIT),a2,L
-osiattach_found
+srjlattach_found
 
 	;get damage
-	move	*a4(osiFULL_DAMAGE),a0
+	move	*a4(srjlFULL_DAMAGE),a0
 	move	*a2(LAST_DAMAGE),a14
-	jrz	osidmset
+	jrz	srjldmset
 	move	@PCNT,a1
 	sub	a14,a1
 	cmpi	30,a1
-	jrgt	osidmset
-	move	*a4(osiREDUCED_DAMAGE),a0
-osidmset
+	jrgt	srjldmset
+	move	*a4(srjlREDUCED_DAMAGE),a0
+srjldmset
 
 	;ooh, wait.  if the attacker has a NEXT_DAMAGE set, use that instead.
 	move	*a13(NEXT_DAMAGE),a14
-	jrz	osinnd		;aw, skip it.
+	jrz	srjlnnd		;aw, skip it.
 	move	*a13(SPECIAL_DAMAGE_TIME),a14,L
 	move	@PCNT,a1,L
 	cmp	a14,a1
-	jrgt	osinnd		;too late.  blow it off.
+	jrgt	srjlnnd		;too late.  blow it off.
 	move	*a13(NEXT_DAMAGE),a0
 
-osinnd	neg	a0
+srjlnnd	neg	a0
 
 	;If this is the first unblocked hit this round and it did at least
 	; 2 pixels of damage, give an award
@@ -2219,36 +2219,36 @@ osinnd	neg	a0
 	PUSH	a0
 
 	cmpi	-2,a0
-	jrgt	osin1uh
+	jrgt	srjln1uh
 
 ;Taunt style high risk move - give 3x dmg
 	move	*a13(RISK),a1
-	jrz	osino_mult
+	jrz	srjlno_mult
 
 	PUSH	a0,a8,a10
 	move	a13,a8
 	btst	15,a1
-	jrz	osireg
+	jrz	srjlreg
 ;Taunt style high risk move - give 3x dmg
 	movi	-1,a10
 	movk	4,a14
 	move	a14,@DAM_MULT
 	.ref	BONUS_MESS
 	CREATE0	BONUS_MESS
-osireg
+srjlreg
 	clr	a1
 	move	a1,*a13(RISK)
 	PULL	a0,a8,a10
-	jruc	osiclear
-osino_mult
+	jruc	srjlclear
+srjlno_mult
 
 
 	move	@any_hits,a14
-	jrnz	osin1uh			;skip if there's already been one
+	jrnz	srjln1uh			;skip if there's already been one
 
 	move	*a2(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jreq	osin1uh			;skip if it was blocked
+	jreq	srjln1uh			;skip if it was blocked
 
 	RND_AWARD a13,FIRST_HIT_AWD
 
@@ -2259,10 +2259,10 @@ osino_mult
 
 	movk	2,a14
 	move	a14,@DAM_MULT
-osiclear
+srjlclear
 	movk	1,a14
 	move	a14,@any_hits
-osin1uh	PULL	a0
+srjln1uh	PULL	a0
 
 
 ;MODS REQUIRED TO MAKE ADJUST_HEALTH WORK IN COMBO MODE
@@ -2274,7 +2274,7 @@ osin1uh	PULL	a0
 
 	PULL	A10,A13
 
-osidone	jruc	_next_command
+srjldone	jruc	_next_command
 
 ********
 _ani_rndper	;67
@@ -2285,13 +2285,13 @@ _ani_rndper	;67
 	move	*a4+,a0,W
 	move	*a4+,a2,L
 	calla	RNDPER
-	jrls	gapdone
+	jrls	sgatdone
 
 	;ANI_GOTO a2
 	move	a2,*a10(OANIPC),L
 	jruc	_next_command
 
-gapdone
+sgatdone
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -2331,28 +2331,28 @@ _ani_attchimage	;69
 	move	a14,*a13(ATTACHIMG_XOFF),L
 
 	move	*a4+,a0,L
-	jrz	kxmoffimg
+	jrz	uixpoffimg
 
 	move	*a4+,a1
 	move	a1,*a13(ATTACHIMG_ZOFF)
-kxmoff
-attach_cont69	;entry from attachimage2 kxm124
+uixpoff
+attach_cont69	;entry from attachimage2 uixp124
 	move	*a13(ATTIMG_CUR_FRAME),*a13(ATTIMG_LAST_FRAME),L
 
 	move	*a0,a0,L
  .if DEBUG
-	jrnz	kxmok
+	jrnz	uixpok
 	LOCKUP
 ;NULL IMAGE POINTER!!!
-kxmok
+uixpok
  .endif
-;kxmoffimg
+;uixpoffimg
 	move	a0,*a13(ATTIMG_CUR_FRAME),L
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
 
-kxmoffimg
+uixpoffimg
 	move	a0,*a13(ATTIMG_CUR_FRAME),L
 	addk	16,a4
 	move	a4,*a10(OANIPC),L
@@ -2362,16 +2362,16 @@ kxmoffimg
  .if 0
 
 	move	*a4+,a0,L
-	jrz	kxmoff
+	jrz	uixpoff
 	move	*a4+,a1
 	move	a1,*a13(ATTIMG_ZOFF)
 
 	move	*a0,a0,L
  .if DEBUG
-	jrnz	kxmok
+	jrnz	uixpok
 	LOCKUP
 ;NULL IMAGE POINTER!!!
-kxmok
+uixpok
  .endif
 
 	move	a0,*a13(ATTIMG_CUR_FRAME),L
@@ -2383,11 +2383,11 @@ kxmok
 
 	move	*a0(ICMAP),a0,L
 	calla	pal_find
-	jrnz	kxmAOK
+	jrnz	uixpAOK
 
 	LOCKUP	;can't find palette
 
-kxmAOK
+uixpAOK
 	move	a0,*a8(OPAL)
 	move	*a8(OIMG),a0,L
 	movb	*a0(ICTRL+7),*a8(OCTRL+7)	;Write 5 z comp bits + bits pp
@@ -2407,26 +2407,25 @@ kxmAOK
 
 	jruc	_next_command
 
-kxmoff
+uixpoff
 	move	a0,*a13(ATTIMG_CUR_FRAME),L
 	jruc	_next_command
 
  .endif
 
 ********
-* AM THIS IS EDITED BY HAND! Preasm missed it..
 _ani_ifoppmode		;70
 
-	;If opponent PLYRMODE is #MODE, jump to #BRANCH
-	;If the high bit of #MODE is set, jump on PLYRMODE != ~#MODE
+	;If opponent PLYRMODE is tmotMODE, jump to tmotBRANCH
+	;If the high bit of tmotMODE is set, jump on PLYRMODE != ~tmotMODE
 
 	STRUCT	0
-	WORD	MODE
-	LONG	BRANCH
-	LABEL	SIZE
+	WORD	tmotMODE
+	LONG	tmotBRANCH
+	LABEL	tmotSIZE
 
 	move	a4,a14
-	addi	SIZE,a14
+	addi	tmotSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(CLOSEST_NUM),a11
@@ -2435,22 +2434,22 @@ _ani_ifoppmode		;70
 	move	*a11,a11,L
 	move	*a11(PLYRMODE),a14
 
-	move	*a4(MODE),a0
-	jrn	not1
+	move	*a4(tmotMODE),a0
+	jrn	tmotnot
 	cmp	a0,a14
-	jrne	done1
-	jruc	branch1
+	jrne	tmotdone
+	jruc	tmotBRANCH
 
-not1
+tmotnot
 	not	a0
 	cmp	a0,a14
-	jreq	done1
+	jreq	tmotdone
 
-branch1
-	move	*a4(BRANCH),a0,L
+tmotbranchka
+	move	*a4(tmotBRANCH),a0,L
 	move	a0,*a10(OANIPC),L
 
-done1
+tmotdone
 	jruc	_next_command
 
 ********
@@ -2467,14 +2466,14 @@ _ani_ifbuttons	;71
 ;;Drones shouldn't run accidentally
 ;	move	*a13(PLYR_TYPE),a14
 ;	cmpi	PTYPE_DRONE,a14
-;	jrz	ouqfail
+;	jrz	epmqfail
 
 	and	a1,a0
 	cmp	a1,a0
-	jrne	ouqfail
+	jrne	epmqfail
 
 	move	a2,a4	;jump to new ani address
-ouqfail
+epmqfail
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -2509,10 +2508,10 @@ _ani_ifrope	;74
 ********
 _ani_ifnotrope	;75
 
-ekxMODE	equ	0	;UHW
-ekxDIST	equ	10h	;UHW
-ekxADDR	equ	20h	;UHL
-ekxSIZE	equ	40h
+adugMODE	equ	0	;UHW
+adugDIST	equ	10h	;UHW
+adugADDR	equ	20h	;UHL
+adugSIZE	equ	40h
 
 	;word	distance
 	;long	jump here if close enough
@@ -2528,78 +2527,78 @@ ekxSIZE	equ	40h
 _ani_ifrope_common
 	;prepare OANIPC before doing anything else
 	move	a4,a14
-	addi	ekxSIZE,a14
+	addi	adugSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(INRING),a0
-	jrnz	ekxdefinitly_too_far
+	jrnz	adugdefinitly_too_far
 
 	;;;a9 is process ptr of person for whom we're checking
 	move	a13,a9
-	move	*a4(ekxMODE),a0
+	move	*a4(adugMODE),a0
 	sra	8,a0			;mask off the low byte
-	jrz	ekxplayer_set		;RC_PLAYER == 0
+	jrz	adugplayer_set		;RC_PLAYER == 0
 
 	move	*a13(CLOSEST_NUM),a9
 	X32	a9
 	addi	process_ptrs,a9
 	move	*a9,a9,L
-ekxplayer_set
+adugplayer_set
 
-	move	*a4(ekxMODE),a14,W	;mode
+	move	*a4(adugMODE),a14,W	;mode
 	andi	00FFh,a14		;mask off the high byte
-	jrz	ekxcheck_front		;RC_FRONT == 0
+	jrz	adugcheck_front		;RC_FRONT == 0
 	dec	a14
-	jrz	ekxcheck_back
+	jrz	adugcheck_back
 
 	;;;RC_(FRONT|BACK|EITHER) cases
-ekxcheck_closest
+adugcheck_closest
 	move	*a9(OBJ_XPOSINT),a1
 	cmpi	RING_X_CENTER,a1
-	jrgt	ekxcheck_right_rope
-	jruc	ekxcheck_left_rope
+	jrgt	adugcheck_right_rope
+	jruc	adugcheck_left_rope
 
-ekxcheck_front
+adugcheck_front
 	move	*a9(FACING_DIR),a0
 	btst	MOVE_RIGHT_BIT,a0
-	jrnz	ekxcheck_right_rope
-	jruc	ekxcheck_left_rope
+	jrnz	adugcheck_right_rope
+	jruc	adugcheck_left_rope
 
-ekxcheck_back
+adugcheck_back
 	move	*a9(FACING_DIR),a0
 	btst	MOVE_LEFT_BIT,a0
-	jrnz	ekxcheck_right_rope
-	jruc	ekxcheck_left_rope
+	jrnz	adugcheck_right_rope
+	jruc	adugcheck_left_rope
 
 
 	;now do the actual check
-ekxcheck_left_rope
+adugcheck_left_rope
 	movi	vln_left_rope,a6
-	jruc	ekxcheck_xxx_rope
-ekxcheck_right_rope
+	jruc	adugcheck_xxx_rope
+adugcheck_right_rope
 	movi	vln_right_rope,a6
-ekxcheck_xxx_rope
+adugcheck_xxx_rope
 	calla	calc_line_x
 	move	*a9(OBJ_XPOSINT),a1
 	sub	a0,a1
 	abs	a1
-	move	*a4(ekxDIST),a0
+	move	*a4(adugDIST),a0
 	cmp	a0,a1
-	jrle	ekxclose_enough
+	jrle	adugclose_enough
 
 
 	;a11 is one if we are an IFNOTROPE command, so swap outcomes.
-ekxtoo_far
+adugtoo_far
 	dec	a11
-	jrz	ekxclose_enough
-ekxdefinitly_too_far
+	jrz	adugclose_enough
+adugdefinitly_too_far
 	jruc	_next_command
 
-ekxclose_enough
+adugclose_enough
 	dec	a11
-	jrz	ekxtoo_far
+	jrz	adugtoo_far
 
-	move	*a4(ekxADDR),a0,L
+	move	*a4(adugADDR),a0,L
 	move	a0,*a10(OANIPC),L
 	jruc	_next_command
 
@@ -2609,36 +2608,36 @@ _ani_opp_getup	;76
 
 ;if TIME is negative, then clear DELAY_METER
 
-xbcTIME	equ	0	;UHW
-xbcSIZE	equ	10h
+vqdbTIME	equ	0	;UHW
+vqdbSIZE	equ	10h
 
 	move	a4,a14
-	addi	xbcSIZE,a14
+	addi	vqdbSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a1,L
-	jrnz	xbcvictim_set
+	jrnz	vqdbvictim_set
 
 	;not attached.  check WHOIHIT
 	move	*a13(WHOIHIT),a1,L
-	jrz	xbcdone
+	jrz	vqdbdone
 
-xbcvictim_set
+vqdbvictim_set
 
-	move	*a4(xbcTIME),a0
-	jrnn	xbcnorm
+	move	*a4(vqdbTIME),a0
+	jrnn	vqdbnorm
 
 	clr 	a14
 	move	a14,*a1(DELAY_METER)	;always do delay
 
 	abs	a0			;make GETUP_TIME positive
 
-xbcnorm
+vqdbnorm
 	move	*a1(PLYR_DIZZY),a14
-	jrnz	xbcdone
+	jrnz	vqdbdone
 
 	move	a0,*a1(GETUP_TIME)
-xbcdone
+vqdbdone
 	jruc	_next_command
 
 ********
@@ -2652,9 +2651,9 @@ _ani_shakecorner	;77
 	movi	ROPE_LEFT,a0
 	move	*a13(OBJ_XPOSINT),a14
 	cmpi	RING_X_CENTER,a14
-	jrle	nmfdir_set
+	jrle	mbvydir_set
 	movi	ROPE_RIGHT,a0
-nmfdir_set
+mbvydir_set
 
 	movi	ROPE_BOUNCEUD,a1
 	calla	rope_command
@@ -2669,11 +2668,11 @@ _ani_singlestep		;78
 	
 	calla	get_all_buttons_down
 	move	a0,a0
-	jrnz	joodone
+	jrnz	dyfwdone
 	move	a1,*a10(OANICNT)
 	jruc	_exit
 
-joodone
+dyfwdone
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -2687,42 +2686,42 @@ _ani_superslave2	;79
 ;	table index
 
 	STRUCT	0		;ANI_SUPERSLAVE data
-	WORD	tleTICKS
-	LONG	tleATTACKER
-	LONG	tleTABLE
-	WORD	tleINDEX
-	LABEL	tleSIZE
+	WORD	cmkmTICKS
+	LONG	cmkmATTACKER
+	LONG	cmkmTABLE
+	WORD	cmkmINDEX
+	LABEL	cmkmSIZE
 
 	STRUCT	0		;table data
-	LONG	tleFRAME
-	WORD	tleXOFF
-	WORD	tleYOFF
-	WORD	tleFLIP
-	LABEL	tleTABLE_SIZE
+	LONG	cmkmFRAME
+	WORD	cmkmXOFF
+	WORD	cmkmYOFF
+	WORD	cmkmFLIP
+	LABEL	cmkmTABLE_SIZE
 
 	;set OANIPC
 	move	a4,a14
-	addi	tleSIZE,a14
+	addi	cmkmSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	;verify the links
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a0,L
 	cmp	a13,a0
-	jrne	tledone
+	jrne	cmkmdone
 
-	move	*a4(tleTICKS),a0
+	move	*a4(cmkmTICKS),a0
 	move	*a13(ANI_SPEED),a1
 	mpyu	a0,a1
 	srl	8,a1
 	move	a1,*a10(OANICNT)
-	move	*a4(tleATTACKER),a0,L
+	move	*a4(cmkmATTACKER),a0,L
 	move	*a0,a0,L
 
 	.if DEBUG
-	jrnz	tleok0
+	jrnz	cmkmok0
 	LOCKUP	;image not loaded! (null pointer)
-tleok0
+cmkmok0
 	.endif
 	;set the attacker frame
 	move	a0,*a10(OCUR_FRAME),L
@@ -2731,29 +2730,29 @@ tleok0
 	;get the slave table
 	move	*a11(WRESTLERNUM),a0
 	X32	a0
-	move	*a4(tleTABLE),a14,L
+	move	*a4(cmkmTABLE),a14,L
 	add	a14,a0
 	move	*a0,a5,L
 
 	.if DEBUG
 	move	*a5,a0,L
-	jrnz	tleok1
+	jrnz	cmkmok1
 	LOCKUP	;no slave table defined!
-tleok1
+cmkmok1
 	.endif
 
 	;get the defender frame
-	move	*a4(tleINDEX),a14
-	movi	tleTABLE_SIZE,a1
+	move	*a4(cmkmINDEX),a14
+	movi	cmkmTABLE_SIZE,a1
 	mpyu	a14,a1
 	add	a1,a5
-	move	*a5(tleFRAME),a0,L
+	move	*a5(cmkmFRAME),a0,L
 	move	*a0,a0,L
 
 	.if DEBUG
-	jrnz	tleok
+	jrnz	cmkmok
 	LOCKUP	;image not loaded! (null pointer)
-tleok
+cmkmok
 	.endif
 
 	;set the defender frame
@@ -2779,7 +2778,7 @@ tleok
 	move	a0,a7
 
 	;compute Y offset
-	move	*a5(tleYOFF),a1		;raw Y
+	move	*a5(cmkmYOFF),a1		;raw Y
 
 	move	a9,a14
 	sra	16,a14
@@ -2796,29 +2795,29 @@ tleok
 	; def flip:      raw x + (def xsz - def xoff) - att xoff
 
 	;compute X offset
-	move	*a5(tleXOFF),a1			;raw X
+	move	*a5(cmkmXOFF),a1			;raw X
 
 	;defender part in a2
 	move	a9,a2
 	andi	0FFFFh,a2		;def xoff
 	sext	a2
-	callr	tleattacker_flip_test
-	jrc	tleaf_match
+	callr	cmkmattacker_flip_test
+	jrc	cmkmaf_match
 
 	;attack X's don't match up
-	move	*a5(tleFLIP),a14
-	jrz	tledef_set
+	move	*a5(cmkmFLIP),a14
+	jrz	cmkmdef_set
 	neg	a2
 	add	a7,a2			;def xsize
-	jruc	tledef_set
+	jruc	cmkmdef_set
 
 	;attack X's match up
-tleaf_match
-	move	*a5(tleFLIP),a14
-	jrnz	tledef_set
+cmkmaf_match
+	move	*a5(cmkmFLIP),a14
+	jrnz	cmkmdef_set
 	neg	a2
 	add	a7,a2			;def xsize
-tledef_set
+cmkmdef_set
 
 	;attacker part in a3
 	move	a8,a3
@@ -2828,10 +2827,10 @@ tledef_set
 	sub	a3,a1
 
 	;if X's don't match, negate this
-	calla	tleattacker_flip_test
-	jrc	tlefoox
+	calla	cmkmattacker_flip_test
+	jrc	cmkmfoox
 	neg	a1
-tlefoox
+cmkmfoox
 
 	move	a1,*a13(ATTACH_XOFF)
 
@@ -2840,24 +2839,24 @@ tlefoox
 	move	*a11(OBJ_CONTROL),a3
 	move	*a13(FACING_DIR),a14
 	btst	PLAYER_RIGHT_BIT,a14
-	jrnz	tleright
+	jrnz	cmkmright
 ;left
 	andni	M_FLIPH,a3		;clear flip bit
-	jruc	tlecnt
-tleright
+	jruc	cmkmcnt
+cmkmright
 	ori	M_FLIPH,a3		;set flip
-tlecnt
-	move	*a5(tleFLIP),a0		;flip flag
-	jrz	tleskip
+cmkmcnt
+	move	*a5(cmkmFLIP),a0		;flip flag
+	jrz	cmkmskip
 
 	xori	M_FLIPH,a3		;invert
-tleskip
+cmkmskip
 	move	a3,*a11(OBJ_CONTROL)
 
-tledone
+cmkmdone
 	jruc	_exit
 
- SUBRP	tleattacker_flip_test
+ SUBRP	cmkmattacker_flip_test
 	;Test for attacker flip.  When facing right, flip should be off.
 	; When facing left, should be on.  Set the carry flag if everything
 	; is okay.
@@ -2865,22 +2864,22 @@ tledone
 	move	*a13(FACING_DIR),a0
 	move	*a13(OBJ_CONTROL),a1
 	btst	B_FLIPH,a1
-	jrnz	tlettf_set
+	jrnz	cmkmttf_set
 
-tlettf_clear
+cmkmttf_clear
 	btst	MOVE_LEFT_BIT,a0
-	jrnz	tlettf_flip
-	jruc	tlettf_noflip
-tlettf_set
+	jrnz	cmkmttf_flip
+	jruc	cmkmttf_noflip
+cmkmttf_set
 	btst	MOVE_RIGHT_BIT,a0
-	jrnz	tlettf_flip
-	jruc	tlettf_noflip
+	jrnz	cmkmttf_flip
+	jruc	cmkmttf_noflip
 
-tlettf_flip
+cmkmttf_flip
 	PULL	a0,a1
 	clrc
 	rets
-tlettf_noflip
+cmkmttf_noflip
 	PULL	a0,a1
 	setc
 	rets
@@ -2889,80 +2888,80 @@ tlettf_noflip
 _ani_setoppmode		;80
 
 	STRUCT	0
-	WORD	wxtMODE
-	LABEL	wxtSIZE
+	WORD	pezdMODE
+	LABEL	pezdSIZE
 
 	move	a4,a14
-	addi	wxtSIZE,a14
+	addi	pezdSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrz	wxtdone
+	jrz	pezddone
 	move	*a0(ATTACH_PROC),a14,L
-	jrz	wxtdone
+	jrz	pezddone
 
 	move	*a0(ANIMODE),a1
-	move	*a4(wxtMODE),a14
+	move	*a4(pezdMODE),a14
 	or	a14,a1
 	move	a1,*a0(ANIMODE)
 
-wxtdone
+pezddone
 	jruc	_next_command
 
 ********
 _ani_clroppmode		;81
 
 	STRUCT	0
-	WORD	uiuMODE
-	LABEL	uiuSIZE
+	WORD	omjuMODE
+	LABEL	omjuSIZE
 
 	move	a4,a14
-	addi	uiuSIZE,a14
+	addi	omjuSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrz	uiudone
+	jrz	omjudone
 	move	*a0(ATTACH_PROC),a14,L
-	jrz	uiudone
+	jrz	omjudone
 
 	move	*a0(ANIMODE),a1
-	move	*a4(uiuMODE),a14
+	move	*a4(omjuMODE),a14
 	andn	a14,a1
 	move	a1,*a0(ANIMODE)
 
-uiudone
+omjudone
 	jruc	_next_command
 
 ********
 _ani_oppoffset		;82
 
 	STRUCT	0
-	LONG	rzhTABLE
-	LABEL	rzhSIZE
+	LONG	vfcqTABLE
+	LABEL	vfcqSIZE
 
 	move	a4,a14
-	addi	rzhSIZE,a14
+	addi	vfcqSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrz	rzhdone
+	jrz	vfcqdone
 	move	*a0(ATTACH_PROC),a14,L
-	jrz	rzhdone
+	jrz	vfcqdone
 
 	move	*a0(WRESTLERNUM),a1
 	X32	a1
 
-	move	*a4(rzhTABLE),a14,L
-	jrz	rzhdone
+	move	*a4(vfcqTABLE),a14,L
+	jrz	vfcqdone
 	add	a14,a1
 
 	move	*a0(OBJ_XPOSINT),a2
 	move	*a1+,a3
 	move	*a0(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	rzhright
+	jrnz	vfcqright
 	neg	a3
-rzhright
+vfcqright
 	add	a3,a2
 	move	a2,*a0(OBJ_XPOSINT)
 
@@ -2971,7 +2970,7 @@ rzhright
 	add	a3,a2
 	move	a2,*a0(OBJ_YPOSINT)
 
-rzhdone
+vfcqdone
 	jruc	_next_command
 
 ********
@@ -2979,10 +2978,10 @@ _ani_ifblocked	;83
 
 	move	*a4+,a0,L		;this is a conditional goto
 	move	*a13(HITBLOCKER),a1
-	jrz	fzjskip
+	jrz	pwpbskip
 
 	move	a0,a4			;new ani pc
-fzjskip
+pwpbskip
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -2993,80 +2992,80 @@ _ani_waitroll	;84
 	;Zombies always roll up.
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_ZOMBIE,a14
-	jrnz	fuezombie
+	jrnz	jltyzombie
 
 	;DEAD check
 	move	*a13(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	fuedead
+	jreq	jltydead
 	move	*a13(I_WILL_DIE),a14
-	jrz	fuenotded
+	jrz	jltynotded
 
 	;I_WILL_DIE is set.  If immobilize is zero, die and clear it.
 	move	*a13(IMMOBILIZE_TIME),a14
-	jrnz	fuerepeat
+	jrnz	jltyrepeat
 	clr	a14
 	move	a14,*a13(IMMOBILIZE_TIME)
 	move	a14,*a13(I_WILL_DIE)
 	SETMODE	DEAD
 
 	calla	clear_lifebar
-	jruc	fuedead
+	jruc	jltydead
 
 
-fuenotded	;since we're not dead, set mode onground, just to be safe
+jltynotded	;since we're not dead, set mode onground, just to be safe
 	movi	MODE_ONGROUND,a14
 	move	a14,*a13(PLYRMODE)
 
 	move	*a13(IMMOBILIZE_TIME),a0
-	jrnz	fuerepeat
+	jrnz	jltyrepeat
 
 	move	*a13(GETUP_TIME),a0
-	jrnz	fuerepeat
+	jrnz	jltyrepeat
 
-fueroll	;clear stars
+jltyroll	;clear stars
 	clr	a0
 	move	a0,*a13(STARS_FLAG)
 
 	calla	do_roll
-	jrz	fuegetup
+	jrz	jltygetup
 
-fuerepeat	;come back again next tick.
+jltyrepeat	;come back again next tick.
 	clr	a0
 	move	a0,*a13(Z_BOUND)
 	movk	1,a0
 	move	a0,*a10(OANICNT)
 	rets
 
-fuegetup	move	a4,*a10(OANIPC),L
+jltygetup	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
 
-fuedead	;if player, change anim to xxx_dead_anim.
+jltydead	;if player, change anim to xxx_dead_anim.
 	;if drone, figure out if we should become a zombie or not.
 	; if so, set it and roll up until we can't roll no more.  Then the
 	;	mode_dead code takes over so we don't worry about it here.
 	; if not, change to xxx_dead_anim.
 	move	*a13(PLYR_TYPE),a14
 	cmpi	PTYPE_PLAYER,a14
-	jreq	fuedie
+	jreq	jltydie
 
 	;drone.
 	calla	is_8_on_1
-	jrc	fuefin
+	jrc	jltyfin
 	move	@royal_rumble,a14
-;	jrnz	fuenolife
-	jrnz	fuerlife
-	jruc	fuedie
+;	jrnz	jltynolife
+	jrnz	jltyrlife
+	jruc	jltydie
 
 
-fuerlife	;royal rumble.  give the human team some life
+jltyrlife	;royal rumble.  give the human team some life
 	movk	4,a0
 	clr	a1
 	calla	adjust_health
-	jruc	fuenolife
+	jruc	jltynolife
 
-fuefin	;this is the final match.
+jltyfin	;this is the final match.
 	; see if there's another guy in the hopper.
 	; if there is, store his number and become a zombie.
 
@@ -3081,15 +3080,15 @@ fuefin	;this is the final match.
 	move	*a0,a0,L
 	move	*a0(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	fuenolife
+	jreq	jltynolife
 
 	movk	8,a0
 	calla	adjust_health
 
-fuenolife
+jltynolife
 	move	@FINAL_PTR,a0,L
 	movb	*a0,a1
-	jrn	fuedie			;no more guys
+	jrn	jltydie			;no more guys
 
 	;okay, become a zombie.  set our zombie flag, store our new number
 	; in NEW_WRESTLERNUM, increment FINAL_PTR, and clear our ZOMBIE_TIME.
@@ -3098,9 +3097,9 @@ fuenolife
 
 	;7-08H hack
 	cmpi	7,a1
-	jrne	fuevok
+	jrne	jltyvok
 	movk	8,a1
-fuevok	move	a1,*a13(NEW_WRESTLERNUM)
+jltyvok	move	a1,*a13(NEW_WRESTLERNUM)
 	move	*a13(STATUS_FLAGS),a14
 	ori	M_ZOMBIE,a14
 	move	a14,*a13(STATUS_FLAGS)
@@ -3115,25 +3114,25 @@ fuevok	move	a1,*a13(NEW_WRESTLERNUM)
 	; a few pixels so we can roll.
 	move	*a13(OBJ_ZPOSINT),a14
 	cmpi	RING_TOP+7,a14
-	jrle	fuemvdn
+	jrle	jltymvdn
 	cmpi	RING_BOT-7,a14
-	jrle	fuezombie
+	jrle	jltyzombie
 
 	;move up a few
 	subk	7,a14
 	move	a14,*a13(OBJ_ZPOSINT)
-	jruc	fuezombie
+	jruc	jltyzombie
 
-fuemvdn	;move down a few
+jltymvdn	;move down a few
 	addk	7,a14
 	move	a14,*a13(OBJ_ZPOSINT)
 
-fuezombie	movi	J_UP,a14
+jltyzombie	movi	J_UP,a14
 	move	a14,*a13(DRN_JOY)
 	move	a14,*a13(STICK_VAL_CUR)
-	jruc	fueroll
+	jruc	jltyroll
 
-fuedie	movi	xxx_dead_anim,a14
+jltydie	movi	xxx_dead_anim,a14
 	move	a14,*a10(OANIBASE),L
 	move	a14,*a10(OANIPC),L
 	jruc	_next_command
@@ -3142,14 +3141,14 @@ fuedie	movi	xxx_dead_anim,a14
 _ani_setoppfacing	;85
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrz	hykdone
+	jrz	neiqdone
 	move	*a0(ATTACH_PROC),a14,L
-	jrz	hykdone
+	jrz	neiqdone
 
 	move	*a0(NEW_FACING_DIR),a14
 	move	a14,*a0(FACING_DIR)
 
-hykdone
+neiqdone
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -3173,11 +3172,11 @@ _ani_ifopp		;86
 	move	a0,*a13(ANIMODE)
 
 	;compare loop
-onaloop
+uszrloop
 	move	*a4+,a0,W
-	jrn	onadone
+	jrn	uszrdone
 	cmp	a0,a11
-	jrne	onaloop
+	jrne	uszrloop
 
 	;hit.  set mode_status
 	move	*a13(ANIMODE),a0
@@ -3185,11 +3184,11 @@ onaloop
 	move	a0,*a13(ANIMODE)
 
 	;run off the rest of the list
-onarunoff
+uszrrunoff
 	move	*a4+,a14
-	jrnn	onarunoff
+	jrnn	uszrrunoff
 
-onadone
+uszrdone
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -3215,24 +3214,24 @@ _ani_snot	;87
 _ani_if_butcount_ge	;88
 
 	STRUCT	0
-	WORD	gzvBUTTON
-	WORD	gzvBUTCNT
-	LONG	gzvADDR
-	LABEL	gzvSIZE
+	WORD	jldpBUTTON
+	WORD	jldpBUTCNT
+	LONG	jldpADDR
+	LABEL	jldpSIZE
 
 	move	a4,a14
-	addi	gzvSIZE,a14
+	addi	jldpSIZE,a14
 	move	a14,*a10(OANIPC),L
 
-	move	*a4(gzvBUTTON),a14
+	move	*a4(jldpBUTTON),a14
 	add	a13,a14
 	move	*a14,a14		;button count
-	move	*a4(gzvBUTCNT),a0
-	cmp	a0,a14			;gzvof presses needed to repeat
-	jrlt	gzvfail
+	move	*a4(jldpBUTCNT),a0
+	cmp	a0,a14			;jldpof presses needed to repeat
+	jrlt	jldpfail
 
-	move	*a4(gzvADDR),*a10(OANIPC),L	;take branch
-gzvfail
+	move	*a4(jldpADDR),*a10(OANIPC),L	;take branch
+jldpfail
 	jruc	_next_command
 
 
@@ -3240,50 +3239,50 @@ gzvfail
 _ani_if_butcount_lt	;89
 
 	move	a4,a14
-	addi	gzvSIZE,a14
+	addi	jldpSIZE,a14
 	move	a14,*a10(OANIPC),L
 
-	move	*a4(gzvBUTTON),a14
+	move	*a4(jldpBUTTON),a14
 	add	a13,a14
 	move	*a14,a14		;button count
-	move	*a4(gzvBUTCNT),a0
-	cmp	a0,a14			;gzvof presses needed to repeat
-	jrge	gzvfail2
+	move	*a4(jldpBUTCNT),a0
+	cmp	a0,a14			;jldpof presses needed to repeat
+	jrge	jldpfail2
 
-	move	*a4(gzvADDR),*a10(OANIPC),L	;take branch
-gzvfail2
+	move	*a4(jldpADDR),*a10(OANIPC),L	;take branch
+jldpfail2
 	jruc	_next_command
 
 ********
 _ani_if_rptcount	;90
 
 	STRUCT	0
-	LONG	exlADDR
-	LABEL	exlSIZE
+	LONG	sqorADDR
+	LABEL	sqorSIZE
 
 	move	a4,a14
-	addi	exlSIZE,a14
+	addi	sqorSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(RPT_COUNT),a14
-	jrz	exlfail
+	jrz	sqorfail
 
-	move	*a4(exlADDR),*a10(OANIPC),L	;take branch
-exlfail
+	move	*a4(sqorADDR),*a10(OANIPC),L	;take branch
+sqorfail
 	jruc	_next_command
 
 *********
 _ani_ifnot_rptcount	;91
 
 	move	a4,a14
-	addi	exlSIZE,a14
+	addi	sqorSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(RPT_COUNT),a14
-	jrnz	exlfail2
+	jrnz	sqorfail2
 
-	move	*a4(exlADDR),*a10(OANIPC),L	;take branch
-exlfail2
+	move	*a4(sqorADDR),*a10(OANIPC),L	;take branch
+sqorfail2
 	jruc	_next_command
 
 
@@ -3291,14 +3290,14 @@ exlfail2
 _ani_ringcheck		;92
 
 	;If caller and nearest opponent's INRING values don't match, jump
-	; to dcoBRANCH
+	; to fnxdBRANCH
 
 	STRUCT	0
-	LONG	dcoBRANCH
-	LABEL	dcoSIZE
+	LONG	fnxdBRANCH
+	LABEL	fnxdSIZE
 
 	move	a4,a14
-	addi	dcoSIZE,a14
+	addi	fnxdSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(CLOSEST_NUM),a11
@@ -3308,12 +3307,12 @@ _ani_ringcheck		;92
 	move	*a11(INRING),a0
 	move	*a13(INRING),a1
 	cmp	a0,a1
-	jreq	dcodone
+	jreq	fnxddone
 
-	move	*a4(dcoBRANCH),a0,L
+	move	*a4(fnxdBRANCH),a0,L
 	move	a0,*a10(OANIPC),L
 
-dcodone
+fnxddone
 	jruc	_next_command
 
 ********
@@ -3329,11 +3328,11 @@ _ani_debrisat		;93
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a11,L
-	jrz	qzydone
+	jrz	rgyzdone
 	move	*a11(ATTACH_PROC),a14,L
 	cmp	a13,a14
 	jreq	db94
-qzydone
+rgyzdone
 	jruc	_next_command
 
 
@@ -3374,7 +3373,7 @@ _ani_set_wrestler_xflip	;95
 
 	move	*a13(FACING_DIR),a14
 	btst	PLAYER_RIGHT_BIT,a14
-	jrnz	mljright
+	jrnz	ysteright
 
 	move	*a13(OBJ_CONTROL),a14
 	ori	M_FLIPH,a14
@@ -3384,7 +3383,7 @@ _ani_set_wrestler_xflip	;95
 ;	jruc	_next_command
 	jruc	_next_command1
 
-mljright
+ysteright
 	move	*a13(OBJ_CONTROL),a14
 	andni	M_FLIPH,a14
 	move	a14,*a13(OBJ_CONTROL)
@@ -3404,18 +3403,18 @@ _ani_slideatopp		;96
 
 
 	STRUCT	0
-	WORD	qclMAX_TICKS
-	LONG	qclVELOCITY
-	WORD	qclMAX_Z_DIST
-	WORD	qclTRGT
-	WORD	qclATT_X_OFF
-	WORD	qclATT_Y_OFF
-	WORD	qclATT_Z_OFF
-	LABEL	qclSIZE
+	WORD	ejqwMAX_TICKS
+	LONG	ejqwVELOCITY
+	WORD	ejqwMAX_Z_DIST
+	WORD	ejqwTRGT
+	WORD	ejqwATT_X_OFF
+	WORD	ejqwATT_Y_OFF
+	WORD	ejqwATT_Z_OFF
+	LABEL	ejqwSIZE
 
 
 	move	a4,a14
-	addi	qclSIZE,a14
+	addi	ejqwSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(CLOSEST_NUM),a11
@@ -3441,69 +3440,69 @@ _ani_slideatopp		;96
 	sll	16,a8
 	addi	[256,0],a8
 
-	move	*a4(qclMAX_TICKS),a0
+	move	*a4(ejqwMAX_TICKS),a0
 
-qcllp0
+ejqwlp0
 	add	a5,a1			;x + xvel
 	add	a6,a2			;z + zvel
 
 	move	a7,a7
-	jrz	qclok
+	jrz	ejqwok
 
 	add	a7,a3			;y + yvel
 ;;;;	subi	GRAVITY,a7	;yvel - gravity
 
 	cmp	a3,a8		;hit ground?
-	jrgt	qclok
+	jrgt	ejqwok
 	move	a8,a3
-	jruc	qcldn
-qclok
-	dsj	a0,qcllp0
-qcldn
+	jruc	ejqwdn
+ejqwok
+	dsj	a0,ejqwlp0
+ejqwdn
 	subi	[256,0],a3
 
 	move	a1,@oppx,L
 	move	a2,@oppz,L
 	move	a3,@oppy,L
 
-	move	*a4(qclTRGT),a0
-	jrn	qcluser
+	move	*a4(ejqwTRGT),a0
+	jrn	ejqwuser
 	calla	set_target_offsets
-qcluser
+ejqwuser
 
 	move	*a13(TGT_XOFF),a0	;target x offset
 	sll	16,a0
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	qclright1
+	jrz	ejqwright1
 	neg	a0
-qclright1
+ejqwright1
 ;;;	move	*a11(OBJ_XPOS),a1,L
 	move	@oppx,a1,L
 	add	a0,a1			;def target x
 
-	move	*a4(qclATT_X_OFF),a0
+	move	*a4(ejqwATT_X_OFF),a0
 	sll	16,a0
 	move	*a13(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	qclright0
+	jrz	ejqwright0
 	neg	a0
-qclright0
+ejqwright0
 	move	*a13(OBJ_XPOS),a2,L
 	add	a0,a2			;att x
 
 
 
-	move	*a4(qclVELOCITY),a0,L
+	move	*a4(ejqwVELOCITY),a0,L
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	qclpos
+	jrnz	ejqwpos
 	neg	a0			;left
-qclpos
+ejqwpos
 	move	a0,*a13(OBJ_XVEL),L
 
 
-;	move	*a4(qclMAX_TICKS),a0
+;	move	*a4(ejqwMAX_TICKS),a0
 ;	move	a0,*a10(OANICNT)
 
 	jruc	_next_command
@@ -3531,18 +3530,18 @@ _ani_clr_butcount	;97
 _ani_set_rptcount	;98
 
 	STRUCT	0
-	WORD	injVAL
-	LABEL	injSIZE
+	WORD	izbhVAL
+	LABEL	izbhSIZE
 
-	;If injVAL is negative, set RPT_COUNT to RND(0-injVAL)
+	;If izbhVAL is negative, set RPT_COUNT to RND(0-izbhVAL)
 
 	move	*a4+,a0
-	jrnn	injset
+	jrnn	izbhset
 
 	neg	a0
 	calla	RNDRNG0
 
-injset	move	a0,*a13(RPT_COUNT)
+izbhset	move	a0,*a13(RPT_COUNT)
 
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
@@ -3553,9 +3552,9 @@ injset	move	a0,*a13(RPT_COUNT)
 _ani_dec_rptcount	;99
 
 	move	*a13(RPT_COUNT),a0
-	jrz	ezsatz
+	jrz	nwstatz
 	dec	a0
-ezsatz
+nwstatz
 	move	a0,*a13(RPT_COUNT)
 
 	move	a4,*a10(OANIPC),L
@@ -3566,33 +3565,33 @@ ezsatz
 _ani_shadowtrail	;100
 
 	STRUCT	0
-	LONG	znvPALETTE
-	WORD	znvRATE
-	WORD	znvLIFESPAN
-	LABEL	znvSIZE
+	LONG	fjqaPALETTE
+	WORD	fjqaRATE
+	WORD	fjqaLIFESPAN
+	LABEL	fjqaSIZE
 
 	move	*a4,a0
-	jrnz	znvnot_off
+	jrnz	fjqanot_off
 
 	addi	010h,a4
 	move	a4,*a10(OANIPC),L
 
 	move	*a13(SHADTRAIL_PROC),a0,L	;check proc still exists
-	jrz	znvhuh
+	jrz	fjqahuh
 
 	calla 	KILL
 
 	clr	a0
 	move	a0,*a13(SHADTRAIL_PROC),L	;proc is toast
-znvhuh
+fjqahuh
 	jruc	_next_command
 
 
 
 
-znvnot_off
+fjqanot_off
 	move	a4,a14
-	addi	znvSIZE,a14
+	addi	fjqaSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	@reduce_bog,a14
@@ -3607,25 +3606,25 @@ znvnot_off
 ;	ori	SHADGEN_PID,a0		;proc ID
 ;	move	a0,a1			;mask
 ;	calla	EXISTP			;does process already exist?
-;	jrz	znvno_proc
+;	jrz	fjqano_proc
 
 	move	*a13(SHADTRAIL_PROC),a0,L
-	jrz	znvno_proc
+	jrz	fjqano_proc
 					;exists, so restart with new arguments
 	move	*a13(PLYRNUM),a1
 	ori	SHADGEN_PID,a1		;same proc ID
 	movi	shadow_gen,a7		;wake address
 	calla	XFERPROC
-	jruc	znvexit
+	jruc	fjqaexit
 
-znvno_proc
+fjqano_proc
 	move	*a13(PLYRNUM),a1
 	ori	SHADGEN_PID,a1		;proc ID
 	movi	shadow_gen,a7		;wake address
 	calla	GETPRC
 	move	a0,*a13(SHADTRAIL_PROC),L
 
-znvexit
+fjqaexit
 	pull	a10
 	jruc	_next_command
 
@@ -3637,9 +3636,9 @@ znvexit
 
 shadow_gen
 
-znvlp
+fjqalp
 	move	*a11(SHADTRAIL_PROC),a0,L
-	jrz	znvdie
+	jrz	fjqadie
 
 	move	*a11(CUR_FRAME),a10,L	;* multi-part image
 
@@ -3651,9 +3650,9 @@ znvlp
 ;	addi	(17-7)*16,a10		;1st header
 	move	*a10(IPCOUNT),a9		;# pieces
 	addi	IANI2Y,a10		;1st header
-znvloop
+fjqaloop
 	dec	a9
-	jrz	znvdone
+	jrz	fjqadone
 ;	addi	7*16,a10
 	addi	(ICBZ-IANI2Y),a10
 
@@ -3661,13 +3660,13 @@ znvloop
 	movi	shadow_proc,a7		;wake address
 	calla	GETPRC			;create proc for piece
 
-	jruc	znvloop
-znvdone
-	move	*a8(znvRATE),a0
+	jruc	fjqaloop
+fjqadone
+	move	*a8(fjqaRATE),a0
 	calla	PRCSLP			;sleep
 
-	jruc	znvlp
-znvdie
+	jruc	fjqalp
+fjqadie
 	DIE
 
 
@@ -3675,7 +3674,7 @@ znvdie
 ;created from shadow_gen - creates an image, sleeps, delobj & dies
 shadow_proc
 
-	move	*a8(znvLIFESPAN),a9
+	move	*a8(fjqaLIFESPAN),a9
 
 	movi	Y_SCALE_MULTIPLIER,a0
 	move	*a11(OBJ_ZPOSINT),a1
@@ -3697,7 +3696,7 @@ shadow_proc
 	SLEEP	1
 	PULLP	a0,a1,a2,a3,a4
 
-	move	*a8(znvPALETTE),a5,L
+	move	*a8(fjqaPALETTE),a5,L
 	move	a5,b0			;palette to use
 
 	clr	a5			;object ID
@@ -3707,7 +3706,7 @@ shadow_proc
 
 	move	a9,a0			;lifespan
 	calla	PRCSLP			;sleep
-;znvslp
+;fjqaslp
 ;	move	@PCNT,a1
 ;	andi	1,a1
 ;	sll	12,a1
@@ -3716,7 +3715,7 @@ shadow_proc
 ;	or	a1,a0
 ;	move	a0,*a8(OXPOS)
 ;	SLEEP	1
-;	dsj	a9,znvslp
+;	dsj	a9,fjqaslp
 
 	calla	DELOBJA8
 	DIE
@@ -3726,23 +3725,23 @@ shadow_proc
 _ani_createproc	;101
 
 	STRUCT	0
-	LONG	laxADDR
-	WORD	laxPROCID
-	WORD	laxWORD1
-	WORD	laxWORD2
-	WORD	laxWORD3
-	LABEL	laxSIZE
+	LONG	mueoADDR
+	WORD	mueoPROCID
+	WORD	mueoWORD1
+	WORD	mueoWORD2
+	WORD	mueoWORD3
+	LABEL	mueoSIZE
 
 
 	move	a4,a14
-	addi	laxSIZE,a14
+	addi	mueoSIZE,a14
 	move	a14,*a10(OANIPC),L
 	move	a13,a11
 
 	push	a10
-	move	*a4(laxPROCID),a1	;proc ID
-	move	*a4(laxADDR),a7,L	;wake address
-	addi	laxWORD1,a4
+	move	*a4(mueoPROCID),a1	;proc ID
+	move	*a4(mueoADDR),a7,L	;wake address
+	addi	mueoWORD1,a4
 	move	a4,a8		;* arguments
 	calla	GETPRC
 	pull	a10
@@ -3753,8 +3752,8 @@ _ani_createproc	;101
 ********
 _ani_target	;102
 
-	;sets leapat target to wzbTARGET1 or wzbTARGET2, depending on the
-	; value of wzbMODE.
+	;sets leapat target to mtjvTARGET1 or mtjvTARGET2, depending on the
+	; value of mtjvMODE.
 	;ex: ANI_TARGET,TGT_HEAD,TGT_KNEES,ATM_CLOSEST
 	;    target the victim's head or victim's knees, whichever
 	;    is closest.
@@ -3763,13 +3762,13 @@ _ani_target	;102
 	; not, the results will be screwy.
 
 	STRUCT	0
-	WORD	wzbTARGET1		;TGT_???
-	WORD	wzbTARGET2		;TGT_???
-	WORD	wzbMODE			;ATM_CLOSEST|ATM_FARTHEST
-	LABEL	wzbSIZE
+	WORD	mtjvTARGET1		;TGT_???
+	WORD	mtjvTARGET2		;TGT_???
+	WORD	mtjvMODE			;ATM_CLOSEST|ATM_FARTHEST
+	LABEL	mtjvSIZE
 
 	move	a4,a14
-	addi	wzbSIZE,a14
+	addi	mtjvSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 
@@ -3784,40 +3783,40 @@ _ani_target	;102
 	btst	B_FLIPH,a0
 
 	;if Z is set, the flips match and thus the we're facing our
-	; opponent's feet, thus the wzbTARGET with the highest value
+	; opponent's feet, thus the mtjvTARGET with the highest value
 	; is closest.  if Z isn't set, the opposite is true.
-	jrz	wzbfacing_feet
-	jruc	wzbfacing_head
+	jrz	mtjvfacing_feet
+	jruc	mtjvfacing_head
 
-wzbfacing_feet
-	move	*a4(wzbMODE),a14
+mtjvfacing_feet
+	move	*a4(mtjvMODE),a14
 	cmpi	ATM_CLOSEST,a14
-	jreq	wzbchoose_highest
-	jruc	wzbchoose_lowest
+	jreq	mtjvchoose_highest
+	jruc	mtjvchoose_lowest
 
-wzbfacing_head
-	move	*a4(wzbMODE),a14
+mtjvfacing_head
+	move	*a4(mtjvMODE),a14
 	cmpi	ATM_CLOSEST,a14
-	jreq	wzbchoose_lowest
-	jruc	wzbchoose_highest
+	jreq	mtjvchoose_lowest
+	jruc	mtjvchoose_highest
 
-wzbchoose_highest
-	move	*a4(wzbTARGET1),a0
-	move	*a4(wzbTARGET2),a1
+mtjvchoose_highest
+	move	*a4(mtjvTARGET1),a0
+	move	*a4(mtjvTARGET2),a1
 	cmp	a1,a0
-	jrge	wzbset
-	jruc	wzbswitch
+	jrge	mtjvset
+	jruc	mtjvswitch
 
-wzbchoose_lowest
-	move	*a4(wzbTARGET1),a0
-	move	*a4(wzbTARGET2),a1
+mtjvchoose_lowest
+	move	*a4(mtjvTARGET1),a0
+	move	*a4(mtjvTARGET2),a1
 	cmp	a1,a0
-	jrle	wzbset
-	jruc	wzbswitch
+	jrle	mtjvset
+	jruc	mtjvswitch
 
-wzbswitch
+mtjvswitch
 	move	a1,a0
-wzbset
+mtjvset
 	calla	set_target_offsets
 	calla	tgt_ground
 	jruc	_next_command
@@ -3826,36 +3825,36 @@ wzbset
 _ani_hmbwait	;103
 
 	STRUCT	0
-	WORD	HIT
-	WORD	MISSED
-	WORD	BLOCKED
-	LABEL	SIZE
+	WORD	gwuqHIT
+	WORD	gwuqMISSED
+	WORD	gwuqBLOCKED
+	LABEL	gwuqSIZE
 
 	move	a4,a14
-	addi	SIZE,a14
+	addi	gwuqSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	;first check for a block
 	move	*a13(HITBLOCKER),a1
-	jrz	check_hit
+	jrz	gwuqcheck_hit
 
-	move	*a4(BLOCKED),*a10(OANICNT)
+	move	*a4(gwuqBLOCKED),*a10(OANICNT)
 	jrz	_next_command
 	rets
 
 	;then for a hit
-check_hit
+gwuqcheck_hit
 	move	*a13(ANIMODE),a14
 	btst	MODE_STATUS_BIT,a14
-	jrz	MISSED1
+	jrz	gwuqmissedkb
 
-	move	*a4(HIT),*a10(OANICNT)
+	move	*a4(gwuqHIT),*a10(OANICNT)
 	jrz	_next_command
 	rets
 
 	;assume a miss
-MISSED1
-	move	*a4(MISSED),*a10(OANICNT)
+gwuqmissedkb
+	move	*a4(gwuqMISSED),*a10(OANICNT)
 	jrz	_next_command
 	rets
 
@@ -3880,14 +3879,14 @@ _ani_setopp_plyrmode	;105
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a14,L
 	cmp	a13,a14
-	jrne	kondone
+	jrne	qjkddone
 
 	move	*a11(PLYRMODE),a14
 	cmpi	MODE_DEAD,a14
-	jreq	kondone
+	jreq	qjkddone
      
 	move	a0,*a11(PLYRMODE)
-kondone
+qjkddone
 	jruc	_next_command
 
 ********
@@ -3898,13 +3897,13 @@ _ani_xflip_opp		;106
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a14,L
 	cmp	a13,a14
-	jrne	rnvdone
+	jrne	ihfgdone
 
 	move	*a11(OBJ_CONTROL),a0
 	xori	M_FLIPH,a0
 	move	a0,*a11(OBJ_CONTROL)
 
-rnvdone
+ihfgdone
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -3914,17 +3913,17 @@ rnvdone
 _ani_setlong	;107
 
 	STRUCT	0
-	WORD	yezPDOFF
-	LONG	yezLONG
-	LABEL	yezSIZE
+	WORD	xzbyPDOFF
+	LONG	xzbyLONG
+	LABEL	xzbySIZE
 
 	move	a4,a14
-	addi	yezSIZE,a14
+	addi	xzbySIZE,a14
 	move	a14,*a10(OANIPC),L
 
-	move	*a4(yezPDOFF),a0
+	move	*a4(xzbyPDOFF),a0
 	add	a13,a0
-	move	*a4(yezLONG),a1,L
+	move	*a4(xzbyLONG),a1,L
 	move	a1,*a0,L
 
 	jruc	_next_command
@@ -3936,13 +3935,13 @@ _ani_immobilize	;108
 	move	*a4+,a0
 
 	move	*a13(PLYR_DIZZY),a1
-	jrnz	stcskip
+	jrnz	zqroskip
 	move	*a13(WHOIHIT),a1,L
 
 	;don't immobilize blockers!
 	move	*a1(PLYRMODE),a14
 	cmpi	MODE_BLOCK,a14
-	jreq	stcskip
+	jreq	zqroskip
 
 	move	a0,*a1(IMMOBILIZE_TIME)
 
@@ -3951,7 +3950,7 @@ _ani_immobilize	;108
 	move	a0,*a1(OBJ_XVEL),L
 	move	a0,*a1(OBJ_YVEL),L
 	move	a0,*a1(OBJ_ZVEL),L
-stcskip
+zqroskip
 	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
@@ -3963,30 +3962,30 @@ stcskip
 _ani_xflip_tbl	;109
 
 	STRUCT	0
-	LONG	nfuFLIPTBL
-	LABEL	nfuSIZE
+	LONG	jmqoFLIPTBL
+	LABEL	jmqoSIZE
 
 	move	a4,a14
-	addi	nfuSIZE,a14
+	addi	jmqoSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a14,L
 	cmp	a13,a14
-	jrne	nfudone
+	jrne	jmqodone
 
 	move	*a11(WRESTLERNUM),a0
 	X16	a0
 
-	move	*a4(nfuFLIPTBL),a1,L
+	move	*a4(jmqoFLIPTBL),a1,L
 	add	a1,a0
 	move	*a0,a0
-	jrz	nfudone			;no flip
+	jrz	jmqodone			;no flip
 
 	move	*a11(OBJ_CONTROL),a0
 	xori	M_FLIPH,a0
 	move	a0,*a11(OBJ_CONTROL)
-nfudone
+jmqodone
 	jruc	_next_command
 
 ********
@@ -3998,42 +3997,42 @@ nfudone
 _ani_setoppvels		;110
 
 	STRUCT	0
-	LONG	mnqXVEL
-	LONG	mnqYVEL
-	LONG	mnqZVEL
-	LABEL	mnqSIZE
+	LONG	dvxiXVEL
+	LONG	dvxiYVEL
+	LONG	dvxiZVEL
+	LABEL	dvxiSIZE
 
 	move	a4,a14
-	addi	mnqSIZE,a14
+	addi	dvxiSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a14,L
 	cmp	a13,a14
-	jreq	mnqattach_match
+	jreq	dvxiattach_match
 
 	;no attach.  instead do this to WHOIHIT
 	move	*a13(WHOIHIT),a11,L
 
-mnqattach_match
-	move	*a4(mnqYVEL),*a11(OBJ_YVEL),L
+dvxiattach_match
+	move	*a4(dvxiYVEL),*a11(OBJ_YVEL),L
 
-	move	*a4(mnqXVEL),a0,L
+	move	*a4(dvxiXVEL),a0,L
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	mnqxok			;right
+	jrnz	dvxixok			;right
 	neg	a0			;left
-mnqxok
+dvxixok
 	move	a0,*a11(OBJ_XVEL),L
 
-	move	*a4(mnqZVEL),a0,L
+	move	*a4(dvxiZVEL),a0,L
 	btst	MOVE_DOWN_BIT,a14
-	jrnz	mnqzok			;down
+	jrnz	dvxizok			;down
 	neg	a0			;up
-mnqzok
+dvxizok
 	move	a0,*a11(OBJ_ZVEL),L
 
-mnqdone
+dvxidone
 	jruc	_next_command
 
 
@@ -4044,48 +4043,48 @@ mnqdone
 _ani_waithitgnd2	;111
 
 	STRUCT	0
-	WORD	lpvOFFSET
-	LABEL	lpvSIZE
+	WORD	vkixOFFSET
+	LABEL	vkixSIZE
 
 
 	move	*a13(OBJ_YVEL),a0,L	;must have down velocity
-	jrp	lpvno_gnd
+	jrp	vkixno_gnd
 
 	;if we're the master and the attach is valid, check and see if
 	; our puppet has hit the ground.
 	move	*a13(ANIMODE),a14
 	btst	MODE_KEEPATTACHED_BIT,a14
-	jrz	lpvskip_pcheck
+	jrz	vkixskip_pcheck
 
 	move	*a13(ATTACH_PROC),a0,L
-	jrz	lpvskip_pcheck		;we're attached?
+	jrz	vkixskip_pcheck		;we're attached?
 	move	*a0(ATTACH_PROC),a14,L
-	jrz	lpvskip_pcheck		;they're attached?
+	jrz	vkixskip_pcheck		;they're attached?
 	cmp	a13,a14
-	jrne	lpvskip_pcheck		;to each other?
+	jrne	vkixskip_pcheck		;to each other?
 
 	;ah, but if the opponent's MODE_GHOST bit is set, ignore him
 	move	*a0(ANIMODE),a14
 	btst	MODE_GHOST_BIT,a14
-	jrnz	lpvskip_pcheck
+	jrnz	vkixskip_pcheck
 
 	move	*a0(OBJ_YPOSINT),a1,W
 	move	*a0(GROUND_Y),a2,W
-	move	*a4(lpvOFFSET),a14
+	move	*a4(vkixOFFSET),a14
 	add	a14,a2
 	cmp	a2,a1
-	jrle	lpvhit_gnd
+	jrle	vkixhit_gnd
 
-lpvskip_pcheck
+vkixskip_pcheck
 
 	move	*a13(OBJ_YPOSINT),a0
 	move	*a13(GROUND_Y),a2
-	move	*a4(lpvOFFSET),a14
+	move	*a4(vkixOFFSET),a14
 	add	a14,a2
 	cmp	a2,a0			;a0-a1
-	jrgt	lpvno_gnd
+	jrgt	vkixno_gnd
 
-lpvhit_gnd
+vkixhit_gnd
 	sll	16,a2
 	move	a2,*a0(OBJ_YPOS),L
 
@@ -4093,11 +4092,11 @@ lpvhit_gnd
 	CALLA	SMALL_BOUNCE
 
 	move	a4,a14
-	addi	lpvSIZE,a14
+	addi	vkixSIZE,a14
 	move	a14,*a10(OANIPC),L
 	jruc	_next_command
 
-lpvno_gnd
+vkixno_gnd
 	movk	1,a0
 	move	a0,*a10(OANICNT)	;# ticks to hold cur frame
 	rets
@@ -4118,40 +4117,40 @@ _ani_set_opp_xvel	;112
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a14,L
 	cmp	a13,a14
-	jrne	mcjdone
+	jrne	scjwdone
 
 	move	*a4+,a0,L
 	move	*a4+,a1
-	jrz	mcjabs
+	jrz	scjwabs
 	dec	a1
-	jrz	mcjface
+	jrz	scjwface
 	dec	a1
-	jrz	mcjhit
+	jrz	scjwhit
 
 ;new_facing relative
 	move	*a13(NEW_FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	mcjabs			;right
+	jrnz	scjwabs			;right
 	neg	a0			;left
-	jruc	mcjabs
+	jruc	scjwabs
 
-mcjhit
+scjwhit
 ;hit relative
 	move	*a13(PLYR_HIT_SIDE),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	mcjabs			;hit from right
+	jrnz	scjwabs			;hit from right
 
 	neg	a0			;hit from left
-	jruc	mcjabs
-mcjface
+	jruc	scjwabs
+scjwface
 	move	*a13(FACING_DIR),a14
 	btst	MOVE_RIGHT_BIT,a14
-	jrnz	mcjabs			;right
+	jrnz	scjwabs			;right
 	neg	a0			;left
-mcjabs
+scjwabs
 	move	a0,*a11(OBJ_XVEL),L
 
-mcjdone	jruc	_next_command
+scjwdone	jruc	_next_command
 
 ********
 _ani_set_attach	;113
@@ -4187,16 +4186,16 @@ PROBLEMS_SS
 ********
 _ani_clear_combo_count ;115
 	move	*a13(COMBO_COUNT),a0
-	jrz	mxdstart_combo
+	jrz	ncrzstart_combo
 	CLR	A0
 	move	a0,*a13(COMBO_COUNT)
 	MOVE	*a13(ATTACH_PROC),A0,L
-	jrnz	mxdok
+	jrnz	ncrzok
 	MOVE	*a13(WHOIHIT),A0,L
-	jrnz	mxdok
+	jrnz	ncrzok
 ;Fix
 	LOCKUP
-mxdok
+ncrzok
 ;	MOVE	*A0(GETUP_TIME),A14
 ;	JRZ	NO_WORRIES_MATEY
 ;Time opponent has to execute combo breaker
@@ -4210,7 +4209,7 @@ mxdok
 ;	jruc	_next_command
 	jruc	_next_command1
 
-mxdstart_combo
+ncrzstart_combo
 ;problem here!
 ;Used to stuff a 1 in COMBO_COUNT.
 ;Mark now writes a 0 to COMBO_COUNT,
@@ -4220,12 +4219,12 @@ mxdstart_combo
 	clr	a0
 	move	a0,*a13(COMBO_COUNT)
 	MOVE	*a13(ATTACH_PROC),A0,L
-	jrnz	mxdok2
+	jrnz	ncrzok2
 	MOVE	*a13(WHOIHIT),A0,L
-	jrnz	mxdok2
+	jrnz	ncrzok2
 ;Fix
 	LOCKUP
-mxdok2
+ncrzok2
 ;	MOVE	*A0(GETUP_TIME),A14
 ;	JRZ	NO_WORRIES_MATEY
 ;Time opponent has to execute combo breaker
@@ -4272,21 +4271,21 @@ NO_ADD_MORE_JUICE
 _ani_startattack ;117
 
 	STRUCT	0
-	WORD	zsuATT_TYPE
-	WORD	zsuNUM_TICKS
-	LABEL	zsuSIZE
+	WORD	btdxATT_TYPE
+	WORD	btdxNUM_TICKS
+	LABEL	btdxSIZE
 
 	move	a4,a14
-	addi	zsuSIZE,a14
+	addi	btdxSIZE,a14
 	move	a14,*a10(OANIPC),L
 
-	move	*a4(zsuATT_TYPE),*a13(ATTACK_TYPE)
+	move	*a4(btdxATT_TYPE),*a13(ATTACK_TYPE)
 
-	move	*a4(zsuNUM_TICKS),a1
-	jrp	zsuok
+	move	*a4(btdxNUM_TICKS),a1
+	jrp	btdxok
 
 	movk	30,a1			;default tick count
-zsuok
+btdxok
 	move	@round_tickcount,a0
 	add	a0,a1
 	move	a1,*a13(ATTACK_TIME)
@@ -4297,12 +4296,12 @@ zsuok
 _ani_changeanim_tbl	;118
 
 	STRUCT	0
-	LONG	tzlTABLE
-	LABEL	tzlEND
+	LONG	kpurTABLE
+	LABEL	kpurEND
 
 	move	*a13(WRESTLERNUM),a0
 	X32	a0
-	move	*a4(tzlTABLE),a14,L
+	move	*a4(kpurTABLE),a14,L
 	add	a14,a0
 	move	*a0,a0,L
 
@@ -4315,42 +4314,42 @@ _ani_changeanim_tbl	;118
 _ani_if_rptcount_ge	;119
 
 	STRUCT	0
-	WORD	zbeVAL
-	LONG	zbeADDR
-	LABEL	zbeSIZE
+	WORD	noulVAL
+	LONG	noulADDR
+	LABEL	noulSIZE
 
 	move	a4,a14
-	addi	zbeSIZE,a14
+	addi	noulSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(RPT_COUNT),a14
-	move	*a4(zbeVAL),a0,W
+	move	*a4(noulVAL),a0,W
 	cmp	a0,a14
-	jrlt	zbefail
+	jrlt	noulfail
 
-	move	*a4(zbeADDR),*a10(OANIPC),L	;take branch
-zbefail
+	move	*a4(noulADDR),*a10(OANIPC),L	;take branch
+noulfail
 	jruc	_next_command
 
 ********
 _ani_if_rptcount_lt	;120
 
 	STRUCT	0
-	WORD	eeiVAL
-	LONG	eeiADDR
-	LABEL	eeiSIZE
+	WORD	bjsnVAL
+	LONG	bjsnADDR
+	LABEL	bjsnSIZE
 
 	move	a4,a14
-	addi	eeiSIZE,a14
+	addi	bjsnSIZE,a14
 	move	a14,*a10(OANIPC),L
 
 	move	*a13(RPT_COUNT),a14
-	move	*a4(eeiVAL),a0,W
+	move	*a4(bjsnVAL),a0,W
 	cmp	a0,a14
-	jrge	eeifail
+	jrge	bjsnfail
 
-	move	*a4(eeiADDR),*a10(OANIPC),L	;take branch
-eeifail
+	move	*a4(bjsnADDR),*a10(OANIPC),L	;take branch
+bjsnfail
 	jruc	_next_command
 
 
@@ -4367,22 +4366,22 @@ _ani_waithitany	;121
 	move	*a13(OBJ_YPOSINT),a0
 	move	*a13(GROUND_Y),a1
 	cmp	a1,a0			;a0-a1
-	jrgt	iutno_gnd
+	jrgt	konmno_gnd
 
 	;hit ground.  make noise and quit.
 	calla	SMALL_BOUNCE
-	jruc	iuthit
+	jruc	konmhit
 
-iutno_gnd	;have we hit our opponent?
+konmno_gnd	;have we hit our opponent?
 	move	*a13(ANIMODE),a14
 	btst	MODE_STATUS_BIT,a14
-	jrz	iutno_hit
+	jrz	konmno_hit
 
-iuthit	move	a4,*a10(OANIPC),L
+konmhit	move	a4,*a10(OANIPC),L
 ;	jruc	_next_command
 	jruc	_next_command1
 
-iutno_hit	movk	1,a0
+konmno_hit	movk	1,a0
 	move	a0,*a10(OANICNT)	;# ticks to hold cur frame
 	rets
 
@@ -4414,20 +4413,20 @@ _ani_set_idiot  ;123
 _ani_attchimage2 ;124
 
 	STRUCT	0
-	LONG	nbjIMAGE
-	WORD	nbjXOFF
-	WORD	nbjYOFF
-	WORD	nbjZOFF
-	LABEL	nbjSIZE
+	LONG	xbyjIMAGE
+	WORD	xbyjXOFF
+	WORD	xbyjYOFF
+	WORD	xbyjZOFF
+	LABEL	xbyjSIZE
 
-;	move	*a4(nbjXOFF),*a13(ATTACHIMG_XOFF)
-;	move	*a4(nbjYOFF),*a13(ATTACHIMG_YOFF)
+;	move	*a4(xbyjXOFF),*a13(ATTACHIMG_XOFF)
+;	move	*a4(xbyjYOFF),*a13(ATTACHIMG_YOFF)
 
-	move	*a4(nbjXOFF),*a13(ATTACHIMG_XOFF),L
-	move	*a4(nbjZOFF),*a13(ATTACHIMG_ZOFF)
-	move	*a4(nbjIMAGE),a0,L
+	move	*a4(xbyjXOFF),*a13(ATTACHIMG_XOFF),L
+	move	*a4(xbyjZOFF),*a13(ATTACHIMG_ZOFF)
+	move	*a4(xbyjIMAGE),a0,L
 
-	addi	nbjSIZE,a4
+	addi	xbyjSIZE,a4
 	jruc	attach_cont69
 
 ********
@@ -4449,18 +4448,18 @@ _ani_rot	;126
 _ani_scroll_ctrl;127
 
 	STRUCT	0
-	WORD	gayY_VAL
-	LABEL	gaySIZE
+	WORD	nakoY_VAL
+	LABEL	nakoSIZE
 
 	move	a4,a14
-	addi	gaySIZE,a14
+	addi	nakoSIZE,a14
 	move	a14,*a10(OANIPC),L
 
-	move	*a4(gayY_VAL),a14
-	jrn	gaycont
+	move	*a4(nakoY_VAL),a14
+	jrn	nakocont
 	move	a14,*a13(SCROLL_Y)
 
-gaycont	move	*a13(STATUS_FLAGS),a14
+nakocont	move	*a13(STATUS_FLAGS),a14
 	ori	M_SCROLL_CTRL,a14
 	move	a14,*a13(STATUS_FLAGS)
 
@@ -4486,15 +4485,15 @@ _ani_opp_face	;129
 	move	*a13(ATTACH_PROC),a11,L
 	move	*a11(ATTACH_PROC),a14,L
 	cmp	a13,a14
-	jrne	lrsdone
+	jrne	ctxedone
 
 	move	*a11(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	lrsno_flip
+	jrz	ctxeno_flip
 	xori	MOVE_LEFT|MOVE_RIGHT,a0
-lrsno_flip
+ctxeno_flip
 	move	a0,*a11(FACING_DIR)
-lrsdone
+ctxedone
 	jruc	_next_command
 
 ********
@@ -4538,7 +4537,7 @@ _ani_setflag	;129
 
 	move	*a13(ANIBASE),a2,L
 	cmp	a0,a2
-	jreq	gycno_change
+	jreq	efmqno_change
 
  SUBR	change_anim1a
 
@@ -4554,7 +4553,7 @@ _ani_setflag	;129
 	move	a0,*a13(OBJ_GRAVITY),L
 	callr	animate_wrestler1
 
-gycno_change
+efmqno_change
 	rets
 
 *****************************************************************************
@@ -4569,7 +4568,7 @@ gycno_change
 
 	move	*a13(ANIBASE2),a2,L
 	cmp	a0,a2
-	jreq	mgfno_change
+	jreq	vippno_change
 
  SUBR	change_anim2a
 
@@ -4583,7 +4582,7 @@ gycno_change
 
 	callr	animate_wrestler2
 
-mgfno_change
+vippno_change
 	rets
 
 *****************************************************************************
@@ -4616,20 +4615,20 @@ mgfno_change
 
 	movi	process_ptrs,a1
 	movi	NUM_WRES,a2
-nqzslp
+kjbrslp
 	move	*a1+,a13,L
-	jrz	nqzskp_mtp
+	jrz	kjbrskp_mtp
 	PUSH	a1,a2
-	callr	nqzset_image
+	callr	kjbrset_image
 	PULL	a1,a2
-nqzskp_mtp
-	dsj	a2,nqzslp
+kjbrskp_mtp
+	dsj	a2,kjbrslp
 
 	PULL	a13
 	rets
 
 
-nqzset_image
+kjbrset_image
 
 ;	CLR	A5
 ;	MOVE	A5,*A13(SCREENY)
@@ -4637,12 +4636,12 @@ nqzset_image
 	move	*a13(OBJ_ZPOS),a0,L
 	ori	[01000h,0],a0
 	move	*a13(INRING),a14
-	jrz	nqzinring
+	jrz	kjbrinring
 	cmpi	[015ach,0],a0
-	jrgt	nqzinring
+	jrgt	kjbrinring
 
 	subi	[01e5h,0],a0		;below mat
-nqzinring
+kjbrinring
 	move	a0,*a13(OBJ_PRIORITY),L
 
 
@@ -4661,13 +4660,13 @@ nqzinring
 	movi	[-100,0],a14		;set all images offscreen
 	move	*a13(OBJ_PRIORITY),a2,L
 	clr	a7
-nqzlp
+kjbrlp
 	move	*a0+,a8,L
 	move	a7,*a8(OSAG),L
 	move	a14,*a8(OXVAL),L
 	move	a6,*a8(OYVAL),L		;keep updating YVAL to keep priorities
 	move	a2,*a8(OZVAL),L
-	dsj	a1,nqzlp
+	dsj	a1,kjbrlp
 
 ;	move	*a13(OBJ_CONTROL),a7	;flip bits & pixel ops
 ;	andni	00111b,a7
@@ -4700,12 +4699,12 @@ nqzlp
 
 	movi	[013c8h,0],a14		;inside ring
 	move	*a13(INRING),a1
-	jrz	nqzin
+	jrz	kjbrin
 	movi	[0106Ah,0],a14		;outside ring
-nqzin
+kjbrin
 	move	a14,*a13(OBJ_PRIORITY),L
 
-	callr	nqzplot_object		;plot shadow
+	callr	kjbrplot_object		;plot shadow
 	PULL	a14
 	move	a14,*a13(OBJ_PRIORITY),L
 
@@ -4713,9 +4712,9 @@ nqzin
 
 	move	*a13(ANIMODE),a14
 	btst	MODE_NOSHADOW_BIT,a14
-	jrz	nqzshadow_on
+	jrz	kjbrshadow_on
 	clr	a0
-nqzshadow_on
+kjbrshadow_on
 	andni	1,a0
 	move	@PCNT,a1
 	andi	1,a1
@@ -4728,7 +4727,7 @@ nqzshadow_on
 	;leave him off if in mode_invisible
 	move	*a13(ANIMODE),a14
 	btst	MODE_INVISIBLE_BIT,a14
-	jrnz	nqzdone2
+	jrnz	kjbrdone2
 
 
 	move	*a13(OBJ_CONTROL),a7	;flip bits & pixel ops
@@ -4740,7 +4739,7 @@ nqzshadow_on
 
 
 	move	*a13(CUR_FRAME),a0,L
-	callr	nqzplot_object		;image
+	callr	kjbrplot_object		;image
 
 	move	*a13(OBJ_PAL),a1
 	move	a1,*a8(OPAL)
@@ -4756,23 +4755,23 @@ nqzshadow_on
 
 ;	addi	(13+4-7)*16,a0		;1st header
 	addi	IANI2Y,a0		;1st header
-nqzloop1
+kjbrloop1
 	dec	a4
-	jrz	nqzdone1
+	jrz	kjbrdone1
 ;	addi	7*16,a0
 	addi	(ICBZ-IANI2Y),a0
-	callr	nqzplot_object		;image
+	callr	kjbrplot_object		;image
 
 	move	*a13(OBJ_PAL),a1
 	move	a1,*a8(OPAL)
 
-	jruc	nqzloop1
-nqzdone1
+	jruc	kjbrloop1
+kjbrdone1
 
 	move	*a13(CUR_FRAME),a9,L
 	move	*a9(IANI2X),a14,L		;secondary X & Y
 	inc	a14				;should be 0
-	jrz	nqzno_2nd_piece
+	jrz	kjbrno_2nd_piece
 
 	move	*a9(IANIOFFX),a10		;display x offset
 	move	*a9(IANI2X),a14			;secondary X
@@ -4784,7 +4783,7 @@ nqzdone1
 	add	a1,a11
 
 	move	*a13(CUR_FRAME2),a0,L
-	callr	nqzplot_object
+	callr	kjbrplot_object
 
 	move	*a13(OBJ_PAL),a1
 	move	a1,*a8(OPAL)
@@ -4797,54 +4796,54 @@ nqzdone1
 	move	@part_count,a14
 	add	a4,a14
 	cmpi	5,a14
-	jrle	nqzokay
+	jrle	kjbrokay
 	LOCKUP	;too many pieces!!!
-nqzokay
+kjbrokay
 	.endif
 
 ;	addi	(13+4-7)*16,a0		;1st header
 	addi	IANI2Y,a0		;1st header
-nqzloop2
+kjbrloop2
 	dec	a4
-	jrz	nqzdone2
+	jrz	kjbrdone2
 ;	addi	7*16,a0
 	addi	(ICBZ-IANI2Y),a0
-	callr	nqzplot_object		;image
+	callr	kjbrplot_object		;image
 
 	move	*a13(OBJ_PAL),a1
 	move	a1,*a8(OPAL)
 
-	jruc	nqzloop2
+	jruc	kjbrloop2
 
-nqzno_2nd_piece
+kjbrno_2nd_piece
 	movi	MODE_END,a0		;don't bother animating
 	move	a0,*a13(ANIMODE2)	;if no 2nd piece
 
-nqzdone2
+kjbrdone2
 
 ;	move	a13,a3
 ;	addi	ATTACH_IMG1,a3
 ;	movk	4,a4
-;nqzattloop
+;kjbrattloop
 ;	move	*a3+,a8,L
-;	jrz	nqzskip
+;	jrz	kjbrskip
 
 ;set the x,y & z of image
 ;;	LOCKUP
 
 	move	*a13(ATTIMG_IMG),a8,L
 	move	*a13(ATTIMG_CUR_FRAME),a0,L
-	jrnz	nqzonscr
+	jrnz	kjbronscr
 
 	move	a0,*a8(OXVAL),L
 	movi	[-100,0],a0			;set all images offscreen
 	move	a0,*a8(OYVAL),L
 	rets
 
-nqzonscr
+kjbronscr
 	move	*a13(ATTIMG_LAST_FRAME),a1,L
 	cmp	a0,a1
-	jreq	nqzno_change
+	jreq	kjbrno_change
 
 ;image has just changed
 
@@ -4859,11 +4858,11 @@ nqzonscr
 	.ref	pal_getf
 	calla	pal_getf
 ;;;	calla	pal_find
-	jrnz	nqzAOK
+	jrnz	kjbrAOK
 
 	LOCKUP	;can't get palette
 
-nqzAOK
+kjbrAOK
 	move	a0,*a8(OPAL)
 	.endif
 	move	*a8(OIMG),a0,L
@@ -4879,15 +4878,15 @@ nqzAOK
 
 	move	*a13(ATTIMG_CUR_FRAME),*a13(ATTIMG_LAST_FRAME),L
 
-nqzno_change
+kjbrno_change
 	clr	a1
 	move	*a13(ATTACHIMG_XOFF),a0
 	move	*a13(OBJ_CONTROL),a14
 	btst	B_FLIPH,a14
-	jrz	nqzno_flip
+	jrz	kjbrno_flip
 	movi	M_FLIPH,a1
 	neg	a0
-nqzno_flip
+kjbrno_flip
 	sll	16,a0
 	add	a5,a0
 	move	a0,*a8(OXVAL),L
@@ -4917,12 +4916,12 @@ nqzno_flip
 
 	move	*a0(IANIOFFX),*a8(ODXOFF)
 
-nqzskip
-;	dsj	a4,nqzattloop
+kjbrskip
+;	dsj	a4,kjbrattloop
 
 	rets
 
-nqzplot_object
+kjbrplot_object
 
 	move	*a3+,a8,L		;* object
 

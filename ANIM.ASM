@@ -2445,7 +2445,7 @@ _ani_ifoppmode		;70
 	cmp	a0,a14
 	jreq	#done
 
-#branch
+#branchka
 	move	*a4(#BRANCH),a0,L
 	move	a0,*a10(OANIPC),L
 
@@ -3846,14 +3846,14 @@ _ani_hmbwait	;103
 #check_hit
 	move	*a13(ANIMODE),a14
 	btst	MODE_STATUS_BIT,a14
-	jrz	#missed
+	jrz	#missedkb
 
 	move	*a4(#HIT),*a10(OANICNT)
 	jrz	_next_command
 	rets
 
 	;assume a miss
-#missed
+#missedkb
 	move	*a4(#MISSED),*a10(OANICNT)
 	jrz	_next_command
 	rets
