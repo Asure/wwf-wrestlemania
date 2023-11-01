@@ -45,9 +45,9 @@
 * EQUATES FOR THIS FILE
 
 
-#*****************************************************************************
+*****************************************************************************
 *
-* #4 BLOCK + HITBLOCK
+* 4 BLOCK + HITBLOCK
 
  SUBR	yok_4_block_anim
 
@@ -62,7 +62,7 @@
 	WL	3,Y4BK3A+FR3
 ;	.word	ANI_SETPLYRMODE,MODE_BLOCK
 
-#hold_block
+hold_block
 	WL	2,Y4BK3A+FR5
 	.word	ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT|MODE_FRICTION
 ;	.word	ANI_ZERO_XZVELS
@@ -82,7 +82,7 @@
 	WL	ANI_CODE,DO_BLOCKED
 	WL	2,Y4BK3A+FR6
 	WL	2,Y4BK3A+FR5
-	WL	ANI_GOTO,#hold_block
+	WL	ANI_GOTO,hold_block
 
  SUBR	yok_4_hitblock2_anim
 	.word	ANI_SETMODE,MODE_NOAUTOFLIP|MODE_UNINT
@@ -96,20 +96,20 @@
 	WL	3,Y4BK3A+FR5
 	WL	3,Y4BK3A+FR6
 	WL	3,Y4BK3A+FR5
-	WL	ANI_GOTO,#hold_block
+	WL	ANI_GOTO,hold_block
 
 
-#*****************************************************************************
+*****************************************************************************
 *
-* #4 LOSE BALANCE
+* 4 LOSE BALANCE
 
-#FRICTION_VAL	equ	3000h
+FRICTION_VAL	equ	3000h
 
  SUBR	yok_4_losebal_anim
 
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
 	.word	ANI_ZEROVELS
-	.word	ANI_FRICTION,#FRICTION_VAL
+	.word	ANI_FRICTION,FRICTION_VAL
 	.word	ANI_SETSPEED,100h
 	WLW	ANI_SET_XVEL,-50000h,AM_HIT_REL
 
@@ -130,9 +130,9 @@
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-#*****************************************************************************
+*****************************************************************************
 *
-* #2 HEAD HIT
+* 2 HEAD HIT
 
  SUBR	yok_2_head_hit_anim
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
@@ -151,9 +151,9 @@
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-#************
+************
 *
-* #4 HEAD HIT
+* 4 HEAD HIT
 
  SUBR	yok_4_head_hit_anim
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
@@ -174,7 +174,7 @@
 
 ******************************************************************************
 *
-* #2 RUNNING BOUNCE OFF OF OPPONENT
+* 2 RUNNING BOUNCE OFF OF OPPONENT
 
  SUBR	yok_2_bncoff_anim
 
@@ -205,7 +205,7 @@
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-* #4 RUNNING BOUNCE OFF OF OPPONENT
+* 4 RUNNING BOUNCE OFF OF OPPONENT
 
  SUBR	yok_4_bncoff_anim
 
@@ -239,7 +239,7 @@
 
 ******************************************************************************
 *
-* #2 RUNNING BOUNCE OFF OF GATE
+* 2 RUNNING BOUNCE OFF OF GATE
 
  SUBR	yok_2_bncoff_gate_anim
 
@@ -255,7 +255,7 @@
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-* #4 RUNNING BOUNCE OFF OF GATE
+* 4 RUNNING BOUNCE OFF OF GATE
 
  SUBR	yok_4_bncoff_gate_anim
 
@@ -273,7 +273,7 @@
 	.word	ANI_END
 
 
-* #4 RUNNING BOUNCE OFF OF OPPONENT
+* 4 RUNNING BOUNCE OFF OF OPPONENT
 
 ;Bounce off but stay dizzy!
 
@@ -294,9 +294,9 @@
 	WL	ANI_CHANGEANIM,yok_dizzy_anim
 ;	.word	ANI_END
 
-#************
+************
 *
-* #4 HEAD HIT2 (hands on face)
+* 4 HEAD HIT2 (hands on face)
 
  SUBR	yok_2_head_hit2_anim
  SUBR	yok_4_head_hit2_anim
@@ -323,12 +323,12 @@
 
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS2,#nodead
+	WL	ANI_IFNOTSTATUS2,nodead
 
 	WL	ANI_CHANGEANIM,yok_fall_back_anim
 ;	.word	ANI_END
 
-#nodead
+nodead
 	.word	ANI_FACEDOWN
 	.word	ANI_SETPLYRMODE,MODE_NORMAL
        	.word	ANI_SETMODE,MODE_NORMAL
@@ -363,9 +363,9 @@
        	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-#************
+************
 *
-* #2 HEAD HIT - From spin kick
+* 2 HEAD HIT - From spin kick
 
  SUBR	yok_2_head_hit3_anim
 
@@ -393,9 +393,9 @@
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-#************
+************
 *
-* #4 HEAD HIT - From spin kick
+* 4 HEAD HIT - From spin kick
 
  SUBR	yok_4_head_hit3_anim
 
@@ -451,9 +451,9 @@
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-#************
+************
 *
-* #4 HEAD HIT (ends in dizzy)
+* 4 HEAD HIT (ends in dizzy)
 
  SUBR	yok_4_head_hit_dizzy_anim
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
@@ -482,9 +482,9 @@
 ;	.word	ANI_SETPLYRMODE,MODE_DIZZY
 	WL	ANI_CHANGEANIM,yok_dizzy_anim
 
-#*****************************************************************************
+*****************************************************************************
 *
-* #2 BODY HIT
+* 2 BODY HIT
 
  SUBR	yok_2_body_hit_anim
 	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
@@ -511,7 +511,7 @@
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
 
-* #4 BODY HIT
+* 4 BODY HIT
 
  SUBR	yok_4_body_hit_anim
 
@@ -537,7 +537,7 @@
 	WL	2,Y4AM4A+FR7
 	WL	3,Y4AM4A+FR8
 	.word	ANI_CHECKWORD,USR_VAR1
-	WL	ANI_IFNOTSTATUS2,#reg
+	WL	ANI_IFNOTSTATUS2,reg
 
 	WL	10,Y4TI4C+FR4
 	WL	10,Y4TI4C+FR5
@@ -554,7 +554,7 @@
 	WL	10,Y4TI4C+FR7
 	WL	10,Y4TI4C+FR8
 
-#reg
+reg
 	.word	ANI_FACEDOWN
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END
@@ -589,7 +589,7 @@
 	WL	ANI_CHANGEANIM,yok_dizzy_anim
 ;	.word	ANI_END
 
-* #4 BODY HIT FROM KNEE
+* 4 BODY HIT FROM KNEE
 
  SUBR	yok_4_knee_hit_dizzy_anim
 
@@ -703,12 +703,12 @@
 	.ref	am_I_dead
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS2,#nodead
+	WL	ANI_IFNOTSTATUS2,nodead1
 
 	WL	ANI_CHANGEANIM,yok_fall_back_anim
 ;	.word	ANI_END
 
-#nodead
+nodead1
 
 	.word	ANI_FACEDOWN
 	WL	ANI_CHANGEANIM,yok_3_head_held_anim
@@ -716,7 +716,7 @@
 
 ******************************************************************************
 *
-* #3 FALL DOWN
+* 3 FALL DOWN
 
  SUBR	yok_fall_back_anim
 
@@ -775,7 +775,7 @@
 
 ******************************************************************************
 *
-* #3 FALL DOWN
+* 3 FALL DOWN
 
  SUBR	yok_fall_back2_anim
 
@@ -831,7 +831,7 @@
 	WL	ANI_CHANGEANIM,yok_faceup_getup_anim
 ;	.word	ANI_END
 
-#*****************************************************************************
+*****************************************************************************
 *
 * GETUPS
 
@@ -844,7 +844,7 @@
 	WL	2,Y3GU2A+FR1
 	WL	3,Y3GU2A+FR2
 	WL	2,Y3GU2A+FR3
-	WL	ANI_GOTO,#common
+	WL	ANI_GOTO,common
 
 	;like above, but skip first three frames
  SUBR	yok_faceup_getup2_anim
@@ -853,7 +853,7 @@
 	.word	ANI_SETPLYRMODE,MODE_NORMAL
 	.word	ANI_SETSPEED,100h
 
-#common
+common
 	WL	3,Y3GU2A+FR4
 	WL	2,Y3GU2A+FR6
 	WL	3,Y3GU2A+FR7
@@ -863,10 +863,10 @@
 ;	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP
 	WL	3,Y3GU2A+FR12
 
-	WL	ANI_CODE,#choose_2or4
-	WL	ANI_IFSTATUS2,#getup_in_4
+	WL	ANI_CODE,choose_2or4
+	WL	ANI_IFSTATUS2,getup_in_4
 
-#getup_in_2
+getup_in_2
 
 	WL	3,Y3GU2A+FR13
 	WL	2,Y3GU2A+FR14
@@ -877,16 +877,16 @@
 	.word	ANI_SAFE_TIME,50
   
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS2,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,no_freetoss
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,0,44,52-8,52
 	WL	1,Y3GU2A+FR14
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS2,#no_freetoss
+	WL	ANI_IFNOTSTATUS2,no_freetoss
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
 	WL	ANI_CHANGEANIM,yok_4_push_anim
-#no_freetoss
+no_freetoss
 
 	.word	ANI_FACEUP
 
@@ -895,7 +895,7 @@
 	.word	ANI_END
 
 
-#getup_in_4
+getup_in_4
 	WL	3,Y3GU4A+FR13
 	WL	2,Y3GU4A+FR14
 	.word	ANI_SETFACING		;ANI_XFLIP <- not primary anim
@@ -905,17 +905,17 @@
 	.word	ANI_SAFE_TIME,50
 
 	WL	ANI_CODE,free_toss_check
-	WL	ANI_IFNOTSTATUS2,#no_freetoss2
+	WL	ANI_IFNOTSTATUS2,no_freetoss2
 	.word	ANI_ATTACK_ON,AMODE_HITCHECK,0,44,52-8,52
 	WL	1,Y3GU4A+FR14
 	.word	ANI_ATTACK_OFF
-	WL	ANI_IFNOTSTATUS2,#no_freetoss2
+	WL	ANI_IFNOTSTATUS2,no_freetoss2
 
 	;Opponent standing too close -- free toss
 	WL	ANI_CODE,setup_freetoss
 	.ref	yok_4_push_anim
 	WL	ANI_CHANGEANIM,yok_4_push_anim
-#no_freetoss2
+no_freetoss2
 
 	.word	ANI_FACEDOWN
 
@@ -925,21 +925,21 @@
 
 *****
 * set status bit for a getup in 4, clear for a 2.
-#choose_2or4
+choose_2or4
 
 	move	*a13(ANIMODE),a0
 	andni	MODE_STATUS2,a0
 
 	move	*a13(NEW_FACING_DIR),a14
 	btst	MOVE_UP_BIT,a14
-	jrnz	#choose_2
+	jrnz	choose_2
 	ori	MODE_STATUS2,a0
-#choose_2
+choose_2
 	move	a0,*a13(ANIMODE)
 	rets
 
 
-#*****************************************************************************
+*****************************************************************************
 *
 * DIZZY
 
@@ -951,7 +951,7 @@
 	.word	ANI_START_DIZZY,0	;0=Standing dizzy
 	.word	ANI_FACE,MOVE_RIGHT|MOVE_DOWN
 
-#loop
+loop
 	WL	10,Y4TI4C+FR4
 	WL	10,Y4TI4C+FR5
 	WL	10,Y4TI4C+FR6
@@ -961,9 +961,9 @@
 	WL	10,Y4TI4C+FR6
 	WL	10,Y4TI4C+FR5
 
-	WL	ANI_GOTO,#loop
+	WL	ANI_GOTO,loop
 
-#*****************************************************************************
+*****************************************************************************
 *
 * HITS ON GROUND
 
@@ -1019,7 +1019,7 @@
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,yok_faceup_getup_anim
 
-#*****************************************************************************
+*****************************************************************************
 *
 * Head slams into mat
 ;From head slam - repeated head slam
@@ -1094,7 +1094,7 @@
 ;	.word	ANI_END
 	
 
-#*****************************************************************************
+*****************************************************************************
 *
 * ROLL OVER AND BREAK YER STINKIN' NECK
 *
@@ -1108,7 +1108,7 @@
 	WL	9,Y3FD3N+FR4
 
 	;pick an action, roll or fall back
-	WWWL	ANI_IFROPE,RC_EITHER,100,#fall_back
+	WWWL	ANI_IFROPE,RC_EITHER,100,fall_back
 
 	;plenty o' room. roll over
 	.word	ANI_OFFSET,-5,0,0
@@ -1129,7 +1129,7 @@
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,yok_faceup_getup_anim
 
-#fall_back
+fall_back
 	;sans.  no room.  fall back
 	.word	ANI_OFFSET,-2,0,0
 	WL	6,Y3FD3N+FR3
@@ -1146,7 +1146,7 @@
 	WL	ANI_CHANGEANIM,yok_faceup_getup_anim
 
 
-#*****************************************************************************
+*****************************************************************************
 
  SUBR	yok_roll_frames
 
@@ -1167,7 +1167,7 @@
 	.long	0,0,0,0,0,0,0
 
 
-#*****************************************************************************
+*****************************************************************************
 *
 * END OF BACK BROKEN SEQ.
 
@@ -1222,7 +1222,7 @@
 	WL	ANI_CHANGEANIM,yok_faceup_getup_anim
 ;	.word	ANI_END
 
-#*****************************************************************************
+*****************************************************************************
 *
 * GENERIC BOUNCE
 
@@ -1316,7 +1316,7 @@
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,yok_faceup_getup_anim
 
-#*****************************************************************************
+*****************************************************************************
 
  SUBR	yok_breakneck2_anim
 
@@ -1358,7 +1358,7 @@
 	.word	ANI_WAITROLL
 	WL	ANI_CHANGEANIM,yok_faceup_getup_anim
 
-#*****************************************************************************
+*****************************************************************************
 
  SUBR	yok_arm_broken_anim
 
@@ -1382,12 +1382,12 @@
 	.ref	am_I_dead
 	WL	ANI_CODE,am_I_dead
 ;If I'm dead, goto fall back
-	WL	ANI_IFNOTSTATUS2,#nodead
+	WL	ANI_IFNOTSTATUS2,nodead2
 
 	WL	ANI_CHANGEANIM,yok_fall_back_anim
 ;	.word	ANI_END
 
-#nodead
+nodead2
 	.word	ANI_FACEDOWN
 	.word	ANI_SETMODE,MODE_NORMAL
 	.word	ANI_END

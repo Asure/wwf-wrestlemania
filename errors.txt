@@ -27,3 +27,90 @@ WL	.macro	w,l
 	WL	10,Y4TI4C+FR7
 	WL	10,Y4TI4C+FR6
 	WL	10,Y4TI4C+FR5
+
+
+YOKSEQ4.ASM
+ 	.include	"yokoimg.h"
+YOKOIMG.H
+	.global	Y4TI4C
+
+Assuming the following:
+There should be some definition of Y4TI4C, it's nowhere. It should be a word. Why is it not there? 
+Fact: We miss is yoko.seq file.. and that's included in yokoimg.asm now as 0 bytes..
+Fact: We miss wwfld.exe that might generate these SEQ files.
+Fact: FR4	equ	1*20h
+Fact: YOKOIMG.TBL holds all the frames for that anim.
+Maybe add a Y4TI4C: in the .TBL? What format do they expect? Can we deduct from yoko.bat?
+Edit: I added Y4TI4C: in the .TBL and this solves the error, but not sure if this is the way to go.
+
+Difficult. Let's find BAMSEQ after yoko.obj
+Might be wrong: ffa7b3d0    00015900     yoko.obj (.text).
+yoko.obj end?
+
+bamseq1 start..
+        WL      60*60,B2ST2A+FR1  (60x60=0e10h)
+       .word   ANI_END
+
+ANI_END		equ     73 + 8000h = 8049
+FR1		equ     1*20h
+
+FFAC60B0: B8F0 FFC9 0E10
+FFAC60E0: F150                    
+FFAC60F0: FF81                    
+FFAC6100: 8049                     
+
+FF81F150: 77C0                     DW     77C0h
+FF81F160: FFDD                     DW     FFDDh		= 0018
+FF81F170: 7930                     DW     7930h
+FF81F180: FFDD                     DW     FFDDh
+FF81F190: 7AA0                     DW     7AA0h
+FF81F1A0: FFDD                     DW     FFDDh
+FF81F1B0: 7C10                     DW     7C10h
+FF81F1C0: FFDD                     DW     FFDDh
+FF81F1D0: 7D80                     DW     7D80h
+FF81F1E0: FFDD                     DW     FFDDh
+FF81F1F0: 7EF0                     DW     7EF0h
+FF81F200: FFDD                     DW     FFDDh
+FF81F210: 8060                     MOVE   A3,*A0,0
+FF81F220: FFDD                     DW     FFDDh
+FF81F230: 81D0                     MOVE   B14,*B0,0
+FF81F240: FFDD                     DW     FFDDh
+FF81F250: 83B0                     MOVE   B13,*B0,1
+FF81F260: FFDD                     DW     FFDDh
+FF81F270: 8590                     MOVE   *B12,B0,0
+FF81F280: FFDD                     DW     FFDDh
+FF81F290: 8770                     MOVE   *B11,B0,1
+FF81F2A0: FFDD                     DW     FFDDh
+FF81F2B0: 88E0                     MOVE   *A7,*A0,0
+FF81F2C0: FFDD                     DW     FFDDh
+FF81F2D0: 8A50                     MOVE   *B2,*B0,1
+FF81F2E0: FFDD                     DW     FFDDh
+FF81F2F0: 0000                     DW     0000h
+FF81F300: 0000                     DW     0000h
+
+
+
+
+
+
+Bamimg.tbl
+B2ST2A01:
+	.word   24,103,24,102
+	.long   051e438cH
+	.word   06080H,-1,-1,-1,0
+	.word	-9,-111,27,114
+	.word   48,116,0,109
+	.long   051e6c4aH
+	.word   06480H
+	.word	2
+
+at FFDD77C0 we end up inside BAMIMG.TBL
+it's a pointer to the .tbl so adding the label there will fix it.. it think.
+B2ST2A:
+.long B2ST2A01
+.long B2ST2A02
+.long B2ST2A03
+.long B2ST2A04
+
+
+FFAC60B0: B8F0 FFC9 0E10           MOVE   *B7(FFC9h),*B0(E10h),0		#bamseq1?

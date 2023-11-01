@@ -2658,7 +2658,7 @@ mode_chokehold	;24
 #VEL	equ	3a000h		;38000h	;30000h
 #DVEL	equ	31000h		;27978h	;21f0eh
 
-
+*FFAC52D0
  SUBR yok_velocity_table
 
 ;		X,	Z

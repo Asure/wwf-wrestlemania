@@ -238,6 +238,9 @@ COL_DEBUG	equ	0
 
 	BSSX	PSTATUS		,16	;Player in game bits (0-3)
 	BSSX	OLD_PSTATUS	,16	;Previous games PSTATUS
+; AM added these.
+	BSSX	PSTATUS2	,16	;Previous games PSTATUS
+	BSSX	OLD_PSTATUS2	,16	;Previous games PSTATUS
 
 	.if	DEBUG
 	BSSX	SLDEBUG		,16	;Shawn's debug

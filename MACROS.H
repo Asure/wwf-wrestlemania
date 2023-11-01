@@ -293,10 +293,12 @@ WWL	.macro	w,w2,l
 	.word	:w:,:w2:
 	.long	:l:
 	.endm
-WL	.macro	w,l
-	.word	:w:
-	.long	:l:
+
+WL	.macro	a1,a2
+	.word	:a1:
+	.long	:a2:
 	.endm
+
 WLW	.macro	w,l,w2
 	.word	:w:
 	.long	:l:
