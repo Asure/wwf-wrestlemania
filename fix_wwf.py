@@ -45,12 +45,6 @@ for asmfile in (asmfiles + tblfiles + macfiles + hdrfiles + equfiles + incfiles 
 
 # Smash tv specific fixes
 
-        elif "STATUS," in line:
-            out.write(line.replace("STATUS,", "STATUS2,"))
-
-        elif ",STATUS" in line:
-            out.write(line.replace(",STATUS", ",STATUS2"))
-
         elif ".SECT SHIT" in line:
             out.write(line.replace("SHIT", "\"SHIT\""))
             

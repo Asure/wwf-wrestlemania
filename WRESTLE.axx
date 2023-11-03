@@ -120,7 +120,7 @@ COL_DEBUG	equ	0
 	.ref	show_wrestler_end_story,do_fireworks
 	.ref	p1pins,p2pins,finish_completed
 * need to check if errors
-;	.ref	PSTATUS2,OLD_PSTATUS2
+;	.ref	PSTATUS,OLD_PSTATUS
 
 
 ******************************************************************************
@@ -145,9 +145,6 @@ COL_DEBUG	equ	0
 
 	BSSX	PSTATUS		,16	;Player in game bits (0-3)
 	BSSX	OLD_PSTATUS	,16	;Previous games PSTATUS
-;added these, they are referenced in some others (select.asm etc.)
-	BSSX	PSTATUS2	,16	;Player in game bits (0-3)
-	BSSX	OLD_PSTATUS2	,16	;Previous games PSTATUS
 	BSSX	PSTARTS		,16	;Not documented.  Pbltltlt.
 
 	.if	DEBUG
@@ -680,7 +677,7 @@ frmago
 	cmpi	INPARTY,a0
 	jreq	frmadie			;don't interrupt the win sequence
 
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	btst	a8,a14
 	jrnz	frmadie			;Player already started?
 
@@ -729,7 +726,7 @@ frmaa4ok
 
 	PULL	a0
 
-	move	@OLD_PSTATUS2,a14
+	move	@OLD_PSTATUS,a14
 	btst	a8,a14
 	jrz	frmareg			;Player on buyin screen?
 ;On the buyin screen.
@@ -892,7 +889,7 @@ frmastart_from_pregame
 frmaset_pstatus_and_die
 	movk	1,a0			;set the player bit in PSTATUS
 	sll	a8,a0
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	or	a0,a14
 	move	a14,@PSTATUS
 	MOVE	@PSTARTS,A14
@@ -1081,7 +1078,7 @@ do_pregame
 	inc	a0
 	move	a0,@match_cnt
 
-	move	@PSTATUS2,A0
+	move	@PSTATUS,A0
 	CMPI	3,A0
 	JREQ	NOT_FINISHED_GAME
 
@@ -1140,7 +1137,7 @@ wrdegame
 	jrnz	wrdefinished_rumble
 
 	;Did a human player lose?
-	move	@PSTATUS2,a0
+	move	@PSTATUS,a0
 	move	@match_winner,a1
 	andn	a1,a0
 	jrnz	wrdego_buyin
@@ -1163,11 +1160,11 @@ wrdego_buyin
 	calla	loser_snd
 
 	;save old PSTATUS
-	move	@PSTATUS2,a0
+	move	@PSTATUS,a0
 	move	a0,@OLD_PSTATUS
 
 	;did a human win?  Check by ANDing match_winner with PSTATUS.
-	move	@PSTATUS2,a0
+	move	@PSTATUS,a0
 	move	@match_winner,a1
 	and	a1,a0
 	jrnz	wrdehuman_won
@@ -1210,7 +1207,7 @@ wrdenotp1	clr	a14
 wrdefinished_rumble
 
 	;save old PSTATUS
-;	move	@PSTATUS2,a14
+;	move	@PSTATUS,a14
 ;	move	a14,@OLD_PSTATUS
 
 	;...no, DON'T save the old PSTATUS.  For whatever reason, the
@@ -1281,7 +1278,7 @@ wrderr_cpuwon
 	move	a14,@rr_loss
 	move	a14,@royal_rumble
 
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	jrnz	do_pregame
 
 	;nobody bought in.  drop to game over
@@ -1456,7 +1453,7 @@ sajasd_exit
 	move	a14,@p2oldwinstreak
 
 	move	@match_winner,a0
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	and	a14,a0
 
 	;inc/clear p1winstreak
@@ -1482,7 +1479,7 @@ wculno_clr_p1_ws_awards
 ;	btst	0,a0
 ;	jrz	wculclrp1d			;clr if we lost
 ;	move	@p1winstreakd,a1
-;	move	@PSTATUS2,a14
+;	move	@PSTATUS,a14
 ;	btst	1,a14
 ;	jrz	wculincp1d			;inc if vs drone
 ;	jruc	wculp1dset			;else no increment
@@ -1514,7 +1511,7 @@ wculno_clr_p2_ws_awards
 ;	btst	1,a0
 ;	jrz	wculclrp2d			;clr if we lost
 ;	move	@p2winstreakd,a1
-;	move	@PSTATUS2,a14
+;	move	@PSTATUS,a14
 ;	btst	0,a14
 ;	jrz	wculincp2d			;inc if vs drone
 ;	jruc	wculp2dset			;else no increment
@@ -1530,7 +1527,7 @@ wculno_clr_p2_ws_awards
 	; 3. 1p match, player loses.  set both winstreaks to -1, unless
 	;     they're already negative, in which case we dec both.
 
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	cmpi	3,a14
 	jreq	wculdo_nothing
 
@@ -1573,7 +1570,7 @@ wculdo_nothing
  SUBR	start_match
 
 	;skip some of this if we're in attract mode
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	jrz	tfqxamode_battle
 
 	move	@total_matches,a14,W
@@ -1692,7 +1689,7 @@ tfqxno_wcounter
 
 ****	;increment the battles started audit
 	movi	AUD_VSHUMS,a0
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	JRZ	NO_BATLES_AT_ALL
 	cmpi	03h,a14
 	jreq	tfqxaud_vshumf
@@ -1710,7 +1707,7 @@ NO_BATLES_AT_ALL
 ****	;create wrestler processes
 
 	;figure out if it's a 0-, 1-, or 2-player game, and branch.
-	MOVE	@PSTATUS2,A0
+	MOVE	@PSTATUS,A0
 	jrz	tfqx0plyr
 	CMPI	3,A0
 	JREQ	tfqx2plyr
@@ -1753,7 +1750,7 @@ tfqxnxtdrn	CALLA	SORT_OUT_WRESTLER_NUM
 	;set PLYR_SIDE for ENEMY drones--All these drones are bad guys.
 	;In a 2v2 match, we can't use this code.
 	movi	PSIDE_PLYR2,a9
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	btst	0,a14			;plyr 1 human?
 	jrnz	tfqxpside_set
 	movi	PSIDE_PLYR1,a9
@@ -1806,7 +1803,7 @@ tfqxngup	dsj	a3,tfqxnxt
 tfqx2plyr	;2-player game
 
 	movi	PTYPE_PLAYER,a8			;player type
-	move	@PSTATUS2,a0
+	move	@PSTATUS,a0
 	btst	0,a0
 	jrnz	tfqxok
 	movi	PTYPE_DRONE,a8			;player type
@@ -1818,7 +1815,7 @@ tfqxok	movi	PSIDE_PLYR1,a9			;side on
 	CREATE	GETUP_PID,getup_meter
 
 	movi	PTYPE_PLAYER,a8			;player type
-	move	@PSTATUS2,a0
+	move	@PSTATUS,a0
 	btst	1,a0
 	jrnz	tfqxok1
 	movi	PTYPE_DRONE,a8			;player type
@@ -1965,7 +1962,7 @@ tfqxmarked_snd
 	dec	a14
 	jrnz	tfqxno_vince_intro
 	CREATE	SKIRT_PID,CHANGE_SKIRTS
-	move	@PSTATUS2,A0
+	move	@PSTATUS,A0
 	CMPI	3,A0
 	JRNE	tfqxno_vince_intro
 
@@ -1989,7 +1986,7 @@ INTRO_DONE
 
 	clr	a8				;left meter for player 0
 	movk	1,a9				;right meter for player 1
-	move	@PSTATUS2,a0
+	move	@PSTATUS,a0
 	jrz	drone_pointers
 
 	move	@royal_rumble,a14
@@ -2114,7 +2111,7 @@ tfqxnot_over
 	.endif
 
 	;if we're in attract mode, roll the clock around
-	move	@PSTATUS2,a14
+	move	@PSTATUS,a14
 	jrnz	tfqxnorm
 
 tfqxwraparound
@@ -2708,7 +2705,7 @@ bwlnloop0	move	*a1+,a14,L
 	move	*a14(PLYR_SIDE),a14
 	cmp	a14,a0
 	jrne	bwlnloop0
-	inc	a2		;lower PSTATUS2, same PLYR_SIDE, so inc index
+	inc	a2		;lower PSTATUS, same PLYR_SIDE, so inc index
 	jruc	bwlnloop0
 	
 bwlnset0	;a2 is index.
