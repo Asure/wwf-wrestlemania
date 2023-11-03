@@ -96,6 +96,7 @@
 	.bss	kp_p1cursor,	32
 	.bss	blow_out,	16	;Flag for not delaying after no buyin
 	.BSS	SPEECH_STARTED,	16
+	.BSS	TEMP_PSTATUS,16		;AM check if it goes here.
 
 	bssx	match_time_bcd,32
 
@@ -104,7 +105,7 @@
 	BSSX	player_pal_pref,120*2
 	.bss	cursor_procs,16
 	BSSX	rr_loss,16
-	.BSS	TEMP_PSTATUS,16
+*	.BSS	TEMP_PSTATUS,16
 
 #*****************************************************************************
 

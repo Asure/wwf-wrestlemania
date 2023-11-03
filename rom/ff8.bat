@@ -8,3 +8,4 @@
 :	Split the Program file
 echo "Beginning Program File Build Process..."
 bigsrec <ff8.lrn
+exit
