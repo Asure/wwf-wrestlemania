@@ -42,8 +42,8 @@ foreach ($lodFile in $lodFiles) {
     # Iterate through the keys
     foreach ($frameHeader in $frameHeaders.Keys) {
         $sequences = $frameHeaders[$frameHeader] -join ','  # Join the sequences with a comma
-#        $seqFileContent += "$frameHeader`:`r`n`t.long 0`r`n`t.long $sequences"  # Add a tab before .long
-        $seqFileContent += "$frameHeader`:`r`n`t.long $sequences"  # Add a tab before .long
+        $seqFileContent += "$frameHeader`:`r`n`t.long 0`r`n`t.long $sequences"  # Add a tab before .long
+#        $seqFileContent += "$frameHeader`:`r`n`t.long $sequences"  # Add a tab before .long
     }
 
     # Write the content to the output .SEQ file with CP1252 encoding

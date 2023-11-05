@@ -1,4 +1,4 @@
-JJXM_DEBUG	.equ	1
+JJXM_DEBUG	.equ	0
 
 JJXM_INIT	.macro
 
