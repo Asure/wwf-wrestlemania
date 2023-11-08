@@ -1,8 +1,8 @@
 /*	Game linker command file				*/
 -e WARMSET		/* entry point of program		*/
--f 0xdead		/* fill unspecified memory with value	*/
+-f 0xffff		/* fill unspecified memory with value	*/
 -o wrestle.out		/* specify output file			*/
-/*-m wrestle.map		/* map file				*/
+/*-m wrestle.map		/* map file				removed or out of memory error!*/
 -s			/* Kill the symbol table		*/
 display.obj		/*IMAGE HANDLER*/
 main.obj		/*INITIALIZATION AND INTERRUPTS*/
