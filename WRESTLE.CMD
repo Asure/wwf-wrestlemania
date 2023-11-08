@@ -1,6 +1,6 @@
 /*	Game linker command file				*/
 -e WARMSET		/* entry point of program		*/
--f 0xFFFF		/* fill unspecified memory with value	*/
+-f 0xdead		/* fill unspecified memory with value	*/
 -o wrestle.out		/* specify output file			*/
 /*-m wrestle.map		/* map file				*/
 -s			/* Kill the symbol table		*/
@@ -18,15 +18,14 @@ imgpal.obj
 ropeimg.obj
 miscimg.obj
 
-bamimg.obj
-bretimg.obj
-doinkimg.obj
+bamimg.obj 		/* done */
+bretimg.obj		/* done */
+doinkimg.obj		/* done */
 leximg.obj
 razorimg.obj
 shawnimg.obj
 takerimg.obj
 yokoimg.obj
-
 wrestle.obj		/*FIRST GAME MODULE*/
 wrestle2.obj
 anim.obj

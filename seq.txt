@@ -1,0 +1,89 @@
+* Notes from production rom dasm
+
+The .seq is included from BAMIMG.ASM 
+--------------------------------------
+	.include imgtbl.glo
+	.DATA
+	.even
+	.include bamimg.tbl
+	.include bamimg.h
+	.even
+	.include "bam.seq"
+--------------------------------------
+
+The table starts at 0xFF81C490. It starts there on our rebuild too.
+The first image sequence is for B4AM4A, with B4AM4A01 - B4AM4A08
+The same sequence exists in our rebuild, but the pointers are different because we end up misaligned.
+
+The reason for this misalignment is because of the wrong .SEQ table.
+
+1.
+Evidence:
+orig FF81C850: 74C0                     DW     74C0h
+orig FF81C860: FFDC                     DW     FFDCh			#04d3feca = B3GU2A13  #this one is later on in .lod
+
+Our .seq misses the B3GU2A13 as it is out-of-order in the LOD file. 
+
+seq tool missed it. Work on the tool.
+
+2.
+Evidence
+orig FF81CEA0: FFDC                     DW     FFDCh		= 04c99e86 = B2AM2A08
+orig FF81CEB0: 0000                     DW     0000h
+orig FF81CEC0: 0000                     DW     0000h         .long 0
+orig FF81CED0: 0000                     DW     0000h		
+orig FF81CEE0: 0000                     DW     0000h         .long 0
+orig FF81CEF0: 5010                     AND    B0,B0
+orig FF81CF00: FFDC                     DW     FFDCh		= 04ca0986 = B4BK3D02
+
+There is an extra .long here which is not in our .seq file. What's up with B2AM2A08 that does this.
+
+LOD: ---> B2AM2A08,B4BK3D02,B4BK3D03,B4BK3D04,B4BK3D06,B4BK3D07,B4BK3D08
+
+TBL
+B2AM2A08:
+	.word   33,96,35,97
+	.long   04c99e86H
+	.word   06580H,-1,-1,-1,0
+	.word	-15,-108,29,112
+	.word   41,103,2,98
+	.long   04c9caaeH
+	.word   06580H
+	.word	2
+B4BK3D02:
+	.word   29,113,25,107
+	.long   04ca0968H
+	.word   06580H,-1,-1,-1,0
+	.word	-17,-108,29,112
+	.word   34,112,-4,112
+	.long   04ca3cd2H
+	.word   06480H
+	.word	2
+
+Maybe ??AM???? images need an extra .long 0 after the sequence?
+
+3. describe fix.
+
+4. research
+
+bamimg.obj 		/ FF81C4A0 SEQ
+bretimg.obj		/ FFDFCAD0 TBL
+doinkimg.obj		/
+leximg.obj
+razorimg.obj
+shawnimg.obj
+takerimg.obj
+yokoimg.obj
+
+wrestle.obj starts with 0511 03ff 0544
+
+
+
+
+
+
+
+
+
+
+
