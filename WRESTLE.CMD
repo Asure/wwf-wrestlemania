@@ -124,7 +124,7 @@ MEMORY        			/* set up memory for sdb board */
 {
  SCRATCH	: org = 0x01000000,	len = 0x3F7300
  SCRATCH2	: org = 0x013F7300,	len = 0x8D00
- ROM		: org = 0xFF800000,	len = 0x7FFC00
+ ROM		: org = 0xFF800000,	len = 0x7FFC00 
  TRAP31		: org = 0xFFFFFC00,	len = 0x400
  IROM		: org = 0x02000000,	len = 0x400000
 }

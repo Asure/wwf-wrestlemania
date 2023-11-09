@@ -7,3 +7,4 @@ call merge.cmd
 call joinnew.cmd
 rem update the zip for debugging
 zip d:\mame\roms\wwfmania.zip wwf_*
+del std*.txt
