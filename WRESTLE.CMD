@@ -141,7 +141,9 @@ SECTIONS       /* linker sections directive */
 	      } > SCRATCH
 
 	.text:	{}	> ROM
+	.TEXT:	{}	> ROM
 	.data:	{}	> ROM
+	.DATA:	{}	> ROM
 
  }
                                                         

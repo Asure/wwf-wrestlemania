@@ -342,4 +342,3 @@ SPORTBK_P:	;PAL #1
 BKPALS:
 	.long	SPORTBK
 	.long	SPORTBK_P
-

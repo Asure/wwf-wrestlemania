@@ -1203,4 +1203,3 @@ SPORTBKBLKS:
 SPORTBKBMOD:
 	.word	1100,400,71	;x size, y size, #blocks
 	.long	SPORTBKBLKS, BKHDRS, BKPALS
-

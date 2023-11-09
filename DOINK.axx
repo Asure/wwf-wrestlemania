@@ -619,32 +619,196 @@ lgqkck2
 
 	.if NUM_DOINK_FINISHES
 ******************************************************************************
+*
+* Shake world - shakes the world around for takers finish move
+*
+	.ref	BGND_UD1
+	.ref	KIL1C
+	.ref	RNDRNG0
+ SUBRP	shake_world
+	move	@WORLDTLX,a8,L
+	move	@WORLDTLY,a9,L
+iuwysw_loop
+	movk	4,a0
+	calla	RNDRNG0
+	movk	2,a11
+	sub	a0,a11
+	sll	16,a11
+	move	a8,a10
+	add	a11,a10
+	move	a10,@WORLDTLX,L
+
+	movk	4,a0
+	calla	RNDRNG0
+	movk	2,a11
+	sub	a0,a11
+	sll	16,a11
+	move	a9,a10
+	add	a11,a10
+	move	a10,@WORLDTLY,L
+
+	calla	BGND_UD1
+
+	SLEEPK	3
+	jruc	iuwysw_loop
+	
+	DIE
+
+******************************************************************************
+*
+* Adjusts the view to midpoint between taker and the coffin
+*
+ SUBRP	adjust_view
+	move	@WORLDTLX,a14,L
+
+	; If we are positioned within 100 pixels to the left of the right
+	; edge of the ring don't bother scrolling any further.
+	move	a14,a0
+	srl	16,a0
+	cmpi	1322-100,a0
+	jrge	izqgav_exit
+
+	; Get the midpoint between taker and the right edge of ring
+	move	*a8(OBJ_XPOS),a14,L
+	addi	[1200,0],a14
+	srl	1,a14
+
+	; Get the difference between taker and the midpoint
+	move	*a8(OBJ_XPOS),a0,L
+	sub	a0,a14
+
+	; Divide by 32
+	sra	5,a14
+
+	; Do the move
+	movi	32,a9
+izqgmv_loop
+	move	@WORLDTLX,a0,L
+	add	a14,a0
+	move	a0,@WORLDTLX,L
+	PUSHP	a14
+	SLEEPK	1
+	calla	BGND_UD1
+	PULLP	a14
+	dsjs	a9,izqgmv_loop
+
+izqgav_exit
+	; Now start the world shakin' around
+	CREATE	FIREWRK_PID,shake_world
+
+	RETP
+
+
+******************************************************************************
+
+******************************************************************************
+
  SUBRP	dnk_finish_move1
 
-fkgnTIMEOUT	.equ	TSEC
+	.ref	guy_up,guy_in
+	.ref	p1pins,p2pins
+	.ref	close_the_door
+	.ref	dead_wrestler
+	.ref	und_2_raise_dead_anim
 
-fkgnend_wait
-	SLEEP		TSEC/4
-	move		@p1rounds,a0			; Get player 1 rounds
-	move		@p2rounds,a1			; Get player 2 rounds
-	or		a1,a0				; Put em together
-	cmpi		2,a0				; Anybody got 2?
-	jrlt		fkgnend_wait			; br = no
+zimwTIMEOUT	.equ	TSEC
 
-fkgnreset
+	; Set up the globals used to syncronize everythins
+	clr		a14
+	move		a14,@in_finish_move
+	move		a14,@close_the_door
+	move		a14,@guy_up
+	move		a14,@guy_in
+
+	; Now wait on the correct buttons -n- sticks
+zimwreset
 	clr		a11
-	move		a11,@in_finish_move
 	SLEEPK		1
-	WAITSWITCH_DWN	J_UP,0,fkgnreset
-	movi		fkgnTIMEOUT,a11
-	move		a11,@in_finish_move
-	WAITSWITCH_DWN	J_DOWN,0,fkgnreset
-	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,fkgnreset
-	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,fkgnreset
-	WAITSWITCH_DWN	B_PUNCH,J_ALL,fkgnreset
+	WAITSWITCH_DWN	J_UP,0,zimwreset
+	movi		zimwTIMEOUT,a11
+	WAITSWITCH_DWN	J_DOWN,0,zimwreset
+	WAITSWITCH_DWN	B_PUNCH,J_ALL,zimwreset
 
-	movi		dnk_finish1_move,a0
-	move		a0,*a8(SPECIAL_MOVE_ADDR),L
+
+	; Make sure the guy we are doin' this on is dead
+	PUSH		a13
+	move		a8,a13
+	calla		get_opp_plyrmode
+	PULL		a13
+	cmpi		MODE_DEAD,a0
+	jrnz		zimwreset
+
+	; Check to make sure this is my 2nd pin attempt
+	move		@p1pins,a0
+	move		*a8(PLYR_SIDE),a14
+	jrz		zimwis_p1
+	move		@p2pins,a0
+zimwis_p1
+	cmpi		2,a0
+	jrlt		zimwreset
+
+	; Don't allow the move if I've been turned into a drone
+	; by the autopin goop
+	move		*a8(PLYR_TYPE),a14
+	jrnz		zimwfi1_exit
+
+	; Don't allow the move if I'm outside the ring
+	move		*a8(RING_TIME),a14
+	jrn		zimwfi1_exit
+
+	; Don't allow the move if I've already pinned the guy
+	move		*a8(STATUS_FLAGS),a14
+	btst		B_DID_PIN,a14
+	jrnz		zimwfi1_exit
+
+	; Set up globals used for this animation
+	move		*a8(WHOIHIT),a14,L
+	move		a14,@dead_wrestler,L
+
+	; Don't allow move if dead guy is to right of center ring + 100 pix
+	move		*a14(OBJ_XPOSINT),a14
+	cmpi		RING_X_CENTER+100,a14
+	jrgt		zimwfi1_exit
+
+	; Don't allow move if taker is to right of center ring + 100 pix
+	move		*a8(OBJ_XPOSINT),a14
+	cmpi		RING_X_CENTER+100,a14
+	jrgt		zimwfi1_exit
+
+	; OK - we made it - tell all who care we are going to
+	; do a finishing move.  This also shuts down the scroller.
+	movk		1,a14
+	move		a14,@in_finish_move
+
+	; clear victim's DO_BUCKOFF bit and set his NO_BUCKOFF bit
+	move		@dead_wrestler,a0,L
+	move		*a0(STATUS_FLAGS),a14,L
+	andni		M_DO_BUCKOFF,a14
+	ori		M_NO_BUCKOFF,a14
+	move		a14,*a0(STATUS_FLAGS),L
+
+**
+	; Start the animation for the finish move
+	movi		und_2_raise_dead_anim,a14
+	move		a14,*a8(SPECIAL_MOVE_ADDR),L
+**
+
+
+	; Wait here until finish move is complete
+zimwfdone_wait
+	SLEEPK		5
+	move		@finish_completed,a14
+	jrz		zimwfdone_wait
+
+	; Tell everbody that cares that the finish move is done
+	clr		a14
+	move		a14,@in_finish_move
+
+	; Kill off shaker process
+	movi		FIREWRK_PID,a0
+	calla		KIL1C
+
+zimwfi1_exit
 	DIE
 	.endif
 	
