@@ -13,3 +13,49 @@ This doesn't seem to work, but rumor has it that it is done with P, and the
 motions aren't exactly correct.  Still unconfirmed as this rumor will be
 eliminated soon.
 
+Default finish structure as planned:
+
+Originally 2 finish move were planned, only takers' was implemented.
+
+Let's check yoko.asm
+
+1. yoko.asm 
+	.if NUM_YOKO_FINISHES
+	.ref	yok_finish1_move
+
+NUM_YOKO_FINISHES is defined in GAME.EQU, so let's set it to 1
+
+2. What does the finish move do?
+
+	.if NUM_YOKO_FINISHES
+- It's only in game code if this is set to 1, so production roms don't have this.
+!!TODO: reverse engineer proto 2 rom that's out there.. Maybe they left it in?!!
+
+Checks button combo and then does this:
+
+	movi		yok_finish1_move,a0
+	move		a0,*a8(SPECIAL_MOVE_ADDR),L
+	DIE
+
+It basically does the move animation, then die. 
+
+
+3. FINISEQ.ASM this holds all the SUBR (these routines are all .def auto by the SUBR macro.)
+
+ SUBR	yok_finish1_move
+	.word	ANI_SETMODE,MODE_UNINT|MODE_NOAUTOFLIP	;uninterruptable
+	.word	ANI_ZEROVELS
+	.word	ANI_SETSPEED,100h
+
+	.word	ANI_SETFACING		;ANI_XFLIP <- not primary anim
+	.word	ANI_SET_WRESTLER_XFLIP
+
+	.word	ANI_SETMODE,MODE_NORMAL
+	.word	ANI_END
+
+	.endif
+
+4. So there's not much going on in FINISEQ.ASM, but there's some stuff in FINISH.ASM for yoko..
+
+adding img's.. dionk 679a482
+u110 - u113 allow for adding stuf at 0x1400000 - 0x2000000
