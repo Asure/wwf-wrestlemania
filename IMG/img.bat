@@ -8,6 +8,7 @@ loadw shawn /A /t=c:\tmp\wwf /FI /E
 loadw taker /A /t=c:\tmp\wwf /FI /E
 loadw yoko /A /t=c:\tmp\wwf /FI /E
 loadw misc /A /t=c:\tmp\wwf /FI /E
+loadw adam /A /t=c:\tmp\wwf /FI /E
 cd c:\tmp\wwf
 copy bgndglo.txt + bgndtbl.asm temp.xyz
 copy temp.xyz bgndtbl.asm

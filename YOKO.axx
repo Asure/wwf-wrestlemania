@@ -45,7 +45,7 @@
 	.ref	change_anim2,can_pin
 	.ref	blocking_off,std_taunt,std_walk_fast
 	.ref	hyper_speed_on
-	.ref	in_finish_move
+	.ref	in_finish_move,finish_completed
 	.ref	p1rounds,p2rounds
 	.if NUM_YOKO_FINISHES
 	.ref	yok_finish1_move
@@ -542,33 +542,143 @@ tirdscrt_jabs
 ******************************************************************************
  SUBRP	yok_finish_move1
 
-yedjTIMEOUT	.equ	TSEC
+;yedjTIMEOUT	.equ	TSEC
+;
+;yedjend_wait
+;	SLEEP		TSEC/4
+;	move		@p1rounds,a0			; Get player 1 rounds
+;	move		@p2rounds,a1			; Get player 2 rounds
+;	or		a1,a0				; Put em together
+;	cmpi		2,a0				; Anybody got 2?
+;	jrlt		yedjend_wait			; br = no
+;
+;yedjreset
+;	clr		a11
+;	move		a11,@in_finish_move
+;	SLEEPK		1
+;	WAITSWITCH_DWN	J_UP,0,yedjreset
+;	movi		yedjTIMEOUT,a11
+;	move		a11,@in_finish_move
+;	WAITSWITCH_DWN	J_DOWN,0,yedjreset
+;	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,yedjreset
+;	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,yedjreset
+;	WAITSWITCH_DWN	B_PUNCH,J_ALL,yedjreset
+;
+;	movi		yok_finish1_move,a0
+;	move		a0,*a8(SPECIAL_MOVE_ADDR),L
+;	DIE
+;	.endif
+;	
+;
 
-yedjend_wait
-	SLEEP		TSEC/4
-	move		@p1rounds,a0			; Get player 1 rounds
-	move		@p2rounds,a1			; Get player 2 rounds
-	or		a1,a0				; Put em together
-	cmpi		2,a0				; Anybody got 2?
-	jrlt		yedjend_wait			; br = no
+	.ref	guy_up,guy_in
+	.ref	p1pins,p2pins
+	.ref	close_the_door
+	.ref	dead_wrestler
+;	.ref	und_2_raise_dead_anim
+	.ref	yok_falling_lights
 
-yedjreset
+zimwTIMEOUT	.equ	TSEC
+
+	; Set up the globals used to syncronize everythins
+	clr		a14
+	move		a14,@in_finish_move
+	move		a14,@close_the_door
+	move		a14,@guy_up
+	move		a14,@guy_in
+
+	; Now wait on the correct buttons -n- sticks
+zimwreset
 	clr		a11
-	move		a11,@in_finish_move
 	SLEEPK		1
-	WAITSWITCH_DWN	J_UP,0,yedjreset
-	movi		yedjTIMEOUT,a11
-	move		a11,@in_finish_move
-	WAITSWITCH_DWN	J_DOWN,0,yedjreset
-	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,yedjreset
-	WAITSWITCH_DWN	J_TOWARD,J_DOWN|J_UP,yedjreset
-	WAITSWITCH_DWN	B_PUNCH,J_ALL,yedjreset
+	WAITSWITCH_DWN	J_UP,0,zimwreset
+	movi		zimwTIMEOUT,a11
+	WAITSWITCH_DWN	J_DOWN,0,zimwreset
+	WAITSWITCH_DWN	B_PUNCH,J_ALL,zimwreset
 
-	movi		yok_finish1_move,a0
-	move		a0,*a8(SPECIAL_MOVE_ADDR),L
+
+	; Make sure the guy we are doin' this on is dead
+	PUSH		a13
+	move		a8,a13
+	calla		get_opp_plyrmode
+	PULL		a13
+	cmpi		MODE_DEAD,a0
+	jrnz		zimwreset
+
+	; Check to make sure this is my 2nd pin attempt
+	move		@p1pins,a0
+	move		*a8(PLYR_SIDE),a14
+	jrz		zimwis_p1
+	move		@p2pins,a0
+zimwis_p1
+	cmpi		2,a0
+	jrlt		zimwreset
+
+	; Don't allow the move if I've been turned into a drone
+	; by the autopin goop
+	move		*a8(PLYR_TYPE),a14
+	jrnz		zimwfi1_exit
+
+	; Don't allow the move if I'm outside the ring
+	move		*a8(RING_TIME),a14
+	jrn		zimwfi1_exit
+
+	; Don't allow the move if I've already pinned the guy
+	move		*a8(STATUS_FLAGS),a14
+	btst		B_DID_PIN,a14
+	jrnz		zimwfi1_exit
+
+	; Set up globals used for this animation
+	move		*a8(WHOIHIT),a14,L
+	move		a14,@dead_wrestler,L
+
+	; Don't allow move if dead guy is to right of center ring + 100 pix
+	move		*a14(OBJ_XPOSINT),a14
+	cmpi		RING_X_CENTER+100,a14
+	jrgt		zimwfi1_exit
+
+	; Don't allow move if taker is to right of center ring + 100 pix
+	move		*a8(OBJ_XPOSINT),a14
+	cmpi		RING_X_CENTER+100,a14
+	jrgt		zimwfi1_exit
+
+	; OK - we made it - tell all who care we are going to
+	; do a finishing move.  This also shuts down the scroller.
+	movk		1,a14
+	move		a14,@in_finish_move
+
+	; clear victim's DO_BUCKOFF bit and set his NO_BUCKOFF bit
+	move		@dead_wrestler,a0,L
+	move		*a0(STATUS_FLAGS),a14,L
+	andni		M_DO_BUCKOFF,a14
+	ori		M_NO_BUCKOFF,a14
+	move		a14,*a0(STATUS_FLAGS),L
+
+**
+	; Start the animation for the finish move
+*	movi		und_2_raise_dead_anim,a14		;in finiseq.asm
+	movi		yok_falling_lights,a14		;in finiseq.asm
+	move		a14,*a8(SPECIAL_MOVE_ADDR),L
+**
+
+
+	; Wait here until finish move is complete
+zimwfdone_wait
+	SLEEPK		5
+	move		@finish_completed,a14
+	jrz		zimwfdone_wait
+
+	; Tell everbody that cares that the finish move is done
+	clr		a14
+	move		a14,@in_finish_move
+
+	; Kill off shaker process
+	movi		FIREWRK_PID,a0
+	calla		KIL1C
+
+zimwfi1_exit
 	DIE
 	.endif
-	
 
 	.if NUM_YOKO_FINISHES > 1
 ******************************************************************************

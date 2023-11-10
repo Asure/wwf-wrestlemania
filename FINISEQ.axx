@@ -1735,5 +1735,172 @@ lyakloop3
 	WL	50,U5RV5A+FR6
 	WL	ANI_GOTO,lyakloop3
 
+*****************************************************************
+* Added the yoko parts here.
+* THERE ARE FOUR LIGHTS!
+
+;a0 = number of lights
+ SUBR	yok_falling_lights
+	PUSHP	a9,a10
+	movi	100,a9
+	move	a0,a10
+wbivcreate_lts
+	CREATE0	yok_falling_light
+	SLEEPK	5
+	addk	20,a9
+	dsjs	a10,wbivcreate_lts
+
+	SLEEP	TSEC*20
+
+	PULLP	a9,a10
+	RETP
+
+*****************************************************************
+*
+	.if DEBUG		;TODO: Fix img lod stuff for these.
+ SUBRP	lt_smk_tbl
+	.long	YKLTSMK01  ; these are kept in TONY.IMG
+	.long	YKLTSMK02
+	.long	YKLTSMK03
+	.long	YKLTSMK04
+	.long	YKLTSMK05
+	.long	YKLTSMK06
+	.long	YKLTSMK07
+	.long	0
+	.endif
+
+ SUBRP	lt_smk_tbl
+	.long	SMOKE01		;Let's recyle taker's puffs.
+	.long	SMOKE02
+	.long	SMOKE03
+	.long	SMOKE04
+	.long	SMOKE05
+	.long	SMOKE06
+	.long	SMOKE07
+	.long	SMOKE08
+	.long	SMOKE09
+	.long	SMOKE10
+	.long	0
+
+*****************************************************************
+*
+
+
+;a9 - starting x position
+ SUBRP	yok_falling_light
+
+	move	a9,a0				; Set up horizontal position
+	clr	a10				; Save off current y
+	sll	16,a0				; Set up vertical position
+	clr	a1
+*	movi	YKLIGHT01,a2			; This is a light		;these are all in TONY.IMG too.
+	movi	COFFIN01,a2			; This is a light		;let's use taker's coffin..
+	movi	1000h|RING_Z_CENTER,a3			; Z position
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; Control goop
+	cmpi	200,a9				; light more'n half way?
+	jrlt	rdrano_flip			; br = nope
+	ori	M_FLIPH,a4			; flip
+rdrano_flip
+	movi	CLSFINI,a5			; Light object id
+	clr	a6				; velocity
+	clr	a7				; velocity
+
+	calla	BEGINOBJ			; make it
+
+rdrafall_loop					; Make the light fall
+	SLEEPK	1
+	cmpi	(255-MAT_Y),a10
+	jrgt	rdrafall_done
+	addk	15,a10
+	move	a10,*a8(OYPOS)
+	jruc	rdrafall_loop
+
+rdrafall_done					; Embed it in the mat
+	move	a8,a0
+	calla	DELOBJ
+
+	move	a9,a0
+	sll	16,a0
+	move	a10,a1
+	sll	16,a1
+*	movi	YKLIGHT02A,a2			; This is an embedded light
+	movi	COFFIN05,a2			; This is an embedded light
+	movi	(1000h|RING_Z_CENTER)+10h,a3
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4
+	cmpi	200,a9
+	jrlt	rdrano_lt2a_flip
+	ori	M_FLIPH,a4
+rdrano_lt2a_flip
+	movi	CLSFINI,a5
+	clr	a6
+	clr	a7
+	calla	BEGINOBJ
+	.if 1
+	move	a9,a0
+	sll	16,a0
+	move	a10,a1
+	sll	16,a1
+*	movi	YKLIGHT02B,a2			; This is an embedded light lens
+	movi	COFFIN05,a2			; This is an embedded light
+	movi	(1000h|RING_Z_CENTER)+20h,a3
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4
+	cmpi	200,a9
+	jrlt	rdrano_lt2b_flip
+	ori	M_FLIPH,a4
+rdrano_lt2b_flip
+	movi	CLSFINI,a5
+	clr	a6
+	clr	a7
+	calla	BEGINOBJ
+	.endif
+
+;	CREATE0	buzz_wire			; Make the wire buzz around
+;	CREATE0	shatter_lens			; Shatter the lens
+
+	SLEEPK	5
+
+	movk	15,a0
+rdramore_smoke
+;	movi	lt_smk_tbl,a11			; Make it smoke (crashes game..)
+rdrasmoke_loop
+;	move	*a11+,a2,L
+;	jrz	rdrasmoke_done
+	move	a9,a0
+	sll	16,a0
+	move	a10,a1
+	sll	16,a1
+	movi	(1000h|RING_Z_CENTER)+30h,a3
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4
+	cmpi	200,a9
+	jrlt	rdrano_smk_flip
+	ori	M_FLIPH,a4
+rdrano_smk_flip
+	movi	CLSFINI,a5
+	clr	a6
+	clr	a7
+
+	calla	BEGINOBJ
+
+	PUSHP	a0
+	SLEEPK	5
+	PULLP	a0
+
+	move	a8,a0
+	calla	DELOBJ
+
+	jruc	rdrasmoke_loop
+rdrasmoke_done
+	dsj	a0,rdramore_smoke
+
+	SLEEP	TSEC*5
+
+	movi	CLSFINI,a0
+	calla	obj_del1c
+
+	DIE
+	
+******************************************************************************
+
+
 
 	.end
