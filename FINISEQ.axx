@@ -168,11 +168,26 @@
 	.word	ANI_ZEROVELS
 	.word	ANI_SETSPEED,100h
 
-	.word	ANI_SETFACING		;ANI_XFLIP <- not primary anim
-	.word	ANI_SET_WRESTLER_XFLIP
+;	WL	ANI_CODE,adjust_taker_facing
 
-	.word	ANI_SETMODE,MODE_NORMAL
-	.word	ANI_END
+	;let's see if this works then. 
+	WLWWWW  ANI_CREATEPROC,yok_falling_tombstone,0,0,0,0    	;ANI_CREATEPROC wants a SUBRP which does stuff and then dies?
+;	WLWWWW  ANI_CREATEPROC,yok_testloop,0,0,0,0    	;ANI_CREATEPROC wants a SUBRP which does stuff and then dies?
+
+
+	; And last but not least raise arm and leave crowd cheering
+	.word	ANI_SHADOWTRAIL,0	;off
+	WL	4,Y5RV5A+FR1
+	WL	4,Y5RV5A+FR2
+	WL	4,Y5RV5A+FR3
+	WL	4,Y5RV5A+FR4
+	WL	4,Y5RV5A+FR5
+	.word	ANI_PAUSE,5
+
+kzztloop3
+	WL	ANI_CODE,DO_CROWD_CHEER
+	WL	50,Y5RV5A+FR6
+	WL	ANI_GOTO,kzztloop3
 
 	.endif
 
@@ -1739,13 +1754,23 @@ lyakloop3
 * Added the yoko parts here.
 * THERE ARE FOUR LIGHTS!
 
+ SUBRP yok_testloop
+	movk	3,a14
+	move	a14,@finish_completed
+;crash	DIE
+;crash	rets
+;nothing just keeps us looping
+
+
 ;a0 = number of lights
- SUBR	yok_falling_lights
+ SUBR	yok_falling_tombstone
+* SUBRP	yok_falling_tombstone
 	PUSHP	a9,a10
 	movi	100,a9
+	movi	5,a0  ; let's do 4. There are 5. Not 4.
 	move	a0,a10
 wbivcreate_lts
-	CREATE0	yok_falling_light
+	CREATE0	yok_falling_tombstones
 	SLEEPK	5
 	addk	20,a9
 	dsjs	a10,wbivcreate_lts
@@ -1754,10 +1779,11 @@ wbivcreate_lts
 
 	PULLP	a9,a10
 	RETP
+*	rets
 
 *****************************************************************
 *
-	.if DEBUG		;TODO: Fix img lod stuff for these.
+
  SUBRP	lt_smk_tbl
 	.long	YKLTSMK01  ; these are kept in TONY.IMG
 	.long	YKLTSMK02
@@ -1767,8 +1793,8 @@ wbivcreate_lts
 	.long	YKLTSMK06
 	.long	YKLTSMK07
 	.long	0
-	.endif
 
+	.if DEBUG		;TODO: Fix img lod stuff for these.
  SUBRP	lt_smk_tbl
 	.long	SMOKE01		;Let's recyle taker's puffs.
 	.long	SMOKE02
@@ -1781,20 +1807,23 @@ wbivcreate_lts
 	.long	SMOKE09
 	.long	SMOKE10
 	.long	0
+	.endif
+
 
 *****************************************************************
-*
+* Yoko debugging
+* let's make a tombstone fall.
 
 
 ;a9 - starting x position
- SUBRP	yok_falling_light
+ SUBRP	yok_falling_tombstones
 
 	move	a9,a0				; Set up horizontal position
 	clr	a10				; Save off current y
 	sll	16,a0				; Set up vertical position
 	clr	a1
-*	movi	YKLIGHT01,a2			; This is a light		;these are all in TONY.IMG too.
-	movi	COFFIN01,a2			; This is a light		;let's use taker's coffin..
+	movi	YKLIGHT01,a2			; This is a light		;these are all in TONY.IMG too.
+*	movi	COFFIN01,a2			; This is a light		;let's use taker's coffin..
 	movi	1000h|RING_Z_CENTER,a3			; Z position
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; Control goop
 	cmpi	200,a9				; light more'n half way?
@@ -1816,6 +1845,9 @@ rdrafall_loop					; Make the light fall
 	jruc	rdrafall_loop
 
 rdrafall_done					; Embed it in the mat
+	movi	1252,a3				; let's make a sound.
+	calla	SNDSND
+
 	move	a8,a0
 	calla	DELOBJ
 
@@ -1823,8 +1855,8 @@ rdrafall_done					; Embed it in the mat
 	sll	16,a0
 	move	a10,a1
 	sll	16,a1
-*	movi	YKLIGHT02A,a2			; This is an embedded light
-	movi	COFFIN05,a2			; This is an embedded light
+	movi	YKLIGHT02A,a2			; This is an embedded light
+*	movi	COFFIN05,a2			; This is an embedded light
 	movi	(1000h|RING_Z_CENTER)+10h,a3
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4
 	cmpi	200,a9
@@ -1840,8 +1872,8 @@ rdrano_lt2a_flip
 	sll	16,a0
 	move	a10,a1
 	sll	16,a1
-*	movi	YKLIGHT02B,a2			; This is an embedded light lens
-	movi	COFFIN05,a2			; This is an embedded light
+	movi	YKLIGHT02B,a2			; This is an embedded light lens
+*	movi	COFFIN05,a2			; This is an embedded light
 	movi	(1000h|RING_Z_CENTER)+20h,a3
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4
 	cmpi	200,a9
@@ -1861,10 +1893,10 @@ rdrano_lt2b_flip
 
 	movk	15,a0
 rdramore_smoke
-;	movi	lt_smk_tbl,a11			; Make it smoke (crashes game..)
+	movi	lt_smk_tbl,a11			; Make it smoke (crashes game..)
 rdrasmoke_loop
-;	move	*a11+,a2,L
-;	jrz	rdrasmoke_done
+	move	*a11+,a2,L
+	jrz	rdrasmoke_done
 	move	a9,a0
 	sll	16,a0
 	move	a10,a1
@@ -1898,8 +1930,97 @@ rdrasmoke_done
 	calla	obj_del1c
 
 	DIE
-	
+
 ******************************************************************************
+* Yoko data stuff
+	.global	LITSMKEP
+	.global	YKLTSMK01
+	.global	YKLTSMK02
+	.global	YKLTSMK03
+	.global	YKLTSMK04
+	.global	YKLTSMK05
+	.global	YKLTSMK06
+	.global	YKLTSMK07
+	.global	LITSETP
+	.global	YKLIGHT01
+	.global	YKLIGHT02A
+	.global	YKLIGHT02B
+
+	.DATA
+	.even
+
+LITSMKEP:
+	.word	 14
+	.word	01CACH,04A52H,031AEH,056B5H,04631H,06318H,06B5AH,05ED6H
+	.word	077BDH,06AF6H,04232H,05AD6H,056B5H,04E73H
+
+LITSETP:
+	.word	 64
+	.word	01CACH,0422H,0442H,014C6H,0400H,02949H,0842H,0821H
+	.word	018A4H,018C5H,014A4H,01083H,0841H,0C83H,01063H,02507H
+	.word	0441H,024E6H,018C6H,014C5H,0C84H,0C64H,024C5H,0354AH
+	.word	024A4H,01C62H,01041H,02CE6H,06B39H,03528H,039ADH,045CDH
+	.word	05AB5H,04A31H,02883H,02462H,02CC5H,02CA4H,04A0FH,05651H
+	.word	02D8DH,04149H,05693H,01841H,01020H,0398BH,0560FH,03928H
+	.word	030C5H,07FDEH,06F5DH,02D8BH,0469H,06A8FH,07AF1H,02862H
+	.word	02C83H,030A4H,034C5H,038E6H,04107H,04528H,04949H,04D6AH
+
+
+	.DATA
+	.even
+	.DATA
+YKLTSMK01:
+	.word   18,17,7,8
+	.long   09000000H
+	.word   04080H
+	.long   LITSMKEP
+YKLTSMK02:
+	.word   28,24,11,13
+	.long   09000330H
+	.word   04480H
+	.long   LITSMKEP
+YKLTSMK03:
+	.word   33,33,13,19
+	.long   09000818H
+	.word   04480H
+	.long   LITSMKEP
+YKLTSMK04:
+	.word   35,42,13,24
+	.long   09000fa4H
+	.word   04580H
+	.long   LITSMKEP
+YKLTSMK05:
+	.word   31,47,12,27
+	.long   0900190cH
+	.word   04580H
+	.long   LITSMKEP
+YKLTSMK06:
+	.word   30,48,13,29
+	.long   09002330H
+	.word   04580H
+	.long   LITSMKEP
+YKLTSMK07:
+	.word   27,53,12,34
+	.long   09002cb0H
+	.word   04580H
+	.long   LITSMKEP
+YKLIGHT01:
+	.word   94,114,36,85
+	.long   0900379cH
+	.word   06980H
+	.long   LITSETP
+YKLIGHT02A:
+	.word   55,80,33,78
+	.long   0900bd70H
+	.word   06580H
+	.long   LITSETP
+YKLIGHT02B:
+	.word   69,65,14,31
+	.long   0900f8e4H
+	.word   06980H
+	.long   LITSETP
+	.TEXT
+******************************************************************************
 
 
 
