@@ -38,6 +38,9 @@
 	.include	"miscimg.glo"
 	.INCLUDE	"SWEAT.EQU"
 
+	.include	"finiseq.tbl"
+	.include	"finiseq.glo"
+
 	BSSX	close_the_door,16
 	BSSX	close_the_floor,16
 	BSSX	dead_wrestler,32
@@ -168,26 +171,32 @@
 	.word	ANI_ZEROVELS
 	.word	ANI_SETSPEED,100h
 
-;	WL	ANI_CODE,adjust_taker_facing
-
 	;let's see if this works then. 
 	WLWWWW  ANI_CREATEPROC,yok_falling_tombstone,0,0,0,0    	;ANI_CREATEPROC wants a SUBRP which does stuff and then dies?
-;	WLWWWW  ANI_CREATEPROC,yok_testloop,0,0,0,0    	;ANI_CREATEPROC wants a SUBRP which does stuff and then dies?
+
+	WL	3,Y1TT5Z+FR2		;victory pose
+	WL	3,Y1TT5Z+FR3
+
+	WL	7,Y5RV5A+FR1
+	WL	7,Y5RV5A+FR2
+	WL	7,Y5RV5A+FR3
+	WL	7,Y5RV5A+FR4
+	WL	7,Y5RV5A+FR5
+	WL	7,Y5RV5A+FR6
+	WL	7,Y5RV5A+FR7
+	WL	7,Y5RV5A+FR8
+	WL	40,Y5RV5A+FR9
+	WL	7,Y5RV5A+FR10
+	WL	7,Y5RV5A+FR11
 
 
-	; And last but not least raise arm and leave crowd cheering
-	.word	ANI_SHADOWTRAIL,0	;off
-	WL	4,Y5RV5A+FR1
-	WL	4,Y5RV5A+FR2
-	WL	4,Y5RV5A+FR3
-	WL	4,Y5RV5A+FR4
-	WL	4,Y5RV5A+FR5
-	.word	ANI_PAUSE,5
-
-kzztloop3
+	.word	ANI_SET_RPTCOUNT,-4	;set count to rnd from 0 to 4
+brgmlp0	
 	WL	ANI_CODE,DO_CROWD_CHEER
-	WL	50,Y5RV5A+FR6
-	WL	ANI_GOTO,kzztloop3
+	WL	55,Y5RV5A+FR12
+	.word	ANI_DEC_RPTCOUNT
+	WL	ANI_IF_RPTCOUNT,brgmlp0
+
 
 	.endif
 
@@ -1767,7 +1776,7 @@ lyakloop3
 * SUBRP	yok_falling_tombstone
 	PUSHP	a9,a10
 	movi	100,a9
-	movi	5,a0  ; let's do 4. There are 5. Not 4.
+	movi	1,a0  ; let's do 4. There are 5. Not 4. ;(need 1 light so we can see how it looks.)
 	move	a0,a10
 wbivcreate_lts
 	CREATE0	yok_falling_tombstones
@@ -1794,6 +1803,16 @@ wbivcreate_lts
 	.long	YKLTSMK07
 	.long	0
 
+ SUBRP	lt_wire_tbl
+	.long	YKLTWIRE01 ; this is the dancin wire.
+	.long	YKLTWIRE02
+	.long	0
+
+ SUBRP 	lt_glass_tbl
+	.long	YKLTGLAS01
+	.long	YKLTGLAS02
+	.long	0
+
 	.if DEBUG		;TODO: Fix img lod stuff for these.
  SUBRP	lt_smk_tbl
 	.long	SMOKE01		;Let's recyle taker's puffs.
@@ -1813,6 +1832,7 @@ wbivcreate_lts
 *****************************************************************
 * Yoko debugging
 * let's make a tombstone fall.
+* maybe use RNDRNG0 to make a MK cab fall
 
 
 ;a9 - starting x position
@@ -1824,7 +1844,7 @@ wbivcreate_lts
 	clr	a1
 	movi	YKLIGHT01,a2			; This is a light		;these are all in TONY.IMG too.
 *	movi	COFFIN01,a2			; This is a light		;let's use taker's coffin..
-	movi	1000h|RING_Z_CENTER,a3			; Z position
+	movi	1000h|RING_Z_CENTER,a3		; Z position
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; Control goop
 	cmpi	200,a9				; light more'n half way?
 	jrlt	rdrano_flip			; br = nope
@@ -1834,27 +1854,48 @@ rdrano_flip
 	clr	a6				; velocity
 	clr	a7				; velocity
 
-	calla	BEGINOBJ			; make it
+	calla	BEGINOBJ			; make it an active object. (it's outside visible range btw.)
 
-rdrafall_loop					; Make the light fall
+rdrafall_loop					; Make the light fall (move from outside viewport, to bottom of mat.)
 	SLEEPK	1
-	cmpi	(255-MAT_Y),a10
-	jrgt	rdrafall_done
-	addk	15,a10
-	move	a10,*a8(OYPOS)
-	jruc	rdrafall_loop
+	cmpi	(255-MAT_Y),a10			; Check if this light hit bottom.
+	jrgt	rdrafall_done			; it did? Nice. Let's go to done.
+	addk	15,a10                          ; increase Y pos of current OBJ (OYPOS)
+	move	a10,*a8(OYPOS)			; put a10 into it.
+	jruc	rdrafall_loop			; Loop untill the light fell completely.
 
-rdrafall_done					; Embed it in the mat
-	movi	1252,a3				; let's make a sound.
-	calla	SNDSND
 
-	move	a8,a0
-	calla	DELOBJ
+rdrafall_done					; A light hit the mat.
+	movi	1252,a3				; Set up sound to make.
+	calla	SNDSND				; Make the sound.
 
-	move	a9,a0
-	sll	16,a0
-	move	a10,a1
-	sll	16,a1
+; Let's delete the falling light OBJ as we will replace it with the embedded one.
+
+	move	a8,a0				; a8 is the light object?
+	calla	DELOBJ                          ; delete the complete light that fell (a0=obj, see display.asm)
+
+; Show the damaged mat.
+
+	move	a9,a0                           ; a9 is the end pos of the light that fell. a0 = X position(hori)
+	addi	08h,a0				; adjust this image position a bit to the right.
+	sll	16,a0                           ; 
+	move	a10,a1				; a1 = Y position (verti)
+	sll	16,a1				l 
+        movi	LIGHTDENT,a2			; This is the dent in the mat.
+	movi	(1000h|RING_Z_CENTER)+10h,a3	; The +10h is the prio?
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4
+;	ori	M_FLIPH,a4			; not flipping this image.
+	movi	CLSFINI,a5			; no idea for now
+	clr	a6
+	clr	a7
+	calla	BEGINOBJ			; this starts to show the actual OBJ on screen.
+                                                
+; Embed light in the mat.
+
+	move	a9,a0                           ; a9 is the end pos of the light that fell. a0 = X position(hori)
+	sll	16,a0                           ; 
+	move	a10,a1				; a1 = Y position (verti)
+	sll	16,a1				l 
 	movi	YKLIGHT02A,a2			; This is an embedded light
 *	movi	COFFIN05,a2			; This is an embedded light
 	movi	(1000h|RING_Z_CENTER)+10h,a3
@@ -1866,8 +1907,8 @@ rdrano_lt2a_flip
 	movi	CLSFINI,a5
 	clr	a6
 	clr	a7
-	calla	BEGINOBJ
-	.if 1
+	calla	BEGINOBJ			; this starts to show the actual OBJ on screen.
+	.if DEBUG
 	move	a9,a0
 	sll	16,a0
 	move	a10,a1
@@ -1886,23 +1927,37 @@ rdrano_lt2b_flip
 	calla	BEGINOBJ
 	.endif
 
-;	CREATE0	buzz_wire			; Make the wire buzz around
-;	CREATE0	shatter_lens			; Shatter the lens
 
-	SLEEPK	5
+	CREATE0	buzz_wire			; Make the wire buzz around  (SUBRP, DIE)
+;	CREATE0	shatter_lens			; Shatter the lens (SUBRP, DIE)
+	move	a13,a11
+	.ref react_bloodnguts_gen
+	CREATE0 react_bloodnguts_gen
+	SLEEPK	1
+	CREATE0 react_bloodnguts_gen
+	SLEEPK	1
+	CREATE0 react_bloodnguts_gen
+	SLEEPK	1
+	CREATE0 react_bloodnguts_gen
+	SLEEPK	1
+
+	SLEEPK	1				; Wait 5 seconds
 
 	movk	15,a0
 rdramore_smoke
-	movi	lt_smk_tbl,a11			; Make it smoke (crashes game..)
+	movi	lt_smk_tbl,a11			; Make it smoke (adjust position on this one..)
 rdrasmoke_loop
 	move	*a11+,a2,L
 	jrz	rdrasmoke_done
-	move	a9,a0
+	move	a9,a0					;a0 = XPOS?
+	addi	-20h,a0					;Move the smoke left a bit.
 	sll	16,a0
-	move	a10,a1
+	move	a10,a1					;a1 = YPOS
+	addi	-30h,a1					;Move the smoke up a bit.
 	sll	16,a1
-	movi	(1000h|RING_Z_CENTER)+30h,a3
+	movi	(1000h|RING_Z_CENTER)+30h,a3		;a3 = ZPOS?
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4
+
 	cmpi	200,a9
 	jrlt	rdrano_smk_flip
 	ori	M_FLIPH,a4
@@ -1924,6 +1979,50 @@ rdrano_smk_flip
 rdrasmoke_done
 	dsj	a0,rdramore_smoke
 
+*
+* wire dance
+ SUBRP buzz_wire
+	movk	15,a0
+rdramore_wire
+	movi	lt_wire_tbl,a11			; Moving wire
+rdrawire_loop
+	move	*a11+,a2,L
+	jrz	rdrawire_done
+	move	a9,a0				; a0 = X, a1 =Y a3 =Z
+	addi	-05h,a0
+	sll	16,a0				 
+	move	a10,a1
+	addi	-04fh,a1			; adjust the y pos of the cable.
+	sll	16,a1				; a1 = Y?  
+
+;	move	a9,a0				; a0 = X, a1 =Y a3 =Z
+;	sll	16,a0				 
+;	move	a10,a1
+;	sll	16,a1				; a1 = Y?  (was 16)
+	movi	(1000h|RING_Z_CENTER)+40h,a3	;Z-POS
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4
+	cmpi	200,a9
+	jrlt	rdrano_wir_flip
+	ori	M_FLIPH,a4
+rdrano_wir_flip
+	movi	CLSFINI,a5
+	clr	a6
+	clr	a7
+
+	calla	BEGINOBJ
+
+	PUSHP	a0
+	SLEEPK	5
+	PULLP	a0
+
+	move	a8,a0
+	calla	DELOBJ
+
+	jruc	rdrawire_loop
+rdrawire_done
+	dsj	a0,rdramore_wire
+
+
 	SLEEP	TSEC*5
 
 	movi	CLSFINI,a0
@@ -1932,23 +2031,9 @@ rdrasmoke_done
 	DIE
 
 ******************************************************************************
-* Yoko data stuff
-	.global	LITSMKEP
-	.global	YKLTSMK01
-	.global	YKLTSMK02
-	.global	YKLTSMK03
-	.global	YKLTSMK04
-	.global	YKLTSMK05
-	.global	YKLTSMK06
-	.global	YKLTSMK07
-	.global	LITSETP
-	.global	YKLIGHT01
-	.global	YKLIGHT02A
-	.global	YKLIGHT02B
-
+* Yoko pals
 	.DATA
 	.even
-
 LITSMKEP:
 	.word	 14
 	.word	01CACH,04A52H,031AEH,056B5H,04631H,06318H,06B5AH,05ED6H
@@ -1965,60 +2050,38 @@ LITSETP:
 	.word	030C5H,07FDEH,06F5DH,02D8BH,0469H,06A8FH,07AF1H,02862H
 	.word	02C83H,030A4H,034C5H,038E6H,04107H,04528H,04949H,04D6AH
 
+MATDNT:
+	.word	 59
+	.word	00H,02D89H,02969H,02506H,020E6H,07FBBH,07FBAH,07BBAH
+	.word	07F99H,07B9AH,07B99H,07B78H,07B79H,07779H,07778H,07379H
+	.word	07758H,07757H,07359H,07358H,07737H,07337H,07336H,06F37H
+	.word	06F36H,06F16H,06F15H,06B17H,06B16H,06B15H,066F5H,066F4H
+	.word	066D4H,062D3H,062B3H,05EB2H,05E91H,05A92H,05A91H,05A71H
+	.word	05670H,05650H,05250H,04E2FH,04E0EH,0442H,024E6H,0C83H
+	.word	045CCH,041ABH,0398AH,03549H,02D28H,02907H,024E5H,01CC4H
+	.word	018A3H,00H,0420H
 
-	.DATA
-	.even
-	.DATA
-YKLTSMK01:
-	.word   18,17,7,8
-	.long   09000000H
-	.word   04080H
-	.long   LITSMKEP
-YKLTSMK02:
-	.word   28,24,11,13
-	.long   09000330H
-	.word   04480H
-	.long   LITSMKEP
-YKLTSMK03:
-	.word   33,33,13,19
-	.long   09000818H
-	.word   04480H
-	.long   LITSMKEP
-YKLTSMK04:
-	.word   35,42,13,24
-	.long   09000fa4H
-	.word   04580H
-	.long   LITSMKEP
-YKLTSMK05:
-	.word   31,47,12,27
-	.long   0900190cH
-	.word   04580H
-	.long   LITSMKEP
-YKLTSMK06:
-	.word   30,48,13,29
-	.long   09002330H
-	.word   04580H
-	.long   LITSMKEP
-YKLTSMK07:
-	.word   27,53,12,34
-	.long   09002cb0H
-	.word   04580H
-	.long   LITSMKEP
-YKLIGHT01:
-	.word   94,114,36,85
-	.long   0900379cH
-	.word   06980H
-	.long   LITSETP
-YKLIGHT02A:
-	.word   55,80,33,78
-	.long   0900bd70H
-	.word   06580H
-	.long   LITSETP
-YKLIGHT02B:
-	.word   69,65,14,31
-	.long   0900f8e4H
-	.word   06980H
-	.long   LITSETP
+MK1GAME_P:
+	.word	 63
+	.word	01FH,0843H,0422H,00H,0C64H,01CC8H,0C42H,02CC6H
+	.word	04C64H,044C6H,02822H,04843H,03822H,0844H,02463H,030A3H
+	.word	05844H,018A7H,05673H,04612H,05AD6H,048E2H,03505H,0410AH
+	.word	04D44H,03DAFH,0466H,058E2H,045ACH,0294DH,0250AH,05D42H
+	.word	0416CH,05926H,055AAH,059EFH,065CAH,059CDH,065A3H,061C6H
+	.word	0552AH,02D6EH,06962H,0624CH,0314CH,01CE9H,06671H,071E4H
+	.word	072ADH,07226H,06A6BH,062D7H,06AF2H,07666H,06D4DH,0650AH
+	.word	069CFH,0598CH,071D0H,0190AH,046AH,06F5AH,06319H
+
+MK2GAME_P:
+	.word	 64
+	.word	01FH,0843H,0422H,03C23H,00H,05064H,01443H,0C64H
+	.word	06B38H,056D6H,04A53H,04A31H,06B5AH,06319H,039F0H,0252AH
+	.word	01CE7H,05272H,01486H,0358BH,0423H,0445H,014EAH,06064H
+	.word	0488H,02990H,04254H,04CAH,050DH,066D1H,03A34H,046F9H
+	.word	05F5AH,0570H,0214EH,015D2H,0154EH,0739CH,03885H,01E35H
+	.word	02A97H,036D8H,055A5H,064A6H,072AAH,04187H,06228H,03904H
+	.word	0730EH,0628EH,058E5H,03908H,05D09H,06D2AH,06D6BH,059AAH
+	.word	06904H,07245H,06DA4H,07A31H,071CEH,010FH,07FFFH,01BH
 	.TEXT
 ******************************************************************************
 
