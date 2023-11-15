@@ -34,6 +34,7 @@
 	.include	"shawnimg.h"
 	.include	"bamimg.h"
 
+	.include	"special.equ"
 	.include	"damage.equ"
 	.include	"miscimg.glo"
 	.INCLUDE	"SWEAT.EQU"
@@ -59,7 +60,7 @@
 	.ref	RNDRNG0
 	.ref	do_roll
 
-
+	.ref	RNDRNGS
 
 
 
@@ -172,7 +173,8 @@
 	.word	ANI_SETSPEED,100h
 
 	;let's see if this works then. 
-	WLWWWW  ANI_CREATEPROC,yok_falling_tombstone,0,0,0,0    	;ANI_CREATEPROC wants a SUBRP which does stuff and then dies?
+*	WLWWWW  ANI_CREATEPROC,yok_falling_light,0,0,0,0    	;ANI_CREATEPROC wants a SUBRP which does stuff and then dies?
+	WLWWWW  ANI_CREATEPROC,yok_falling_cab,0,0,0,0    	;ANI_CREATEPROC wants a SUBRP which does stuff and then dies?
 
 	WL	3,Y1TT5Z+FR2		;victory pose
 	WL	3,Y1TT5Z+FR3
@@ -1760,90 +1762,100 @@ lyakloop3
 	WL	ANI_GOTO,lyakloop3
 
 *****************************************************************
-* Added the yoko parts here.
 * THERE ARE FOUR LIGHTS!
+* a0 = number of lights
 
- SUBRP yok_testloop
-	movk	3,a14
-	move	a14,@finish_completed
-;crash	DIE
-;crash	rets
-;nothing just keeps us looping
-
-
-;a0 = number of lights
- SUBR	yok_falling_tombstone
-* SUBRP	yok_falling_tombstone
-	PUSHP	a9,a10
+ SUBR	yok_falling_light
+	PUSHP	a9,a10			; free up a9 and a10 for us to use.
 	movi	100,a9
 	movi	1,a0  ; let's do 4. There are 5. Not 4. ;(need 1 light so we can see how it looks.)
 	move	a0,a10
 wbivcreate_lts
-	CREATE0	yok_falling_tombstones
+	CREATE0	yok_falling_lights
 	SLEEPK	5
 	addk	20,a9
 	dsjs	a10,wbivcreate_lts
 
 	SLEEP	TSEC*20
 
-	PULLP	a9,a10
+	PULLP	a9,a10                  ; restore a9 and a10.
 	RETP
 *	rets
 
 *****************************************************************
-*
+* Randomly drop a MK1 or MK2 cab
+* a0 = number of arcade cabs to drop
 
- SUBRP	lt_smk_tbl
-	.long	YKLTSMK01  ; these are kept in TONY.IMG
-	.long	YKLTSMK02
-	.long	YKLTSMK03
-	.long	YKLTSMK04
-	.long	YKLTSMK05
-	.long	YKLTSMK06
-	.long	YKLTSMK07
-	.long	0
+ SUBR	yok_falling_cab
+	PUSHP	a9,a10			; free up a9 and a10 for us to use.
+	movi	100,a9
+	movi	1,a0  ; let's do 4. There are 5. Not 4. ;(need 1 cab so we can see how it looks.)
+	move	a0,a10
+wbixcreate_cab
+	CREATE0	yok_falling_cabs
+	SLEEPK	5
+	addk	25,a9
+	dsjs	a10,wbixcreate_cab
 
- SUBRP	lt_wire_tbl
-	.long	YKLTWIRE01 ; this is the dancin wire.
-	.long	YKLTWIRE02
-	.long	0
+	SLEEP	TSEC*20
 
- SUBRP 	lt_glass_tbl
-	.long	YKLTGLAS01
-	.long	YKLTGLAS02
-	.long	0
-
-	.if DEBUG		;TODO: Fix img lod stuff for these.
- SUBRP	lt_smk_tbl
-	.long	SMOKE01		;Let's recyle taker's puffs.
-	.long	SMOKE02
-	.long	SMOKE03
-	.long	SMOKE04
-	.long	SMOKE05
-	.long	SMOKE06
-	.long	SMOKE07
-	.long	SMOKE08
-	.long	SMOKE09
-	.long	SMOKE10
-	.long	0
-	.endif
-
+	PULLP	a9,a10                  ; restore a9 and a10.
+	RETP
 
 *****************************************************************
+*
+ SUBRP	yok_falling_cabs
+
+	move	a9,a0				; Set up horizontal position
+	clr	a10				; Save off current y
+	sll	16,a0				; Set up vertical position
+	clr	a1
+	movi	MK2GAME,a2			; This is a cab		;these are from mk3.. MKGAMES.IMG
+;	movi	MK1GAME,a2			; This is a cab		;these are from mk3.. MKGAMES.IMG
+	movi	1000h|RING_Z_CENTER,a3		; Z position
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; Control goop
+	cmpi	200,a9				; more'n half way on Z-axis?
+	jrlt	rdrbno_flip			; br = nope
+	ori	M_FLIPH,a4			; flip
+rdrbno_flip
+	movi	CLSFINI,a5			; object id
+	clr	a6				; velocity
+	clr	a7				; velocity
+
+	calla	BEGINOBJ			; make it an active object. (it's outside visible range btw.)
+
+rdrbfall_loop					; Make the cab fall (move from outside viewport, to bottom of mat.)
+	SLEEPK	1
+	cmpi	(100-MAT_Y),a10			; Check if this cab hit bottom.
+	jrgt	rdrbfall_done			; it did? Nice. Let's go to done.
+	addk	15,a10                          ; increase Y pos of current OBJ (OYPOS)
+	move	a10,*a8(OYPOS)			; put a10 into OYPOS.
+	jruc	rdrbfall_loop			; Loop untill the cab fell completely.
+
+
+rdrbfall_done					; A cab hit the mat.
+	movi	1252,a3				; Set up sound to make.
+	calla	SNDSND				; Make the sound.
+	SLEEP	TSEC*5
+
+	movi	CLSFINI,a0
+
+	DIE
+
+******************************************************************************
 * Yoko debugging
-* let's make a tombstone fall.
-* maybe use RNDRNG0 to make a MK cab fall
+* let's make a light fall.
+* maybe use RNDRNG0 to make a MK cab fall?
 
 
 ;a9 - starting x position
- SUBRP	yok_falling_tombstones
+ SUBRP	yok_falling_lights
 
 	move	a9,a0				; Set up horizontal position
 	clr	a10				; Save off current y
 	sll	16,a0				; Set up vertical position
 	clr	a1
 	movi	YKLIGHT01,a2			; This is a light		;these are all in TONY.IMG too.
-*	movi	COFFIN01,a2			; This is a light		;let's use taker's coffin..
 	movi	1000h|RING_Z_CENTER,a3		; Z position
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; Control goop
 	cmpi	200,a9				; light more'n half way?
@@ -1871,7 +1883,7 @@ rdrafall_done					; A light hit the mat.
 
 ; Let's delete the falling light OBJ as we will replace it with the embedded one.
 
-	move	a8,a0				; a8 is the light object?
+	move	a8,a0				; a8 is the that just fell object pointer?
 	calla	DELOBJ                          ; delete the complete light that fell (a0=obj, see display.asm)
 
 ; Show the damaged mat.
@@ -1908,40 +1920,38 @@ rdrano_lt2a_flip
 	clr	a6
 	clr	a7
 	calla	BEGINOBJ			; this starts to show the actual OBJ on screen.
-	.if DEBUG
+
+; at this point we have the fallen light on the screen, but no lens.
+; we should just spawn the lens and make it bounce?
+
+	move 	a8,a0
 	move	a9,a0
+;	addi	-20h,a0					;adjust the lens position left a bit.
 	sll	16,a0
 	move	a10,a1
+;	addi	-30h,a1					;adjust the lens position up a bit.
 	sll	16,a1
 	movi	YKLIGHT02B,a2			; This is an embedded light lens
-*	movi	COFFIN05,a2			; This is an embedded light
-	movi	(1000h|RING_Z_CENTER)+20h,a3
-	movi	DMAWNZ|M_3D|M_SCRNREL,a4
-	cmpi	200,a9
+	movi	(1000h|RING_Z_CENTER)+20h,a3	; a3: the +20h is the Z (depth) or layer this item appears on.
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; DMA Flags
+	cmpi	200,a9				; If the light is to the left/right flip its image. otherwise no.
 	jrlt	rdrano_lt2b_flip
 	ori	M_FLIPH,a4
 rdrano_lt2b_flip
-	movi	CLSFINI,a5
+	movi	CLSFINI,a5			; What is CLSFINI, and what is a5?
 	clr	a6
 	clr	a7
-	calla	BEGINOBJ
-	.endif
-
-
+	calla	BEGINOBJ			; this should at least put the lens on screen now.
+	
 	CREATE0	buzz_wire			; Make the wire buzz around  (SUBRP, DIE)
-;	CREATE0	shatter_lens			; Shatter the lens (SUBRP, DIE)
-	move	a13,a11
-	.ref react_bloodnguts_gen
-	CREATE0 react_bloodnguts_gen
-	SLEEPK	1
-	CREATE0 react_bloodnguts_gen
-	SLEEPK	1
-	CREATE0 react_bloodnguts_gen
-	SLEEPK	1
-	CREATE0 react_bloodnguts_gen
-	SLEEPK	1
+;	CREATE0	shatter_lens			; Shatter the lens (SUBRP, DIE) (Not implemented)
 
-	SLEEPK	1				; Wait 5 seconds
+**;	We should do something with the light on top of the player?
+**;	.ref react_bloodnguts_gen
+**;	CREATE0 react_bloodnguts_gen
+
+	move	a13,a11
+	SLEEPK	5				; Wait 5 seconds?
 
 	movk	15,a0
 rdramore_smoke
@@ -1956,7 +1966,7 @@ rdrasmoke_loop
 	addi	-30h,a1					;Move the smoke up a bit.
 	sll	16,a1
 	movi	(1000h|RING_Z_CENTER)+30h,a3		;a3 = ZPOS?
-	movi	DMAWNZ|M_3D|M_SCRNREL,a4
+	movi	DMAWNZ|M_3D|M_SCRNREL,a4		;dma flags.
 
 	cmpi	200,a9
 	jrlt	rdrano_smk_flip
@@ -1979,8 +1989,9 @@ rdrano_smk_flip
 rdrasmoke_done
 	dsj	a0,rdramore_smoke
 
-*
-* wire dance
+******************************************************************************
+* wire dancing around
+
  SUBRP buzz_wire
 	movk	15,a0
 rdramore_wire
@@ -2083,8 +2094,27 @@ MK2GAME_P:
 	.word	0730EH,0628EH,058E5H,03908H,05D09H,06D2AH,06D6BH,059AAH
 	.word	06904H,07245H,06DA4H,07A31H,071CEH,010FH,07FFFH,01BH
 	.TEXT
-******************************************************************************
+******************************************************************************
+* Yoko tables
 
+ SUBRP	lt_smk_tbl
+	.long	YKLTSMK01  ; these are kept in TONY.IMG
+	.long	YKLTSMK02
+	.long	YKLTSMK03
+	.long	YKLTSMK04
+	.long	YKLTSMK05
+	.long	YKLTSMK06
+	.long	YKLTSMK07
+	.long	0
 
+ SUBRP	lt_wire_tbl
+	.long	YKLTWIRE01 ; this is the dancin wire.
+	.long	YKLTWIRE02
+	.long	0
+
+ SUBRP 	lt_glass_tbl
+	.long	YKLTGLAS01
+	.long	YKLTGLAS02
+	.long	0
 
 	.end
