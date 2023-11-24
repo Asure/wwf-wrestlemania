@@ -1,0 +1,328 @@
+!<arch>
+divl.asm/       652729170   0     0     0       312       `
+;  *** Logical Divide ***
+;  Divide the value in the dest register by the value in the source
+;  register (1,2,4,8,16, etc), and store the result (quotient) in
+;  the destination register.
+divl     $MACRO R1,R2
+         lmo    :R1:,:R1:
+         subk   31,:R1:
+         srl    :R1:,:R2:
+         $ENDM
+findpix.asm/    652729170   0     0     0       5645      `
+;***********************************************************************;
+;* Find Pixel & Find Not Pixel        (c) 1988 Texas Instruments, Inc  *;
+;***********************************************************************;
+;* These two macros are designed to be used in place of the proposed   *;
+;* find_pixel and find not pixel instructions in the 34020. Once the   *;
+;* implied operands are set, one of these macro calls is performed in  *;
+;* in leiu of the actual opcode.                                       *;
+;*                                                                     *;
+;* On return, the B file registers and status reflect the results.     *;
+;*                                                                     *;
+;* Implied Operands (B file registers)                                 *;
+;*                                                                     *;
+;*   B2 (SADDR)  - Pixel run starting address                          *;
+;*   B7 (DYDX)   - Maximum distance to search, in pixels               *;
+;*   B8 (COLOR0) - Target value                                        *;
+;*                                                                     *;
+;*  Note: If the distance (DYDX) is zero, no search is performed.      *;
+;*        A positive distance indicates a right search (ascending).    *;
+;*        A negative distance indicates a left search (descending)     *;
+;*                                                                     *;
+;*  Initially, the search direction was controlled by the PBH bit      *;
+;*  in the control register, but due to lower overhead, especially     *;
+;*  for routines such as seedfill--which alternate search direction    *;
+;*  frequently, the sign of the distance was chosen.                   *;
+;*                                                                     *;
+;*   B8 (COLOR0) - Target value                                        *;
+;*   B10-B14     - Reserved registers                                  *;
+;*                                                                     *;
+;* Implied Operands (I/O Registers)                                    *;
+;*   0C00000150h - PSIZE   - Pixel size, 1,2,4,8,16,32                 *;
+;*                                                                     *;
+;* After Execution:                                                    *;
+;*   B4 (DADDR)  - Terminating address                                 *;
+;*   B7 (DYDX)   - Updated count                                       *;
+;*   STATUS BITS - Z - If 1, pixel was found                           *;
+;*   B10-B14     - Intermediate values                                 *;
+;*                                                                     *;
+;*  Note: All other registers are unchanged. ie: SADDR, DYDX, COLOR1   *;
+;*                                                                     *;
+;* History:                                                            *;
+;*  2/07/88...J.G.Littleton                                            *;
+;***********************************************************************;
+PBH     .set    0100h
+ZBIT    .set    20000000h
+
+findp   $MACRO
+        getst   B14             ;save status
+        andni   ZBIT,B14        ;reset Z bit
+        setf    16,0,0
+        move    SADDR,DADDR
+        move    @PSIZE,B11,0    ;set field size 0
+        move    B11,B13
+        exgf    B11,0           ;  to pixel size
+        move    COLOR0,B11
+        zext    B11,0
+        move    DYDX,DYDX
+        jrz     exit_findp?
+        jrnn    search_rgt?
+        neg     DYDX
+;
+;  SADDR = Address,
+;  B11   = Target value
+;  B12   = distance
+;  B13   = pixel size
+;
+        add     B13,DADDR
+lft_loop?:
+        move    *-DADDR,B10,0
+        xor     B11,B10
+        dsjne   DYDX,lft_loop?
+        add     B13,DADDR
+        move    DYDX,DYDX
+        jrz     exit_findp?
+        neg     DYDX
+        movi    ZBIT,B12
+        jruc    exit_findp?
+;
+;  SADDR = Address,
+;  B11   = Target value
+;  B12   = distance
+;  B13   = pixel size
+;
+search_rgt?:
+        move    *DADDR+,B10,0
+        xor     B11,B10
+        dsjne   DYDX,search_rgt?
+        sub     B13,DADDR
+        move    DYDX,DYDX
+        jrz     exit_findp?
+        movi    ZBIT,B12
+exit_findp?:
+        or      B12,B14
+        putst   B14
+        $ENDM
+
+findnp  $MACRO
+        getst   B14             ;save status
+        andni   ZBIT,B14        ;reset Z bit
+        setf    16,0,0
+        move    SADDR,DADDR
+        move    @PSIZE,B11,0    ;set field size 0
+        move    B11,B13
+        exgf    B11,0           ;  to pixel size
+        move    COLOR0,B11
+        zext    B11,0
+        move    DYDX,DYDX
+        jrz     exit_findnp?
+        jrnn    nsearch_rgt?
+;
+;  SADDR = Address,
+;  B11   = Target value
+;  B12   = distance
+;  B13   = pixel size
+;
+        neg     DYDX
+        add     B13,DADDR
+nsearch_left?:
+        move    *-DADDR,B10,0
+        xor     B11,B10
+        dsjne   DYDX,nsearch_left?
+        add     B13,DADDR
+        move    DYDX,DYDX
+        jrz     exit_findnp?
+        neg     DYDX
+        movi    ZBIT,B12
+        jruc    exit_findnp?
+;
+;  SADDR = Address,
+;  B11   = Target value
+;  B12   = distance
+;  B13   = pixel size
+;
+nsearch_rgt?:
+        move    *DADDR+,B10,0
+        xor     B11,B10
+        dsjne   DYDX,nsearch_rgt?
+        sub     B13,DADDR
+        move    DYDX,DYDX
+        jrz     exit_findnp?
+        movi    ZBIT,B12
+exit_findnp?:
+        or      B12,B14
+        putst   B14
+        $ENDM
+
+intfix.asm/     652729170   0     0     0       1216      `
+; Check for interrupt of special cases of PIXBLT B and PIXBLT
+IntFix    $macro
+          move  B4,-*SP,1             ; save B4
+          setf  1,0,0
+          move  *SP(32+25),B4,0       ; B4 = PBX from status on stack
+          jrz   return                ; if PBX = 0, then return
+          move  B13,B4
+          srl   28,B4
+          subk  0Dh,B4
+          jrnz  pb_check              ; not PIXBLT B, check for PIXBLT case
+          setf  5,0,0
+          move  @0C00000BAh,B4,0      ; return if pix. proc. is enabled
+          jrnz  return
+          add   B14,B2
+          move  B10,B10
+          jrnz  set32
+          sub   B1,B0
+          move  B11,B14
+          zext  B14,0
+          jrnz  not32
+set32:    movk  32,B14
+not32:    sub   B14,B0
+          cvxyl B14,B4
+          sub   B4,B2
+          sll   1,B13
+          srl   1,B13
+return:   move  *SP+,B4,1             ; restore B4, fix complete
+          reti
+
+pb_check: move  B14,B14
+          jrnz  return
+          addk  0Dh,B4
+          jrz   pb_fix
+          subk  2,B4
+          jrnz  return
+pb_fix:   sub   B10,B14
+          move  *SP+,B4,1             ; restore B4, fix complete
+          reti
+          $ENDM
+mpyl.asm/       652729170   0     0     0       339       `
+;  *** Logical Multiply ***
+;  Multiply the value in the dest register by the value in the source
+;  register (1,2,4,8,16, etc), and store the result in the destination
+;  register.  (4 cycles)
+mpyl     $MACRO R1,R2
+         lmo    :R1:,:R1:
+         subk   31,:R1:
+         neg    :R1:
+         sll    :R1:,:R2:
+         $ENDM
+
+pop.asm/        652729170   0     0     0       99        `
+;  Pop a register off the system stack
+pop   $MACRO  R1
+      move    *SP+,:R1:,1
+      $ENDM
+
+popc.asm/       652729170   0     0     0       95        `
+;  Pop a register off the C stack
+popc  $MACRO  R1
+      move    *-STK,:R1:,1
+      $ENDM
+
+push.asm/       652729170   0     0     0       99        `
+;  Push a register on the system stack
+push  $MACRO  R1
+      move    :R1:,-*SP,1
+      $ENDM
+
+pushc.asm/      652729170   0     0     0       95        `
+;  Push a register on the C stack
+pushc $MACRO  R1
+      MOVE    :R1:,*STK+,1
+      $ENDM
+
+repc.asm/       652729208   0     0     0       846       `
+;--------------------------------------------------------------------
+;  Replicate color values throughout the COLOR1 and COLOR0 registers
+;  based on the current pixel size.
+;--------------------------------------------------------------------
+repc    $MACRO
+        movk    1,B12
+        cvxyl   B12,B12         ;get pixel size
+        sub     OFFSET,B12      ;subtract off offset
+        exgf    B12,0
+        zext    COLOR1,0
+        zext    COLOR0,0
+        exgf    B12,0
+        lmo     B12,B13
+        subk    26,B13          ;B13 -> shift count
+        jrz     exit?
+reploop?:
+        move    COLOR1,B14
+        sll     B12,COLOR1
+        or      B14,COLOR1
+        move    COLOR0,B14
+        sll     B12,COLOR0
+        or      B14,COLOR0
+        sll     1,B12
+        dsjs    B13,reploop?
+exit?:
+        $ENDM
+repc0.asm/      652729224   0     0     0       784       `
+;--------------------------------------------------------------------
+;  Replicate color value throughout COLOR0 register (based on the
+;  current pixel size)
+;--------------------------------------------------------------------
+repc0   $MACRO
+        movk    1,B12
+        cvxyl   B12,B12         ;B12 = (PSIZE*1) + OFFSET
+        sub     OFFSET,B12      ;B12 = PSIZE
+        exgf    B12,0           ;Field 0 = PSIZE
+        zext    COLOR0,0        ;isolate significant LSBs
+        exgf    B12,0
+        lmo     B12,B13
+        subk    26,B13          ;B13 -> shift count
+        jrz     exit?
+rep0loop?:
+        move    COLOR0,B14
+        sll     B12,COLOR0
+        or      B14,COLOR0
+        sll     1,B12
+        dsjs    B13,rep0loop?
+exit?:
+        $ENDM
+repc1.asm/      652729238   0     0     0       643       `
+;--------------------------------------------------------------------
+;  Replicate color value throughout COLOR1 register (based on the
+;  current pixel size)
+;--------------------------------------------------------------------
+repc1   $MACRO
+        movk    1,B12
+        cvxyl   B12,B12
+        sub     OFFSET,B12
+        exgf    B12,0
+        zext    COLOR1,0
+        exgf    B12,0
+        lmo     B12,B13
+        subk    26,B13
+        jrz     exit?
+rep1loop?:
+        move    COLOR1,B14
+        sll     B12,COLOR1
+        or      B14,COLOR1
+        sll     1,B12
+        dsjs    B13,rep1loop?
+exit?:
+        $ENDM
+
+rmo.asm/        652729170   0     0     0       190       `
+;
+; Find bit number of the rightmost one.
+;
+rmo      $MACRO R1,R2
+         move   :R1:,:R2:
+         neg    :R2:
+         and    :R2:,:R1:
+         lmo    :R1:,:R2:
+         $ENDM
+swap.asm/       652729170   0     0     0       216       `
+;
+;  *** Swap registers ***
+;  Swap the contents of the source and destination registers
+;
+swap     $MACRO R1,R2
+         xor    :R1:,:R2:
+         xor    :R2:,:R1:
+         xor    :R1:,:R2:
+         $ENDM
+

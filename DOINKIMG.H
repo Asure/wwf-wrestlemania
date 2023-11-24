@@ -98,4 +98,4 @@
 	.global	D3SK3X
 	.global	D4WA4A
 	.global	D3CS3Z
-	.global	A4ST4J
+;	.global	A4ST4J

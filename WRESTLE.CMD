@@ -2,7 +2,7 @@
 -e WARMSET		/* entry point of program		*/
 -f 0xffff		/* fill unspecified memory with value	*/
 -o wrestle.out		/* specify output file			*/
-/*-m wrestle.map		/* map file				removed or out of memory error!*/
+-m wrestle.map		/* map file				removed or out of memory error!*/
 -s			/* Kill the symbol table		*/
 display.obj		/*IMAGE HANDLER*/
 main.obj		/*INITIALIZATION AND INTERRUPTS*/
@@ -46,8 +46,8 @@ diag.obj
 menu.obj
 hstd.obj
 select.obj
-/* robo.obj
-coll2.obj */
+robo.obj
+coll2.obj
 tables.obj
 ropes.obj
 lifebar.obj
