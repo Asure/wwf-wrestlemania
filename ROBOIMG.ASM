@@ -8,4 +8,3 @@
 	.include roboimg.glo
 
 	.include roboimg.tbl
-

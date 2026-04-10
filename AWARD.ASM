@@ -1433,7 +1433,7 @@ lp?
 	sll	16,a1
 	sub	a1,a0
 	move	*a9,a2,L
-	movi	>2000,a3
+	movi	02000H,a3
 	movi	DMAWNZ|M_SCRNREL,a4
 	movi	CLSNEUT,a5
 	clr	a6
@@ -1694,7 +1694,7 @@ f_done
 	move	a2,@dboxes_on,L
 	move	*a3,a2,L			; Get image pointer (text)
 	movi	[DUFUS_BOX_YPOS,0],a1		; Vertical Position
-	movi	>2000,a3			; Z Position
+	movi	02000H,a3			; Z Position
 	movi	DMAWNZ|M_3D|M_SCRNREL,a4	; DMACTRL
 	movi	CLSNEUT,a5			; Object ID
 	clr	a6				; X Velocity 
@@ -3248,4 +3248,3 @@ hello_prompt3
 ******************************************************************************
 
 	.end
-

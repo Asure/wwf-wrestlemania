@@ -1,4 +1,4 @@
-***************************************************************
+#***************************************************************
 *
 * Software:	JAKE SIMPSON
 * Initiated:	10/17/94
@@ -648,7 +648,7 @@ SPKR1_ANIM
 	;it's a multiple-wrestler fight.  Scramble the current entry.
 	callr	scramble_table_entry
 
-	;sort so that shawn ends up in the third slot: >03040x0x
+	;sort so that shawn ends up in the third slot: 003040Hx0x
 	CLR	A3
 	CLR	A4
 	MOVX	A1,A3
@@ -1546,9 +1546,9 @@ FINAL_BATTLE	equ	7	;14th battle is last one. (keep up-to-date)
 	; swap a3 and a4.  Then look at a3 again, and if one still matches,
 	; rotate it 16 bits.
 	move	a3,a5
-	andi	>00FF,a5
+	andi	000FFH,a5
 	move	a3,a6
-	andi	>FF00,a6
+	andi	0FF00H,a6
 	srl	8,a6
 
 	cmp	a1,a5
@@ -1564,9 +1564,9 @@ FINAL_BATTLE	equ	7	;14th battle is last one. (keep up-to-date)
 #swap	SWAP	a3,a4
 
 	move	a3,a5
-	andi	>00FF,a5
+	andi	000FFH,a5
 	move	a3,a6
-	andi	>FF00,a6
+	andi	0FF00H,a6
 	srl	8,a6
 
 	cmp	a1,a5
@@ -4267,7 +4267,7 @@ WHICH_SKIRT_PALLETE
 
 **********
 * Get a random wrestler among those available.
-* >a7 = excluded wrestler mask  >a8 = excluded wrestler count
+* 0a7H = excluded wrestler mask  0a8H = excluded wrestler count
 * <a0 = choice among those available
 
  SUBR	get_rnd_wrestler
@@ -4536,4 +4536,3 @@ belt_str
 ******************************************************************************
 
 	.end
-

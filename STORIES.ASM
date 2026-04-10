@@ -58,6 +58,8 @@
 	.ref	osgmd8_ascii
 
 	BSSX	wrestler_number,32
+#****
+* START
 
 blank_line
 	.byte	0
@@ -286,4 +288,3 @@ inval_wnum
 ******************************************************************************
 	
 	.end
-

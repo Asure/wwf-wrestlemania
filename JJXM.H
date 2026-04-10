@@ -56,4 +56,3 @@ MATCH_AWARD	.macro	REG,AWARD_INDEX
 	calla	match_award
 	PULL	a0,a10
 		.endm
-

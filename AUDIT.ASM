@@ -201,7 +201,7 @@ COINCNT2	.EQU	COINCNTR+8
 *
 **************************************************************************
 
-**************************************************************************
+#**************************************************************************
 *
 *	L_TIMER
 *
@@ -222,18 +222,18 @@ L_TIMER
 	move	@_switch_addr,a0,L
 	move	*a0,a0
 	not	a0
-	andi	>7f7f,a0		;Get sticks 'n starts
+	andi	07f7fH,a0		;Get sticks 'n starts
 	move	@OCT_FLG,a1
 	jrgt	#p2			;Got part one?
 
-	cmpi	>7171,a0		;P1&P2 all buts down & both sticks up
+	cmpi	07171H,a0		;P1&P2 all buts down & both sticks up
 	jrne	#NO_CK_OCTO			;Wrong?
 	movi	TSEC,a1			;One sec to get part two
 #p2
 	subk	1,a1
 	move	a1,@OCT_FLG
 	jrgt	#NO_CK_OCTO			;Still counting?
-	cmpi	>202,a0
+	cmpi	0202H,a0
 	jrne	#NO_CK_OCTO			;Wrong?
 
 	movi	ACTIVE,a13
@@ -1758,7 +1758,7 @@ SLAM_P
 	jauc	EXISTP
 
 SLAM_SW
-	movi	SLAM_PID|>ffff0000,a0	;So we can kill other indestructables
+	movi	SLAM_PID|0ffff0000H,a0	;So we can kill other indestructables
 	move	a0,*a13(PROCID)		;Set our ID
 	calla	KIL1C			;Kill others
 
@@ -2387,7 +2387,7 @@ FACS1
 	DSJS	A2,FACS1		;WRITE 1 LONG WORD PER ADJUST
 fs20
 ;	.if	YUNIT
-;	move	@SWITCH+>30,a1
+;	move	@SWITCH+030H,a1
 ;	btst	6,a1
 ;	jrnz	fs80
 ;	not	a1
@@ -2652,7 +2652,7 @@ lct8	move	*a6+,a1			;Get word
 **************************************************************************
 L_MESS_LOOP
 	addk	BYTE_SIZE,a8		;PUSH BEYOND THIS BYTE
-L_MESS	addk	>f,a8			;Round up word
+L_MESS	addk	0fH,a8			;Round up word
 	srl	4,a8
 	sll	4,a8
 
@@ -2848,7 +2848,7 @@ PROMPT_PROC
 
 
 *
-*	>1 = READY FOR 2 PLAYERS.  PRESS START.
+*	01H = READY FOR 2 PLAYERS.  PRESS START.
 *
 rf4
 	MOVI	MESS_READY_4,A1
@@ -3057,7 +3057,7 @@ DUMP_FS
 *
 **************************************************************************
 DUMP_SIZE	 .equ	 10*C_LONG_SIZE		;9 LONG WORDS.
-DUMP_LAST	 .equ	 CMOS+>8000-DUMP_SIZE	;Let em use the whole page!
+DUMP_LAST	 .equ	 CMOS+08000H-DUMP_SIZE	;Let em use the whole page!
 MAX_DUMP	 .equ	 8			;DON'T HOLD MORE THAN 12/PAGE
 
 ADD_DUMP
@@ -3417,4 +3417,3 @@ dollar_mes
 ******************************************************************************
 
 	.end
-

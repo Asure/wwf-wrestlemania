@@ -24,4 +24,3 @@ SDA_PREEMPT	.equ	1	;sound call okay, preempts another call
 SDA_LOPRI	.equ	2	;sound call okay, dropped -- priority too low
 SDA_BADNDX	.equ	3	;bad index -- ignored
 SDA_ZCALL	.equ	4	;index in range, but points to a zero entry
-

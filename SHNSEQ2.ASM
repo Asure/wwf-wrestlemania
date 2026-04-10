@@ -1112,7 +1112,7 @@
 	move	a0,a11
 
 	move	*a13(CLOSEST_XDIST),a0
-	cmpi	>40,a0
+	cmpi	040H,a0
 	jrlt	#drop
 
 ;We are to side of fallen opponent, we must float toward
@@ -2785,4 +2785,3 @@ NOT_IN_RING
 ******************************************************************************
 
 	.end
-

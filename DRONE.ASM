@@ -144,7 +144,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 	move	*a8(PLYRMODE),a0
 	move	a0,b7			;B7=Opp pmode
 
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Find friendly wrestlers
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0FHind friendly wrestlers
 
 	movi	process_ptrs,a2
 	movk	NUM_WRES,b0
@@ -274,7 +274,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 	callr	drone_seekdirdist
 #skmv
 
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Dec charge delay
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0DecH charge delay
 
 	move	*a13(DRN_BUTCHRG),a0
 	jrz	#nochrgn
@@ -311,7 +311,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 	move	a0,*a13(DRN_DELAY)
 	jruc	#x
 #newact
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Block detection
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0BHlock detection
 
 	move	*a8(ATTACK_TIME),a4
 	move	@round_tickcount,a5
@@ -786,7 +786,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 
 
 #cact
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Chk script for mode change
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CHhk script for mode change
 
 	move	b6,a0
 	jrz	#mdsame			;MODE_NORMAL?
@@ -876,7 +876,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 	subk	16,a9
 	jruc	#dsdone
 #nwtint
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Abort if opponent blocking
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0AbHort if opponent blocking
 
 	subk	1,a0			;#4
 	jrne	#naib
@@ -886,7 +886,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 
 	jruc	#dsabt
 #naib
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Call code
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CaHll code
 
 	subk	1,a0			;#5
 	jrne	#ncall
@@ -919,7 +919,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 	move	*a9+,a9,L
 	jruc	#scplp
 #njmp
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Call function
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CaHll function
 
 	exgpc	a9
 	jruc	#scplp
@@ -938,7 +938,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 	btst	PLAYER_RIGHT_BIT,a14
 	jrnz	#rgt			;Facing rgt?
 
-	move	a1,a0			;>Flip L&R bits
+	move	a1,a0			;0FHlip L&R bits
 	move	a1,a14
 	sll	32-2,a1
 	srl	3,a0			;Bit0=Rgt
@@ -961,7 +961,7 @@ SK_M	.equ	PLAYER_SKICK_VAL
 
 #unint
 
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Calc ctrl bit transitions
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CaHlc ctrl bit transitions
 #x
 	move	*a13(DRN_BUT),a0
 #butx
@@ -1128,7 +1128,7 @@ DS_END	.macro
 	.word	0,0
 	.endm
 
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Bam bam scripts
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		0BaHm bam scripts
 
 bam_s_t
 	BBL	MODE_HEADHOLD,-1,baM_hh
@@ -1335,7 +1335,7 @@ utM_chold ;Choke holding opp by neck
 	.word	P_M,4, 0,4, P_M,4, 0,4, P_M,0
 
 
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Doink scripts
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		0DHoink scripts
 
 doink_s_t
 	BBL	MODE_HEADHOLD,-1,doM_hh
@@ -1555,7 +1555,7 @@ shM_hhr ;Head held reversals
 	.long	#jkk		;Speed kick
 
 
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		>Bret scripts
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ		0BHret scripts
 
 bret_s_t
 	BBL	MODE_HEADHOLD,-1,brM_hh
@@ -3040,7 +3040,7 @@ lex_l_t
 * A1 = Z
 * A2 = Range to stop
 * A13= *Plyr proc
-*>A0 = Joy bits set or 0 (Pass CC)
+*0A0H = Joy bits set or 0 (Pass CC)
 * Trashes scratch
 
  SUBRP	drone_seekxz
@@ -3167,7 +3167,7 @@ lex_l_t
 #maxok
 	move	a5,*a13(DRN_SKILL)
 
-;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			>Clr attack count
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ			0CHlr attack count
 
 	clr	a0
 	movi	atkcnt_t,a1
@@ -3184,7 +3184,7 @@ lex_l_t
 ********************************
 * Get random # with mask
 * A0 = Mask
-*>A0 = Rnd # (Pass CC)
+*0A0H = Rnd # (Pass CC)
 * Trashes scratch
 
  SUBRP	rnd
@@ -3203,7 +3203,7 @@ lex_l_t
 ********************************
 * Quickly produce a random # in range 0-X
 * A0 = X
-*>A0 = Random # (0 to A0) (No CC)
+*0A0H = Random # (0 to A0) (No CC)
 * Trashes scratch
 
  SUBRP	rndrng0
@@ -3228,4 +3228,3 @@ lex_l_t
 ********************************
 
 	.end
-

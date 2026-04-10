@@ -79,4 +79,3 @@ DBEVENT	.macro	ETYPE,D1,S1,D2,S2,D3,S3
 ok?	move	a0,@event_ptr,L
 	mmfm	sp,a0,a14
 	.endm
-

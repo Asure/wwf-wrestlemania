@@ -173,7 +173,7 @@ _next_command1
 	move	*a4+,a0,L		;* * multi image object
 
 	.if DEBUG
-	cmpi	>ff800000,a0
+	cmpi	0ff800000H,a0
 	jrhs	#img_ok
 	LOCKUP	;bogus image pointer
 #img_ok
@@ -1473,9 +1473,9 @@ _ani_leapatpos	;39
 	add	a0,a1
 	divu	a8,a1			;a1 = a1/a8 ( ((y-y0)+(1/2*a*t^2)) / t )
 
-	cmpi	>0f0000,a1
+	cmpi	00f0000H,a1
 	jrlt	#yok
-	movi	>0f0000,a1
+	movi	00f0000H,a1
 #yok	move	a1,*a13(OBJ_YVEL),L
 
 
@@ -2438,14 +2438,14 @@ _ani_ifoppmode		;70
 	jrn	#not
 	cmp	a0,a14
 	jrne	#done
-	jruc	#branch
+	jruc	#branchka
 
 #not
 	not	a0
 	cmp	a0,a14
 	jreq	#done
 
-#branch
+#branchka
 	move	*a4(#BRANCH),a0,L
 	move	a0,*a10(OANIPC),L
 
@@ -3095,7 +3095,7 @@ _ani_waitroll	;84
 	addk	8,a0
 	move	a0,@FINAL_PTR,L
 
-	;7->8 hack
+	;7-08H hack
 	cmpi	7,a1
 	jrne	#vok
 	movk	8,a1
@@ -3846,14 +3846,14 @@ _ani_hmbwait	;103
 #check_hit
 	move	*a13(ANIMODE),a14
 	btst	MODE_STATUS_BIT,a14
-	jrz	#missed
+	jrz	#missedkb
 
 	move	*a4(#HIT),*a10(OANICNT)
 	jrz	_next_command
 	rets
 
 	;assume a miss
-#missed
+#missedkb
 	move	*a4(#MISSED),*a10(OANICNT)
 	jrz	_next_command
 	rets
@@ -4965,4 +4965,3 @@ shadows
 ******************************************************************************
 
 	.end
-

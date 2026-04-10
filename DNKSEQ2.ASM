@@ -3095,7 +3095,7 @@ dnk_repeat_combo_hammer_anim
 	move	a0,a11
 
 	move	*a13(CLOSEST_XDIST),a0
-	cmpi	>40,a0
+	cmpi	040H,a0
 	jrlt	#drop
 
 ;We are to side of fallen opponent, we must float toward
@@ -3126,7 +3126,7 @@ dnk_repeat_combo_hammer_anim
 
 #zero_x
 	move	*a13(CLOSEST_XDIST),a0
-	cmpi	>40,a0
+	cmpi	040H,a0
 	jrgt	#ok			;Is he to the side?
 
 ;Don't float if dropping straight down
@@ -4339,7 +4339,7 @@ dnk_repeat_combo_hammer_anim
 ;	move	*a0(STICK_VAL_CUR),a14
 ;	cmpi	4,a1
 ;	jrz	#fclft
-;	cmpi	>6,a14
+;	cmpi	06H,a14
 ;	jrnz	#ok
 ;;Pulling down & away!
 ;;Don't allow hiptoss
@@ -4348,7 +4348,7 @@ dnk_repeat_combo_hammer_anim
 ;	move	a1,*a13(ANIMODE)
 ;	rets
 ;
-;#fclft	cmpi	>a,a14
+;#fclft	cmpi	0aH,a14
 ;	jrz	#ano
 ;
 ;#ok	move	*a13(ANIMODE),a1
@@ -5812,4 +5812,3 @@ yes_do_combo_again
 ******************************************************************************
 
 	.end
-

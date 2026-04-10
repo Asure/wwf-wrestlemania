@@ -957,7 +957,7 @@ crouton_pos_table
 
 #*****************************************************************************
 * Process that handles player selection for one player.
-* >a10 = player (0 or 1)
+* 0a10H = player (0 or 1)
 
 	STRUCTPD
 	LONG		#HILITE			;UHL *hilite ring
@@ -1905,7 +1905,7 @@ redcyc_tbl
 
 	move	*a13(#RND_DEST),a14
 	jrn	#move_sound_ok
-	movi	>DD,a0
+	movi	0DDH,a0
 #move_sound_ok
 
 	calla	triple_sound
@@ -2542,13 +2542,13 @@ attbars
 	.word	CLSNEUT|TYPNEUT				;OID
 	.long	0,0					;XVEL, YVEL
 
-#p1name	.word	>51,184,name_z
+#p1name	.word	051H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
 	.long	0,0
 
-#p2name	.word	>142,184,name_z
+#p2name	.word	0142H,184,name_z
 	.long	WF_INSERT
 	.word	DMAWNZ|M_3D|M_SCRNREL
 	.word	CLSNEUT|TYPNEUT
@@ -3320,4 +3320,3 @@ auto_str
 ******************************************************************************
 
 	.end
-

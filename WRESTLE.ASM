@@ -328,7 +328,7 @@ box_matedge2
 	.long	vln_right_matedge2
 
 
-****************************************************************
+#****************************************************************
 * Reset entry point
 
  SUBR	init_prog
@@ -342,7 +342,7 @@ box_matedge2
 	calla	InitPIC
 
 ;	.if	DEBUG
-;	move	a0,@>1e00000		;Clr FPGA rom protect
+;	move	a0,@01e00000H		;Clr FPGA rom protect
 ;	.endif
 
 					;>Manual sound board reset
@@ -2433,7 +2433,7 @@ NO_POINT_ITS_A_DRONE
 	move	*a13(STATUS_FLAGS),a14
 	btst	B_KOD,a14
 	jrz	#slp
-	movi	>7fff,a0
+	movi	07fffH,a0
 #slp	SLEEPR	a0
 ;	TINTON
 
@@ -3254,7 +3254,7 @@ obj_look
 	move	*a13(OBJ_XVEL),a0,L
 	movi	[3,0001],a7
 	move	a7,*a13(OBJ_XVEL),L
-	andi	>ffff,a0
+	andi	0ffffH,a0
 	cmpi	1,a0
 	jrz	#no_l
 
@@ -3401,7 +3401,7 @@ obj_look
 	move	*a13(OBJ_XVEL),a0,L
 	movi	[-3,0001],a7
 	move	a7,*a13(OBJ_XVEL),L
-	andi	>ffff,a0
+	andi	0ffffH,a0
 	cmpi	1,a0
 	jrz	#no_r
 
@@ -4689,7 +4689,7 @@ just_ignore_me
 	move	a13,a2
 	addi	PUNCHB_COUNT,a2
 #loop
-	srl	1,a0		;button-->Carry
+	srl	1,a0		;button--0CaHrry
 	jrnc	#no_but
 
 	move	*a2,a14
@@ -6238,7 +6238,7 @@ gottime
 	clr	a0				;x pos
 	clr	a1				;y pos
 	movi	jmeter,a2			;* image
-	movi	>1601,a3			;z pos
+	movi	01601H,a3			;z pos
 	movi	DMACAL|M_3D,a4			;DMA flags
 	clr	a5				;object ID
 	clr	a6				;x vel
@@ -6371,7 +6371,7 @@ gottime
 #loop
 	SLEEPK	1
 
-	movi	>1600,a0
+	movi	01600H,a0
 	move	@debug_collis,a14
 	cmpi	2,a14
 	jrne	#not_2
@@ -6703,4 +6703,3 @@ NO_ONE_HERE2
 ******************************************************************************
 
 	.end
-

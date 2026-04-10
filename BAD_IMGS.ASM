@@ -19,4 +19,3 @@ U3DD3A01	undseq3.asm
 U4BF3A04	lexseq3.asm
 
 Y2ST2Z01	yokseq1.asm
-

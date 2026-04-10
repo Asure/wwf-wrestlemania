@@ -9,4 +9,3 @@
 
 	.include ropeimg.tbl
 
-

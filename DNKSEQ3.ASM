@@ -68,7 +68,7 @@
 
 TSEC 	equ	53
 
-*****************************************************************************
+#*****************************************************************************
 *
 * JOY BUZZER
 
@@ -2695,13 +2695,13 @@ GRAV		equ	04000h	;9000h	;a000h	;6000h
 
  SUBR	one_spark
 
-	movk	>a,a0
+	movk	0aH,a0
 	calla	RNDRNG0
 	subk	5,a0
 	sll	14,a0			;XVel
 	move	a0,a6
 
-	movk	>3,a0
+	movk	03H,a0
 	calla	RNDRNG0
 	addk	1,a0
 	sll	16,a0			;YVel
@@ -2739,7 +2739,7 @@ GRAV		equ	04000h	;9000h	;a000h	;6000h
 	movi	CLSDEAD,a5
 	calla	BEGINOBJ
 
-	movk	>f,a0
+	movk	0fH,a0
 	calla	RNDRNG0
 	subk	7,a0
 	sll	14,a0
@@ -2816,7 +2816,7 @@ clb_spark
 	sra	1,a0
 	add	a0,a6
 
-	movk	>5,a0
+	movk	05H,a0
 	calla	RNDRNG0
 	addk	2,a0
 	sll	16,a0			;YVel
@@ -2854,7 +2854,7 @@ clb_spark
 	movi	CLSDEAD,a5
 	calla	BEGINOBJ
 
-	movk	>f,a0
+	movk	0fH,a0
 	calla	RNDRNG0
 	subk	7,a0
 	sll	14,a0
@@ -3420,4 +3420,3 @@ clb_spark
 ******************************************************************************
 
 	.end
-

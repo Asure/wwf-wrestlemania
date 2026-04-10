@@ -1503,7 +1503,7 @@ OFFSCR_X	equ	221
 * Gets the animation point of a multipart object.  Find the highest x and y
 * offset values among all the pieces.
 *
-* >a0 = object table pointer
+* 0a0H = object table pointer
 * <a0 = [Yoff,Xoff]
 
  SUBR	get_mpart_offsets
@@ -1560,7 +1560,7 @@ OFFSCR_X	equ	221
 * Gets the combined X size of a multi-part object.  The correct answer is
 * (hi anipt) + hi (size - anipt)
 *
-* >a0 = object table pointer
+* 0a0H = object table pointer
 * <a0 = Xsize
 
  SUBR	get_mpart_xsize
@@ -3160,7 +3160,7 @@ but_offs2	.word	20h-3,24h-3
 	movi	DIAGP,a0
 	calla	pal_getf
 	move	a0,a1
-	ori	>0E0E0000,a1
+	ori	00E0E0000H,a1
 	movi	[1,400],a2
 	move	@dma_bog,a3
 	sll	16,a3
@@ -3176,7 +3176,7 @@ but_offs2	.word	20h-3,24h-3
 	movi	DIAGP,a0
 	calla	pal_getf
 	move	a0,a1
-	ori	>0D0D0000,a1
+	ori	00D0D0000H,a1
 	movi	[1,400],a2
 	move	@CPUAVG,a3
 	sll	14,a3
@@ -3411,7 +3411,7 @@ but_offs2	.word	20h-3,24h-3
 #*****************************************************************************
 * Sets PLYR_TYPE to PTYPE_PLAYER if PLYRNUM < 2.
 *
-* >a13 = process *
+* 0a13H = process *
 
  SUBR	drone_change_back
 
@@ -3504,7 +3504,7 @@ but_offs2	.word	20h-3,24h-3
 
 #x_flip
 	move	*a13(FACING_DIR),a14
-	xori	>0C,a14
+	xori	00CH,a14
 	move	a14,*a13(FACING_DIR)
 	rets
 
@@ -3767,7 +3767,7 @@ but_offs2	.word	20h-3,24h-3
 * Change into another wrestler and re-enter the battle.  This should probably
 * only be used in the king of the ring match.
 *
-* >a13 = pointer to process to change
+* 0a13H = pointer to process to change
 *
 
  SUBR	change_wrestler
@@ -3788,9 +3788,9 @@ but_offs2	.word	20h-3,24h-3
 	movk	MAX_PIECES-1,a9
 	move	*a13(OBJ_BASE),a1,L
 	addk	20h,a1			;skip shadow
-#nxt	move	*a1+,a8,L
+#glnxt	move	*a1+,a8,L
 	move	a0,*a8(OPAL)
-	dsj	a9,#nxt
+	dsj	a9,#glnxt
 
 ****	;re-initialize animation
 	movi	MODE_NORMAL,a14
@@ -4128,7 +4128,7 @@ but_offs2	.word	20h-3,24h-3
 	cmpi	3,a14
 	jrne	#nfin
 
-#isrum	movi	>AAAA,a14
+#isrum	movi	0AAAAH,a14
 	mpyu	a14,a1
 	srl	16,a1
 
@@ -4500,7 +4500,7 @@ digit_tbl
 	move	@reduce_bog,a1
 	jrnz	#die
 	MOVE	@WORLDTLY,A0,L
-	CMPI	[>ff97,0],A0
+	CMPI	[0ff97H,0],A0
 	JRGT	#top
 	CALLA	START_HI_FLASHES
 	SLEEPK	30
@@ -5019,4 +5019,3 @@ AUDIT_THE_HUMAN
 ******************************************************************************
 
 	.end
-
