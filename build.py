@@ -55,6 +55,7 @@ def main():
     cmd = [
         str(dosbox),
         "-conf", str(conf),
+	"-noconsole",
         "-c", "make.bat"
     ]
 

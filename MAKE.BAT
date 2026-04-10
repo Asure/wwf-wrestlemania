@@ -7,6 +7,8 @@ del make0*.bat
 del make0*.lck
 del wrestle.out
 del rom\wwf*.*
+echo "Beginning Code Compilation (1-3 minutes)..."
+echo "Screen may show trash or flash..."
 \tools\vidram on
 rem \opus\make %1 %2 %3 %4 %5
 \tools\gmake -m
