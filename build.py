@@ -18,24 +18,21 @@ def get_dosbox_path() -> Path:
     elif system == "Windows":
         paths = [
 #	"C:\Program Files (x86)\DOSBox-0.74\DOSBox.exe"
-	    Path(os.environ.get("PROGRAMFILES(X86)", "C:\\Program Files (x86)")) / "DOSBox-0.74" / "DOSBox.exe",
-            Path(os.environ.get("PROGRAMFILES", "C:\\Program Files")) / "DOSBox-X" / "dosbox-x.exe",
-            Path(os.environ.get("PROGRAMFILES(X86)", "C:\\Program Files (x86)")) / "DOSBox-X" / "dosbox-x.exe",
-            Path(os.environ.get("LOCALAPPDATA", "")) / "DOSBox-X" / "dosbox-x.exe",
-            Path("C:\\DOSBox-X\\dosbox-x.exe"),
+	    Path(os.environ.get("PROGRAMFILES(X86)", "C:\\Program Files (x86)")) / "DOSBox-0.74-3" / "DOSBox.exe",
+            Path(os.environ.get("PROGRAMFILES", "C:\\Program Files")) / "DOSBox-0.74-3" / "DOSBox.exe",
         ]
     else:
         paths = [
-            Path("/usr/bin/dosbox-x"),
-            Path("/usr/local/bin/dosbox-x"),
-            Path.home() / ".local/bin/dosbox-x",
+            Path("/usr/bin/dosbox"),
+            Path("/usr/local/bin/dosbox"),
+            Path.home() / ".local/bin/dosbox",
         ]
 
     for path in paths:
         if path.exists():
             return path
 
-    dosbox = shutil.which("dosbox-x")
+    dosbox = shutil.which("dosbox")
     if dosbox:
         return Path(dosbox)
 
@@ -47,7 +44,7 @@ def main():
 
     dosbox = get_dosbox_path()
     if not dosbox:
-        print("Error: DOSBox-X not found.")
+        print("Error: DOSBox not found.")
         sys.exit(1)
 
     conf = script_dir / "dosbox.conf"
