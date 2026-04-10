@@ -46,8 +46,8 @@ diag.obj
 menu.obj
 hstd.obj
 select.obj
-robo.obj
-coll2.obj
+/* robo.obj */
+/* coll2.obj */
 tables.obj
 ropes.obj
 lifebar.obj
