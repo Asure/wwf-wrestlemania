@@ -12,8 +12,7 @@ def get_dosbox_path() -> Path:
 
     if system == "Darwin":
         paths = [
-            Path("/Applications/DOSBox-X.app/Contents/MacOS/dosbox-x"),
-            Path.home() / "Applications/DOSBox-X.app/Contents/MacOS/dosbox-x",
+	    Path("/Applications/DOSBox.app/Contents/MacOS/dosbox"),
         ]
     elif system == "Windows":
         paths = [
