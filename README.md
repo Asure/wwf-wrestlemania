@@ -21,7 +21,7 @@ http://www.chrysocome.net/downloads/ddrelease64.exe
 - Zip for Windows (Optional)
 http://downloads.sourceforge.net/gnuwin32/zip-3.0-bin.zip
 
-## How-to
+# How-to
 - Install Dosbox and Python 3
 - Now you can double-click on build.py. Game roms will end up in rom\ folder.
 - Windows: Run rom\merge.cmd to create game roms. ( Optional: Edit the CMD file to allow auto-zipping into mame rom folder.)
@@ -39,16 +39,16 @@ File preasm.ps1 was used to fix the duplicate label style that Midway liked to u
 - Compare production roms vs. 1.30 code leak and make it 1:1
 - Compare release 1.20/1.1 and see what was changed.
 
-## Working inside dosbox with tools and manual compiling of stuff
+# Working inside dosbox with tools and manual compiling of stuff
 
-# Windows 
+## Windows 
 If you install dosbox 0.74.3 the dosbox.conf is in 
 C:\Users<yourusername>\AppData\Local\DOSBox
 
-# Linux
+## Linux
 Location of the dosbox.conf file can vary. Find it :)
 
-# General
+## General
 Add the virtual C: to the [autoexec] and stuff like this:
 
 ---
@@ -60,6 +60,7 @@ path=Z:;C:\NC;C:\TI;c:\bin;c:\QEMM;c:\tools
 C:
 ---
 Your 'D:\DOSBOX\TOOLS\C' can be any folder you decide on.
- 
- 
 
+Individual files compile with "gspa file.asm" to "file.obj". Handy for debugging.
+To link files into a COFF .OUT file you'll need to write a linker CMD file. See WRESTLE.CMD for inspiration.
+If you wrote a CMD file you can use "GSPLNK <cmd file.cmd>".
