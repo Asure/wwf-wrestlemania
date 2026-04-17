@@ -38,6 +38,28 @@ File preasm.ps1 was used to fix the duplicate label style that Midway liked to u
 ## Todo
 - Compare production roms vs. 1.30 code leak and make it 1:1
 - Compare release 1.20/1.1 and see what was changed.
+
+## Working inside dosbox with tools and manual compiling of stuff
+
+# Windows 
+If you install dosbox 0.74.3 the dosbox.conf is in 
+C:\Users<yourusername>\AppData\Local\DOSBox
+
+# Linux
+Location of the dosbox.conf file can vary. Find it :)
+
+# General
+Add the virtual C: to the [autoexec] and stuff like this:
+
+---
+[autoexec]
+set TMP=C:\TMP
+set TEMP=C:\TEMP
+mount c d:\dosbox\tools\c
+path=Z:;C:\NC;C:\TI;c:\bin;c:\QEMM;c:\tools
+C:
+---
+Your 'D:\DOSBOX\TOOLS\C' can be any folder you decide on.
  
  
 
