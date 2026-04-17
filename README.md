@@ -51,14 +51,14 @@ Location of the dosbox.conf file can vary. Find it :)
 ## General
 Add the virtual C: to the [autoexec] and stuff like this:
 
----
+
 [autoexec]
 set TMP=C:\TMP
 set TEMP=C:\TEMP
 mount c d:\dosbox\tools\c
 path=Z:;C:\NC;C:\TI;c:\bin;c:\QEMM;c:\tools
 C:
----
+
 Your 'D:\DOSBOX\TOOLS\C' can be any folder you decide on.
 
 Individual files compile with "gspa file.asm" to "file.obj". Handy for debugging.
