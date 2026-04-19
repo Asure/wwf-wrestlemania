@@ -229,8 +229,14 @@ xjbhno_bleedin_announcer
 	JSRP	show_title
 	JSRP	show_gameplay
 	JSRP	creditscreen
+	.if	NOHINTS
+	.else
 	JSRP	DO_HINTS
+	.endif
+	.if	NOTIPS
+	.else
 	JSRP	show_gen_tips
+	.endif
 	JSRP	show_bios
 	movk	1,a14
 	move	a14,@bios_type
@@ -245,7 +251,10 @@ xjbhno_bleedin_announcer
 	move	a14,@bios_type
 	move	@nb_save,a14
 	move	a14,@nb_save
+	.IF	NOOPMSG
+	.ELSE
 	JSRP	show_operatormsg
+	.ENDIF
 
 	calla	RemapIO			;Remap the I/O
 	MOVE	@AMODE_LOOPS,A0
@@ -259,11 +268,14 @@ xjbhno_bleedin_announcer
 	JSRP	show_time_date
 	
 	MOVE	@AMODE_LOOPS,A0
-	andk	7,a0
+	andk	1,a0
 	jrnz	xjbhloop
 	
 	JSRP	show_copyright
+	.if	NOAAMA
+	.else
 	JSRP	aama_message
+	.endif
 
 	clr	a0
 	move	a0,@AMODE_LOOPS
@@ -271,6 +283,8 @@ xjbhno_bleedin_announcer
 
 	jruc	xjbhloop
 
+	.if	NOAAMA
+	.else
 aama_message
 	calla	display_blank
 	calla	WIPEOUT			;CLEAN SYSTEM OUT
@@ -410,6 +424,8 @@ xjbhln4	.string	"HUMAN-LIKE CHARACTERS ENGAGED IN",0
 xjbhln5	.string	"COMBATIVE ACTIVITY.",0
 	.byte	0
 	.even
+
+	.endif
 
 
 do_the_grad_thang
@@ -682,6 +698,9 @@ SOUNDS_SHOULD_BE_ON
 ****************************************************************
 * Show an operator message if one has been entered
 
+	.IF	NOOPMSG
+	.ELSE
+
 	STRUCTPD
 	WORD	som_string
 
@@ -698,8 +717,11 @@ cniicmlp
 	dsj	a2,cniicmlp
 	jruc	cniix
 cniimsg
-;	JSRP	GENERIC_DISPLAY
+	.if	NODAN
+	JSRP	GENERIC_DISPLAY
+	.else
 	JSRP	dan_test
+	.endif
 	movk	CMESS_LINES,a2		;0CHheck for a message
 	movi	CUSTOM_MESSAGE,a7
 	movi	[50,200],a9
@@ -761,6 +783,8 @@ cniinxt
 	calla	WIPEOUT
 
 cniix	RETP
+
+	.ENDIF
 
 *****************************************************************************
 
@@ -1311,6 +1335,9 @@ mzuxln19	.string	"BMG MUSIC PUBLISHING LTD./ALL BOYS MUSIC LTD.",0
 *
 * Print general tips
 *
+	.if	NOTIPS
+	.else
+
  SUBRP	print_gen_tips
 
 	movi	ommxgen_tip_mes,a2
@@ -1434,6 +1461,7 @@ ommxgen_tip_table
 	calla	KIL1C
 
 	RETP
+	.endif
 
 *****************************************************************************
 *
@@ -2343,9 +2371,12 @@ bret_tip2a
 	.string	"A SUPER UPPERCUT.",0
 	.even
 bret_tip3
+razor_tip1
+shawn_tip1
 	.string	"CHARGE POWERKICK 2 SEC",0
 	.even
 bret_tip3a
+razor_tip1a
 	.string	"TO DO A FLYING KICK.",0
 	.even
 
@@ -2361,19 +2392,25 @@ bret_tips
 	.long	0
 
 
-razor_tip1
-	.string	"CHARGE POWERKICK 2 SEC.",0
-	.even
-razor_tip1a
-	.string	"TO DO A FLYING KICK.",0
-	.even
+;razor_tip1
+;	.string	"CHARGE POWERKICK 2 SEC.",0
+;	.even
+;razor_tip1a
+;	.string	"TO DO A FLYING KICK.",0
+;	.even
 razor_tip2
+taker_tip3
 	.string	"1/4 CIRCLE D,DT,T - PUNCH",0
 	.even
 razor_tip2a
 	.string	"DOES DOWN SLASHES.",0
 	.even
 razor_tip3
+taker_tip1
+yoko_tip1
+doink_tip1
+bam_tip2
+lex_tip1
 	.string	"CHARGE PUNCH 2 SECONDS",0
 	.even
 razor_tip3a
@@ -2391,21 +2428,23 @@ razor_tips
 	.long	razor_tip3a
 	.long	0
 
-taker_tip1
-	.string	"CHARGE PUNCH 2 SECONDS",0
-	.even
+;taker_tip1
+;	.string	"CHARGE PUNCH 2 SECONDS",0
+;	.even
 taker_tip1a
 	.string	"TO DO A NECKBREAKER.",0
 	.even
 taker_tip2
+yoko_tip3
+shawn_tip2
 	.string	"TOWARD-TOWARD-POWERKICK",0
 	.even
 taker_tip2a
 	.string	"DOES A TOMBSTONE SMASH.",0
 	.even
-taker_tip3
-	.string	"1/4 CIRCLE D,DT,T - PUNCH",0
-	.even
+;taker_tip3
+;	.string	"1/4 CIRCLE D,DT,T - PUNCH",0
+;	.even
 taker_tip3a
 	.string	"DOES A SLIDING CHOKE HOLD.",0
 	.even
@@ -2422,9 +2461,9 @@ taker_tips
 	.long	0
 
 
-yoko_tip1
-	.string	"CHARGE PUNCH 2 SECONDS",0
-	.even
+;yoko_tip1
+;	.string	"CHARGE PUNCH 2 SECONDS",0
+;	.even
 yoko_tip1a
 	.string	"TO DO A SALT THROW.",0
 	.even
@@ -2434,9 +2473,9 @@ yoko_tip2
 yoko_tip2a
 	.string	"DOES A GUT PUSH.",0
 	.even
-yoko_tip3
-	.string	"TOWARD-TOWARD-POWERKICK",0
-	.even
+;yoko_tip3
+;	.string	"TOWARD-TOWARD-POWERKICK",0
+;	.even
 yoko_tip3a
 	.string	"DOES A SCISSORS.",0
 	.even
@@ -2453,15 +2492,15 @@ yoko_tips
 	.long	0
 
 
-shawn_tip1
-	.string	"CHARGE POWERKICK 2 SEC.",0
-	.even
+;shawn_tip1
+;	.string	"CHARGE POWERKICK 2 SEC.",0
+;	.even
 shawn_tip1a
 	.string	"TO DO A FLYING KICK",0
 	.even
-shawn_tip2
-	.string	"TOWARD-TOWARD-POWERKICK",0
-	.even
+;shawn_tip2
+;	.string	"TOWARD-TOWARD-POWERKICK",0
+;	.even
 shawn_tip2a
 	.string	"DOES A FRANKENSTEINER.",0
 	.even
@@ -2490,9 +2529,9 @@ bam_tip1
 bam_tip1a
 	.string	"DOES A JUMP KICK.",0
 	.even
-bam_tip2
-	.string	"CHARGE PUNCH 2 SECONDS",0
-	.even
+;bam_tip2
+;	.string	"CHARGE PUNCH 2 SECONDS",0
+;	.even
 bam_tip2a
 	.string	"TO DO A FIREPUNCH.",0
 	.even
@@ -2515,9 +2554,9 @@ bam_tips
 	.long	0
 
 
-doink_tip1
-	.string	"CHARGE PUNCH 2 SECONDS",0
-	.even
+;doink_tip1
+;	.string	"CHARGE PUNCH 2 SECONDS",0
+;	.even
 doink_tip1a
 	.string	"TO DO A JOY BUZZER.",0
 	.even
@@ -2544,10 +2583,9 @@ doink_tips
 	.long	doink_tip3a
 	.long	0
 
-
-lex_tip1
-	.string	"CHARGE PUNCH 2 SECONDS",0
-	.even
+;lex_tip1
+;	.string	"CHARGE PUNCH 2 SECONDS",0
+;	.even
 lex_tip1a
 	.string	"TO DO A CLOBBER.",0
 	.even
@@ -3382,6 +3420,8 @@ ERRORLOG
 	RETS
 
 ******************************************************************************
+	.if NOHINTS
+	.else
 
 NUM_HINTS	.EQU	10
 
@@ -3760,6 +3800,8 @@ enjeHNT_AC	.byte	"DEFEATED A TEAM OF DRONES, PIN ONE",0,0
 enjeHNT_AD	.byte	"WHOSE COMBO METER IS UNLIT.",0,0
 	.even
 
+	.endif
+
 
 *****************************************************************************
 *
@@ -3845,7 +3887,8 @@ ihrbgotit	clrc
 	rets
 
 *****************************************************************************
-
+	.if 	NODAN
+	.else
  SUBRP	dan_test
 
 	calla	display_blank
@@ -3962,6 +4005,8 @@ mxwjxok
 	SLEEPK	2
 mxwjyok
 	jruc	mxwjlp
+	
+	.endif
 
 ******************************************************************************
 
