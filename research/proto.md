@@ -82,6 +82,126 @@ Commented out in `YOKO.ASM` and absent from both the final and prototype binarie
 
 ---
 
+## Extra Prototype ROM Content
+
+The prototype binary is ~6KB larger in live (non-padding) content than the final 1.30:
+**941,124 vs 934,940 live bytes**. The bulk of the difference is in the high-ROM region
+(`0xFFFC0000`–`0xFFFFFFFF`), which contains a fully-populated **operator adjustment menu
+system** in the prototype that was gutted or replaced before the final release.
+
+### Live-content delta by region (significant blocks only)
+
+| Region | Proto extra words | Contents |
+|--------|------------------:|---------|
+| `0xFFFE0000` | +2892 | Coin denomination strings |
+| `0xFFFF0000` | +432 | Operator menu sprite table 2 |
+| `0xFFFC0000` | +335 | Operator adjustment help text |
+| `0xFFFE8000` | ~+1798 | Operator menu sprite table 1 |
+| Various code regions | 50–550 | Layout shift from global +0x1000 offset |
+
+---
+
+### `0xFFFC0000` — Operator Adjustment Menu Help Text
+
+The prototype stores detailed description strings for every adjustable game setting,
+covering:
+
+- Sound in attract mode (`FACTORY SETTING: 3`)
+- High score reset interval (`FACTORY SETTING: 5000`)
+- Graphic violence level (`FACTORY SETTING: NORMAL`)
+- Free play enable (`FACTORY SETTING: NO`)
+- Pricing mode and coin-unit configuration
+- Individual coin chute multipliers (Chutes 1–4)
+- Totalizer mode (Standard / Custom)
+- Bill validator
+- Credits required to start / continue
+- Fractional credit display
+- Bookkeeping money totals
+- Maximum credits limit (`FACTORY SETTING: 50`)
+
+The final 1.30 ROM replaces this block entirely with **hardware diagnostic menu text**:
+`"HARDWARE INFORMATION"`, `"REAL TIME CLOCK"`, `"DISPLAY"`, `"CALIBRATE"`,
+and RTC (real-time clock) setup strings. The operator pricing help strings were removed.
+
+---
+
+### `0xFFFE0000` — Coin Denomination Strings
+
+The prototype holds multi-country pricing strings for the credits screen:
+
+```
+1 CREDIT / 1 DM
+6 CREDITS / 5 DM
+1 CREDIT / 20 FR
+1 CREDIT / 50 P
+$1.00 / PLAY
+CREDITS TO START
+CREDITS TO CONTINUE
+CREDITS PER PLAYER
+MAXIMUM CREDITS!
+```
+
+The final 1.30 ROM has completely different content (animation/sprite data) at this
+address. The country-specific denomination strings were removed from the released build.
+
+---
+
+### `0xFFFE8000` — Operator Menu Sprite Display Table (Table 1)
+
+33+ entries, stride **9 words (18 bytes)** each. Every entry references the same image
+at bit-address `0xFFD24AC0` (a 16-pixel-wide sprite). Entries differ in position
+parameters and control flags:
+
+| Field | Offset in entry | Notes |
+|-------|----------------|-------|
+| Control word | word[0] | Varies per entry |
+| Flags | word[1] | `0x0454` / `0x0455` |
+| Scale/palette | word[2] | `0x4000`, `0x4580`, `0x4A80`, `0x4B80`, `0x4F80` |
+| Image ptr (lo) | word[3] | `0x4AC0` (constant) |
+| Image ptr (hi) | word[4] | `0xFFD2` → 32-bit addr `0xFFD24AC0` (constant) |
+| X position | word[5] | Varies: 9, 24, 44, 64, 84, 33, 65, 97, 129… |
+| Y position | word[6] | Varies: 71, 91, 111, 31, 51, 71, 91, 11… |
+
+Entries 0–2 form a vertical column at X=9, Y=71/91/111 (20-pixel row spacing),
+suggesting a repeating border or scrolling element in the operator menu layout.
+
+The final 1.30 ROM has blank (`0xFFFF`) data at `0xFFFE8000`.
+
+---
+
+### `0xFFFF0000` — Operator Menu Sprite Display Table (Table 2)
+
+19+ entries, same **9-word stride**. All reference image at `0xFFD1B490` (also 16px wide).
+Dimensions vary across groups of entries (18×13, 13×11, 12×14 pixels).
+The incrementing control word increases by **0x3A8 (936)** per entry — consistent with a
+scanline-stride display list.
+
+The final 1.30 ROM has blank (`0xFFFF`) data at `0xFFFF0000`.
+
+---
+
+### Code path referencing `0xFFFE8000` (present in both builds)
+
+Both the prototype (at `FFB37F60`) and the final (at `FFB25A00`) contain identical code
+that conditionally loads `0xFFFE8000` as a display list pointer into a process field:
+
+```asm
+MOVE  *A13(2D0h),A0,1    ; read current display pointer
+JRN   #done              ; if already negative (0x18000 set), skip
+MOVI  FFFE8000h,A0       ; load operator menu display table address
+MOVE  A0,*A13(2D0h),1    ; store as display pointer
+ORI   200h,A1            ; set display flag
+RETS
+#done:
+RETS
+```
+
+In the final, `0xFFFE8000` is unprogrammed Flash (`0xFFFF`), so this code path
+effectively reads garbage and the operator menu graphics are never displayed.
+The code was left in place; only the data was removed.
+
+---
+
 ## Methodology
 
 1. Located `init_smoves` in both builds by searching for `MOVI 12Fh,A1` (`SMOVE_PID`).
