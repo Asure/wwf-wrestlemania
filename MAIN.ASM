@@ -346,7 +346,7 @@ _invalid
 
 	rets		;<----------------temp!!!!!!!!!!!!!!!!!!!!!!
 
-
+	.if	0
 	movi	SecFuncTable,a0,L	;Table of security functions to check
 SFC_loop
 	move	*a0+,a1,L		;Pointer to beginning of function
@@ -366,6 +366,7 @@ SFC_iloop
 	jrz	SFC_loop
 	LOCKUP
 SFC_done
+	.endif
 	
 
 ***************************************************************

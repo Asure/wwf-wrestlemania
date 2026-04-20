@@ -1369,6 +1369,9 @@ HDWH_MAN
 	.string	"MANUFACTURE DATE",0
 	.even
 
+	.if	NOCLOCK
+	.else
+
 CLOCK_HELP
 	.word	0
 	.word	COLOR_BLUE
@@ -1413,6 +1416,22 @@ CSET_H2
 CSET_H3
 	.string	"THE REAL TIME CLOCK",0
 	.even
+
+	.endif
+
+MESS_HARDWARE
+	.string	"HARDWARE INFO",0
+	.even
+
+MESS_QUIT
+	MESS_MAC RD7FONT,SPACING07,200,230,ROBO_DECAY,STRCNRM,0
+	.string	"PRESS ANY BUTTON TO QUIT"
+	.byte	0,0
+	.even
+
+	.if	NOCLOCK
+	.else
+
 CLK_CALIBRATE_HELP
 	.word	0
 	.word	COLOR_BLUE
@@ -1430,9 +1449,6 @@ CCAL_H3
 	.string	"REAL TIME CLOCK",0
 	.even
 
-MESS_HARDWARE
-	.string	"HARDWARE INFO",0
-	.even
 MESS_CLOCK
 	.string	"REAL TIME CLOCK",0
 	.even
@@ -1463,12 +1479,6 @@ M_CLK_SET
 	.string	"SETTING REAL TIME CLOCK",0,0
 	.even
 
-CDAY_PROMPT_Y	EQU	50
-CTIME_PROMPT_Y	EQU	130
-CDAY_Y		EQU	CDAY_PROMPT_Y+30
-CDATE_Y		EQU	CDAY_Y+20
-CTIME_Y		EQU	CTIME_PROMPT_Y+30
-
 MESS_CLKD_PROMPTS
 	MESS_MAC RD15FONT,SPACING07,200,CDAY_PROMPT_Y,ROBO_WHITE,STRCNRM,0
 	.string	"Current Date"
@@ -1478,16 +1488,23 @@ MESS_CLKD_PROMPTS
 	.string	"Current Time"
 	.byte	0,1
 	.even
-MESS_QUIT
-	MESS_MAC RD7FONT,SPACING07,200,230,ROBO_DECAY,STRCNRM,0
-	.string	"PRESS ANY BUTTON TO QUIT"
-	.byte	0,0
-	.even
 MESS_RTC_SET
 	MESS_MAC RD7FONT,SPACING07,200,215,ROBO_LASER,STRCNRM,0
 	.string	"THE REAL TIME CLOCK HAS BEEN SET"
 	.byte	0,0
 	.even
+
+	.endif
+
+CDAY_PROMPT_Y	EQU	50
+CTIME_PROMPT_Y	EQU	130
+CDAY_Y		EQU	CDAY_PROMPT_Y+30
+CDATE_Y		EQU	CDAY_Y+20
+CTIME_Y		EQU	CTIME_PROMPT_Y+30
+
+
+
+
 MESS_SUNDAY
 	.string	"Sunday",0
 	.even
@@ -1513,6 +1530,16 @@ MESS_SATURDAY
 DAY_TABLE	.long	MESS_SUNDAY,MESS_MONDAY,MESS_TUESDAY,MESS_WEDNESDAY
 		.long	MESS_THURSDAY,MESS_FRIDAY,MESS_SATURDAY
 		.even
+
+MONTH_TABLE
+	.long	MESS_JANUARY, MESS_FEBRUARY, MESS_MARCH, MESS_APRIL
+	.long	MESS_MAY, MESS_JUNE, MESS_JULY, MESS_AUGUST, MESS_SEPTEMBER
+	.long	MESS_OCTOBER, MESS_NOVEMBER, MESS_DECEMBER
+	.even
+MESS_HYEARS
+	.string	", 19",0
+	.even
+
 
 MESS_JANUARY
 	.string	"January  ",0
@@ -1549,14 +1576,6 @@ MESS_NOVEMBER
 	.even
 MESS_DECEMBER
 	.string	"December  ",0
-	.even
-MONTH_TABLE
-	.long	MESS_JANUARY, MESS_FEBRUARY, MESS_MARCH, MESS_APRIL
-	.long	MESS_MAY, MESS_JUNE, MESS_JULY, MESS_AUGUST, MESS_SEPTEMBER
-	.long	MESS_OCTOBER, MESS_NOVEMBER, MESS_DECEMBER
-	.even
-MESS_HYEARS
-	.string	", 19",0
 	.even
 TSEPERATOR
 	.string	":",0
@@ -1600,6 +1619,8 @@ TADJ_SETUP
 	.string	""
 	.byte	0,0
 	.even
+
+
 
 ;SNDRELEASE_NUM_PROMPT:
 ;	MESS_MAC RD15FONT,SPACING07,200,130,ROBO_PURPLE,STRCNRM,0
@@ -1651,6 +1672,9 @@ M_HARDWARE_INFO
 	.string	"HARDWARE INFORMATION",0
 	.even
 
+
+	.if	NOCLOCK
+	.else
 MESS_CLK_TITLE
 	.string	"REAL TIME CLOCK",0
 	.even
@@ -1663,6 +1687,7 @@ MESS_SET
 MESS_CALIBRATE
 	.string	"CALIBRATE",0
 	.even
+
 
 MEN_CLOCK
 	.long	RD7FONT		;FONT
@@ -1684,7 +1709,6 @@ MEN_CLOCK
 ;	.long	MESS_MM,RET_CLOCK,NO_HELP
 	.long	MESS_MM,RET_CLOCK,BLNK_HELP
 	.long	0
-
 
 
 *
@@ -1984,6 +2008,9 @@ DO_SECOND
 	.long	0			; Just Show Number
 	.long	MESS_SECOND_SET		; Header Message
 
+	.endif
+
+
 	.text
 
 GO_HARDWARE:
@@ -2071,7 +2098,8 @@ RET_HARDWARE:
 	JSRP	FORCE_MAIN
 	RETP
 
-
+	.if	NOCLOCK
+	.else
 GO_CLOCK:
 	move	@_clk_rd,a8,L		;Save current auto update state
 	move	a8,@_auto_update_save,L
@@ -2085,6 +2113,7 @@ RET_CLOCK:
 	move	a8,@_clk_rd,L
 	JSRP	FORCE_MAIN
 	RETP
+
 
 GO_CALIBRATE:
 	calla	CLR_SCRN		; Clear the screen
@@ -2109,6 +2138,8 @@ GO_CALIBRATE:
 	SLEEP	60			; Let user see it
 	calla	CLR_SCRN
 	RETP				; All done
+
+	.endif
 
 ; a0 = pointer to MESS_MAC TO COPY message is copied from message_buffer
 _setup_message:
@@ -2136,6 +2167,9 @@ _sm_done
 * _GetTime - Process subroutine to get the current time.  Time is
 *            returned in the _tXXXXXX globals.
 *
+	.if	NOCLOCK
+	.else
+
   SUBRP _GetTime
 	move	@_clk_rd,a0,L	;Save status of auto update
 	move	a0,@_auto_update_save,L
@@ -2652,6 +2686,8 @@ TS_CAN:
 	movk	1,a0
 	move	a0,@_switch_map_mode,L
 	RETP
+
+	.endif
 
 
 ********************************
@@ -4874,7 +4910,10 @@ MEN_MAIN
 	 .LONG	 MESS_GAME_ADJ,GO_ADJ,ADJUST_HELP
 	 .LONG	 MESS_UTIL,GO_UTIL,UTIL_HELP
 	 .LONG	 MESS_HARDWARE,GO_HARDWARE,HARDWARE_HELP
+	.if	NOCLOCK
+	.else
 	 .LONG	 MESS_CLOCK,GO_CLOCK,CLOCK_HELP
+	.endif
 	 .LONG	 MESS_VOL,GO_VOL,VOL_HELP
 	 .LONG	 MESS_EXIT,0,EXIT_HELP	;SPECIAL CASE!
 	 .LONG	 0		;END
